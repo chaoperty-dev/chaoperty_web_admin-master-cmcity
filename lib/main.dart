@@ -60,8 +60,10 @@ void main() {
 //2.------> git remote set-url origin https://github.com/trairatdzentric/chaoperty_web.git
 //2.------> git remote set-url origin https://github.com/TraiShiTech/chaoperty.git
 //3.-------->git commit -m "commit message"
-//4.-----------> git push origin main
+//4.-----------> git push origin main 
 //----------------------------------------------------->
+//  git config --global user.email "trairat.dzentric@gmail.com"
+//  git config --global user.name "trairatdzentric"
 //----------------------------------------------------->
 //กรุณาตัดหนี้รายการวางบิลให้เสร็จสิ้น ก่อนรอบวางบิลใหม่ หากติดปัญหากรุณาติดต่อ chaoperty
 // ขออภัย ระบบจะมีการอัพเดต ณ. 12.00 -12.50 น.(27/03/2025)
