@@ -1,0 +1,886 @@
+import 'dart:developer';
+
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:file_saver/file_saver.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/services.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'dart:math' as math;
+import 'package:intl/intl.dart';
+import 'package:flutter/material.dart';
+import 'package:printing/printing.dart';
+import 'package:syncfusion_flutter_xlsio/xlsio.dart' as x;
+import 'package:pdf/widgets.dart' as pw;
+import 'dart:math' as math;
+
+class Mini_Ex_BankdailyReport {
+  static void mini_exportExcel_BankdailyReport(
+      ser_type_repro,
+      context,
+      NameFile_,
+      _verticalGroupValue_NameFile,
+      Value_Report,
+      TransReBillBank,
+      TransHisBillBank,
+      renTal_name,
+      zoneModels_report,
+      Value_TransDate_Daily,
+      zone_name_Trans_Daily,
+      payMentModels,
+      userModels,
+      ReportValue_typeZone) async {
+    final x.Workbook workbook = x.Workbook(2);
+
+    final x.Worksheet sheet = workbook.worksheets[0];
+    final x.Worksheet sheet2 = workbook.worksheets[1];
+    sheet.name = 'Sheet1';
+    sheet.pageSetup.topMargin = 1;
+    sheet.pageSetup.bottomMargin = 1;
+    sheet.pageSetup.leftMargin = 1;
+    sheet.pageSetup.rightMargin = 1;
+
+    sheet2.name = 'สรุปผู้ทำรายการ';
+    sheet2.pageSetup.topMargin = 1;
+    sheet2.pageSetup.bottomMargin = 1;
+    sheet2.pageSetup.leftMargin = 1;
+    sheet2.pageSetup.rightMargin = 1;
+
+//     //Adding a picture
+//     final ByteData bytes_image = await rootBundle.load('images/LOGO.png');
+//     final Uint8List image = bytes_image.buffer
+//         .asUint8List(bytes_image.offsetInBytes, bytes_image.lengthInBytes);
+// // Adding an image.
+//     sheet.pictures.addStream(1, 1, image);
+//     final x.Picture picture = sheet.pictures[0];
+
+// // Re-size an image
+//     picture.height = 200;
+//     picture.width = 200;
+
+// // rotate an image.
+//     picture.rotation = 100;
+
+// // Flip an image.
+//     picture.horizontalFlip = true;
+
+    x.Style globalStyle = workbook.styles.add('style');
+    globalStyle.fontName = 'Angsana New';
+    globalStyle.numberFormat = '_(\$* #,##0_)';
+    globalStyle.fontSize = 20;
+
+    x.Style globalStyle1 = workbook.styles.add('style1');
+    globalStyle1.backColorRgb = Color(0xFFD4E6A3);
+    globalStyle1.fontName = 'Angsana New';
+    globalStyle1.numberFormat = '_(\* #,##0.00_)';
+    globalStyle1.hAlign = x.HAlignType.center;
+    globalStyle1.fontSize = 16;
+    globalStyle1.bold = true;
+    globalStyle1.borders;
+    globalStyle1.fontColorRgb = Color.fromARGB(255, 3, 3, 3);
+
+    x.Style globalStyle22 = workbook.styles.add('style22');
+    globalStyle22.backColorRgb = Color(0xC7F5F7FA);
+    globalStyle22.numberFormat = '_(\* #,##0.00_)';
+    globalStyle22.fontSize = 12;
+    globalStyle22.numberFormat;
+    globalStyle22.hAlign = x.HAlignType.left;
+
+    x.Style globalStyle222 = workbook.styles.add('style222');
+    globalStyle222.backColorRgb = Color(0xC7E1E2E6);
+    globalStyle222.numberFormat = '_(\* #,##0.00_)';
+    // globalStyle222.numberFormat;
+    globalStyle222.fontSize = 12;
+    globalStyle222.hAlign = x.HAlignType.left;
+////////////-------------------------------------------------------->
+    x.Style globalStyle220 = workbook.styles.add('style220');
+    globalStyle220.backColorRgb = Color(0xC7F5F7FA);
+    globalStyle220.numberFormat = '_(\* #,##0.00_)';
+    globalStyle220.fontSize = 12;
+    globalStyle220.numberFormat;
+    globalStyle220.hAlign = x.HAlignType.center;
+    globalStyle220.fontColorRgb = Color.fromARGB(255, 37, 127, 179);
+
+    x.Style globalStyle2220 = workbook.styles.add('style2220');
+    globalStyle2220.backColorRgb = Color(0xC7E1E2E6);
+    globalStyle2220.numberFormat = '_(\* #,##0.00_)';
+    // globalStyle222.numberFormat;
+    globalStyle2220.fontSize = 12;
+    globalStyle2220.hAlign = x.HAlignType.center;
+    globalStyle2220.fontColorRgb = Color.fromARGB(255, 37, 127, 179);
+
+    x.Style globalStyle220D = workbook.styles.add('style220D');
+    globalStyle220D.backColorRgb = Color(0xC7F5F7FA);
+    globalStyle220D.numberFormat = '_(\* #,##0.00_)';
+    globalStyle220D.fontSize = 12;
+    globalStyle220D.numberFormat;
+    globalStyle220D.hAlign = x.HAlignType.center;
+    globalStyle220D.fontColorRgb = Color(0xFFC52611);
+
+    x.Style globalStyle2220D = workbook.styles.add('style2220D');
+    globalStyle2220D.backColorRgb = Color(0xC7E1E2E6);
+    globalStyle2220D.numberFormat = '_(\* #,##0.00_)';
+    // globalStyle222.numberFormat;
+    globalStyle2220D.fontSize = 12;
+    globalStyle2220D.hAlign = x.HAlignType.center;
+    globalStyle2220D.fontColorRgb = Color(0xFFC52611);
+////////////-------------------------------------------------------->
+    x.Style globalStyle7 = workbook.styles.add('style7');
+    globalStyle7.backColorRgb = Color.fromARGB(255, 230, 199, 163);
+    globalStyle7.fontName = 'Angsana New';
+    globalStyle7.numberFormat = '_(\* #,##0.00_)';
+    globalStyle7.hAlign = x.HAlignType.center;
+    globalStyle7.fontSize = 15;
+    globalStyle7.bold = true;
+    globalStyle7.fontColorRgb = Color(0xFFC52611);
+
+    x.Style globalStyle77 = workbook.styles.add('style77');
+    globalStyle7.backColorRgb = Color.fromARGB(255, 230, 199, 163);
+    globalStyle77.fontName = 'Angsana New';
+    globalStyle77.numberFormat = '_(\* #,##0.00_)';
+    globalStyle77.hAlign = x.HAlignType.center;
+    globalStyle77.fontSize = 15;
+    globalStyle77.bold = true;
+    globalStyle77.fontColorRgb = Color(0xFFC52611);
+
+    x.Style globalStyle8 = workbook.styles.add('style8');
+    globalStyle8.backColorRgb = Color(0xC7F5F7FA);
+    globalStyle8.fontName = 'Angsana New';
+    globalStyle8.numberFormat = '_(\* #,##0.00_)';
+    globalStyle8.hAlign = x.HAlignType.center;
+    globalStyle8.fontSize = 15;
+    globalStyle8.bold = true;
+    // globalStyle8.fontColorRgb = Color(0xFFC52611);
+
+    x.Style globalStyle88 = workbook.styles.add('style88');
+    globalStyle88.backColorRgb = Color(0xC7E1E2E6);
+    globalStyle88.fontName = 'Angsana New';
+    globalStyle88.numberFormat = '_(\* #,##0.00_)';
+    globalStyle88.hAlign = x.HAlignType.center;
+    globalStyle88.fontSize = 15;
+    globalStyle88.bold = true;
+    // globalStyle88.fontColorRgb = Color(0xFFC52611);
+
+    globalStyle.backColorRgb = const Color.fromARGB(255, 90, 192, 59);
+    x.Style globalStyle2 = workbook.styles.add('style2');
+    globalStyle2.backColorRgb = const Color.fromARGB(255, 147, 223, 124);
+    int data_type_zone =
+        (ReportValue_typeZone.toString() == '1โซน/พื้นที่') ? 0 : 1;
+/////////--------------------------------------------->
+    sheet.getRangeByName('A1').cellStyle = globalStyle22;
+    sheet.getRangeByName('B1').cellStyle = globalStyle22;
+    sheet.getRangeByName('C1').cellStyle = globalStyle22;
+    sheet.getRangeByName('D1').cellStyle = globalStyle22;
+    sheet.getRangeByName('E1').cellStyle = globalStyle22;
+    sheet.getRangeByName('F1').cellStyle = globalStyle22;
+    sheet.getRangeByName('G1').cellStyle = globalStyle22;
+    sheet.getRangeByName('H1').cellStyle = globalStyle22;
+    sheet.getRangeByName('I1').cellStyle = globalStyle22;
+    sheet.getRangeByName('J1').cellStyle = globalStyle22;
+    sheet.getRangeByName('K1').cellStyle = globalStyle22;
+    sheet.getRangeByName('L1').cellStyle = globalStyle22;
+    sheet.getRangeByName('M1').cellStyle = globalStyle22;
+    sheet.getRangeByName('N1').cellStyle = globalStyle22;
+    sheet.getRangeByName('O1').cellStyle = globalStyle22;
+    sheet.getRangeByName('P1').cellStyle = globalStyle22;
+    sheet.getRangeByName('Q1').cellStyle = globalStyle22;
+    sheet.getRangeByName('R1').cellStyle = globalStyle22;
+    sheet.getRangeByName('S1').cellStyle = globalStyle22;
+    sheet.getRangeByName('T1').cellStyle = globalStyle22;
+    sheet.getRangeByName('U1').cellStyle = globalStyle22;
+
+    sheet.getRangeByName('V1').cellStyle = globalStyle22;
+    sheet.getRangeByName('W1').cellStyle = globalStyle22;
+    sheet.getRangeByName('X1').cellStyle = globalStyle22;
+    sheet.getRangeByName('Y1').cellStyle = globalStyle22;
+    sheet.getRangeByName('Z1').cellStyle = globalStyle22;
+    sheet.getRangeByName('AA1').cellStyle = globalStyle22;
+    sheet.getRangeByName('AB1').cellStyle = globalStyle22;
+    // sheet.getRangeByName('O1').cellStyle = globalStyle22;
+    final x.Range range = sheet.getRangeByName('E1');
+
+    range.setText(
+      (ser_type_repro == '1')
+          ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ ( โซน : $zone_name_Trans_Daily)'
+          : (ser_type_repro == '2')
+              ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ เฉพาะรายการที่มีส่วนลด ( โซน : $zone_name_Trans_Daily)'
+              : (ser_type_repro == '3')
+                  ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ เฉพาะล็อคเสียบ ( โซน : $zone_name_Trans_Daily)'
+                  : (ser_type_repro == '4')
+                      ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ เฉพาะรายการที่ออกใบกำกับภาษี ( โซน : $zone_name_Trans_Daily)'
+                      : 'รายงานประวัติชำระรอตรวจสอบประจำวันแบบย่อ ( โซน : $zone_name_Trans_Daily)',
+    );
+// ExcelSheetProtectionOption
+    final x.ExcelSheetProtectionOption options = x.ExcelSheetProtectionOption();
+    options.all = true;
+
+// Protecting the Worksheet by using a Password
+
+    sheet.getRangeByName('A2').cellStyle = globalStyle22;
+    sheet.getRangeByName('B2').cellStyle = globalStyle22;
+    sheet.getRangeByName('C2').cellStyle = globalStyle22;
+    sheet.getRangeByName('D2').cellStyle = globalStyle22;
+    sheet.getRangeByName('E2').cellStyle = globalStyle22;
+    sheet.getRangeByName('F2').cellStyle = globalStyle22;
+    sheet.getRangeByName('G2').cellStyle = globalStyle22;
+    sheet.getRangeByName('H2').cellStyle = globalStyle22;
+    sheet.getRangeByName('I2').cellStyle = globalStyle22;
+    sheet.getRangeByName('K1').cellStyle = globalStyle22;
+    sheet.getRangeByName('J2').cellStyle = globalStyle22;
+    sheet.getRangeByName('L2').cellStyle = globalStyle22;
+    sheet.getRangeByName('M2').cellStyle = globalStyle22;
+    sheet.getRangeByName('N2').cellStyle = globalStyle22;
+    sheet.getRangeByName('O2').cellStyle = globalStyle22;
+    sheet.getRangeByName('P2').cellStyle = globalStyle22;
+    sheet.getRangeByName('Q2').cellStyle = globalStyle22;
+    sheet.getRangeByName('R2').cellStyle = globalStyle22;
+    sheet.getRangeByName('S2').cellStyle = globalStyle22;
+    sheet.getRangeByName('T2').cellStyle = globalStyle22;
+    sheet.getRangeByName('U2').cellStyle = globalStyle22;
+
+    sheet.getRangeByName('V2').cellStyle = globalStyle22;
+    sheet.getRangeByName('W2').cellStyle = globalStyle22;
+    sheet.getRangeByName('X2').cellStyle = globalStyle22;
+    sheet.getRangeByName('Y2').cellStyle = globalStyle22;
+    sheet.getRangeByName('Z2').cellStyle = globalStyle22;
+    sheet.getRangeByName('AA2').cellStyle = globalStyle22;
+    sheet.getRangeByName('AB2').cellStyle = globalStyle22;
+    // sheet.getRangeByName('O2').cellStyle = globalStyle22;
+    sheet.getRangeByName('A2').setText('${renTal_name}');
+    sheet
+        .getRangeByName('I2')
+        .setText('วันที่รับชำระ : ${Value_TransDate_Daily}');
+    sheet.getRangeByName('I3').setText('อัพเดต ณ :${DateTime.now()}');
+    globalStyle2.hAlign = x.HAlignType.center;
+    sheet.getRangeByName('A2').cellStyle = globalStyle22;
+    sheet.getRangeByName('K2').cellStyle = globalStyle22;
+    sheet.getRangeByName('A3').cellStyle = globalStyle22;
+    sheet.getRangeByName('B3').cellStyle = globalStyle22;
+    sheet.getRangeByName('C3').cellStyle = globalStyle22;
+    sheet.getRangeByName('D3').cellStyle = globalStyle22;
+    sheet.getRangeByName('E3').cellStyle = globalStyle22;
+    sheet.getRangeByName('F3').cellStyle = globalStyle22;
+    sheet.getRangeByName('G3').cellStyle = globalStyle22;
+    sheet.getRangeByName('H3').cellStyle = globalStyle22;
+    sheet.getRangeByName('I3').cellStyle = globalStyle22;
+    sheet.getRangeByName('J3').cellStyle = globalStyle22;
+    sheet.getRangeByName('K3').cellStyle = globalStyle22;
+    sheet.getRangeByName('L3').cellStyle = globalStyle22;
+    sheet.getRangeByName('M3').cellStyle = globalStyle22;
+    sheet.getRangeByName('N3').cellStyle = globalStyle22;
+    sheet.getRangeByName('O3').cellStyle = globalStyle22;
+    sheet.getRangeByName('P3').cellStyle = globalStyle22;
+    sheet.getRangeByName('Q3').cellStyle = globalStyle22;
+    sheet.getRangeByName('R3').cellStyle = globalStyle22;
+    sheet.getRangeByName('S3').cellStyle = globalStyle22;
+    sheet.getRangeByName('T3').cellStyle = globalStyle22;
+    sheet.getRangeByName('U3').cellStyle = globalStyle22;
+
+    sheet.getRangeByName('V3').cellStyle = globalStyle22;
+    sheet.getRangeByName('W3').cellStyle = globalStyle22;
+    sheet.getRangeByName('X3').cellStyle = globalStyle22;
+    sheet.getRangeByName('Y3').cellStyle = globalStyle22;
+    sheet.getRangeByName('Z3').cellStyle = globalStyle22;
+    sheet.getRangeByName('AA3').cellStyle = globalStyle22;
+    sheet.getRangeByName('AB3').cellStyle = globalStyle22;
+    // sheet.getRangeByName('O3').cellStyle = globalStyle22;
+    sheet.getRangeByName('A3').setText('ใบเสร็จ : ${TransReBillBank.length}');
+
+    sheet.getRangeByName('A3').columnWidth = 18;
+    sheet.getRangeByName('B3').columnWidth = 18;
+    sheet.getRangeByName('C3').columnWidth = 18;
+    sheet.getRangeByName('D3').columnWidth = 18;
+    sheet.getRangeByName('E3').columnWidth = 18;
+    sheet.getRangeByName('F3').columnWidth = 18;
+    sheet.getRangeByName('G3').columnWidth = 18;
+    sheet.getRangeByName('H3').columnWidth = 18;
+    sheet.getRangeByName('I3').columnWidth = 18;
+    sheet.getRangeByName('J3').columnWidth = 18;
+    sheet.getRangeByName('K3').columnWidth = 18;
+    sheet.getRangeByName('L3').columnWidth = 18;
+    sheet.getRangeByName('M3').columnWidth = 18;
+    sheet.getRangeByName('N3').columnWidth = 18;
+    sheet.getRangeByName('O3').columnWidth = 18;
+    sheet.getRangeByName('P3').columnWidth = 18;
+    sheet.getRangeByName('Q3').columnWidth = 18;
+    sheet.getRangeByName('R3').columnWidth = 18;
+    sheet.getRangeByName('S3').columnWidth = 18;
+    sheet.getRangeByName('T3').columnWidth = 18;
+    sheet.getRangeByName('U3').columnWidth = 18;
+
+    sheet.getRangeByName('V3').columnWidth = 18;
+    sheet.getRangeByName('W3').columnWidth = 18;
+    sheet.getRangeByName('X3').columnWidth = 18;
+    sheet.getRangeByName('Y3').columnWidth = 18;
+
+    sheet.getRangeByName('A4').cellStyle = globalStyle1;
+    sheet.getRangeByName('B4').cellStyle = globalStyle1;
+    sheet.getRangeByName('C4').cellStyle = globalStyle1;
+    sheet.getRangeByName('D4').cellStyle = globalStyle1;
+    sheet.getRangeByName('E4').cellStyle = globalStyle1;
+    sheet.getRangeByName('F4').cellStyle = globalStyle1;
+    sheet.getRangeByName('G4').cellStyle = globalStyle1;
+    sheet.getRangeByName('H4').cellStyle = globalStyle1;
+    sheet.getRangeByName('I4').cellStyle = globalStyle1;
+    sheet.getRangeByName('J4').cellStyle = globalStyle1;
+    sheet.getRangeByName('K4').cellStyle = globalStyle1;
+    sheet.getRangeByName('L4').cellStyle = globalStyle1;
+    sheet.getRangeByName('M4').cellStyle = globalStyle1;
+    sheet.getRangeByName('N4').cellStyle = globalStyle1;
+    sheet.getRangeByName('O4').cellStyle = globalStyle1;
+    sheet.getRangeByName('P4').cellStyle = globalStyle1;
+    sheet.getRangeByName('Q4').cellStyle = globalStyle1;
+    sheet.getRangeByName('R4').cellStyle = globalStyle1;
+    sheet.getRangeByName('S4').cellStyle = globalStyle1;
+    sheet.getRangeByName('T4').cellStyle = globalStyle1;
+    sheet.getRangeByName('U4').cellStyle = globalStyle1;
+
+    sheet.getRangeByName('V4').cellStyle = globalStyle1;
+    sheet.getRangeByName('W4').cellStyle = globalStyle1;
+    sheet.getRangeByName('X4').cellStyle = globalStyle1;
+    sheet.getRangeByName('Y4').cellStyle = globalStyle1;
+    sheet.getRangeByName('Z4').cellStyle = globalStyle1;
+    sheet.getRangeByName('AA4').cellStyle = globalStyle1;
+    sheet.getRangeByName('AB4').cellStyle = globalStyle1;
+    // sheet.getRangeByName('O4').cellStyle = globalStyle1;
+
+    sheet.getRangeByName('A4').columnWidth = 18;
+    sheet.getRangeByName('B4').columnWidth = 18;
+    sheet.getRangeByName('C4').columnWidth = 18;
+    sheet.getRangeByName('D4').columnWidth = 18;
+    sheet.getRangeByName('E4').columnWidth = 18;
+    sheet.getRangeByName('F4').columnWidth = 18;
+    sheet.getRangeByName('G4').columnWidth = 25;
+    sheet.getRangeByName('H4').columnWidth = 25;
+    sheet.getRangeByName('I4').columnWidth = 25;
+    sheet.getRangeByName('J4').columnWidth = 18;
+    sheet.getRangeByName('K4').columnWidth = 18;
+    sheet.getRangeByName('L4').columnWidth = 18;
+    sheet.getRangeByName('M4').columnWidth = 18;
+    sheet.getRangeByName('N4').columnWidth = 18;
+
+    // sheet.getRangeByName('O4').columnWidth = 18;
+    sheet.getRangeByName('P4').columnWidth = 18;
+    sheet.getRangeByName('Q4').columnWidth = 18;
+    sheet.getRangeByName('R4').columnWidth = 18;
+    sheet.getRangeByName('S4').columnWidth = 18;
+    sheet.getRangeByName('T4').columnWidth = 18;
+    sheet.getRangeByName('U4').columnWidth = 18;
+    sheet.getRangeByName('V4').columnWidth = 18;
+
+    sheet.getRangeByName('W4').columnWidth = 18;
+    sheet.getRangeByName('X4').columnWidth = 18;
+    sheet.getRangeByName('Y4').columnWidth = 18;
+
+    // sheet.getRangeByName('O4').columnWidth = 18;
+
+    sheet.getRangeByName('A4').setText('ลำดับ');
+    sheet.getRangeByName('B4').setText('เลขที่');
+    sheet.getRangeByName('C4').setText('วันที่ชำระ');
+    sheet.getRangeByName('D4').setText('รหัสโซน');
+    sheet.getRangeByName('E4').setText('โซน');
+    sheet.getRangeByName('F4').setText('รหัสพื้นที่');
+    sheet.getRangeByName('G4').setText('ผู้เช่า');
+    sheet.getRangeByName('H4').setText('รูปแบบชำระ');
+    sheet.getRangeByName('I4').setText('ธนาคาร');
+    sheet.getRangeByName('J4').setText('เลขบช.');
+    sheet.getRangeByName('K4').setText('Slip');
+    sheet.getRangeByName('L4').setText('ส่วนลด');
+    sheet.getRangeByName('M4').setText('ราคารวม');
+    sheet.getRangeByName('N4').setText('ส่วนลด');
+    sheet.getRangeByName('O4').setText('หักส่วนลด');
+    sheet.getRangeByName('P4').setText('ประเภท');
+    sheet.getRangeByName('Q4').setText('สถานะ');
+    sheet.getRangeByName('R4').setText('วันที่ทำรายการ');
+    sheet.getRangeByName('S4').setText('อ้างถึง');
+    sheet.getRangeByName('T4').setText('เลขที่สัญญา');
+    sheet.getRangeByName('U4').setText('วันที่เริ่มต้น');
+
+    sheet.getRangeByName('V4').setText('วันที่เริ่มสิ้นสุด');
+    sheet.getRangeByName('W4').setText('ล็อกเสียบ');
+    sheet.getRangeByName('X4').setText('เวลา');
+    sheet.getRangeByName('Y4').setText('รหัสแอดมินผู้ทำรายการ');
+    sheet.getRangeByName('Z4').setText('ref1');
+    sheet.getRangeByName('AA4').setText('ref2');
+    sheet.getRangeByName('AB4').setText('ref-chao');
+
+    ///---------------------------------------------------------->
+    int all_Total = 0;
+    int indextotol = 0;
+    int indextotol_ = 0;
+    int ser_dis = 0;
+
+    for (var index1 = 0; index1 < TransReBillBank.length; index1++) {
+      all_Total = all_Total + 1;
+      var index = indextotol;
+      dynamic numberColor = index1 % 2 == 0 ? globalStyle22 : globalStyle222;
+
+      dynamic numberColor_s =
+          index1 % 2 == 0 ? globalStyle220 : globalStyle2220;
+
+      dynamic numberColor_ss =
+          index1 % 2 == 0 ? globalStyle220D : globalStyle2220D;
+      indextotol = indextotol + 1;
+      sheet.getRangeByName('A${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('B${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('C${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('D${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('E${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('F${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('G${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('H${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('I${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('J${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('K${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('L${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('M${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('N${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('O${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('P${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('Q${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('R${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('S${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('T${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('U${indextotol + 5 - 1}').cellStyle = numberColor;
+
+      sheet.getRangeByName('V${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('W${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('X${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('Y${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('Z${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('AA${indextotol + 5 - 1}').cellStyle = numberColor;
+      sheet.getRangeByName('AB${indextotol + 5 - 1}').cellStyle = numberColor;
+
+      sheet.getRangeByName('A${indextotol + 5 - 1}').setText('${index1 + 1}');
+      sheet.getRangeByName('B${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].doctax != '')
+                ? '${TransReBillBank[index1].doctax}'
+                : TransReBillBank[index1].docno == ''
+                    ? '${TransReBillBank[index1].refno}'
+                    : '${TransReBillBank[index1].docno}',
+          );
+      sheet.getRangeByName('C${indextotol + 5 - 1}').setText((TransReBillBank[
+                      index1]
+                  .dateacc ==
+              null)
+          ? ''
+          : '${DateFormat('dd-MM').format(DateTime.parse('${TransReBillBank[index1].dateacc}'))}-${int.parse('${DateFormat('yyyy').format(DateTime.parse('${TransReBillBank[index1].dateacc}'))}') + 543}');
+
+      // sheet
+      //     .getRangeByName('C${indextotol + 5 - 1}')
+      //     .setText('${TransReBillBank[index1].dateacc}');
+
+      sheet.getRangeByName('D${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].zser1 == null)
+                ? '${TransReBillBank[index1].zser}'
+                : '${TransReBillBank[index1].zser1}',
+          );
+
+      sheet.getRangeByName('E${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].zn == null)
+                ? '${TransReBillBank[index1].znn}'
+                : (data_type_zone == 0)
+                    ? '${TransReBillBank[index1].zn}'
+                    : '${TransReBillBank[index1].zn2}',
+          );
+      sheet
+          .getRangeByName('F${indextotol + 5 - 1}')
+          .setText((TransReBillBank[index1].ln == null)
+              ? '${TransReBillBank[index1].room_number}'
+              : (data_type_zone == 0)
+                  ? '${TransReBillBank[index1].ln}'
+                  : '${TransReBillBank[index1].ln2}');
+      sheet.getRangeByName('G${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].cname == null ||
+                    TransReBillBank[index1].cname.toString() == '' ||
+                    TransReBillBank[index1].cname.toString() == 'null')
+                ? '${TransReBillBank[index1].remark}'
+                : '${TransReBillBank[index1].cname}',
+          );
+      sheet.getRangeByName('H${indextotol + 5 - 1}').setText(
+            '${TransReBillBank[index1].type}',
+          );
+      sheet.getRangeByName('I${indextotol + 5 - 1}').setText(
+          (TransReBillBank[index1].bank == null)
+              ? ''
+              : '${TransReBillBank[index1].bank!}');
+
+      sheet.getRangeByName('J${indextotol + 5 - 1}').setText(
+          (TransReBillBank[index1].bno == null)
+              ? ''
+              : '${TransReBillBank[index1].bno!}');
+
+      sheet.getRangeByName('K${indextotol + 5 - 1}').setText(
+          (TransReBillBank[index1].slip == null ||
+                  TransReBillBank[index1].slip! == 'null')
+              ? ''
+              : '${TransReBillBank[index1].slip}');
+
+      sheet.getRangeByName('L${indextotol + 5 - 1}').setNumber(
+          (TransReBillBank[index1].total_duesbill == null)
+              ? 0
+              : double.parse(TransReBillBank[index1].total_duesbill!));
+
+      sheet.getRangeByName('M${indextotol + 5 - 1}').setNumber(
+            (TransReBillBank[index1].total_bill == null)
+                ? 0 + double.parse(TransReBillBank[index1].total_dis!)
+                : double.parse(TransReBillBank[index1].total_bill!) +
+                    double.parse(TransReBillBank[index1].total_dis!),
+          );
+      sheet.getRangeByName('N${indextotol + 5 - 1}').setNumber(
+            (TransReBillBank[index1].total_dis == null)
+                ? 0.00
+                : double.parse(TransReBillBank[index1].total_dis!),
+          );
+      sheet
+          .getRangeByName('O${indextotol + 5 - 1}')
+          .setNumber(double.parse(TransReBillBank[index1].total_bill!)
+              // (TransReBillBank[index1].total_dis == null)
+              //     ? double.parse(TransReBillBank[index1].total_bill!)
+              //     : double.parse(TransReBillBank[index1].total_bill!) -
+              //         double.parse(TransReBillBank[index1].total_dis!),
+              );
+      sheet.getRangeByName('P${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].room_number.toString() == '' ||
+                    TransReBillBank[index1].room_number == null)
+                ? ''
+                : 'ล็อคเสียบ',
+          );
+      sheet.getRangeByName('Q${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].doctax == '' ||
+                    TransReBillBank[index1].doctax == null)
+                ? ''
+                : 'ใบกำกับภาษี',
+          );
+      sheet.getRangeByName('R${indextotol + 5 - 1}').setText((TransReBillBank[
+                      index1]
+                  .daterec ==
+              null)
+          ? ''
+          : '${DateFormat('dd-MM').format(DateTime.parse('${TransReBillBank[index1].daterec}'))}-${int.parse('${DateFormat('yyyy').format(DateTime.parse('${TransReBillBank[index1].daterec}'))}') + 543}');
+      // sheet
+      //     .getRangeByName('R${indextotol + 5 - 1}')
+      //     .setText('${TransReBillBank[index1].daterec}');
+      sheet.getRangeByName('S${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].inv == '' ||
+                    TransReBillBank[index1].inv == null)
+                ? ''
+                : '${TransReBillBank[index1].inv}',
+          );
+      sheet.getRangeByName('T${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].cid == '' ||
+                    TransReBillBank[index1].cid == null)
+                ? ''
+                : '${TransReBillBank[index1].cid}',
+          );
+      sheet.getRangeByName('U${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].sdate == '' ||
+                    TransReBillBank[index1].sdate == null)
+                ? ''
+                : '${TransReBillBank[index1].sdate}',
+          );
+
+      sheet.getRangeByName('V${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].ldate == '' ||
+                    TransReBillBank[index1].ldate == null)
+                ? ''
+                : '${TransReBillBank[index1].ldate}',
+          );
+      sheet.getRangeByName('W${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].date_book == '' ||
+                    TransReBillBank[index1].date_book == null)
+                ? ''
+                : '${TransReBillBank[index1].date_book}',
+          );
+      sheet.getRangeByName('X${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].timex == '' ||
+                    TransReBillBank[index1].timex == null)
+                ? ''
+                : '${TransReBillBank[index1].timex}',
+          );
+      sheet.getRangeByName('Y${indextotol + 5 - 1}').setText(
+            (TransReBillBank[index1].pay_by.toString() != 'W')
+                ? (TransReBillBank[index1].pay_by == null)
+                    ? ''
+                    : 'ลูกค้า(${TransReBillBank[index1].pay_by})'
+                : (TransReBillBank[index1].user == null)
+                    ? ''
+                    : '${TransReBillBank[index1].user}',
+
+            // '${TransReBillBank[index1].user}',
+          );
+      sheet
+          .getRangeByName('Z${indextotol + 5 - 1}')
+          .setText('${TransReBillBank[index].ref2}');
+      sheet
+          .getRangeByName('AA${indextotol + 5 - 1}')
+          .setText('${TransReBillBank[index].ref4}');
+      sheet
+          .getRangeByName('AB${indextotol + 5 - 1}')
+          .setText('${TransReBillBank[index].ref1}');
+    }
+
+    /////////////////////////////////------------------------------------------------>
+    ///
+
+    sheet.getRangeByName('K${indextotol + 5 + 0}').setText('เฉพาะล็อคเสียบ: ');
+    sheet.getRangeByName('K${indextotol + 5 + 1}').setText('เฉพาะล็อคธรรมดา: ');
+    sheet.getRangeByName('K${indextotol + 5 + 2}').setText('รวมทั้งหมด: ');
+
+    sheet.getRangeByName('L${indextotol + 5 + 0}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "ล็อคเสียบ",L5:L${indextotol + 5 - 1})');
+    sheet.getRangeByName('L${indextotol + 5 + 1}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "<>ล็อคเสียบ",L5:L${indextotol + 5 - 1})');
+    sheet
+        .getRangeByName('L${indextotol + 5 + 2}')
+        .setFormula('=SUM(L5:L${indextotol + 5 - 1})');
+
+    ///---------->
+    ///
+    sheet.getRangeByName('M${indextotol + 5 + 0}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "ล็อคเสียบ",M5:M${indextotol + 5 - 1})');
+    sheet.getRangeByName('M${indextotol + 5 + 1}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "<>ล็อคเสียบ",M5:M${indextotol + 5 - 1})');
+    sheet
+        .getRangeByName('M${indextotol + 5 + 2}')
+        .setFormula('=SUM(M5:M${indextotol + 5 - 1})');
+
+    ///---------->
+    sheet.getRangeByName('N${indextotol + 5 + 0}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "ล็อคเสียบ",N5:N${indextotol + 5 - 1})');
+    sheet.getRangeByName('N${indextotol + 5 + 1}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "<>ล็อคเสียบ",N5:N${indextotol + 5 - 1})');
+    sheet
+        .getRangeByName('N${indextotol + 5 + 2}')
+        .setFormula('=SUM(N5:N${indextotol + 5 - 1})');
+
+    ///---------->
+    sheet.getRangeByName('O${indextotol + 5 + 0}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "ล็อคเสียบ",O5:O${indextotol + 5 - 1})');
+    sheet.getRangeByName('O${indextotol + 5 + 1}').setFormula(
+        '=SUMIF(P5:P${indextotol + 5 - 1}, "<>ล็อคเสียบ",O5:O${indextotol + 5 - 1})');
+    sheet
+        .getRangeByName('O${indextotol + 5 + 2}')
+        .setFormula('=SUM(O5:O${indextotol + 5 - 1})');
+    ///////-------------------------------------------------------------------->
+
+    for (var index = 0; index < 3; index++) {
+      sheet.getRangeByName('K${indextotol + 5 + index}').cellStyle =
+          globalStyle7;
+      sheet.getRangeByName('L${indextotol + 5 + index}').cellStyle =
+          globalStyle7;
+      sheet.getRangeByName('M${indextotol + 5 + index}').cellStyle =
+          globalStyle7;
+      sheet.getRangeByName('N${indextotol + 5 + index}').cellStyle =
+          globalStyle7;
+      sheet.getRangeByName('O${indextotol + 5 + index}').cellStyle =
+          globalStyle7;
+    }
+/////////////////////////////////------------------------------------------------>
+    sheet.getRangeByName('H${indextotol + 5 + 5}').setText('ธนาคาร');
+    sheet.getRangeByName('I${indextotol + 5 + 5}').setText('ชื่อบช.');
+    sheet.getRangeByName('J${indextotol + 5 + 5}').setText('เลขบช.');
+    sheet.getRangeByName('K${indextotol + 5 + 5}').setText('สาขา');
+
+    sheet.getRangeByName('L${indextotol + 5 + 5}').setText('รวมค่าธรรมเนียม');
+    sheet.getRangeByName('M${indextotol + 5 + 5}').setText('ราคารวม');
+    sheet.getRangeByName('N${indextotol + 5 + 5}').setText('รวมส่วนลด');
+    sheet.getRangeByName('O${indextotol + 5 + 5}').setText('ราคารวมหักส่วนลด');
+    sheet.getRangeByName('H${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('I${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('J${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('K${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('L${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('M${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('N${indextotol + 5 + 5}').cellStyle = globalStyle1;
+    sheet.getRangeByName('O${indextotol + 5 + 5}').cellStyle = globalStyle1;
+
+    for (var index = 0; index < payMentModels.length; index++) {
+      sheet
+          .getRangeByName('H${indextotol + 5 + 6 + index}')
+          .setText('${payMentModels[index].bank}');
+      sheet
+          .getRangeByName('I${indextotol + 5 + 6 + index}')
+          .setText('${payMentModels[index].bname}');
+      sheet
+          .getRangeByName('J${indextotol + 5 + 6 + index}')
+          .setText('${payMentModels[index].bno}');
+      sheet
+          .getRangeByName('K${indextotol + 5 + 6 + index}')
+          .setText('${payMentModels[index].bsaka}');
+
+      sheet.getRangeByName('L${indextotol + 5 + 6 + index}').setFormula(
+          '=SUMIF(J5:J${indextotol + 5 - 1}, "${payMentModels[index].bno}",L5:L${indextotol + 5 - 1})');
+      sheet.getRangeByName('M${indextotol + 5 + 6 + index}').setFormula(
+          '=SUMIF(J5:J${indextotol + 5 - 1}, "${payMentModels[index].bno}",M5:M${indextotol + 5 - 1})');
+
+      sheet.getRangeByName('N${indextotol + 5 + 6 + index}').setFormula(
+          '=SUMIF(J5:J${indextotol + 5 - 1}, "${payMentModels[index].bno}", N5:N${indextotol + 5 - 1})');
+      sheet.getRangeByName('O${indextotol + 5 + 6 + index}').setFormula(
+          '=SUMIF(J5:J${indextotol + 5 - 1}, "${payMentModels[index].bno}", O5:O${indextotol + 5 - 1})');
+
+      sheet.getRangeByName('H${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('I${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('J${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('K${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('L${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('M${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('N${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+      sheet.getRangeByName('O${indextotol + 5 + 6 + index}').cellStyle =
+          globalStyle22;
+    }
+    /////////////////////////////////------------------------------------------------>
+    sheet2.getRangeByName('A1').setText('รหัสแอดมิน');
+    sheet2.getRangeByName('B1').setText('Email');
+    sheet2.getRangeByName('C1').setText('ชื่อ');
+    sheet2.getRangeByName('D1').setText('นามสกุล');
+    sheet2.getRangeByName('E1').setText('จำนวนรายการ');
+
+    sheet2.getRangeByName('F1').setText('รวมค่าธรรมเนียม');
+    sheet2.getRangeByName('G1').setText('ราคารวม');
+    sheet2.getRangeByName('H1').setText('รวมส่วนลด');
+    sheet2.getRangeByName('I1').setText('ราคารวมหักส่วนลด');
+
+    sheet2.getRangeByName('A1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('B1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('C1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('D1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('E1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('F1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('G1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('H1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('I1').cellStyle = globalStyle1;
+    sheet2.getRangeByName('A1').columnWidth = 18;
+    sheet2.getRangeByName('B1').columnWidth = 18;
+    sheet2.getRangeByName('C1').columnWidth = 18;
+    sheet2.getRangeByName('D1').columnWidth = 18;
+    sheet2.getRangeByName('E1').columnWidth = 18;
+    sheet2.getRangeByName('F1').columnWidth = 18;
+    sheet2.getRangeByName('G1').columnWidth = 18;
+    sheet2.getRangeByName('H1').columnWidth = 18;
+    sheet2.getRangeByName('I1').columnWidth = 18;
+
+    for (var index = 0; index < userModels.length; index++) {
+      if (userModels[index].ser.toString() == '0') {
+        sheet2.getRangeByName('A${index + 2}').setText('');
+        sheet2.getRangeByName('B${index + 2}').setText(' - ');
+        sheet2.getRangeByName('C${index + 2}').setText('อื่นๆ');
+        sheet2.getRangeByName('D${index + 2}').setText(' - ');
+        sheet2.getRangeByName('E${index + 2}').setFormula(
+            '=${TransReBillBank.length}-SUM(E${index + 3}:E${userModels.length + 1})');
+
+        sheet2.getRangeByName('F${index + 2}').setFormula(
+            '=Sheet1!L${indextotol + 5 + 2}-SUM(F${index + 3}:F${userModels.length + 1})');
+        sheet2.getRangeByName('G${index + 2}').setFormula(
+            '=Sheet1!M${indextotol + 5 + 2}-SUM(G${index + 3}:G${userModels.length + 1})');
+        sheet2.getRangeByName('H${index + 2}').setFormula(
+            '=Sheet1!N${indextotol + 5 + 2}-SUM(H${index + 3}:H${userModels.length + 1})');
+
+        sheet2.getRangeByName('I${index + 2}').setFormula(
+            '=Sheet1!O${indextotol + 5 + 2}-SUM(I${index + 3}:I${userModels.length + 1})');
+      } else {
+        sheet2
+            .getRangeByName('A${index + 2}')
+            .setText('${userModels[index].ser}');
+        sheet2
+            .getRangeByName('B${index + 2}')
+            .setText('${userModels[index].email}');
+        sheet2
+            .getRangeByName('C${index + 2}')
+            .setText('${userModels[index].fname}');
+        sheet2
+            .getRangeByName('D${index + 2}')
+            .setText('${userModels[index].lname}');
+
+        sheet2.getRangeByName('E${index + 2}').setFormula(
+            '=COUNTIF(Sheet1!Y5:Sheet1!Y${indextotol + 5 - 1},A${index + 2})');
+
+        sheet2.getRangeByName('F${index + 2}').setFormula(
+            '=SUMIF(Sheet1!Y5:Sheet1!Y${indextotol + 5 - 1}, "${userModels[index].ser}",Sheet1!L5:Sheet1!L${indextotol + 5 - 1})');
+
+        sheet2.getRangeByName('G${index + 2}').setFormula(
+            '=SUMIF(Sheet1!Y5:Sheet1!Y${indextotol + 5 - 1}, "${userModels[index].ser}",Sheet1!M5:Sheet1!M${indextotol + 5 - 1})');
+
+        sheet2.getRangeByName('H${index + 2}').setFormula(
+            '=SUMIF(Sheet1!Y5:Sheet1!Y${indextotol + 5 - 1}, "${userModels[index].ser}",Sheet1!N5:Sheet1!N${indextotol + 5 - 1})');
+
+        sheet2.getRangeByName('I${index + 2}').setFormula(
+            '=SUMIF(Sheet1!Y5:Sheet1!Y${indextotol + 5 - 1}, "${userModels[index].ser}",Sheet1!O5:Sheet1!O${indextotol + 5 - 1})');
+      }
+
+      sheet2.getRangeByName('A${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('B${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('C${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('D${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('E${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('F${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('G${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('H${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+      sheet2.getRangeByName('I${index + 2}').cellStyle =
+          (index == 0) ? globalStyle2220 : globalStyle22;
+    }
+/////////////////////////////////------------------------------------------------>
+    sheet2.getRangeByName('E${userModels.length + 2}').setText('รวมทั้งหมด: ');
+    sheet2
+        .getRangeByName('F${userModels.length + 2}')
+        .setFormula('=SUM(F2:F${userModels.length + 1})');
+    sheet2
+        .getRangeByName('G${userModels.length + 2}')
+        .setFormula('=SUM(G2:G${userModels.length + 1})');
+    sheet2
+        .getRangeByName('H${userModels.length + 2}')
+        .setFormula('=SUM(H2:H${userModels.length + 1})');
+    sheet2
+        .getRangeByName('I${userModels.length + 2}')
+        .setFormula('=SUM(I2:I${userModels.length + 1})');
+
+    sheet2.getRangeByName('E${userModels.length + 2}').cellStyle = globalStyle7;
+    sheet2.getRangeByName('F${userModels.length + 2}').cellStyle = globalStyle7;
+    sheet2.getRangeByName('G${userModels.length + 2}').cellStyle = globalStyle7;
+    sheet2.getRangeByName('H${userModels.length + 2}').cellStyle = globalStyle7;
+    sheet2.getRangeByName('I${userModels.length + 2}').cellStyle = globalStyle7;
+/////////////////////////////////------------------------------------------------>
+
+    final List<int> bytes = workbook.saveAsStream();
+    workbook.dispose();
+    Uint8List data = Uint8List.fromList(bytes);
+    MimeType type = MimeType.MICROSOFTEXCEL;
+
+    if (_verticalGroupValue_NameFile.toString() == 'จากระบบ') {
+      String path = await FileSaver.instance.saveFile(
+          (ser_type_repro == '1')
+              ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ ( โซน : $zone_name_Trans_Daily)'
+              : (ser_type_repro == '2')
+                  ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ เฉพาะรายการที่มีส่วนลด ( โซน : $zone_name_Trans_Daily)'
+                  : (ser_type_repro == '3')
+                      ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ เฉพาะล็อคเสียบ ( โซน : $zone_name_Trans_Daily)'
+                      : (ser_type_repro == '4')
+                          ? 'รายงานการเคลื่อนไหวธนาคารประจำวันแบบย่อ เฉพาะรายการที่ออกใบกำกับภาษี ( โซน : $zone_name_Trans_Daily)'
+                          : 'รายงานประวัติชำระรอตรวจสอบประจำวันประจำวันแบบย่อ ( โซน : $zone_name_Trans_Daily)',
+          // "รายงานการเคลื่อนไหวธนาคารแบบย่อ",
+          data,
+          "xlsx",
+          mimeType: type);
+      log(path);
+    } else {
+      String path = await FileSaver.instance
+          .saveFile("$NameFile_", data, "xlsx", mimeType: type);
+      log(path);
+    }
+  }
+}
