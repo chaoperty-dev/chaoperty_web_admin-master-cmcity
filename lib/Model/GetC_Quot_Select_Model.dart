@@ -18,6 +18,7 @@ class QuotxSelectModel {
   String? ldate;
   String? amt;
   String? vtype;
+  String? wtype;
   String? nvat;
   String? vat;
   String? pvat;
@@ -45,6 +46,19 @@ class QuotxSelectModel {
   String? cfid;
   String? pdate;
   String? exp_array;
+  String? pri;
+  String? total_prev;
+
+  String? is_mon;
+  String? is_tue;
+  String? is_wed;
+  String? is_thu;
+  String? is_fri;
+  String? is_sat;
+  String? is_sun;
+  String? price_type;
+  String? trans_array;
+  String? totals;
 
   QuotxSelectModel({
     this.ser,
@@ -66,6 +80,7 @@ class QuotxSelectModel {
     this.ldate,
     this.amt,
     this.vtype,
+    this.wtype,
     this.nvat,
     this.vat,
     this.pvat,
@@ -93,6 +108,18 @@ class QuotxSelectModel {
     this.cfid,
     this.pdate,
     this.exp_array,
+    this.pri,
+    this.total_prev,
+    this.is_mon,
+    this.is_tue,
+    this.is_wed,
+    this.is_thu,
+    this.is_fri,
+    this.is_sat,
+    this.is_sun,
+    this.price_type,
+    this.trans_array,
+    this.totals,
   });
 
   QuotxSelectModel.fromJson(Map<String, dynamic> json) {
@@ -115,6 +142,7 @@ class QuotxSelectModel {
     ldate = json['ldate'];
     amt = json['amt'];
     vtype = json['vtype'];
+    wtype = json['wtype'];
     nvat = json['nvat'];
     vat = json['vat'];
     pvat = json['pvat'];
@@ -142,6 +170,19 @@ class QuotxSelectModel {
     cfid = json['cfid'];
     pdate = json['pdate'];
     exp_array = json['exp_array'];
+    pri = json['pri'];
+    total_prev = json['total_prev'];
+
+    is_mon = json['is_mon'];
+    is_tue = json['is_tue'];
+    is_wed = json['is_wed'];
+    is_thu = json['is_thu'];
+    is_fri = json['is_fri'];
+    is_sat = json['is_sat'];
+    is_sun = json['is_sun'];
+    price_type = json['price_type'];
+    trans_array = json['trans_array'];
+    totals = json['totals'];
   }
 
   Map<String, dynamic> toJson() {
@@ -165,6 +206,7 @@ class QuotxSelectModel {
     data['ldate'] = this.ldate;
     data['amt'] = this.amt;
     data['vtype'] = this.vtype;
+    data['wtype'] = this.wtype;
     data['nvat'] = this.nvat;
     data['vat'] = this.vat;
     data['pvat'] = this.pvat;
@@ -192,6 +234,19 @@ class QuotxSelectModel {
     data['cfid'] = this.cfid;
     data['pdate'] = this.pdate;
     data['exp_array'] = this.exp_array;
+    data['pri'] = this.pri;
+    data['total_prev'] = this.total_prev;
+
+    data['is_mon'] = this.is_mon;
+    data['is_tue'] = this.is_tue;
+    data['is_wed'] = this.is_wed;
+    data['is_thu'] = this.is_thu;
+    data['is_fri'] = this.is_fri;
+    data['is_sat'] = this.is_sat;
+    data['is_sun'] = this.is_sun;
+    data['price_type'] = this.price_type;
+    data['trans_array'] = this.trans_array;
+    data['totals'] = this.totals;
 
     return data;
   }

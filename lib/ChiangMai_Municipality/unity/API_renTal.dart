@@ -10,12 +10,13 @@ Future<RenTalModel?> read_GC_rental() async {
   SharedPreferences preferences = await SharedPreferences.getInstance();
   var ren = preferences.getString('renTalSer');
   var ser_user = preferences.getString('ser');
-
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   String url =
       '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url))
+      ..headers.addAll(headers); // ✅ ต้องใส่ headers ด้วย
     final result = json.decode(response.body);
 
     if (result != null && result is List && result.isNotEmpty) {
@@ -25,8 +26,8 @@ Future<RenTalModel?> read_GC_rental() async {
       return renTalModel;
     }
   } catch (e, stackTrace) {
-    print('❌ เกิดข้อผิดพลาดใน read_GC_rental: $e');
-    print('🪵 StackTrace:\n$stackTrace');
+    //print('❌ เกิดข้อผิดพลาดใน read_GC_rental: $e');
+    //print('🪵 StackTrace:\n$stackTrace');
   }
 
   return null;

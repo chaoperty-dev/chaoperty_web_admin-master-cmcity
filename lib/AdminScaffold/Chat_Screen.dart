@@ -1223,10 +1223,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                             });
 
                                             if (response.statusCode == 200) {
-                                              print(
-                                                  'Image uploaded successfully');
+                                              // print(
+                                              //    'Image uploaded successfully');
                                             } else {
-                                              print('Image upload failed');
+                                              //  print('Image upload failed');
                                             }
                                             setState(() {
                                               red_Chat();
@@ -1235,8 +1235,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                             setState(() {
                                               red_Chat();
                                             });
-                                            print(
-                                                'Error during image processing: $e');
+                                            //  print(
+                                            // 'Error during image processing: $e');
                                           }
                                         } else {
                                           // Handle the case where the user didn't pick any file.
@@ -1312,11 +1312,11 @@ class _ChatScreenState extends State<ChatScreen> {
                                               });
 
                                               if (response.statusCode == 200) {
-                                                print(
-                                                    'Image uploaded successfully');
+                                                //  print(
+                                                //   'Image uploaded successfully');
                                                 setState(() {});
                                               } else {
-                                                print('Image upload failed');
+                                                // print('Image upload failed');
                                               }
                                               setState(() {
                                                 red_Chat();
@@ -1325,8 +1325,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                               setState(() {
                                                 red_Chat();
                                               });
-                                              print(
-                                                  'Error during image processing: $e');
+                                              // print(
+                                              //    'Error during image processing: $e');
                                             }
                                           }
                                         },

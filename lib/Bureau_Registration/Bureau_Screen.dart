@@ -51,7 +51,7 @@ class _BureauScreenState extends State<BureauScreen> {
   }
 
   // List Status = ['ทะเบียนลูกค้า', 'ทะเบียนมิเตอร์', 'ประวัติการใช้งาน'];
-  List Status = ['ทะเบียนลูกค้า', 'ประวัติการใช้งาน', 'อ่านบัตรประชาชน'];
+  List Status = ['ทะเบียนลูกค้า', 'ประวัติการใช้งาน'];
   Widget build(BuildContext context) {
     return Container(
       // color: AppbackgroundColor.Sub_Abg_Colors,
@@ -169,7 +169,7 @@ class _BureauScreenState extends State<BureauScreen> {
                               Padding(
                                   padding:
                                       const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                                  child: InkWell(
+                                  child: GestureDetector(
                                     onTap: () {
                                       setState(() {
                                         Status_ = i + 1;
@@ -215,15 +215,10 @@ class _BureauScreenState extends State<BureauScreen> {
                 ),
               ),
               Status_ == 1
-                  ? CustomerScreen()
+                  ? Expanded(child: CustomerScreen())
                   : Status_ == 2
-                      ?
-                      //     ? Add_Custo_Screen(
-                      //         updateMessage: updateMessage,
-                      //       )
-                      //     :
-                      SystemlogScreen()
-                      : ReadCard()
+                      ? Expanded(child: SystemlogScreen())
+                      : Expanded(child: ReadCard())
             ]),
     );
   }

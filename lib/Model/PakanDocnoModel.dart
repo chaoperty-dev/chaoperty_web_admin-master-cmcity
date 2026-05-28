@@ -32,6 +32,8 @@ class PakanDocnoModel {
   String? pvat_pakan_cid;
   String? vat_pakan_cid;
   String? total_pakan_cid;
+  String? expname_pakan;
+  String? expser_pakan;
 
   PakanDocnoModel(
       {this.st,
@@ -62,7 +64,9 @@ class PakanDocnoModel {
       this.total_bill,
       this.pvat_pakan_cid,
       this.vat_pakan_cid,
-      this.total_pakan_cid});
+      this.total_pakan_cid,
+      this.expname_pakan,
+      this.expser_pakan});
 
   PakanDocnoModel.fromJson(Map<String, dynamic> json) {
     st = json['st'];
@@ -96,6 +100,8 @@ class PakanDocnoModel {
     pvat_pakan_cid = json['pvat_pakan_cid'];
     vat_pakan_cid = json['vat_pakan_cid'];
     total_pakan_cid = json['total_pakan_cid'];
+    expname_pakan = json['expname_pakan'];
+    expser_pakan = json['expser_pakan'];
   }
 
   Map<String, dynamic> toJson() {
@@ -132,6 +138,8 @@ class PakanDocnoModel {
     data['pvat_pakan_cid'] = this.pvat_pakan_cid;
     data['vat_pakan_cid'] = this.vat_pakan_cid;
     data['total_pakan_cid'] = this.total_pakan_cid;
+    data['expname_pakan'] = this.expname_pakan;
+    data['expser_pakan'] = this.expser_pakan;
 
     return data;
   }

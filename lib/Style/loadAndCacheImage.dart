@@ -118,8 +118,8 @@ Future<Uint8List?> getResizedLogo() async {
     return cachedImage;
   } catch (e, stackTrace) {
     // Log the error and stack trace
-    print('Error in getResizedLogo: $e');
-    print(stackTrace);
+    //print('Error in getResizedLogo: $e');
+    // print(stackTrace);
     return null;
   }
 }
@@ -147,12 +147,41 @@ Future<Uint8List?> getResizedMap(url) async {
     return cachedImage;
   } catch (e, stackTrace) {
     // Log the error and stack trace
-    print('Error in getResizedLogo: $e');
-    print(stackTrace);
+    // print('Error in getResizedLogo: $e');
+    // print(stackTrace);
     return null;
   }
 }
 
+/// Logo คมชัดสำหรับทุกขนาดหน้ากระดาษ
+/// [targetPx] = ขนาด pixel ที่ต้องการ (≥ logoSize × DPI-factor)
+/// ใช้ PNG (lossless) แทน JPEG เพื่อไม่ให้เบลอ
+Future<Uint8List?> getResizedLogoForSize({int targetPx = 180}) async {
+  try {
+    final SharedPreferences preferences = await SharedPreferences.getInstance();
+    final String? logoUrl = preferences.getString('renTal_logo');
+
+    if (logoUrl == null || logoUrl.isEmpty) return null;
+
+    final Uint8List imageBytes = await loadImage(logoUrl);
+    final img.Image? decoded = img.decodeImage(imageBytes);
+    if (decoded == null) return null;
+
+    // resize แบบ bicubic เพื่อความคมชัดสูงสุด
+    final img.Image resized = img.copyResize(
+      decoded,
+      width: targetPx,
+      height: targetPx,
+      interpolation: img.Interpolation.cubic,
+    );
+
+    // PNG = lossless, ไม่มีการ compress ที่ทำให้เบลอ
+    return Uint8List.fromList(img.encodePng(resized));
+  } catch (e) {
+    print('Error in getResizedLogoForSize: $e');
+    return null;
+  }
+}
 // Future<pw.Container> generatePdfWithLogo() async {
 //   Uint8List? resizedLogo = await getResizedLogo();
 

@@ -386,7 +386,7 @@ class _Report2Screen1State extends State<Report2Screen1> {
     String url_Daily = (zone_ser_Trans_Daily.toString() == '0')
         ? '${MyConstant().domain}/GC_bill_pay_BC_DailyReport_All.php?isAdd=true&ren=$ren&date=$Value_TransDate_Daily&serzone=$zone_ser_Trans_Daily&seruser=$user_ser_Trans_Daily&ser_in=$TypeIncome_ser'
         : '${MyConstant().domain}/GC_bill_pay_BC_DailyReport.php?isAdd=true&ren=$ren&date=$Value_TransDate_Daily&serzone=$zone_ser_Trans_Daily&seruser=$user_ser_Trans_Daily&ser_in=$TypeIncome_ser';
-    print('result $url_Daily');
+    // print('result $url_Daily');
 
     ///-------->
     try {
@@ -705,7 +705,7 @@ class _Report2Screen1State extends State<Report2Screen1> {
                                 TypeIncome = value.toString();
                                 TypeIncome_ser = '${selectedIndex + 1}';
                               });
-                              print(TypeIncome_ser);
+                              // print(TypeIncome_ser);
                             },
                           ),
                         ),
@@ -1700,7 +1700,7 @@ class _Report2Screen1State extends State<Report2Screen1> {
                                 TypeIncome = value.toString();
                                 TypeIncome_ser = '${selectedIndex + 1}';
                               });
-                              print(TypeIncome_ser);
+                            //   print(TypeIncome_ser);
                             },
                           ),
                         ),
@@ -7005,7 +7005,7 @@ class _Report2Screen1State extends State<Report2Screen1> {
       } else {
         //Sales_tax
         if (Value_Report == 'รายงานรายรับ') {
-          print(_ReportValue_type);
+         //  print(_ReportValue_type);
           (_ReportValue_type == "ปกติ")
               ? Excgen_IncomeReport.exportExcel_IncomeReport(
                   '$TypeIncome_ser',

@@ -11,6 +11,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_barcodes/barcodes.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetArea_Model.dart';
 import '../Model/GetC_regis_Model.dart';
 import '../Model/GetContract_Photo_Model.dart';
@@ -140,7 +141,7 @@ class _People_GenQRState extends State<People_GenQR> {
     String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -201,7 +202,7 @@ class _People_GenQRState extends State<People_GenQR> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ser=$seruser&type=$utype&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -277,7 +278,7 @@ class _People_GenQRState extends State<People_GenQR> {
         '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);

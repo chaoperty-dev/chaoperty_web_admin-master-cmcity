@@ -5,26 +5,26 @@ import '../../Constant/Myconstant.dart';
 import '../Model/Properties_Model.dart';
 import '../Model/User_ModelCMM.dart';
 
-Future<List<UserModelCMM>> read_GC_UserCMM() async {
+Future<List<UserModelCMM>> read_GC_UserCMM(String urlCustom) async {
   SharedPreferences preferences = await SharedPreferences.getInstance();
   var ren = preferences.getString('renTalSer');
   var ser_user = preferences.getString('ser');
-
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   String url = '${MyConstant().domain_v1}/admin/users';
-
+  // print(url);
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url), headers: headers);
     final jsonRes = json.decode(response.body);
 
     if (jsonRes != null && jsonRes['data'] is List) {
       final List list = jsonRes['data'];
-      print('📦 JSON Response: ${json.encode(jsonRes)}');
+      // print('📦 JSON Response: ${json.encode(jsonRes)}');
 
       return list.map((e) => UserModelCMM.fromJson(e)).toList();
     }
   } catch (e, stackTrace) {
-    print('❌ Error in read_GC_User: $e');
-    print('🪵 StackTrace: $stackTrace');
+    //print('❌ Error in read_GC_User: $e');
+    //print('🪵 StackTrace: $stackTrace');
   }
 
   return [];
@@ -32,18 +32,18 @@ Future<List<UserModelCMM>> read_GC_UserCMM() async {
 
 Future<http.Response?> read_GC_UserUuidCMM(String usersuuid) async {
   String url = '${MyConstant().domain_v1}/admin/users/$usersuuid';
-
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url), headers: headers);
     if (response.statusCode == 200) {
-      print('✅ UserUuid Success: ${response.body}');
+      //print('✅ UserUuid Success: ${response.body}');
     } else {
-      print('❌ UserUuid Failed [${response.statusCode}]: ${response.body}');
+      //print('❌ UserUuid Failed [${response.statusCode}]: ${response.body}');
     }
     return response;
   } catch (e, stack) {
-    print('❌ Exception during UserUuid request: $e');
-    print('🧭 StackTrace:\n$stack');
+    //print('❌ Exception during UserUuid request: $e');
+    //print('🧭 StackTrace:\n$stack');
     return null;
   }
 }
@@ -61,14 +61,14 @@ Future<http.Response?> read_GC_UserUuidCMM(String usersuuid) async {
 //     // ✅ แก้ตรงนี้: เช็กว่า data เป็น Map
 //     if (jsonRes != null && jsonRes['data'] is Map<String, dynamic>) {
 //       final dataMap = jsonRes['data'];
-//       print('📦 UserUuid JSON Response: ${json.encode(jsonRes)}');
+//       //print('📦 UserUuid JSON Response: ${json.encode(jsonRes)}');
 
 //       // ✅ คืน List จาก user เดียว (ตาม signature เดิม)
 //       return [UserModelCMM.fromJson(dataMap)];
 //     }
 //   } catch (e, stackTrace) {
-//     print('❌ Error in read_GC_User: $e');
-//     print('🪵 StackTrace: $stackTrace');
+//     //print('❌ Error in read_GC_User: $e');
+//     //print('🪵 StackTrace: $stackTrace');
 //   }
 
 //   return [];
@@ -86,8 +86,8 @@ Future<http.Response?> read_GC_UserUuidCMM(String usersuuid) async {
 //       return [UserModelCMM.fromJson(dataMap)];
 //     }
 //   } catch (e, stackTrace) {
-//     print('❌ Error in read_GC_UserUuidCMM: $e');
-//     print('🪵 StackTrace: $stackTrace');
+//     //print('❌ Error in read_GC_UserUuidCMM: $e');
+//     //print('🪵 StackTrace: $stackTrace');
 //   }
 
 //   return [];

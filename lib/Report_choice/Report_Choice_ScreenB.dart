@@ -338,7 +338,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
         : Value_Chang_Zone_Ser_SalesTax_Full;
     String url =
         '${MyConstant().domain}/GC_billPay_SalesTaxFullReport_Choice.php?isAdd=true&ren=$ren&zser=$zone&month_s=$Mon_SalesTax_Full_Mon&year_s=$YE_SalesTax_Full_Mon';
-    print('TransBill_PayTaxFull : ${url}');
+    // print('TransBill_PayTaxFull : ${url}');
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -387,7 +387,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(url);
+      //   print(url);
       if (result != null) {
         for (var map in result) {
           TransBillPayChoiceModel salesTaxfull =
@@ -568,8 +568,8 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
         YE_SalesTax_Full_Mon = DateFormat('yyyy').format(selectedDate);
         // lastDay();
       });
-      print(
-          'Selected month: ${Mon_SalesTax_Full_Mon}, Year: ${YE_SalesTax_Full_Mon}');
+      // print(
+      //     'Selected month: ${Mon_SalesTax_Full_Mon}, Year: ${YE_SalesTax_Full_Mon}');
     }
   }
 
@@ -583,8 +583,8 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
         YE_SalesTax_Full_Mon2 = DateFormat('yyyy').format(selectedDate);
         // lastDay();
       });
-      print(
-          'Selected month: ${Mon_SalesTax_Full_Mon2}, Year: ${YE_SalesTax_Full_Mon2}');
+      // print(
+      //     'Selected month: ${Mon_SalesTax_Full_Mon2}, Year: ${YE_SalesTax_Full_Mon2}');
     }
   }
 
@@ -597,7 +597,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
         Mon_billpay_Mon = DateFormat('MM').format(selectedDate);
         YE_billpay_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Mon_billpay_Mon}, Year: ${YE_billpay_Mon}');
+      //  print('Selected month: ${Mon_billpay_Mon}, Year: ${YE_billpay_Mon}');
     }
   }
 
@@ -610,7 +610,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
         Mon_billpay_Mon2 = DateFormat('MM').format(selectedDate);
         YE_billpay_Mon2 = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Mon_billpay_Mon2}, Year: ${YE_billpay_Mon2}');
+      // print('Selected month: ${Mon_billpay_Mon2}, Year: ${YE_billpay_Mon2}');
     }
   }
 
@@ -7408,7 +7408,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
         Navigator.of(context).pop();
       } else {
         if (Value_Report == 'รายงานภาษีขาย-1') {
-          print('Ex : รายงานภาษีขาย-1');
+          //  print('Ex : รายงานภาษีขาย-1');
           Excgen_SalesTaxFullReport_Choice
               .exportExcel_SalesTaxFullReport_Choice(
                   context,
@@ -7421,7 +7421,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
                   // Mon_SalesTax_Full_Mon,
                   YE_SalesTax_Full_Mon);
         } else if (Value_Report == 'รายงานภาษีขาย-2') {
-          print('Ex : รายงานภาษีขาย-2');
+          // print('Ex : รายงานภาษีขาย-2');
           Excgen_SalesTaxFull2Report_Choice
               .exportExcel_SalesTaxFull2Report_Choice(
                   context,
@@ -7436,7 +7436,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
                   YE_SalesTax_Full_Mon2);
         } else if (Value_Report == 'รายงานค่าเช่า-ฉบับเต็ม') {
           // //salesTax_short
-          print('Ex : รายงานค่าเช่า-ฉบับเต็ม');
+          //  print('Ex : รายงานค่าเช่า-ฉบับเต็ม');
           // print('Excgen_BillPayMonRentReport_Choice');
           Excgen_BillPayMonRentReport_Choice
               .exportExcel_BillPayMonRentReport_Choice(
@@ -7449,7 +7449,7 @@ class _Report_Choice_ScreenBState extends State<Report_Choice_ScreenB> {
                   monthsInThai[int.parse(Mon_billpay_Mon.toString()) - 1],
                   YE_billpay_Mon);
         } else if (Value_Report == 'รายงานค่าเช่า-ฉบับย่อ') {
-          print('Ex : รายงานค่าเช่า-ฉบับย่อ');
+          //   print('Ex : รายงานค่าเช่า-ฉบับย่อ');
           // //salesTax_short
           Excgen_BillPayMonRent2Report_Choice
               .exportExcel_BillPayMonRent2Report_Choice(

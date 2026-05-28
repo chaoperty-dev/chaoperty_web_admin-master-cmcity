@@ -9,7 +9,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:group_radio_button/group_radio_button.dart';
-import 'package:iconsax/iconsax.dart';
+// import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -264,7 +264,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
         }
       } else {}
     } catch (e) {}
-    print('name>>>>>  $renname');
+    // print('name>>>>>  $renname');
   }
 
   // Future<Null> read_GC_rental() async {
@@ -444,8 +444,8 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
       } else {}
 
       // _btnKeys = List.generate(areaModels.length, (_) => GlobalKey());
-      print(
-          'zoneModels >>. ${zoneModels.length} ${areaModelsOverdue.map((e) => e.zser).toString()}');
+      // print(
+      //     'zoneModels >>. ${zoneModels.length} ${areaModelsOverdue.map((e) => e.zser).toString()}');
     } catch (e) {}
   }
 
@@ -472,7 +472,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('read_GC_area ====>  $result');
+      // print('read_GC_area ====>  $result');
       if (result != null) {
         for (var map in result) {
           Overdue_floorplansModel areaModel =
@@ -563,7 +563,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
           }
         }
 
-        print('result ${_TransReBillModels.length}');
+        // print('result ${_TransReBillModels.length}');
       }
     } catch (e) {}
   }
@@ -639,14 +639,14 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
     var ciddoc = _TransReBillModels[index].ser;
     var qutser = _TransReBillModels[index].ser_in;
     var docnoin = _TransReBillModels[index].docno; //.toString().trim()
-    print('>>>>>>>>>>>dd>>> in d  $docnoin');
+    // print('>>>>>>>>>>>dd>>> in d  $docnoin');
 
     String url =
         '${MyConstant().domain}/GC_bill_pay_amt.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&docnoin=$docnoin';
     try {
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      print('BBBBBBBBBBBBBBBB>>>> $result');
+      // print('BBBBBBBBBBBBBBBB>>>> $result');
       if (result.toString() != 'null') {
         for (var map in result) {
           FinnancetransModel finnancetransModel =
@@ -674,8 +674,8 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                   dis_sum_Matjum + double.parse(finnancetransModel.amt!);
             });
           }
-          print(
-              '>>>>> ${finnancetransModel.slip}>>>>>>dd>>> in $sidamt $siddisper  ');
+          // print(
+          //     '>>>>> ${finnancetransModel.slip}>>>>>>dd>>> in $sidamt $siddisper  ');
         }
       }
     } catch (e) {}
@@ -705,7 +705,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      // print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           TransReBillHistoryModel _TransReBillHistoryModel =
@@ -966,7 +966,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
           Padding(
             padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
             child: Container(
-              decoration:  BoxDecoration(
+              decoration: BoxDecoration(
                 color: AppbackgroundColor.TiTile_Colors,
                 borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(10),
@@ -2950,7 +2950,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                                                                                                       });
                                                                                                     } else {
                                                                                                       int index = areaModelsAll.indexWhere((area) => area.ser.toString().trim() == areaModel.ser);
-                                                                                                      print('${areaModelsAll[index].cid}');
+                                                                                                      //  print('${areaModelsAll[index].cid}');
                                                                                                       red_Trans_bill('${areaModelsAll[index].cid}');
                                                                                                       Future.delayed(const Duration(milliseconds: 150), () {
                                                                                                         dialog_svg(index, context, '2');
@@ -3417,7 +3417,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                               ],
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right,
                               color: getRandomColor(index, nameln)),
                         ],
                       ),
@@ -3523,7 +3523,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                                     fontFamily: Font_.Fonts_T),
                               ),
                             ),
-                            Icon(Iconsax.arrow_circle_right,
+                            Icon(Icons.arrow_circle_right,
                                 color: getRandomColor(index, nameln)),
                           ],
                         ),
@@ -5457,8 +5457,8 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                                                 '${_TransReBillModels[index].tax}';
                                             String room_number_BillHistory =
                                                 '${_TransReBillModels[index].room_number}';
-                                            print(
-                                                'room_number ------> ${_TransReBillModels[index].room_number}');
+                                            // print(
+                                            //     'room_number ------> ${_TransReBillModels[index].room_number}');
 
                                             _showMyDialog_SAVE(
                                                 tableData00,
@@ -5732,6 +5732,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
         newValuePDFimg,
         TitleType_Default_Receipt_Name,
         tem_page_ser,
-        bills_name_,'0');
+        bills_name_,
+        '0');
   }
 }

@@ -1,6 +1,7 @@
 // ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member, duplicate_import, must_be_immutable, body_might_complete_normally_nullable
 import 'dart:convert';
 
+import 'package:chaoperty/ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
+import '../ChiangMai_Municipality/unity/API_bank_accounts.dart';
 import '../Constant/Myconstant.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetBank_Model.dart';
@@ -44,6 +46,7 @@ class _PaymentState extends State<Payment> {
   String? ser_typepay,
       name_typepay,
       ser_bank,
+      bcode_bank,
       name_bank,
       ser_bank_type,
       name_bank_type;
@@ -365,12 +368,12 @@ class _PaymentState extends State<Payment> {
     if (deleteRequest.status == 200) {
       final response = deleteRequest.response;
       if (response == 'File deleted successfully.') {
-        print('File deleted successfully!');
+        // print('File deleted successfully!');
       } else {
-        print('Failed to delete file: $response');
+        //  print('Failed to delete file: $response');
       }
     } else {
-      print('Failed to delete file!');
+      //  print('Failed to delete file!');
     }
   }
 
@@ -380,7 +383,7 @@ class _PaymentState extends State<Payment> {
         source: ImageSource.gallery, maxHeight: 100, maxWidth: 100);
 
     if (pickedFile == null) {
-      print('User canceled image selection');
+      //  print('User canceled image selection');
       return;
     } else {
       // 2. Read the image as bytes
@@ -462,7 +465,7 @@ class _PaymentState extends State<Payment> {
 
       // }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      //  print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -500,8 +503,11 @@ class _PaymentState extends State<Payment> {
                 children: [
                   Container(
                     width: (!Responsive.isDesktop(context))
-                        ? 1200
-                        : MediaQuery.of(context).size.width * 0.93,
+                        ? 1400.00
+                        : MediaQuery.of(context).size.width * 0.84,
+                    // width: (!Responsive.isDesktop(context))
+                    //     ? 1200
+                    //     : MediaQuery.of(context).size.width * 0.93,
                     child: Column(
                       children: [
                         Row(
@@ -564,326 +570,326 @@ class _PaymentState extends State<Payment> {
                                         FontWeight_.Fonts_T,
                                         14,
                                         2),
-                                    if (rtser.toString() != '106')
-                                      Padding(
-                                        padding: const EdgeInsets.all(0.0),
-                                        child: Container(
-                                          // width: 100,
-                                          decoration: BoxDecoration(
-                                            color: Colors.deepOrange[50],
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                              topLeft: Radius.circular(10),
-                                              topRight: Radius.circular(10),
-                                              bottomLeft: Radius.circular(10),
-                                              bottomRight: Radius.circular(10),
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: Colors.grey
-                                                    .withOpacity(0.5),
-                                                spreadRadius: 5,
-                                                blurRadius: 7,
-                                                offset: const Offset(0,
-                                                    3), // changes position of shadow
-                                              ),
-                                            ],
-                                          ),
-                                          child: DropdownButtonFormField2(
-                                            focusColor: Colors.deepOrange[300],
-                                            autofocus: false,
-                                            decoration: InputDecoration(
-                                              enabled: true,
-                                              hoverColor: Colors.brown,
-                                              prefixIconColor: Colors.blue,
-                                              fillColor: Colors.white
-                                                  .withOpacity(0.05),
-                                              filled: false,
-                                              isDense: true,
-                                              contentPadding: EdgeInsets.zero,
-                                              border: OutlineInputBorder(
-                                                borderSide: const BorderSide(
-                                                    color: Colors.red),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(10),
-                                                  topLeft: Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10),
-                                                  bottomLeft:
-                                                      Radius.circular(10),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Color.fromARGB(
-                                                      255, 231, 227, 227),
-                                                ),
-                                              ),
-                                            ),
-                                            isExpanded: false,
-                                            hint: Text(
-                                              (time_check == null ||
-                                                      time_check.toString() ==
-                                                          '0')
-                                                  ? 'ไม่เปิดCheck Auto'
-                                                  : (int.parse(
-                                                              '${time_check}') <
-                                                          60)
-                                                      ? '$time_check นาที'
-                                                      : (int.parse(
-                                                                  '${time_check}') ==
-                                                              60)
-                                                          ? '1 ชั่วโมง'
-                                                          : (int.parse(
-                                                                      '${time_check}') ==
-                                                                  90)
-                                                              ? '1.3 ชั่วโมง'
-                                                              : (int.parse(
-                                                                          '${time_check}') ==
-                                                                      120)
-                                                                  ? '2 ชั่วโมง'
-                                                                  : (int.parse(
-                                                                              '${time_check}') ==
-                                                                          1440)
-                                                                      ? '1 วัน'
-                                                                      : (int.parse('${time_check}') ==
-                                                                              2880)
-                                                                          ? '2 วัน'
-                                                                          : '$time_check นาที',
-                                              maxLines: 1,
-                                              style: const TextStyle(
-                                                overflow: TextOverflow.ellipsis,
-                                                fontSize: 15,
-                                                color: Colors.grey,
-                                              ),
-                                            ),
-                                            icon: const Icon(
-                                              Icons.arrow_drop_down,
-                                              color: Colors.black,
-                                            ),
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                            ),
-                                            // buttonWidth: 20,
-                                            iconSize: 20,
-                                            buttonHeight: 40,
-                                            // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                                            dropdownDecoration: BoxDecoration(
-                                              // color: Colors
-                                              //     .amber,
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                              border: Border.all(
-                                                  color: Colors.white,
-                                                  width: 1),
-                                            ),
-                                            items: [
-                                              DropdownMenuItem<String>(
-                                                value: '0',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ไม่เปิดCheck Auto',
-                                                        Colors.red,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '15',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 15 นาที',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '20',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 20 นาที',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '30',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 30 นาที',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '45',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 45 นาที',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '60',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 1 ชั่วโมง',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '90',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 1.3 ชั่วโมง',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '120',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 2 ชั่วโมง',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '1440',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 1 วัน',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                              DropdownMenuItem<String>(
-                                                value: '2880',
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ชำระ/หลักฐาน ภายใน 2 วัน',
-                                                        SettingScreen_Color
-                                                            .Colors_Text2_,
-                                                        TextAlign.left,
-                                                        null,
-                                                        Font_.Fonts_T,
-                                                        12,
-                                                        1),
-                                              ),
-                                            ],
+                                    // if (rtser.toString() != '106')
+                                    //   Padding(
+                                    //     padding: const EdgeInsets.all(0.0),
+                                    //     child: Container(
+                                    //       // width: 100,
+                                    //       decoration: BoxDecoration(
+                                    //         color: Colors.deepOrange[50],
+                                    //         borderRadius:
+                                    //             const BorderRadius.only(
+                                    //           topLeft: Radius.circular(10),
+                                    //           topRight: Radius.circular(10),
+                                    //           bottomLeft: Radius.circular(10),
+                                    //           bottomRight: Radius.circular(10),
+                                    //         ),
+                                    //         boxShadow: [
+                                    //           BoxShadow(
+                                    //             color: Colors.grey
+                                    //                 .withOpacity(0.5),
+                                    //             spreadRadius: 5,
+                                    //             blurRadius: 7,
+                                    //             offset: const Offset(0,
+                                    //                 3), // changes position of shadow
+                                    //           ),
+                                    //         ],
+                                    //       ),
+                                    //       child: DropdownButtonFormField2(
+                                    //         focusColor: Colors.deepOrange[300],
+                                    //         autofocus: false,
+                                    //         decoration: InputDecoration(
+                                    //           enabled: true,
+                                    //           hoverColor: Colors.brown,
+                                    //           prefixIconColor: Colors.blue,
+                                    //           fillColor: Colors.white
+                                    //               .withOpacity(0.05),
+                                    //           filled: false,
+                                    //           isDense: true,
+                                    //           contentPadding: EdgeInsets.zero,
+                                    //           border: OutlineInputBorder(
+                                    //             borderSide: const BorderSide(
+                                    //                 color: Colors.red),
+                                    //             borderRadius:
+                                    //                 BorderRadius.circular(10),
+                                    //           ),
+                                    //           focusedBorder:
+                                    //               const OutlineInputBorder(
+                                    //             borderRadius: BorderRadius.only(
+                                    //               topRight: Radius.circular(10),
+                                    //               topLeft: Radius.circular(10),
+                                    //               bottomRight:
+                                    //                   Radius.circular(10),
+                                    //               bottomLeft:
+                                    //                   Radius.circular(10),
+                                    //             ),
+                                    //             borderSide: BorderSide(
+                                    //               width: 1,
+                                    //               color: Color.fromARGB(
+                                    //                   255, 231, 227, 227),
+                                    //             ),
+                                    //           ),
+                                    //         ),
+                                    //         isExpanded: false,
+                                    //         hint: Text(
+                                    //           (time_check == null ||
+                                    //                   time_check.toString() ==
+                                    //                       '0')
+                                    //               ? 'ไม่เปิดCheck Auto'
+                                    //               : (int.parse(
+                                    //                           '${time_check}') <
+                                    //                       60)
+                                    //                   ? '$time_check นาที'
+                                    //                   : (int.parse(
+                                    //                               '${time_check}') ==
+                                    //                           60)
+                                    //                       ? '1 ชั่วโมง'
+                                    //                       : (int.parse(
+                                    //                                   '${time_check}') ==
+                                    //                               90)
+                                    //                           ? '1.3 ชั่วโมง'
+                                    //                           : (int.parse(
+                                    //                                       '${time_check}') ==
+                                    //                                   120)
+                                    //                               ? '2 ชั่วโมง'
+                                    //                               : (int.parse(
+                                    //                                           '${time_check}') ==
+                                    //                                       1440)
+                                    //                                   ? '1 วัน'
+                                    //                                   : (int.parse('${time_check}') ==
+                                    //                                           2880)
+                                    //                                       ? '2 วัน'
+                                    //                                       : '$time_check นาที',
+                                    //           maxLines: 1,
+                                    //           style: const TextStyle(
+                                    //             overflow: TextOverflow.ellipsis,
+                                    //             fontSize: 15,
+                                    //             color: Colors.grey,
+                                    //           ),
+                                    //         ),
+                                    //         icon: const Icon(
+                                    //           Icons.arrow_drop_down,
+                                    //           color: Colors.black,
+                                    //         ),
+                                    //         style: const TextStyle(
+                                    //           color: Colors.grey,
+                                    //         ),
+                                    //         // buttonWidth: 20,
+                                    //         iconSize: 20,
+                                    //         buttonHeight: 40,
+                                    //         // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                                    //         dropdownDecoration: BoxDecoration(
+                                    //           // color: Colors
+                                    //           //     .amber,
+                                    //           borderRadius:
+                                    //               BorderRadius.circular(10),
+                                    //           border: Border.all(
+                                    //               color: Colors.white,
+                                    //               width: 1),
+                                    //         ),
+                                    //         items: [
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '0',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ไม่เปิดCheck Auto',
+                                    //                     Colors.red,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '15',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 15 นาที',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '20',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 20 นาที',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '30',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 30 นาที',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '45',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 45 นาที',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '60',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 1 ชั่วโมง',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '90',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 1.3 ชั่วโมง',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '120',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 2 ชั่วโมง',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '1440',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 1 วัน',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //           DropdownMenuItem<String>(
+                                    //             value: '2880',
+                                    //             child: Translate
+                                    //                 .TranslateAndSetText(
+                                    //                     'ชำระ/หลักฐาน ภายใน 2 วัน',
+                                    //                     SettingScreen_Color
+                                    //                         .Colors_Text2_,
+                                    //                     TextAlign.left,
+                                    //                     null,
+                                    //                     Font_.Fonts_T,
+                                    //                     12,
+                                    //                     1),
+                                    //           ),
+                                    //         ],
 
-                                            onChanged: (value) async {
-                                              ///UP_Check_TimePay
-                                              setState(() {
-                                                time_check = value;
-                                              });
+                                    //         onChanged: (value) async {
+                                    //           ///UP_Check_TimePay
+                                    //           setState(() {
+                                    //             time_check = value;
+                                    //           });
 
-                                              ///-------------------------------->
-                                              SharedPreferences preferences =
-                                                  await SharedPreferences
-                                                      .getInstance();
+                                    //           ///-------------------------------->
+                                    //           SharedPreferences preferences =
+                                    //               await SharedPreferences
+                                    //                   .getInstance();
 
-                                              ///-------------------------------->
-                                              if (value.toString() == '0') {
-                                                preferences.setString(
-                                                    'Auto_cancel', 'No');
-                                              } else {
-                                                preferences.setString(
-                                                    'Auto_cancel', 'Yes');
-                                              }
+                                    //           ///-------------------------------->
+                                    //           if (value.toString() == '0') {
+                                    //             preferences.setString(
+                                    //                 'Auto_cancel', 'No');
+                                    //           } else {
+                                    //             preferences.setString(
+                                    //                 'Auto_cancel', 'Yes');
+                                    //           }
 
-                                              ///-------------------------------->
-                                              String? ren = preferences
-                                                  .getString('renTalSer');
-                                              String? ser_user =
-                                                  preferences.getString('ser');
+                                    //           ///-------------------------------->
+                                    //           String? ren = preferences
+                                    //               .getString('renTalSer');
+                                    //           String? ser_user =
+                                    //               preferences.getString('ser');
 
-                                              String url =
-                                                  '${MyConstant().domain}/UP_Check_TimePay.php?isAdd=true&ren=$ren&data=$value';
+                                    //           String url =
+                                    //               '${MyConstant().domain}/UP_Check_TimePay.php?isAdd=true&ren=$ren&data=$value';
 
-                                              ///-------------------------------->
-                                              try {
-                                                var response = await http
-                                                    .get(Uri.parse(url));
+                                    //           ///-------------------------------->
+                                    //           try {
+                                    //             var response = await http
+                                    //                 .get(Uri.parse(url));
 
-                                                var result = await json
-                                                    .decode(response.body);
+                                    //             var result = await json
+                                    //                 .decode(response.body);
 
-                                                if (result.toString() ==
-                                                    'true') {
-                                                  Insert_log.Insert_logs(
-                                                      'ตั้งค่า',
-                                                      'การชำระ>>$ser_user ปรับ เวลาการชำระ Marker & User');
-                                                  setState(() {
-                                                    checkPreferance();
-                                                    read_GC_PayMentModel();
-                                                    type_PayMent();
-                                                    type_bank();
-                                                    type_bank_type();
-                                                    read_GC_rental();
-                                                  });
-                                                } else {}
-                                              } catch (e) {
-                                                print(e);
-                                              }
-                                              String? _route = preferences
-                                                  .getString('route');
-                                              MaterialPageRoute
-                                                  materialPageRoute =
-                                                  MaterialPageRoute(
-                                                      builder: (BuildContext
-                                                              context) =>
-                                                          AdminScafScreen(
-                                                              route: _route));
-                                              Navigator.pushAndRemoveUntil(
-                                                  context,
-                                                  materialPageRoute,
-                                                  (route) => false);
-                                            },
-                                          ),
-                                        ),
-                                      ),
+                                    //             if (result.toString() ==
+                                    //                 'true') {
+                                    //               Insert_log.Insert_logs(
+                                    //                   'ตั้งค่า',
+                                    //                   'การชำระ>>$ser_user ปรับ เวลาการชำระ Marker & User');
+                                    //               setState(() {
+                                    //                 checkPreferance();
+                                    //                 read_GC_PayMentModel();
+                                    //                 type_PayMent();
+                                    //                 type_bank();
+                                    //                 type_bank_type();
+                                    //                 read_GC_rental();
+                                    //               });
+                                    //             } else {}
+                                    //           } catch (e) {
+                                    //             //    print(e);
+                                    //           }
+                                    //           String? _route = preferences
+                                    //               .getString('route');
+                                    //           MaterialPageRoute
+                                    //               materialPageRoute =
+                                    //               MaterialPageRoute(
+                                    //                   builder: (BuildContext
+                                    //                           context) =>
+                                    //                       AdminScafScreen(
+                                    //                           route: _route));
+                                    //           Navigator.pushAndRemoveUntil(
+                                    //               context,
+                                    //               materialPageRoute,
+                                    //               (route) => false);
+                                    //         },
+                                    //       ),
+                                    //     ),
+                                    //   ),
                                   ],
                                 ),
                               ),
@@ -1346,6 +1352,14 @@ class _PaymentState extends State<Payment> {
                                                                     rtnameSer;
                                                                 name_bank =
                                                                     rtnameName;
+                                                                bcode_bank = getBankModels
+                                                                        .where((e) =>
+                                                                            e.ser.toString() ==
+                                                                            '$rtnameSer')
+                                                                        .first
+                                                                        .bcode
+                                                                        .toString() ??
+                                                                    '';
                                                               });
                                                             },
                                                           ),
@@ -2251,109 +2265,202 @@ class _PaymentState extends State<Payment> {
                                                               child: TextButton(
                                                                   onPressed:
                                                                       () async {
-                                                                    // if (_formKey
-                                                                    //     .currentState!
-                                                                    //     .validate()) {
+                                                                    // ถ้ามี form validation อยากใช้ก็เปิดไว้ได้
+                                                                    // if (_formKey.currentState!.validate()) { ... }
 
-                                                                    //     }
-
-                                                                    var name_name =
+                                                                    final name_name =
                                                                         bname_bank
                                                                             .text;
-                                                                    // var name_bank =
-                                                                    //     bank_bank.text;
-                                                                    var name_num =
+                                                                    final name_num =
                                                                         bno_bank
                                                                             .text;
-                                                                    var name_sub =
+                                                                    final name_sub =
                                                                         bsaka_bank
                                                                             .text;
-                                                                    var name_btype =
+                                                                    final name_btype =
                                                                         btype_bank
                                                                             .text;
-                                                                    var name_type =
+                                                                    final name_type =
                                                                         ser_typepay;
-                                                                    var name_tpname =
+                                                                    final name_tpname =
                                                                         name_typepay;
 
-                                                                    var ser_banks =
+                                                                    final ser_banks =
                                                                         ser_bank;
-                                                                    var name_banks =
+                                                                    final name_banks =
                                                                         name_bank;
-
-                                                                    var ser_bank_types =
+                                                                    final ser_bank_types =
                                                                         ser_bank_type;
-                                                                    var name_bank_types =
+                                                                    final name_bank_types =
                                                                         name_bank_type;
-                                                                    // print(
-                                                                    //     '$name_name\n$name_num\n$name_sub\n$name_btype\n$name_type\n$name_tpname\n$ser_banks\n$name_banks\n$ser_bank_types\n$name_bank_types');
-                                                                    SharedPreferences
-                                                                        preferences =
+
+                                                                    final prefs =
                                                                         await SharedPreferences
                                                                             .getInstance();
-                                                                    String?
-                                                                        ren =
-                                                                        preferences
-                                                                            .getString('renTalSer');
-                                                                    String?
-                                                                        ser_user =
-                                                                        preferences
-                                                                            .getString('ser');
+                                                                    final ren =
+                                                                        prefs.getString(
+                                                                            'renTalSer');
+                                                                    final ser_user =
+                                                                        prefs.getString(
+                                                                            'ser');
 
-                                                                    OKuploadFile_Slip();
-                                                                    Future.delayed(
-                                                                        const Duration(
-                                                                            milliseconds:
-                                                                                200),
-                                                                        () async {
-                                                                      var fileNameSlip = (fileName_Slip == null ||
-                                                                              fileName_Slip.toString() == 'null')
-                                                                          ? ''
-                                                                          : fileName_Slip;
+                                                                    // 1) อัปโหลดสลิปให้เรียบร้อยก่อน (แนะนำให้ await)
+                                                                    await OKuploadFile_Slip();
 
-                                                                      String
-                                                                          url =
-                                                                          '${MyConstant().domain}/In_c_payment.php?isAdd=true&ren=$ren&ser_user=$ser_user&name_name=$name_name&ser_banks=$ser_banks&name_banks=$name_banks&name_num=$name_num&name_sub=$name_sub&name_btype=$name_btype&name_tpname=$name_tpname&name_type=$name_type&ser_bank_types=$ser_bank_types&name_bank_types=$name_bank_types&imgbank=$fileNameSlip';
+                                                                    // ถ้า OKuploadFile_Slip() เป็น async แล้วตั้งค่า fileName_Slip ให้
+                                                                    final fileNameSlip = (fileName_Slip ==
+                                                                                null ||
+                                                                            fileName_Slip.toString() ==
+                                                                                'null')
+                                                                        ? ''
+                                                                        : fileName_Slip;
 
-                                                                      try {
-                                                                        var response =
-                                                                            await http.get(Uri.parse(url));
+                                                                    // 2) สร้าง Uri แบบปลอดภัย (เลี่ยงต่อ string ตรง ๆ)
+                                                                    final uri =
+                                                                        Uri.parse('${MyConstant().domain}/In_c_paymentV2.php')
+                                                                            .replace(
+                                                                      queryParameters: {
+                                                                        'isAdd':
+                                                                            'true',
+                                                                        'ren': ren ??
+                                                                            '',
+                                                                        'ser_user':
+                                                                            ser_user ??
+                                                                                '',
+                                                                        'name_name':
+                                                                            name_name,
+                                                                        'ser_banks':
+                                                                            ser_banks?.toString() ??
+                                                                                '',
+                                                                        'name_banks':
+                                                                            name_banks ??
+                                                                                '',
+                                                                        'name_num':
+                                                                            name_num,
+                                                                        'name_sub':
+                                                                            name_sub,
+                                                                        'name_btype':
+                                                                            name_btype,
+                                                                        'name_tpname':
+                                                                            name_tpname ??
+                                                                                '',
+                                                                        'name_type':
+                                                                            name_type?.toString() ??
+                                                                                '',
+                                                                        'ser_bank_types':
+                                                                            ser_bank_types?.toString() ??
+                                                                                '',
+                                                                        'name_bank_types':
+                                                                            name_bank_types ??
+                                                                                '',
+                                                                        'imgbank':
+                                                                            fileNameSlip.toString(),
+                                                                      },
+                                                                    );
 
-                                                                        var result =
-                                                                            json.decode(response.body);
+                                                                    try {
+                                                                      final response =
+                                                                          await http
+                                                                              .get(uri);
+                                                                      // debugPrint('In_c_payment response: ${response.body}');
+
+                                                                      if (response
+                                                                              .statusCode !=
+                                                                          200) {
+                                                                        // TODO: แจ้ง error ให้ผู้ใช้ถ้าต้องการ
+                                                                        return;
+                                                                      }
+
+                                                                      final result =
+                                                                          json.decode(
+                                                                              response.body);
+
+                                                                      // -------------------------------
+                                                                      // NOTE: ตรงนี้อิงจาก PHP เวอร์ชันที่เราเขียน:
+                                                                      // {
+                                                                      //   "status": true/false,
+                                                                      //   "message": "...",
+                                                                      //   "data": { ... bank fields ... }
+                                                                      // }
+
+                                                                      // -------------------------------
+                                                                      if (result
+                                                                              is Map &&
+                                                                          result['status'] ==
+                                                                              true) {
                                                                         // print(
                                                                         //     result);
-                                                                        if (result.toString() ==
-                                                                            'true') {
-                                                                          Insert_log.Insert_logs(
-                                                                              'ตั้งค่า',
-                                                                              'การรับชำระ>>เพิ่มช่องทางการชำระ(${bname_bank.text.toString()})');
-                                                                          setState(
-                                                                              () {
-                                                                            bname_bank.clear();
-                                                                            bank_bank.clear();
-                                                                            bno_bank.clear();
-                                                                            bsaka_bank.clear();
-                                                                            btype_bank.clear();
-                                                                            ser_typepay =
-                                                                                null;
-                                                                            name_typepay =
-                                                                                null;
-                                                                            ser_bank =
-                                                                                null;
-                                                                            name_bank =
-                                                                                null;
-                                                                            ser_bank_type =
-                                                                                null;
-                                                                            name_bank_type =
-                                                                                null;
-                                                                            read_GC_PayMentModel();
-                                                                          });
-                                                                          Navigator.pop(
-                                                                              context);
-                                                                        } else {}
-                                                                      } catch (e) {}
-                                                                    });
+                                                                        final data = result['data'] as Map<
+                                                                            String,
+                                                                            dynamic>;
+
+                                                                        // 3) ส่งต่อไป API bank-accounts ด้วยข้อมูลที่ได้จาก PHP
+                                                                        await postBankAccounts(
+                                                                          code: (data['code'] ?? 'BANK_TRANSFER')
+                                                                              as String,
+                                                                          bankName:
+                                                                              (data['bank_name'] ?? '') as String,
+                                                                          accountName:
+                                                                              (data['account_name'] ?? '') as String,
+                                                                          accountNumber:
+                                                                              (data['account_number'] ?? '') as String,
+                                                                          bser: data['bser']?.toString() ??
+                                                                              '',
+                                                                          bcode:
+                                                                              bcode_bank ?? '',
+                                                                          imagePath:
+                                                                              data['image_path'] as String?,
+                                                                          branch:
+                                                                              data['branch'] as String?,
+                                                                          note: data['note']
+                                                                              as String?,
+                                                                        );
+
+                                                                        // 4) Log + เคลียร์ฟอร์ม + refresh + ปิด dialog
+                                                                        Insert_log
+                                                                            .Insert_logs(
+                                                                          'ตั้งค่า',
+                                                                          'การรับชำระ>>เพิ่มช่องทางการชำระ(${bname_bank.text.toString()})',
+                                                                        );
+
+                                                                        setState(
+                                                                            () {
+                                                                          bname_bank
+                                                                              .clear();
+                                                                          bank_bank
+                                                                              .clear();
+                                                                          bno_bank
+                                                                              .clear();
+                                                                          bsaka_bank
+                                                                              .clear();
+                                                                          btype_bank
+                                                                              .clear();
+                                                                          ser_typepay =
+                                                                              null;
+                                                                          name_typepay =
+                                                                              null;
+                                                                          ser_bank =
+                                                                              null;
+                                                                          name_bank =
+                                                                              null;
+                                                                          ser_bank_type =
+                                                                              null;
+                                                                          name_bank_type =
+                                                                              null;
+                                                                          read_GC_PayMentModel();
+                                                                        });
+
+                                                                        Navigator.pop(
+                                                                            context);
+                                                                      } else {
+                                                                        // กรณี PHP ส่ง status = false
+                                                                        // print(
+                                                                        //     'In_c_payment returned error: $result');
+                                                                      }
+                                                                    } catch (e) {
+                                                                      // print(
+                                                                      //     'Exception calling In_c_payment: $e');
+                                                                    }
                                                                   },
                                                                   child: Translate.TranslateAndSetText(
                                                                       'บันทึก',
@@ -2431,8 +2538,11 @@ class _PaymentState extends State<Payment> {
                         Container(
                             height: MediaQuery.of(context).size.height * 0.6,
                             width: (!Responsive.isDesktop(context))
-                                ? 1200
-                                : MediaQuery.of(context).size.width * 0.93,
+                                ? 1400.00
+                                : MediaQuery.of(context).size.width * 0.84,
+                            // width: (!Responsive.isDesktop(context))
+                            //     ? 1200
+                            //     : MediaQuery.of(context).size.width * 0.93,
                             decoration: const BoxDecoration(
                               color: AppbackgroundColor.Sub_Abg_Colors,
                               borderRadius: BorderRadius.only(
@@ -3013,23 +3123,24 @@ class _PaymentState extends State<Payment> {
                                                         child: Container(
                                                             decoration:
                                                                 BoxDecoration(
-                                                              color: Colors.red,
+                                                              color:
+                                                                  Colors.green,
                                                               borderRadius:
                                                                   const BorderRadius
                                                                       .only(
                                                                 topLeft: Radius
                                                                     .circular(
-                                                                        10),
+                                                                        8),
                                                                 topRight: Radius
                                                                     .circular(
-                                                                        10),
+                                                                        0),
                                                                 bottomLeft: Radius
                                                                     .circular(
-                                                                        10),
+                                                                        8),
                                                                 bottomRight:
                                                                     Radius
                                                                         .circular(
-                                                                            10),
+                                                                            0),
                                                               ),
                                                               // border: Border.all(
                                                               //     color: Colors.grey, width: 1),
@@ -3039,7 +3150,7 @@ class _PaymentState extends State<Payment> {
                                                                     .all(1.0),
                                                             child: Translate
                                                                 .TranslateAndSetText(
-                                                                    'แก้ไข',
+                                                                    'ดูข้อมูล',
                                                                     SettingScreen_Color
                                                                         .Colors_Text2_,
                                                                     TextAlign
@@ -3142,7 +3253,8 @@ class _PaymentState extends State<Payment> {
                                                                               BorderRadius.all(Radius.circular(20.0))),
                                                                       title: Center(
                                                                           child: Translate.TranslateAndSetText(
-                                                                              'แก้ไขการชำระ',
+                                                                              'รายละเอียด',
+                                                                              // 'แก้ไขการชำระ',
                                                                               SettingScreen_Color.Colors_Text2_,
                                                                               TextAlign.left,
                                                                               FontWeight.bold,
@@ -3178,7 +3290,10 @@ class _PaymentState extends State<Payment> {
                                                                                   ? SizedBox()
                                                                                   : Container(
                                                                                       height: 150,
-                                                                                      child: Image.network('${MyConstant().domain}/files/$foder/payment/$payment_IMG'),
+                                                                                      child: Image.network(
+                                                                                        '$payment_IMG',
+                                                                                        // '${MyConstant().domain}/files/$foder/payment/$payment_IMG'
+                                                                                      ),
                                                                                     ),
                                                                               Align(
                                                                                 alignment: Alignment.centerLeft,
@@ -3189,6 +3304,7 @@ class _PaymentState extends State<Payment> {
                                                                                 child: SizedBox(
                                                                                   // width: 200,
                                                                                   child: TextFormField(
+                                                                                    readOnly: true,
                                                                                     keyboardType: TextInputType.number,
                                                                                     controller: bname_bank,
 
@@ -3247,80 +3363,132 @@ class _PaymentState extends State<Payment> {
                                                                                 padding: const EdgeInsets.all(8.0),
                                                                                 child: SizedBox(
                                                                                   // width: 200,
-                                                                                  child: DropdownButtonFormField2(
+                                                                                  child: TextFormField(
+                                                                                    keyboardType: TextInputType.number,
+                                                                                    // controller: bno_bank,
+                                                                                    initialValue: payMentModels[index].bank == null ? 'เลือก' : '${payMentModels[index].bank}',
+                                                                                    readOnly: true,
+
+                                                                                    // maxLength: 13,
+                                                                                    cursorColor: Colors.green,
                                                                                     decoration: InputDecoration(
-                                                                                      //Add isDense true and zero Padding.
-                                                                                      //Add Horizontal padding using buttonPadding and Vertical padding by increasing buttonHeight instead of add Padding here so that The whole TextField Button become clickable, and also the dropdown menu open under The whole TextField Button.
-                                                                                      isDense: true,
-                                                                                      contentPadding: EdgeInsets.zero,
-                                                                                      border: OutlineInputBorder(
-                                                                                        borderRadius: BorderRadius.circular(15),
-                                                                                      ),
-                                                                                      //Add more decoration as you want here
-                                                                                      //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
-                                                                                    ),
-                                                                                    isExpanded: true,
-                                                                                    // disabledHint: Icon(Icons.time_to_leave, color: Colors.black),
-                                                                                    hint: (payMentModels[index].bank == null)
-                                                                                        ? Translate.TranslateAndSetText('เลือก', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)
-                                                                                        : Text(
-                                                                                            payMentModels[index].bank == null ? 'เลือก' : '${payMentModels[index].bank}',
-                                                                                            style: const TextStyle(
-                                                                                                fontSize: 14,
-                                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                // fontWeight: FontWeight.bold,
-                                                                                                fontFamily: Font_.Fonts_T),
+                                                                                        fillColor: Colors.white.withOpacity(0.3),
+                                                                                        filled: true,
+                                                                                        // prefixIcon:
+                                                                                        //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                                        // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                                        focusedBorder: const OutlineInputBorder(
+                                                                                          borderRadius: BorderRadius.only(
+                                                                                            topRight: Radius.circular(15),
+                                                                                            topLeft: Radius.circular(15),
+                                                                                            bottomRight: Radius.circular(15),
+                                                                                            bottomLeft: Radius.circular(15),
                                                                                           ),
-                                                                                    icon: const Icon(
-                                                                                      Icons.arrow_drop_down,
-                                                                                      color: Colors.black45,
-                                                                                    ),
-                                                                                    iconSize: 25,
-                                                                                    buttonHeight: 42,
-                                                                                    buttonPadding: const EdgeInsets.only(left: 10, right: 10),
-                                                                                    dropdownDecoration: BoxDecoration(
-                                                                                      borderRadius: BorderRadius.circular(15),
-                                                                                    ),
-                                                                                    items: getBankModels
-                                                                                        .where((item) => item.st.toString() == '1')
-                                                                                        .map((item) => DropdownMenuItem<String>(
-                                                                                              value: '${item.ser}:${item.bname}',
-                                                                                              child: Row(
-                                                                                                children: [
-                                                                                                  CircleAvatar(
-                                                                                                    radius: 15.0,
-                                                                                                    backgroundImage: AssetImage('images/LogoBank/${item.bcode}.png'),
-                                                                                                    backgroundColor: Colors.transparent,
-                                                                                                  ),
-                                                                                                  Expanded(
-                                                                                                    child: Text(
-                                                                                                      '  ${item.bname}',
-                                                                                                      textAlign: TextAlign.start,
-                                                                                                      style: const TextStyle(
-                                                                                                          fontSize: 14,
-                                                                                                          color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                          // fontWeight: FontWeight.bold,
-                                                                                                          fontFamily: Font_.Fonts_T),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ],
-                                                                                              ),
-                                                                                            ))
-                                                                                        .toList(),
-                                                                                    onChanged: (value) async {
-                                                                                      // Do something when changing the item if you want.
-
-                                                                                      var zones = value!.indexOf(':');
-                                                                                      var rtnameSer = value.substring(0, zones);
-                                                                                      var rtnameName = value.substring(zones + 1);
-                                                                                      // print('mmmmm ${rtnameSer.toString()} $rtnameName');
-
-                                                                                      setState(() {
-                                                                                        ser_bank = rtnameSer;
-                                                                                        name_bank = rtnameName;
-                                                                                      });
-                                                                                    },
+                                                                                          borderSide: BorderSide(
+                                                                                            width: 1,
+                                                                                            color: Colors.black,
+                                                                                          ),
+                                                                                        ),
+                                                                                        enabledBorder: const OutlineInputBorder(
+                                                                                          borderRadius: BorderRadius.only(
+                                                                                            topRight: Radius.circular(15),
+                                                                                            topLeft: Radius.circular(15),
+                                                                                            bottomRight: Radius.circular(15),
+                                                                                            bottomLeft: Radius.circular(15),
+                                                                                          ),
+                                                                                          borderSide: BorderSide(
+                                                                                            width: 1,
+                                                                                            color: Colors.grey,
+                                                                                          ),
+                                                                                        ),
+                                                                                        labelText: '',
+                                                                                        labelStyle: const TextStyle(
+                                                                                          color: Colors.black54,
+                                                                                          fontFamily: FontWeight_.Fonts_T,
+                                                                                        )),
+                                                                                    // inputFormatters: <TextInputFormatter>[
+                                                                                    //   // for below version 2 use this
+                                                                                    //   // FilteringTextInputFormatter.allow(
+                                                                                    //   //     RegExp(r'[0-9]')),
+                                                                                    //   // for version 2 and greater youcan also use this
+                                                                                    //   FilteringTextInputFormatter.digitsOnly
+                                                                                    // ],
                                                                                   ),
+
+                                                                                  // DropdownButtonFormField2(
+                                                                                  //   decoration: InputDecoration(
+                                                                                  //     //Add isDense true and zero Padding.
+                                                                                  //     //Add Horizontal padding using buttonPadding and Vertical padding by increasing buttonHeight instead of add Padding here so that The whole TextField Button become clickable, and also the dropdown menu open under The whole TextField Button.
+                                                                                  //     isDense: true,
+                                                                                  //     contentPadding: EdgeInsets.zero,
+                                                                                  //     border: OutlineInputBorder(
+                                                                                  //       borderRadius: BorderRadius.circular(15),
+                                                                                  //     ),
+                                                                                  //     //Add more decoration as you want here
+                                                                                  //     //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
+                                                                                  //   ),
+                                                                                  //   isExpanded: true,
+                                                                                  //   // disabledHint: Icon(Icons.time_to_leave, color: Colors.black),
+                                                                                  //   hint: (payMentModels[index].bank == null)
+                                                                                  //       ? Translate.TranslateAndSetText('เลือก', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)
+                                                                                  //       : Text(
+                                                                                  //           payMentModels[index].bank == null ? 'เลือก' : '${payMentModels[index].bank}',
+                                                                                  //           style: const TextStyle(
+                                                                                  //               fontSize: 14,
+                                                                                  //               color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //               // fontWeight: FontWeight.bold,
+                                                                                  //               fontFamily: Font_.Fonts_T),
+                                                                                  //         ),
+                                                                                  //   icon: const Icon(
+                                                                                  //     Icons.arrow_drop_down,
+                                                                                  //     color: Colors.black45,
+                                                                                  //   ),
+                                                                                  //   iconSize: 25,
+                                                                                  //   buttonHeight: 42,
+                                                                                  //   buttonPadding: const EdgeInsets.only(left: 10, right: 10),
+                                                                                  //   dropdownDecoration: BoxDecoration(
+                                                                                  //     borderRadius: BorderRadius.circular(15),
+                                                                                  //   ),
+                                                                                  //   items: getBankModels
+                                                                                  //       .where((item) => item.st.toString() == '1')
+                                                                                  //       .map((item) => DropdownMenuItem<String>(
+                                                                                  //             value: '${item.ser}:${item.bname}',
+                                                                                  //             child: Row(
+                                                                                  //               children: [
+                                                                                  //                 CircleAvatar(
+                                                                                  //                   radius: 15.0,
+                                                                                  //                   backgroundImage: AssetImage('images/LogoBank/${item.bcode}.png'),
+                                                                                  //                   backgroundColor: Colors.transparent,
+                                                                                  //                 ),
+                                                                                  //                 Expanded(
+                                                                                  //                   child: Text(
+                                                                                  //                     '  ${item.bname}',
+                                                                                  //                     textAlign: TextAlign.start,
+                                                                                  //                     style: const TextStyle(
+                                                                                  //                         fontSize: 14,
+                                                                                  //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //                         // fontWeight: FontWeight.bold,
+                                                                                  //                         fontFamily: Font_.Fonts_T),
+                                                                                  //                   ),
+                                                                                  //                 ),
+                                                                                  //               ],
+                                                                                  //             ),
+                                                                                  //           ))
+                                                                                  //       .toList(),
+                                                                                  //   onChanged: (value) async {
+                                                                                  //     // Do something when changing the item if you want.
+
+                                                                                  //     var zones = value!.indexOf(':');
+                                                                                  //     var rtnameSer = value.substring(0, zones);
+                                                                                  //     var rtnameName = value.substring(zones + 1);
+                                                                                  //     // print('mmmmm ${rtnameSer.toString()} $rtnameName');
+
+                                                                                  //     setState(() {
+                                                                                  //       ser_bank = rtnameSer;
+                                                                                  //       name_bank = rtnameName;
+                                                                                  //     });
+                                                                                  //   },
+                                                                                  // ),
                                                                                 ),
                                                                               ),
                                                                               Align(
@@ -3331,74 +3499,125 @@ class _PaymentState extends State<Payment> {
                                                                                 padding: const EdgeInsets.all(8.0),
                                                                                 child: SizedBox(
                                                                                   // width: 200,
-                                                                                  child: DropdownButtonFormField2(
+                                                                                  child: TextFormField(
+                                                                                    keyboardType: TextInputType.number,
+                                                                                    // controller: bno_bank,
+                                                                                    initialValue: payMentModels[index].btype == null ? 'เลือก' : '${payMentModels[index].btype}',
+                                                                                    readOnly: true,
+
+                                                                                    // maxLength: 13,
+                                                                                    cursorColor: Colors.green,
                                                                                     decoration: InputDecoration(
-                                                                                      //Add isDense true and zero Padding.
-                                                                                      //Add Horizontal padding using buttonPadding and Vertical padding by increasing buttonHeight instead of add Padding here so that The whole TextField Button become clickable, and also the dropdown menu open under The whole TextField Button.
-                                                                                      isDense: true,
-                                                                                      contentPadding: EdgeInsets.zero,
-                                                                                      border: OutlineInputBorder(
-                                                                                        borderRadius: BorderRadius.circular(15),
-                                                                                      ),
-                                                                                      //Add more decoration as you want here
-                                                                                      //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
-                                                                                    ),
-                                                                                    isExpanded: true,
-                                                                                    // disabledHint: Icon(Icons.time_to_leave, color: Colors.black),
-                                                                                    hint: (payMentModels[index].btype == null)
-                                                                                        ? Translate.TranslateAndSetText('เลือก', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)
-                                                                                        : Text(
-                                                                                            payMentModels[index].btype == null ? 'เลือก' : '${payMentModels[index].btype}',
-                                                                                            style: const TextStyle(
-                                                                                                fontSize: 14,
-                                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                // fontWeight: FontWeight.bold,
-                                                                                                fontFamily: Font_.Fonts_T),
+                                                                                        fillColor: Colors.white.withOpacity(0.3),
+                                                                                        filled: true,
+                                                                                        // prefixIcon:
+                                                                                        //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                                        // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                                        focusedBorder: const OutlineInputBorder(
+                                                                                          borderRadius: BorderRadius.only(
+                                                                                            topRight: Radius.circular(15),
+                                                                                            topLeft: Radius.circular(15),
+                                                                                            bottomRight: Radius.circular(15),
+                                                                                            bottomLeft: Radius.circular(15),
                                                                                           ),
-                                                                                    icon: const Icon(
-                                                                                      Icons.arrow_drop_down,
-                                                                                      color: Colors.black45,
-                                                                                    ),
-                                                                                    iconSize: 25,
-                                                                                    buttonHeight: 42,
-                                                                                    buttonPadding: const EdgeInsets.only(left: 10, right: 10),
-                                                                                    dropdownDecoration: BoxDecoration(
-                                                                                      borderRadius: BorderRadius.circular(15),
-                                                                                    ),
-                                                                                    items: banktypeModels
-                                                                                        .map((item) => DropdownMenuItem<String>(
-                                                                                              value: '${item.ser}:${item.btype}',
-                                                                                              child: Row(
-                                                                                                children: [
-                                                                                                  Expanded(
-                                                                                                    child: Text(
-                                                                                                      '${item.btype}',
-                                                                                                      textAlign: TextAlign.start,
-                                                                                                      style: const TextStyle(
-                                                                                                          fontSize: 14,
-                                                                                                          color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                          // fontWeight: FontWeight.bold,
-                                                                                                          fontFamily: Font_.Fonts_T),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ],
-                                                                                              ),
-                                                                                            ))
-                                                                                        .toList(),
-                                                                                    onChanged: (value) async {
-                                                                                      // Do something when changing the item if you want.
-
-                                                                                      var zones = value!.indexOf(':');
-                                                                                      var rtnameSer = value.substring(0, zones);
-                                                                                      var rtnameName = value.substring(zones + 1);
-                                                                                      // print('mmmmm ${rtnameSer.toString()} $rtnameName');
-
-                                                                                      setState(() {
-                                                                                        ser_bank_type = rtnameSer;
-                                                                                        name_bank_type = rtnameName;
-                                                                                      });
-                                                                                    },
+                                                                                          borderSide: BorderSide(
+                                                                                            width: 1,
+                                                                                            color: Colors.black,
+                                                                                          ),
+                                                                                        ),
+                                                                                        enabledBorder: const OutlineInputBorder(
+                                                                                          borderRadius: BorderRadius.only(
+                                                                                            topRight: Radius.circular(15),
+                                                                                            topLeft: Radius.circular(15),
+                                                                                            bottomRight: Radius.circular(15),
+                                                                                            bottomLeft: Radius.circular(15),
+                                                                                          ),
+                                                                                          borderSide: BorderSide(
+                                                                                            width: 1,
+                                                                                            color: Colors.grey,
+                                                                                          ),
+                                                                                        ),
+                                                                                        labelText: '',
+                                                                                        labelStyle: const TextStyle(
+                                                                                          color: Colors.black54,
+                                                                                          fontFamily: FontWeight_.Fonts_T,
+                                                                                        )),
+                                                                                    // inputFormatters: <TextInputFormatter>[
+                                                                                    //   // for below version 2 use this
+                                                                                    //   // FilteringTextInputFormatter.allow(
+                                                                                    //   //     RegExp(r'[0-9]')),
+                                                                                    //   // for version 2 and greater youcan also use this
+                                                                                    //   FilteringTextInputFormatter.digitsOnly
+                                                                                    // ],
                                                                                   ),
+                                                                                  // child: DropdownButtonFormField2(
+                                                                                  //   decoration: InputDecoration(
+                                                                                  //     //Add isDense true and zero Padding.
+                                                                                  //     //Add Horizontal padding using buttonPadding and Vertical padding by increasing buttonHeight instead of add Padding here so that The whole TextField Button become clickable, and also the dropdown menu open under The whole TextField Button.
+                                                                                  //     isDense: true,
+                                                                                  //     contentPadding: EdgeInsets.zero,
+                                                                                  //     border: OutlineInputBorder(
+                                                                                  //       borderRadius: BorderRadius.circular(15),
+                                                                                  //     ),
+                                                                                  //     //Add more decoration as you want here
+                                                                                  //     //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
+                                                                                  //   ),
+                                                                                  //   isExpanded: true,
+                                                                                  //   // disabledHint: Icon(Icons.time_to_leave, color: Colors.black),
+                                                                                  //   hint: (payMentModels[index].btype == null)
+                                                                                  //       ? Translate.TranslateAndSetText('เลือก', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)
+                                                                                  //       : Text(
+                                                                                  //           payMentModels[index].btype == null ? 'เลือก' : '${payMentModels[index].btype}',
+                                                                                  //           style: const TextStyle(
+                                                                                  //               fontSize: 14,
+                                                                                  //               color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //               // fontWeight: FontWeight.bold,
+                                                                                  //               fontFamily: Font_.Fonts_T),
+                                                                                  //         ),
+                                                                                  //   icon: const Icon(
+                                                                                  //     Icons.arrow_drop_down,
+                                                                                  //     color: Colors.black45,
+                                                                                  //   ),
+                                                                                  //   iconSize: 25,
+                                                                                  //   buttonHeight: 42,
+                                                                                  //   buttonPadding: const EdgeInsets.only(left: 10, right: 10),
+                                                                                  //   dropdownDecoration: BoxDecoration(
+                                                                                  //     borderRadius: BorderRadius.circular(15),
+                                                                                  //   ),
+                                                                                  //   items: banktypeModels
+                                                                                  //       .map((item) => DropdownMenuItem<String>(
+                                                                                  //             value: '${item.ser}:${item.btype}',
+                                                                                  //             child: Row(
+                                                                                  //               children: [
+                                                                                  //                 Expanded(
+                                                                                  //                   child: Text(
+                                                                                  //                     '${item.btype}',
+                                                                                  //                     textAlign: TextAlign.start,
+                                                                                  //                     style: const TextStyle(
+                                                                                  //                         fontSize: 14,
+                                                                                  //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //                         // fontWeight: FontWeight.bold,
+                                                                                  //                         fontFamily: Font_.Fonts_T),
+                                                                                  //                   ),
+                                                                                  //                 ),
+                                                                                  //               ],
+                                                                                  //             ),
+                                                                                  //           ))
+                                                                                  //       .toList(),
+                                                                                  //   onChanged: (value) async {
+                                                                                  //     // Do something when changing the item if you want.
+
+                                                                                  //     var zones = value!.indexOf(':');
+                                                                                  //     var rtnameSer = value.substring(0, zones);
+                                                                                  //     var rtnameName = value.substring(zones + 1);
+                                                                                  //     // print('mmmmm ${rtnameSer.toString()} $rtnameName');
+
+                                                                                  //     setState(() {
+                                                                                  //       ser_bank_type = rtnameSer;
+                                                                                  //       name_bank_type = rtnameName;
+                                                                                  //     });
+                                                                                  //   },
+                                                                                  // ),
                                                                                 ),
                                                                               ),
                                                                               Align(
@@ -3410,110 +3629,163 @@ class _PaymentState extends State<Payment> {
                                                                                 child: SizedBox(
                                                                                   // width: 200,
 
-                                                                                  child: DropdownButtonFormField2(
+                                                                                  child: TextFormField(
+                                                                                    keyboardType: TextInputType.number,
+                                                                                    // controller: bno_bank,
+                                                                                    initialValue: payMentModels[index].ptname == null ? 'เลือก' : '${payMentModels[index].ptname}',
+                                                                                    readOnly: true,
+
+                                                                                    // maxLength: 13,
+                                                                                    cursorColor: Colors.green,
                                                                                     decoration: InputDecoration(
-                                                                                      //Add isDense true and zero Padding.
-                                                                                      //Add Horizontal padding using buttonPadding and Vertical padding by increasing buttonHeight instead of add Padding here so that The whole TextField Button become clickable, and also the dropdown menu open under The whole TextField Button.
-                                                                                      isDense: true,
-                                                                                      contentPadding: EdgeInsets.zero,
-                                                                                      border: OutlineInputBorder(
-                                                                                        borderRadius: BorderRadius.circular(15),
-                                                                                      ),
-                                                                                      //Add more decoration as you want here
-                                                                                      //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
-                                                                                    ),
-                                                                                    isExpanded: true,
-                                                                                    // disabledHint: Icon(Icons.time_to_leave, color: Colors.black),
-                                                                                    hint: (payMentModels[index].ptname == null)
-                                                                                        ? Translate.TranslateAndSetText('เลือก', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)
-                                                                                        : Text(
-                                                                                            payMentModels[index].ptname == null ? 'เลือก' : '${payMentModels[index].ptname}',
-                                                                                            style: const TextStyle(
-                                                                                                fontSize: 14,
-                                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                // fontWeight: FontWeight.bold,
-                                                                                                fontFamily: Font_.Fonts_T),
+                                                                                        fillColor: Colors.white.withOpacity(0.3),
+                                                                                        filled: true,
+                                                                                        // prefixIcon:
+                                                                                        //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                                        // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                                        focusedBorder: const OutlineInputBorder(
+                                                                                          borderRadius: BorderRadius.only(
+                                                                                            topRight: Radius.circular(15),
+                                                                                            topLeft: Radius.circular(15),
+                                                                                            bottomRight: Radius.circular(15),
+                                                                                            bottomLeft: Radius.circular(15),
                                                                                           ),
-                                                                                    icon: const Icon(
-                                                                                      Icons.arrow_drop_down,
-                                                                                      color: Colors.black45,
-                                                                                    ),
-                                                                                    iconSize: 25,
-                                                                                    buttonHeight: 42,
-                                                                                    buttonPadding: const EdgeInsets.only(left: 10, right: 10),
-                                                                                    dropdownDecoration: BoxDecoration(
-                                                                                      borderRadius: BorderRadius.circular(15),
-                                                                                    ),
-                                                                                    items: payTypeModels
-                                                                                        .map((item) => DropdownMenuItem<String>(
-                                                                                              value: '${item.ser}:${item.ptname}',
-                                                                                              child: Row(
-                                                                                                children: [
-                                                                                                  Expanded(
-                                                                                                    child: Text(
-                                                                                                      (item.ser.toString() == '2')
-                                                                                                          ? '${item.ptname} ( แบบแนบรูป QR เอง )'
-                                                                                                          : (item.ser.toString() == '5')
-                                                                                                              ? '${item.ptname} ( ระบบ Gen PromptPay QR ให้ )'
-                                                                                                              : (item.ser.toString() == '6')
-                                                                                                                  ? '${item.ptname} ( ระบบ Gen Standard QR [ref.1 , ref.2] ให้ )'
-                                                                                                                  : '${item.ptname}',
-                                                                                                      textAlign: TextAlign.start,
-                                                                                                      style: const TextStyle(
-                                                                                                          fontSize: 14,
-                                                                                                          color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                          // fontWeight: FontWeight.bold,
-                                                                                                          fontFamily: Font_.Fonts_T),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ],
-                                                                                              ),
-                                                                                            ))
-                                                                                        .toList(),
-                                                                                    onChanged: (value) async {
-                                                                                      // Do something when changing the item if you want.
-
-                                                                                      var zones = value!.indexOf(':');
-                                                                                      var rtnameSer = value.substring(0, zones);
-                                                                                      var rtnameName = value.substring(zones + 1);
-                                                                                      // print('mmmmm ${rtnameSer.toString()} $rtnameName');
-
-                                                                                      setState(() {
-                                                                                        ser_typepay = rtnameSer;
-                                                                                        name_typepay = rtnameName;
-                                                                                      });
-                                                                                    },
+                                                                                          borderSide: BorderSide(
+                                                                                            width: 1,
+                                                                                            color: Colors.black,
+                                                                                          ),
+                                                                                        ),
+                                                                                        enabledBorder: const OutlineInputBorder(
+                                                                                          borderRadius: BorderRadius.only(
+                                                                                            topRight: Radius.circular(15),
+                                                                                            topLeft: Radius.circular(15),
+                                                                                            bottomRight: Radius.circular(15),
+                                                                                            bottomLeft: Radius.circular(15),
+                                                                                          ),
+                                                                                          borderSide: BorderSide(
+                                                                                            width: 1,
+                                                                                            color: Colors.grey,
+                                                                                          ),
+                                                                                        ),
+                                                                                        labelText: '',
+                                                                                        labelStyle: const TextStyle(
+                                                                                          color: Colors.black54,
+                                                                                          fontFamily: FontWeight_.Fonts_T,
+                                                                                        )),
+                                                                                    // inputFormatters: <TextInputFormatter>[
+                                                                                    //   // for below version 2 use this
+                                                                                    //   // FilteringTextInputFormatter.allow(
+                                                                                    //   //     RegExp(r'[0-9]')),
+                                                                                    //   // for version 2 and greater youcan also use this
+                                                                                    //   FilteringTextInputFormatter.digitsOnly
+                                                                                    // ],
                                                                                   ),
+
+                                                                                  // DropdownButtonFormField2(
+                                                                                  //   decoration: InputDecoration(
+                                                                                  //     //Add isDense true and zero Padding.
+                                                                                  //     //Add Horizontal padding using buttonPadding and Vertical padding by increasing buttonHeight instead of add Padding here so that The whole TextField Button become clickable, and also the dropdown menu open under The whole TextField Button.
+                                                                                  //     isDense: true,
+                                                                                  //     contentPadding: EdgeInsets.zero,
+                                                                                  //     border: OutlineInputBorder(
+                                                                                  //       borderRadius: BorderRadius.circular(15),
+                                                                                  //     ),
+                                                                                  //     //Add more decoration as you want here
+                                                                                  //     //Add label If you want but add hint outside the decoration to be aligned in the button perfectly.
+                                                                                  //   ),
+                                                                                  //   isExpanded: true,
+                                                                                  //   // disabledHint: Icon(Icons.time_to_leave, color: Colors.black),
+                                                                                  //   hint:
+                                                                                  //(payMentModels[index].ptname == null)
+                                                                                  //       ? Translate.TranslateAndSetText('เลือก', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)
+                                                                                  //       : Text(
+                                                                                  //           payMentModels[index].ptname == null ? 'เลือก' : '${payMentModels[index].ptname}',
+                                                                                  //           style: const TextStyle(
+                                                                                  //               fontSize: 14,
+                                                                                  //               color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //               // fontWeight: FontWeight.bold,
+                                                                                  //               fontFamily: Font_.Fonts_T),
+                                                                                  //         ),
+                                                                                  //   icon: const Icon(
+                                                                                  //     Icons.arrow_drop_down,
+                                                                                  //     color: Colors.black45,
+                                                                                  //   ),
+                                                                                  //   iconSize: 25,
+                                                                                  //   buttonHeight: 42,
+                                                                                  //   buttonPadding: const EdgeInsets.only(left: 10, right: 10),
+                                                                                  //   dropdownDecoration: BoxDecoration(
+                                                                                  //     borderRadius: BorderRadius.circular(15),
+                                                                                  //   ),
+                                                                                  //   items: payTypeModels
+                                                                                  //       .map((item) => DropdownMenuItem<String>(
+                                                                                  //             value: '${item.ser}:${item.ptname}',
+                                                                                  //             child: Row(
+                                                                                  //               children: [
+                                                                                  //                 Expanded(
+                                                                                  //                   child: Text(
+                                                                                  //                     (item.ser.toString() == '2')
+                                                                                  //                         ? '${item.ptname} ( แบบแนบรูป QR เอง )'
+                                                                                  //                         : (item.ser.toString() == '5')
+                                                                                  //                             ? '${item.ptname} ( ระบบ Gen PromptPay QR ให้ )'
+                                                                                  //                             : (item.ser.toString() == '6')
+                                                                                  //                                 ? '${item.ptname} ( ระบบ Gen Standard QR [ref.1 , ref.2] ให้ )'
+                                                                                  //                                 : '${item.ptname}',
+                                                                                  //                     textAlign: TextAlign.start,
+                                                                                  //                     style: const TextStyle(
+                                                                                  //                         fontSize: 14,
+                                                                                  //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //                         // fontWeight: FontWeight.bold,
+                                                                                  //                         fontFamily: Font_.Fonts_T),
+                                                                                  //                   ),
+                                                                                  //                 ),
+                                                                                  //               ],
+                                                                                  //             ),
+                                                                                  //           ))
+                                                                                  //       .toList(),
+                                                                                  //   onChanged: (value) async {
+                                                                                  //     // Do something when changing the item if you want.
+
+                                                                                  //     var zones = value!.indexOf(':');
+                                                                                  //     var rtnameSer = value.substring(0, zones);
+                                                                                  //     var rtnameName = value.substring(zones + 1);
+                                                                                  //     // print('mmmmm ${rtnameSer.toString()} $rtnameName');
+
+                                                                                  //     setState(() {
+                                                                                  //       ser_typepay = rtnameSer;
+                                                                                  //       name_typepay = rtnameName;
+                                                                                  //     });
+                                                                                  //   },
+                                                                                  // ),
                                                                                 ),
                                                                               ),
-                                                                              if (name_typepay.toString().trim() == 'เงินโอน')
-                                                                                Row(
-                                                                                  children: [
-                                                                                    Padding(padding: EdgeInsets.all(8.0), child: Translate.TranslateAndSetText('แบบรูป QR', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)),
-                                                                                  ],
-                                                                                ),
-                                                                              if (name_typepay.toString().trim() == 'เงินโอน')
-                                                                                Padding(
-                                                                                  padding: const EdgeInsets.all(8.0),
-                                                                                  child: Container(
-                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                    child: Row(
-                                                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                                                      children: [
-                                                                                        IconButton(
-                                                                                            onPressed: () {
-                                                                                              uploadFile_Slip();
-                                                                                            },
-                                                                                            icon: Icon(Icons.upload_file, color: Colors.blue)),
-                                                                                        if (base64_Slip != null || payment_IMG != null || payment_IMG.toString() != '')
-                                                                                          Padding(
-                                                                                            padding: const EdgeInsets.all(8.0),
-                                                                                            child: Icon(Icons.check, color: Colors.green),
-                                                                                          )
-                                                                                      ],
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
+                                                                              // if (name_typepay.toString().trim() == 'เงินโอน')
+                                                                              //   Row(
+                                                                              //     children: [
+                                                                              //       Padding(padding: EdgeInsets.all(8.0), child: Translate.TranslateAndSetText('แบบรูป QR', SettingScreen_Color.Colors_Text2_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)),
+                                                                              //     ],
+                                                                              //   ),
+                                                                              // if (name_typepay.toString().trim() == 'เงินโอน')
+                                                                              //   Padding(
+                                                                              //     padding: const EdgeInsets.all(8.0),
+                                                                              //     child: Container(
+                                                                              //       padding: const EdgeInsets.all(8.0),
+                                                                              //       child: Row(
+                                                                              //         mainAxisAlignment: MainAxisAlignment.center,
+                                                                              //         children: [
+                                                                              //           IconButton(
+                                                                              //               onPressed: () {
+                                                                              //                 uploadFile_Slip();
+                                                                              //               },
+                                                                              //               icon: Icon(Icons.upload_file, color: Colors.blue)),
+                                                                              //           if (base64_Slip != null || payment_IMG != null || payment_IMG.toString() != '')
+                                                                              //             Padding(
+                                                                              //               padding: const EdgeInsets.all(8.0),
+                                                                              //               child: Icon(Icons.check, color: Colors.green),
+                                                                              //             )
+                                                                              //         ],
+                                                                              //       ),
+                                                                              //     ),
+                                                                              //   ),
                                                                               if (name_typepay.toString().trim() != 'QR IMAGE')
                                                                                 Align(
                                                                                   alignment: Alignment.centerLeft,
@@ -3526,7 +3798,7 @@ class _PaymentState extends State<Payment> {
                                                                                     // width: 200,
                                                                                     child: TextFormField(
                                                                                       keyboardType: TextInputType.number,
-                                                                                      controller: bno_bank,
+                                                                                      controller: bno_bank, readOnly: true,
 
                                                                                       // maxLength: 13,
                                                                                       cursorColor: Colors.green,
@@ -3586,6 +3858,7 @@ class _PaymentState extends State<Payment> {
                                                                                   child: SizedBox(
                                                                                     // width: 200,
                                                                                     child: TextFormField(
+                                                                                      readOnly: true,
                                                                                       keyboardType: TextInputType.number,
                                                                                       controller: bsaka_bank,
 
@@ -3687,6 +3960,7 @@ class _PaymentState extends State<Payment> {
                                                                                         child: SizedBox(
                                                                                           // width: 200,
                                                                                           child: TextFormField(
+                                                                                            readOnly: true,
                                                                                             keyboardType: TextInputType.number,
                                                                                             controller: fine_bc,
                                                                                             onChanged: (velue) {
@@ -3750,6 +4024,7 @@ class _PaymentState extends State<Payment> {
                                                                                         child: SizedBox(
                                                                                           // width: 200,
                                                                                           child: TextFormField(
+                                                                                            readOnly: true,
                                                                                             keyboardType: TextInputType.number,
                                                                                             controller: fine_ba,
                                                                                             onChanged: (velue) {
@@ -3908,133 +4183,146 @@ class _PaymentState extends State<Payment> {
                                                                                         child: Row(
                                                                                           mainAxisAlignment: MainAxisAlignment.center,
                                                                                           children: [
-                                                                                            Padding(
-                                                                                              padding: const EdgeInsets.all(8.0),
-                                                                                              child: Container(
-                                                                                                width: 100,
-                                                                                                decoration: const BoxDecoration(
-                                                                                                  color: Colors.red,
-                                                                                                  borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                                                ),
-                                                                                                padding: const EdgeInsets.all(8.0),
-                                                                                                child: TextButton(
-                                                                                                    onPressed: () async {
-                                                                                                      SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                                                      String? ren = preferences.getString('renTalSer');
-                                                                                                      String? ser_user = preferences.getString('ser');
-                                                                                                      var ser_pay = payMentModels[index].ser;
-                                                                                                      String url = '${MyConstant().domain}/Dec_payment.php?isAdd=true&ren=$ren&ser_pay=$ser_pay&ser_user=$ser_user';
+                                                                                            (int.parse(payMentModels[index].ser.toString()) < 2)
+                                                                                                ? Container(
+                                                                                                    // width: 100,
+                                                                                                    // decoration: const BoxDecoration(
+                                                                                                    //   color: Colors.red,
+                                                                                                    //   borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                                    // ),
+                                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                                    child: Translate.TranslateAndSetText('#รายการนี้ไม่สามารถลบได้', Colors.orange, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2),
+                                                                                                  )
+                                                                                                : Padding(
+                                                                                                    padding: const EdgeInsets.all(8.0),
+                                                                                                    child: Container(
+                                                                                                      width: 100,
+                                                                                                      decoration: const BoxDecoration(
+                                                                                                        color: Colors.red,
+                                                                                                        borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                                      ),
+                                                                                                      padding: const EdgeInsets.all(8.0),
+                                                                                                      child: TextButton(
+                                                                                                          onPressed: () async {
+                                                                                                            SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                                            String? ren = preferences.getString('renTalSer');
+                                                                                                            String? ser_user = preferences.getString('ser');
+                                                                                                            var ser_pay = payMentModels[index].ser;
+                                                                                                            // getBankAccounts
 
-                                                                                                      try {
-                                                                                                        var response = await http.get(Uri.parse(url));
+                                                                                                            String url = '${MyConstant().domain}/Dec_payment.php?isAdd=true&ren=$ren&ser_pay=$ser_pay&ser_user=$ser_user';
 
-                                                                                                        var result = json.decode(response.body);
-                                                                                                        // print(result);
-                                                                                                        if (result.toString() == 'true') {
-                                                                                                          Insert_log.Insert_logs('ตั้งค่า', 'การรับชำระ>>ลบ(*${payMentModels[index].bname})');
-                                                                                                          deletedFile_(payment_IMG.toString());
-                                                                                                          setState(() {
-                                                                                                            bname_bank.clear();
-                                                                                                            bank_bank.clear();
-                                                                                                            bno_bank.clear();
-                                                                                                            bsaka_bank.clear();
-                                                                                                            btype_bank.clear();
-                                                                                                            ser_typepay = null;
-                                                                                                            name_typepay = null;
-                                                                                                            ser_bank = null;
-                                                                                                            name_bank = null;
-                                                                                                            ser_bank_type = null;
-                                                                                                            name_bank_type = null;
-                                                                                                            read_GC_PayMentModel();
-                                                                                                          });
-                                                                                                          Navigator.pop(context);
-                                                                                                        } else {}
-                                                                                                      } catch (e) {}
-                                                                                                    },
-                                                                                                    child: Translate.TranslateAndSetText('ลบ', SettingScreen_Color.Colors_Text3_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)),
-                                                                                              ),
-                                                                                            ),
+                                                                                                            try {
+                                                                                                              var response = await http.get(Uri.parse(url));
+
+                                                                                                              var result = json.decode(response.body);
+                                                                                                              // print(result);
+                                                                                                              if (result.toString() == 'true') {
+                                                                                                                await getBankAccounts(serpay: ser_pay.toString());
+                                                                                                                Insert_log.Insert_logs('ตั้งค่า', 'การรับชำระ>>ลบ(*${payMentModels[index].bname})');
+                                                                                                                deletedFile_(payment_IMG.toString());
+                                                                                                                setState(() {
+                                                                                                                  bname_bank.clear();
+                                                                                                                  bank_bank.clear();
+                                                                                                                  bno_bank.clear();
+                                                                                                                  bsaka_bank.clear();
+                                                                                                                  btype_bank.clear();
+                                                                                                                  ser_typepay = null;
+                                                                                                                  name_typepay = null;
+                                                                                                                  ser_bank = null;
+                                                                                                                  name_bank = null;
+                                                                                                                  ser_bank_type = null;
+                                                                                                                  name_bank_type = null;
+                                                                                                                  read_GC_PayMentModel();
+                                                                                                                });
+                                                                                                                Navigator.pop(context);
+                                                                                                              } else {}
+                                                                                                            } catch (e) {}
+                                                                                                          },
+                                                                                                          child: Translate.TranslateAndSetText('ลบ', SettingScreen_Color.Colors_Text3_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)),
+                                                                                                    ),
+                                                                                                  ),
                                                                                             Expanded(child: Container()),
-                                                                                            Padding(
-                                                                                              padding: const EdgeInsets.all(8.0),
-                                                                                              child: Container(
-                                                                                                width: 100,
-                                                                                                decoration: const BoxDecoration(
-                                                                                                  color: Colors.green,
-                                                                                                  borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                                                ),
-                                                                                                padding: const EdgeInsets.all(8.0),
-                                                                                                child: TextButton(
-                                                                                                    onPressed: () async {
-                                                                                                      // if (_formKey
-                                                                                                      //     .currentState!
-                                                                                                      //     .validate()) {
+                                                                                            // Padding(
+                                                                                            //   padding: const EdgeInsets.all(8.0),
+                                                                                            //   child: Container(
+                                                                                            //     width: 100,
+                                                                                            //     decoration: const BoxDecoration(
+                                                                                            //       color: Colors.green,
+                                                                                            //       borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                            //     ),
+                                                                                            //     padding: const EdgeInsets.all(8.0),
+                                                                                            //     child: TextButton(
+                                                                                            //         onPressed: () async {
+                                                                                            //           // if (_formKey
+                                                                                            //           //     .currentState!
+                                                                                            //           //     .validate()) {
 
-                                                                                                      //     }
+                                                                                            //           //     }
 
-                                                                                                      var name_name = bname_bank.text;
-                                                                                                      // var name_bank =
-                                                                                                      //     bank_bank.text;
-                                                                                                      var name_num = bno_bank.text;
-                                                                                                      var name_sub = bsaka_bank.text;
-                                                                                                      var name_btype = btype_bank.text;
-                                                                                                      var name_type = ser_typepay;
-                                                                                                      var name_tpname = name_typepay;
+                                                                                            //           var name_name = bname_bank.text;
+                                                                                            //           // var name_bank =
+                                                                                            //           //     bank_bank.text;
+                                                                                            //           var name_num = bno_bank.text;
+                                                                                            //           var name_sub = bsaka_bank.text;
+                                                                                            //           var name_btype = btype_bank.text;
+                                                                                            //           var name_type = ser_typepay;
+                                                                                            //           var name_tpname = name_typepay;
 
-                                                                                                      var ser_banks = ser_bank;
-                                                                                                      var name_banks = name_bank;
+                                                                                            //           var ser_banks = ser_bank;
+                                                                                            //           var name_banks = name_bank;
 
-                                                                                                      var ser_bank_types = ser_bank_type;
-                                                                                                      var name_bank_types = name_bank_type;
-                                                                                                      var fine_count_a = fine_count;
-                                                                                                      var fine_bca = fine_bc.text;
-                                                                                                      var fine_baa = fine_ba.text;
-                                                                                                      var fine_keya = fine_key.text;
-                                                                                                      // print('$name_name\n$name_num\n$name_sub\n$name_btype\n$name_type\n$name_tpname\n$ser_banks\n$name_banks\n$ser_bank_types\n$name_bank_types');
-                                                                                                      SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                                                      String? ren = preferences.getString('renTalSer');
-                                                                                                      String? ser_user = preferences.getString('ser');
-                                                                                                      var ser_pay = payMentModels[index].ser;
-                                                                                                      var fileName = (fileName_Slip == null || fileName_Slip.toString() == 'null') ? '' : fileName_Slip;
+                                                                                            //           var ser_bank_types = ser_bank_type;
+                                                                                            //           var name_bank_types = name_bank_type;
+                                                                                            //           var fine_count_a = fine_count;
+                                                                                            //           var fine_bca = fine_bc.text;
+                                                                                            //           var fine_baa = fine_ba.text;
+                                                                                            //           var fine_keya = fine_key.text;
+                                                                                            //           // print('$name_name\n$name_num\n$name_sub\n$name_btype\n$name_type\n$name_tpname\n$ser_banks\n$name_banks\n$ser_bank_types\n$name_bank_types');
+                                                                                            //           SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                            //           String? ren = preferences.getString('renTalSer');
+                                                                                            //           String? ser_user = preferences.getString('ser');
+                                                                                            //           var ser_pay = payMentModels[index].ser;
+                                                                                            //           var fileName = (fileName_Slip == null || fileName_Slip.toString() == 'null') ? '' : fileName_Slip;
 
-                                                                                                      OKuploadFile_Slip();
+                                                                                            //           OKuploadFile_Slip();
 
-                                                                                                      Future.delayed(const Duration(milliseconds: 200), () async {
-                                                                                                        String url = '${MyConstant().domain}/UpC_payment.php?isAdd=true&ren=$ren&ser_pay=$ser_pay&ser_user=$ser_user&name_name=$name_name&ser_banks=$ser_banks&name_banks=$name_banks&name_num=$name_num&name_sub=$name_sub&name_btype=$name_btype&name_tpname=$name_tpname&name_type=$name_type&ser_bank_types=$ser_bank_types&name_bank_types=$name_bank_types&imgbank=$fileName&fine_count=$fine_count_a&fine_ba=$fine_baa&fine_bc=$fine_bca&fine_key=$fine_keya';
+                                                                                            //           Future.delayed(const Duration(milliseconds: 200), () async {
+                                                                                            //             String url = '${MyConstant().domain}/UpC_payment.php?isAdd=true&ren=$ren&ser_pay=$ser_pay&ser_user=$ser_user&name_name=$name_name&ser_banks=$ser_banks&name_banks=$name_banks&name_num=$name_num&name_sub=$name_sub&name_btype=$name_btype&name_tpname=$name_tpname&name_type=$name_type&ser_bank_types=$ser_bank_types&name_bank_types=$name_bank_types&imgbank=$fileName&fine_count=$fine_count_a&fine_ba=$fine_baa&fine_bc=$fine_bca&fine_key=$fine_keya';
 
-                                                                                                        try {
-                                                                                                          var response = await http.get(Uri.parse(url));
+                                                                                            //             try {
+                                                                                            //               var response = await http.get(Uri.parse(url));
 
-                                                                                                          var result = json.decode(response.body);
-                                                                                                          // print(result);
-                                                                                                          if (result.toString() == 'true') {
-                                                                                                            Insert_log.Insert_logs('ตั้งค่า', 'การรับชำระ>>แก้ไข(*${payMentModels[index].bname})');
-                                                                                                            setState(() {
-                                                                                                              bname_bank.clear();
-                                                                                                              bank_bank.clear();
-                                                                                                              bno_bank.clear();
-                                                                                                              bsaka_bank.clear();
-                                                                                                              btype_bank.clear();
-                                                                                                              ser_typepay = null;
-                                                                                                              name_typepay = null;
-                                                                                                              ser_bank = null;
-                                                                                                              name_bank = null;
-                                                                                                              ser_bank_type = null;
-                                                                                                              name_bank_type = null;
-                                                                                                              fine_count == null;
-                                                                                                              fine_key.clear();
-                                                                                                              fine_ba.clear();
-                                                                                                              fine_bc.clear();
-                                                                                                              read_GC_PayMentModel();
-                                                                                                            });
-                                                                                                            Navigator.pop(context);
-                                                                                                          } else {}
-                                                                                                        } catch (e) {}
-                                                                                                      });
-                                                                                                    },
-                                                                                                    child: Translate.TranslateAndSetText('บันทึก', SettingScreen_Color.Colors_Text3_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)),
-                                                                                              ),
-                                                                                            ),
+                                                                                            //               var result = json.decode(response.body);
+                                                                                            //               // print(result);
+                                                                                            //               if (result.toString() == 'true') {
+                                                                                            //                 Insert_log.Insert_logs('ตั้งค่า', 'การรับชำระ>>แก้ไข(*${payMentModels[index].bname})');
+                                                                                            //                 setState(() {
+                                                                                            //                   bname_bank.clear();
+                                                                                            //                   bank_bank.clear();
+                                                                                            //                   bno_bank.clear();
+                                                                                            //                   bsaka_bank.clear();
+                                                                                            //                   btype_bank.clear();
+                                                                                            //                   ser_typepay = null;
+                                                                                            //                   name_typepay = null;
+                                                                                            //                   ser_bank = null;
+                                                                                            //                   name_bank = null;
+                                                                                            //                   ser_bank_type = null;
+                                                                                            //                   name_bank_type = null;
+                                                                                            //                   fine_count == null;
+                                                                                            //                   fine_key.clear();
+                                                                                            //                   fine_ba.clear();
+                                                                                            //                   fine_bc.clear();
+                                                                                            //                   read_GC_PayMentModel();
+                                                                                            //                 });
+                                                                                            //                 Navigator.pop(context);
+                                                                                            //               } else {}
+                                                                                            //             } catch (e) {}
+                                                                                            //           });
+                                                                                            //         },
+                                                                                            //         child: Translate.TranslateAndSetText('บันทึก', SettingScreen_Color.Colors_Text3_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 2)),
+                                                                                            //   ),
+                                                                                            // ),
                                                                                             Padding(
                                                                                               padding: const EdgeInsets.all(8.0),
                                                                                               child: Container(
@@ -4064,6 +4352,153 @@ class _PaymentState extends State<Payment> {
                                                       ),
                                                     ),
                                                   ),
+                                                  Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(0.0),
+                                                        child: InkWell(
+                                                            child: Container(
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  color: Colors
+                                                                      .red,
+                                                                  borderRadius:
+                                                                      const BorderRadius
+                                                                          .only(
+                                                                    topLeft: Radius
+                                                                        .circular(
+                                                                            0),
+                                                                    topRight: Radius
+                                                                        .circular(
+                                                                            8),
+                                                                    bottomLeft:
+                                                                        Radius.circular(
+                                                                            0),
+                                                                    bottomRight:
+                                                                        Radius.circular(
+                                                                            8),
+                                                                  ),
+                                                                  // border: Border.all(
+                                                                  //     color: Colors.grey, width: 1),
+                                                                ),
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        1.0),
+                                                                child: Translate.TranslateAndSetText(
+                                                                    'แก้ไขรูป',
+                                                                    SettingScreen_Color
+                                                                        .Colors_Text2_,
+                                                                    TextAlign
+                                                                        .center,
+                                                                    FontWeight
+                                                                        .bold,
+                                                                    FontWeight_
+                                                                        .Fonts_T,
+                                                                    14,
+                                                                    2)),
+                                                            onTap: () async {
+                                                              await uploadFile_Slip();
+                                                              await OKuploadFile_Slip();
+                                                              final fileName =
+                                                                  fileName_Slip;
+                                                              final payMent =
+                                                                  payMentModels[
+                                                                      index];
+
+                                                              // หา bcode จาก getBankModels ให้ปลอดภัย (กันกรณีหาไม่เจอ)
+                                                              String? bcode;
+                                                              try {
+                                                                bcode =
+                                                                    getBankModels
+                                                                        .firstWhere(
+                                                                          (e) =>
+                                                                              (e.bname ?? '').toString() ==
+                                                                              (payMent.bank ?? ''),
+                                                                        )
+                                                                        .bcode;
+                                                              } catch (_) {
+                                                                bcode = null;
+                                                              }
+
+                                                              // แปลงข้อมูลเป็น map ไว้ debug ดูใน console
+                                                              final data = {
+                                                                'code':
+                                                                    'BANK_TRANSFER',
+                                                                'bankName':
+                                                                    payMent.bank ??
+                                                                        "",
+                                                                'accountName':
+                                                                    payMent.bname ??
+                                                                        "",
+                                                                'accountNumber':
+                                                                    payMent.bno ??
+                                                                        "",
+                                                                'bser': payMent
+                                                                        .ser
+                                                                        ?.toString() ??
+                                                                    "",
+                                                                'bcode':
+                                                                    bcode ?? "",
+                                                                'imagePath':
+                                                                    fileName,
+                                                                'branch': payMent
+                                                                        .bsaka ??
+                                                                    "",
+                                                                'note': '',
+                                                              };
+
+                                                              final response =
+                                                                  await getBankAccounts(
+                                                                      serpay: payMent
+                                                                          .ser
+                                                                          .toString());
+
+                                                              // print(data);
+                                                              if (response!
+                                                                          .statusCode >=
+                                                                      200 &&
+                                                                  response.statusCode <
+                                                                      300) {
+                                                                await postBankAccounts(
+                                                                  code:
+                                                                      'BANK_TRANSFER',
+                                                                  bankName:
+                                                                      payMent.bank ??
+                                                                          "",
+                                                                  accountName:
+                                                                      payMent.bname ??
+                                                                          "",
+                                                                  accountNumber:
+                                                                      payMent.bno ??
+                                                                          "",
+                                                                  bser: payMent
+                                                                          .ser
+                                                                          ?.toString() ??
+                                                                      "",
+                                                                  bcode:
+                                                                      bcode ??
+                                                                          "",
+                                                                  imagePath:
+                                                                      fileName,
+                                                                  branch: payMent
+                                                                          .bsaka ??
+                                                                      "",
+                                                                  note:
+                                                                      'แก้ไขรูปภาพ',
+                                                                );
+                                                                Dialog_success(
+                                                                    context,
+                                                                    'สำเร็จ');
+                                                              } else {
+                                                                Dialog_error(
+                                                                    context,
+                                                                    'ดำเนินการไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+                                                              }
+                                                            }),
+                                                      ))
                                                 ],
                                               ),
                                             ),

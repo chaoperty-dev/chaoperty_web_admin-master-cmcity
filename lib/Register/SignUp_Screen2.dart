@@ -18,6 +18,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:side_sheet/side_sheet.dart';
 import 'package:tap_debouncer/tap_debouncer.dart';
 
+import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../Constant/Myconstant.dart';
 import '../Model/GetArea_Model.dart';
 import '../Model/GetC_Otp.dart';
@@ -88,7 +89,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('read_GC_rental///// $result');
+      // //print('read_GC_rental///// $result');
       for (var map in result) {
         OtpModel otpModel = OtpModel.fromJson(map);
         var ser_idx = otpModel.ser_id;
@@ -119,7 +120,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       Value_Email_ = preferences.getString('email'); //อีเมล
     });
 
-    print('Email>>>>>> $Value_Email_ $serUser');
+    // //print('Email>>>>>> $Value_Email_ $serUser');
   }
 
   final textFieldFocusNode = FocusNode();
@@ -161,17 +162,17 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
   //     if (value.toString() != 'null') {
   //       var result = json.decode(value.body);
   //       for (var item in result) {
-  //         //print(result);
+  //         ////print(result);
   //         MBSettingModel mBSettingModelss = MBSettingModel.fromJson(item);
   //         setState(() {
   //           mBSettingModels.add(mBSettingModelss);
   //         });
   //       }
 
-  //       //print('mBSettingModels');sss
-  //       //print('${mBSettingModels.length}');
+  //       ////print('mBSettingModels');sss
+  //       ////print('${mBSettingModels.length}');
   //     } else {
-  //       // print('no');
+  //       // //print('no');
   //     }
   //   });
 
@@ -778,7 +779,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                                             BoxDecoration(
                                                           color: Colors.black,
                                                           borderRadius: const BorderRadius
-                                                              .only(
+                                                                  .only(
                                                               topLeft: Radius
                                                                   .circular(10),
                                                               topRight: Radius
@@ -1032,14 +1033,14 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                             Random random = Random();
                             int c = random.nextInt(9000) + 1000;
 
-                            print('/////----- Data Step 1  ------- >');
-                            print(Form1_text.text); //ชื่อ
-                            print(Form2_text.text); //นามสกุล
-                            print(Form3_text.text); //เบอร์
-                            print(Form4_text.text); //อีเมล
-                            print(Form5_text.text); //รหัส
-                            print(Form6_text.text); //ยืนยันรหัส
-                            print(' ----------------------------->');
+                            //print('/////----- Data Step 1  ------- >');
+                            //print(Form1_text.text); //ชื่อ
+                            //print(Form2_text.text); //นามสกุล
+                            //print(Form3_text.text); //เบอร์
+                            //print(Form4_text.text); //อีเมล
+                            //print(Form5_text.text); //รหัส
+                            //print(Form6_text.text); //ยืนยันรหัส
+                            //print(' ----------------------------->');
                             setState(() {
                               Value_randomNumber = c.toString();
                               Value_SerName_ = Form1_text.text;
@@ -1179,7 +1180,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                     try {
                       var response = await http.get(Uri.parse(url));
                       var result = json.decode(response.body);
-                      print(result);
+                      //print(result);
                       if (result == true) {
                         setState(() {
                           activeStep++;
@@ -1226,7 +1227,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
           //     //   Value_randomNumber =
           //     //       Value_randomNumber + random.nextInt(9).toString();
           //     // }
-          //     print(Value_randomNumber);
+          //     //print(Value_randomNumber);
           //   },
           //   child: const Text('ส่งรหัสอีกครั้ง',
           //       maxLines: 3,
@@ -1255,7 +1256,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
               var response = await http.get(Uri.parse(url));
 
               var result = json.decode(response.body);
-              print(result.toString());
+              //print(result.toString());
 
               if (result.toString() == 'true') {
                 final response = await SendEmail(
@@ -1325,7 +1326,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
 
       if (result.toString() != 'Not data') {
         for (var map in result) {
@@ -1375,7 +1376,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result != null) {
         for (var map in result) {
           TypeXModel typeXModel = TypeXModel.fromJson(map);
@@ -1398,7 +1399,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result != null) {
         for (var map in result) {
           TypeModel typeModel = TypeModel.fromJson(map);
@@ -1421,7 +1422,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result != null) {
         for (var map in result) {
           RentalTypeModel rentalTypeModel = RentalTypeModel.fromJson(map);
@@ -1781,10 +1782,10 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                         Value_Rent_.toString() == '' ||
                         Value_Usage_.toString() == '') {
                     } else {
-                      print('//----------------- > DATA Stepper 2 ');
-                      print('ลักษณะพื้นที่เช่า : $Value_Area_');
-                      print('การคิดค่าเช่า :$Value_Rent_');
-                      print('การใช้งาน : $Value_Usage_');
+                      //print('//----------------- > DATA Stepper 2 ');
+                      //print('ลักษณะพื้นที่เช่า : $Value_Area_');
+                      //print('การคิดค่าเช่า :$Value_Rent_');
+                      //print('การใช้งาน : $Value_Usage_');
                       // if (activeStep <= upperBound) {
                       setState(() {
                         activeStep++;
@@ -2001,9 +2002,9 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                         await http.get(Uri.parse(url));
 
                                     var result = json.decode(response.body);
-                                    print(result);
+                                    //print(result);
                                     if (result.toString() != 'Not data') {
-                                       var name_db;
+                                      var name_db;
                                       var tr_ser;
                                       setState(() {
                                         Body3Form2_text.text = 'A';
@@ -2012,7 +2013,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                       for (var map in result) {
                                         RenTalModel userModel =
                                             RenTalModel.fromJson(map);
-                                             setState(() {
+                                        setState(() {
                                           name_db = userModel.dbn;
                                           tr_ser = userModel.rtser;
                                         });
@@ -2023,8 +2024,9 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                           Value_Zone_ = Body3Form2_text.text;
                                           Value_QTYROOM_ = Body3Form3_text.text;
                                         });
-                                      }          upZoneTable();
-                                         String url_rental_data =
+                                      }
+                                      upZoneTable();
+                                      String url_rental_data =
                                           '${MyConstant().domain}/In_rental_data.php?isAdd=true&name_db=$name_db&tr_ser=$tr_ser';
                                       try {
                                         var response_rental_data = await http
@@ -2032,9 +2034,8 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
 
                                         var result = json
                                             .decode(response_rental_data.body);
-                                        // print(result);
+                                        // //print(result);
                                       } catch (e) {}
-                            
                                     } else {
                                       ScaffoldMessenger.of(context)
                                           .showSnackBar(
@@ -2359,11 +2360,11 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                         });
                                         upZoneTable();
 
-                                        print('------------> (3.2 Stepper 3 )');
-                                        print('ชื่อสถานที่ : $Value_lacotion_');
-                                        print('โซนชั้น : $Value_Zone_');
-                                        print('จำนวนห้อง : $Value_QTYROOM_');
-                                        print('----------------------->');
+                                        //print('------------> (3.2 Stepper 3 )');
+                                        //print('ชื่อสถานที่ : $Value_lacotion_');
+                                        //print('โซนชั้น : $Value_Zone_');
+                                        //print('จำนวนห้อง : $Value_QTYROOM_');
+                                        //print('----------------------->');
                                       } else {}
                                     },
                                     child: Container(
@@ -2689,8 +2690,8 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                                       const EdgeInsets.all(8.0),
                                                   child: TextButton(
                                                     onPressed: () async {
-                                                      print(
-                                                          'ลบ (โซน : $Value_Zone_)');
+                                                      //print(
+                                                      //  'ลบ (โซน : $Value_Zone_)');
                                                       setState(() {
                                                         SerBody_Step3_ = 1;
                                                         Value_Zone_ = '';
@@ -2880,8 +2881,8 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                           });
                                           editDialog(index);
 
-                                          print(
-                                              'แก้ไข ${areaModels[index].ln}');
+                                          //print(
+                                          //   'แก้ไข ${areaModels[index].ln}');
                                         },
                                         child: (!Responsive.isDesktop(context))
                                             ? Icon(
@@ -2922,7 +2923,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                                       child: InkWell(
                                         onTap: () {
                                           deleteDialog(index);
-                                          print('ลบ ${index + 1}');
+                                          //print('ลบ ${index + 1}');
                                         },
                                         child: (!Responsive.isDesktop(context))
                                             ? Icon(
@@ -3178,7 +3179,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                         Body3Form3_text.clear();
                       });
                       MaterialPageRoute route = MaterialPageRoute(
-                        builder: (context) => SignInScreen(),
+                        builder: (context) => LoginPage(),
                       );
                       Navigator.pushAndRemoveUntil(
                           context, route, (route) => false);
@@ -3233,7 +3234,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
 
       if (result.toString() != 'Not data') {
         for (var map in result) {
@@ -3263,7 +3264,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
                     Container(
                       width: 500,
                       height: 50,
-                      decoration:  BoxDecoration(
+                      decoration: BoxDecoration(
                         color: AppbackgroundColor.TiTile_Colors,
                         borderRadius: BorderRadius.only(
                           topLeft: Radius.circular(0),
@@ -3399,9 +3400,9 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
         zoneModels.clear();
       });
     }
-    print('ชื่อสถานที่ : $Value_lacotion_');
-    print('โซนชั้น : $Value_Zone_');
-    print('จำนวนห้อง : $Value_QTYROOM_');
+    //print('ชื่อสถานที่ : $Value_lacotion_');
+    //print('โซนชั้น : $Value_Zone_');
+    //print('จำนวนห้อง : $Value_QTYROOM_');
     String location = Value_lacotion_;
     String zone = Value_Zone_;
     String qtyroom = Value_QTYROOM_;
@@ -3415,7 +3416,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
 
       if (result.toString() != 'Not data') {
         for (var map in result) {
@@ -3716,7 +3717,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
         var response = await http.get(Uri.parse(url));
 
         var result = json.decode(response.body);
-        print(result.toString());
+        //print(result.toString());
 
         if (result.toString() != 'Not data') {
           for (var map in result) {
@@ -3754,7 +3755,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
 
       if (result.toString() == 'true') {
         setState(() {
@@ -3784,7 +3785,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
 
       if (result.toString() == 'true') {
         setState(() {
@@ -3819,7 +3820,7 @@ class _SingUpScreen2State extends State<SingUpScreen2> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
 
       if (result.toString() != 'Not data') {
         for (var map in result) {

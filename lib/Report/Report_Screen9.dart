@@ -545,7 +545,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
         // Await_Status_Report1 = null;
       });
     } catch (e) {
-      print(e);
+      // print(e);
     }
   }
 
@@ -585,7 +585,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
         // Await_Status_Report1 = null;
       });
     } catch (e) {
-      print(e);
+      //  print(e);
     }
   }
 
@@ -1100,7 +1100,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
       setState(() {});
     });
 
-    print(Value_InvoiceDate_Daily);
+    //print(Value_InvoiceDate_Daily);
   }
 
   void selectionChanged2(DateRangePickerSelectionChangedArgs args) {
@@ -1120,7 +1120,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
       setState(() {});
     });
 
-    print(Value_BillAwatCheck_Daily);
+    // print(Value_BillAwatCheck_Daily);
   }
 
   void selectionChanged_month1(DateRangePickerSelectionChangedArgs args) {
@@ -1140,7 +1140,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
         Ser_BodySta1 = 0;
         Ser_BodySta2 = 0;
       });
-      print('Selected month: ${Mon_Invoice_Mon}, Year: ${YE_Invoice_Mon}');
+      // print('Selected month: ${Mon_Invoice_Mon}, Year: ${YE_Invoice_Mon}');
     }
   }
 
@@ -1161,8 +1161,8 @@ class _ReportScreen9State extends State<ReportScreen9> {
         Ser_BodySta3 = 0;
         Ser_BodySta4 = 0;
       });
-      print(
-          'Selected month: ${Mon_BillAwatCheck_Mon}, Year: ${YE_BillAwatCheck_Mon}');
+      // print(
+      //     'Selected month: ${Mon_BillAwatCheck_Mon}, Year: ${YE_BillAwatCheck_Mon}');
     }
   }
 
@@ -1873,7 +1873,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
                                 Navigator.of(context).pop();
                               });
                             } catch (e) {
-                              print('object catch');
+                              //  print('object catch');
                               Navigator.of(context).pop();
                             }
                           },
@@ -2420,7 +2420,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
                                 Navigator.of(context).pop();
                               });
                             } catch (e) {
-                              print('object catch');
+                              //  print('object catch');
                               Navigator.of(context).pop();
                             }
                             // setState(() {
@@ -4201,7 +4201,7 @@ class _ReportScreen9State extends State<ReportScreen9> {
                                     onTap: () {
                                       int selectedIndex = expModels.indexWhere(
                                           (items) => items.ser == item.ser);
-                                      print(expModels[selectedIndex].expname);
+                                      //     print(expModels[selectedIndex].expname);
                                       // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                       //This rebuilds the StatefulWidget to update the button's text
                                       setState(() {

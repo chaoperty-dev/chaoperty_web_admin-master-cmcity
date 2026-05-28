@@ -13,7 +13,78 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../PeopleChao/Rental_Information.dart';
 import '../../../../Style/ThaiBaht.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/Preview_Agreement.dart';
+import '../../Model/GetC_Quot_Select_Model.dart';
 import '../../Style/loadAndCacheImage.dart';
+
+class RentGroup {
+  final String startDate;
+  final String endDate;
+  final String amount;
+  final String amountText;
+  final int startIndex; // 1-based month position
+  final int endIndex; // 1-based month position
+
+  RentGroup({
+    required this.startDate,
+    required this.endDate,
+    required this.amount,
+    required this.amountText,
+    this.startIndex = 0,
+    this.endIndex = 0,
+  });
+}
+
+// List<RentGroup> groupRentByAmount({
+//   required List<double> rentList,
+//   required DateTime startDate,
+// }) {
+//   List<RentGroup> grouped = [];
+
+//   if (rentList.isEmpty) return grouped;
+
+//   int currentIndex = 0;
+//   double currentAmount = rentList[0];
+//   int startIndex = 0;
+
+//   for (int i = 1; i < rentList.length; i++) {
+//     if (rentList[i] != currentAmount) {
+//       // สิ้นสุดกลุ่ม
+//       DateTime start =
+//           DateTime(startDate.year, startDate.month + startIndex, startDate.day);
+//       DateTime end =
+//           DateTime(startDate.year, startDate.month + i, startDate.day)
+//               .subtract(Duration(days: 1));
+
+//       grouped.add(RentGroup(
+//         startDate: start,
+//         endDate: end,
+//         amount: currentAmount,
+//         amountText: convertToThaiBaht(currentAmount),
+//       ));
+
+//       // เริ่มกลุ่มใหม่
+//       currentAmount = rentList[i];
+//       startIndex = i;
+//     }
+//   }
+
+//   // กลุ่มสุดท้าย
+//   DateTime start =
+//       DateTime(startDate.year, startDate.month + startIndex, startDate.day);
+//   DateTime end =
+//       DateTime(startDate.year, startDate.month + rentList.length, startDate.day)
+//           .subtract(Duration(days: 1));
+
+//   grouped.add(RentGroup(
+//     startDate: start,
+//     endDate: end,
+//     amount: currentAmount,
+//     amountText: convertToThaiBaht(currentAmount),
+//   ));
+
+//   return grouped;
+// }
 
 class Pdfgen_Agreement_Choice {
 //////////---------------------------------------------------->( **** เอกสารสัญญาเช่า  Choice)
@@ -166,6 +237,8 @@ class Pdfgen_Agreement_Choice {
     //   Sumtotal = Sumtotal +
     //       (int.parse(quotxSelectModels[index].term!) *
     //           double.parse(quotxSelectModels[index].total!));
+    int exp_check = 35;
+
     String Howday = (Form_rtname.toString() == 'รายวัน')
         ? 'วัน'
         : (Form_rtname.toString() == 'รายเดือน')
@@ -177,34 +250,217 @@ class Pdfgen_Agreement_Choice {
     int pange = 1;
 
     List<double> data2 = [0.00, 0.00, 0.00];
-    String Rent_List = (quotxSelectModels
-                .where((e) =>
-                    e.expser.toString() == '1' &&
-                    // e.unitser.toString() == '1' &&
-                    e.amt_ty.toString() != '')
-                .length ==
-            0)
-        ? '0.00, 0.00, 0.00'
-        : quotxSelectModels
-            .where((e) =>
-                e.expser.toString() == '1' &&
-                // e.unitser.toString() == '1' &&
-                e.amt_ty.toString() != '')
-            .map((e) => e.amt_ty)
-            .toString();
+    List<double> rentList = [];
+    final targetModels = quotxSelectModels
+        .where((e) => e.expser.toString() == '$exp_check')
+        .toList();
 
-    // Step 1: Remove parentheses
-    Rent_List = Rent_List.replaceAll('(', '').replaceAll(')', '');
+    if (targetModels.isNotEmpty) {
+      // Prefer monthly rental model (unitser: '2') for calculations
+      final modelWithTrans = targetModels.any((e) =>
+              e.unitser.toString() == '2' &&
+              e.trans_array != null &&
+              e.trans_array!.isNotEmpty)
+          ? targetModels.firstWhere((e) =>
+              e.unitser.toString() == '2' &&
+              e.trans_array != null &&
+              e.trans_array!.isNotEmpty)
+          : targetModels.any(
+                  (e) => e.trans_array != null && e.trans_array!.isNotEmpty)
+              ? targetModels.firstWhere(
+                  (e) => e.trans_array != null && e.trans_array!.isNotEmpty)
+              : targetModels.any((e) => e.unitser.toString() == '2')
+                  ? targetModels.firstWhere((e) => e.unitser.toString() == '2')
+                  : targetModels.first;
 
-    // Step 2: Split the string by commas
-    List<String> rentStringList = Rent_List.split(',');
+      if (modelWithTrans.trans_array != null &&
+          modelWithTrans.trans_array!.isNotEmpty) {
+        try {
+          String cleanJson = modelWithTrans.trans_array!;
+          // Remove potential artifacts from the string if it's not pure JSON
+          if (cleanJson.startsWith('(') && cleanJson.endsWith(')')) {
+            cleanJson = cleanJson.substring(1, cleanJson.length - 1);
+          }
+          List<dynamic> trans = json.decode(cleanJson);
+          rentList = trans
+              .map((e) => double.tryParse(e['total'].toString()) ?? 0.0)
+              .toList();
+        } catch (e) {
+          print('Error parsing trans_array: $e');
+        }
+      }
+    }
 
-    // Step 3: Convert the list of strings to a list of doubles
-    List<double> rentList =
-        (rentStringList.map((e) => double.parse(e)).toList() == 0)
-            ? data2
-            : rentStringList.map((e) => double.parse(e)).toList();
+    // Fallback logic if trans_array failed or was empty
+    if (rentList.isEmpty) {
+      String Rent_List = (targetModels.isEmpty)
+          ? '0.00, 0.00, 0.00'
+          : targetModels
+              .where((e) => e.amt_ty.toString() != '')
+              .map((e) => e.amt_ty)
+              .toString();
 
+      Rent_List = Rent_List.replaceAll('(', '').replaceAll(')', '');
+      List<String> rentStringList = Rent_List.split(',');
+
+      rentList =
+          (rentStringList.map((e) => double.tryParse(e) ?? 0.0).toList() == 0)
+              ? data2
+              : rentStringList.map((e) => double.tryParse(e) ?? 0.0).toList();
+    }
+
+///////////////////////------------------------------------------------->
+    // List<RentGroup> rentGroup = [];
+
+    // for (int index = 0; index < rentList.length; index++) {
+    //   String sdate = '';
+    //   String ldate = '';
+
+    //   if (quotxSelectModels
+    //       .where((e) =>
+    //           e.expser.toString() == '$exp_check' && e.amt_ty.toString() != '')
+    //       .isNotEmpty) {
+    //     DateTime baseDate =
+    //         DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00');
+    //     DateTime baseEndDate =
+    //         DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00');
+
+    //     if (Form_rtname == 'รายวัน') {
+    //       DateTime start = baseDate.add(Duration(days: index));
+    //       DateTime end = baseDate
+    //           .add(Duration(days: index + 1))
+    //           .subtract(Duration(days: 1));
+
+    //       sdate =
+    //           '${DateFormat('dd MMM', 'th').format(start)} ${start.year + 543}';
+    //       ldate = '${DateFormat('dd MMM', 'th').format(end)} ${end.year + 543}';
+    //     } else if (Form_rtname == 'รายเดือน') {
+    //       DateTime start =
+    //           DateTime(baseDate.year, baseDate.month + index, baseDate.day);
+    //       DateTime end =
+    //           DateTime(baseDate.year, baseDate.month + index + 1, baseDate.day)
+    //               .subtract(Duration(days: 1));
+
+    //       sdate =
+    //           '${DateFormat('dd MMM', 'th').format(start)} ${start.year + 543}';
+    //       ldate = '${DateFormat('dd MMM', 'th').format(end)} ${end.year + 543}';
+    //     } else if (Form_rtname == 'รายปี') {
+    //       DateTime start =
+    //           DateTime(baseDate.year + index, baseDate.month, baseDate.day);
+    //       DateTime end =
+    //           DateTime(baseDate.year + index + 1, baseDate.month, baseDate.day)
+    //               .subtract(Duration(days: 1));
+
+    //       sdate =
+    //           '${DateFormat('dd MMM', 'th').format(start)} ${start.year + 543}';
+    //       ldate = '${DateFormat('dd MMM', 'th').format(end)} ${end.year + 543}';
+    //     }
+    //   }
+
+    //   // ตัวอย่างแสดงผล:
+    //   print(
+    //       'ลำดับที่ ${index + 1}. วันที่ $sdate ถึง $ldate ยอด ${rentList[index].toStringAsFixed(2)}');
+    //   final currentAmount = rentList[index].toStringAsFixed(2);
+    //   final currentAmountText =
+    //       convertToThaiBaht(double.parse(rentList[index].toString()));
+
+    //   bool isDuplicate = rentGroup.any((e) =>
+    //       // e.startDate == sdate &&
+    //       // e.endDate == ldate &&
+    //       // e.amount == currentAmount &&SELECT  * FROM c_contract  WHERE cid = '10003-09-2025'
+    //       e.amountText == currentAmountText);
+
+    //   if (!isDuplicate) {
+    //     rentGroup.add(
+    //       RentGroup(
+    //         startDate: sdate,
+    //         endDate: ldate,
+    //         amount: currentAmount,
+    //         amountText: currentAmountText,
+    //       ),
+    //     );
+    //   }
+    // }
+    List<RentGroup> rentGroup = [];
+
+    for (int index = 0; index < rentList.length; index++) {
+      String sdate = '';
+      String ldate = '';
+
+      if (quotxSelectModels
+          .where((e) =>
+              e.expser.toString() == '$exp_check' && e.amt_ty.toString() != '')
+          .isNotEmpty) {
+        DateTime baseDate =
+            DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00');
+
+        if (Form_rtname == 'รายวัน') {
+          DateTime start = baseDate.add(Duration(days: index));
+          DateTime end = baseDate
+              .add(Duration(days: index + 1))
+              .subtract(const Duration(days: 1));
+          sdate =
+              '${DateFormat('dd MMM', 'th').format(start)} ${start.year + 543}';
+          ldate = '${DateFormat('dd MMM', 'th').format(end)} ${end.year + 543}';
+        } else if (Form_rtname == 'รายเดือน') {
+          DateTime start =
+              DateTime(baseDate.year, baseDate.month + index, baseDate.day);
+          DateTime end =
+              DateTime(baseDate.year, baseDate.month + index + 1, baseDate.day)
+                  .subtract(const Duration(days: 1));
+          sdate =
+              '${DateFormat('dd MMM', 'th').format(start)} ${start.year + 543}';
+          ldate = '${DateFormat('dd MMM', 'th').format(end)} ${end.year + 543}';
+        } else if (Form_rtname == 'รายปี') {
+          DateTime start =
+              DateTime(baseDate.year + index, baseDate.month, baseDate.day);
+          DateTime end =
+              DateTime(baseDate.year + index + 1, baseDate.month, baseDate.day)
+                  .subtract(const Duration(days: 1));
+          sdate =
+              '${DateFormat('dd MMM', 'th').format(start)} ${start.year + 543}';
+          ldate = '${DateFormat('dd MMM', 'th').format(end)} ${end.year + 543}';
+        }
+      }
+
+      final currentAmount = rentList[index].toStringAsFixed(2);
+      final currentAmountText =
+          convertToThaiBaht(double.parse(rentList[index].toString()));
+
+      // หาในกลุ่มที่มียอดเดียวกัน และ CONSECUTIVE (ไม่มีค่าอื่นคั่น)
+      // ใช้ lastGroup เพื่อ check ว่า group ล่าสุดมียอดเดียวกันหรือไม่
+      if (rentGroup.isNotEmpty && rentGroup.last.amount == currentAmount) {
+        // ยอดเดียวกับ group ล่าสุด → อัปเดต endDate และ endIndex
+        final last = rentGroup.last;
+        rentGroup[rentGroup.length - 1] = RentGroup(
+          startDate: last.startDate,
+          endDate: ldate,
+          amount: currentAmount,
+          amountText: currentAmountText,
+          startIndex: last.startIndex,
+          endIndex: index + 1, // 1-based
+        );
+      } else {
+        // ยอดต่างหรือยังไม่มี group → เริ่ม group ใหม่
+        rentGroup.add(
+          RentGroup(
+            startDate: sdate,
+            endDate: ldate,
+            amount: currentAmount,
+            amountText: currentAmountText,
+            startIndex: index + 1, // 1-based
+            endIndex: index + 1,
+          ),
+        );
+      }
+    }
+
+    // print('rentGroup.length');
+    // print(rentGroup.length);
+    // for (int index = 0; index < rentGroup.length; index++) {
+    //   print(
+    //       'ลำดับที่ ${index + 1}. วันที่ ${rentGroup[index].startDate} ถึง ${rentGroup[index].endDate} ยอด ${rentGroup[index].amount}');
+    // }
 ///////////////////////------------------------------------------------->
     pdf.addPage(
       pw.MultiPage(
@@ -516,6 +772,7 @@ class Pdfgen_Agreement_Choice {
                         mainAxisAlignment: pw.MainAxisAlignment.center,
                         children: [
                           pw.Text(
+                            // 'วันที่ ${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543}',
                             'วันที่ ${DateFormat('dd MMM', 'TH').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('${Datex_text.text} 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('${Datex_text.text} 00:00:00')}").year + 543}',
                             //  'วันที่  ${Datex_text.text} ',
                             textAlign: pw.TextAlign.center,
@@ -1144,6 +1401,7 @@ class Pdfgen_Agreement_Choice {
                                   (DatexChoice_Sub2_3text == null)
                                       ? '-'
                                       : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}").year + 543}',
+                                  // : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}").year + 543}',
                                   // (Form_ldate == null)
                                   //     ? ''
                                   //     : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}',
@@ -1193,277 +1451,771 @@ class Pdfgen_Agreement_Choice {
                         ),
                       ),
                       pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      for (int index = 0; index < rentList.length; index++)
-                        pw.SizedBox(
-                            child: pw.Column(
-                                mainAxisAlignment: pw.MainAxisAlignment.start,
-                                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                children: [
-                              pw.Row(
-                                children: [
-                                  pw.Text(
-                                    (Form_rtname.toString() == 'รายวัน')
-                                        ? ' ' * 12 +
-                                            '5.${index + 1} อัตราค่าเช่าในวันที่'
-                                        : (Form_rtname.toString() == 'รายเดือน')
-                                            ? ' ' * 12 +
-                                                '5.${index + 1} อัตราค่าเช่าในเดือนที่'
-                                            : (Form_rtname.toString() ==
-                                                    'รายปี')
-                                                ? ' ' * 12 +
-                                                    '5.${index + 1} อัตราค่าเช่าในปีที่'
-                                                : ' ' * 12 +
-                                                    '5.${index + 1} อัตราค่าเช่าใน$Form_rtnameที่',
-                                    // ' ' * 12 +
-                                    //     '5.${index + 1} อัตราค่าเช่าในปีที่',
-                                    textAlign: pw.TextAlign.left,
-                                    style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      font: ttf,
-                                      color: Colors_pd,
-                                    ),
-                                  ),
-                                  pw.Container(
-                                    width: 40,
-                                    height: 14,
-                                    decoration: pw.BoxDecoration(
-                                        border: pw.Border(
-                                            bottom: pw.BorderSide(
-                                      color: Colors_pd,
-                                      width: 0.3, // Underline thickness
-                                    ))),
-                                    child: pw.Text(
-                                      ((quotxSelectModels
-                                                  .where((e) =>
-                                                      e.expser.toString() ==
-                                                          '1' &&
-                                                      // e.unitser.toString() == '1' &&
-                                                      e.amt_ty.toString() != '')
-                                                  .length ==
-                                              0))
-                                          ? ' '
-                                          : "  ${index + 1} ",
-                                      textAlign: pw.TextAlign.center,
-                                      style: pw.TextStyle(
-                                        color: Colors_pd,
-                                        fontSize: font_Size,
-                                        fontWeight: pw.FontWeight.bold,
-                                        font: ttf,
-                                      ),
-                                    ),
-                                  ),
-                                  pw.Text(
-                                    'ตั้งแต่วันที่',
-                                    textAlign: pw.TextAlign.left,
-                                    style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      font: ttf,
-                                      color: Colors_pd,
-                                    ),
-                                  ),
-                                  pw.Expanded(
-                                      flex: 1,
-                                      child: pw.Container(
-                                        height: 14,
-                                        decoration: pw.BoxDecoration(
-                                            border: pw.Border(
-                                                bottom: pw.BorderSide(
-                                          color: Colors_pd,
-                                          width: 0.3, // Underline thickness
-                                        ))),
-                                        child: pw.Text(
-                                          (quotxSelectModels
-                                                      .where((e) =>
-                                                          e.expser.toString() ==
-                                                              '1' &&
-                                                          // e.unitser.toString() == '1' &&
-                                                          e.amt_ty.toString() !=
-                                                              '')
-                                                      .length ==
-                                                  0)
-                                              ? ' '
+                      ((quotxSelectModels
+                              .where((e) =>
+                                  e.expser.toString() == '$exp_check' &&
+                                  e.unitser.toString() ==
+                                      '2' && // เน้นเช็คที่รายเดือน
+                                  e.amt_ty.toString() == '')
+                              .isNotEmpty))
+                          ? pw.Column(children: [
+                              pw.SizedBox(
+                                  child: pw.Column(
+                                      mainAxisAlignment:
+                                          pw.MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          pw.CrossAxisAlignment.start,
+                                      children: [
+                                    pw.Row(
+                                      children: [
+                                        pw.Text(
+                                          (Form_rtname.toString() == 'รายวัน')
+                                              ? ' ' * 12 +
+                                                  '5.1 อัตราค่าเช่าในวันที่'
                                               : (Form_rtname.toString() ==
-                                                      'รายวัน')
-                                                  ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").add(Duration(days: index)))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").add(Duration(days: index)).year + 543}'
+                                                      'รายเดือน')
+                                                  ? ' ' * 12 +
+                                                      '5.1 อัตราค่าเช่าในเดือนที่'
                                                   : (Form_rtname.toString() ==
-                                                          'รายเดือน')
-                                                      ? '${DateFormat('dd MMM', 'th').format(DateTime(
-                                                          DateTime.parse(
-                                                                  "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                              .year,
-                                                          DateTime.parse(
-                                                                      "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                  .month +
-                                                              index, // Add one to the month
-                                                          DateTime.parse(
-                                                                  "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                              .day,
-                                                          00,
-                                                          00,
-                                                          00,
-                                                        ))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543}'
-                                                      : (Form_rtname
-                                                                  .toString() ==
-                                                              'รายปี')
-                                                          ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + ((index == 0) ? 0 : index + 1)}'
-                                                          : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + ((index == 0) ? 0 : index + 1)}',
-                                          textAlign: pw.TextAlign.center,
-                                          style: pw.TextStyle(
-                                            color: Colors_pd,
-                                            fontSize: font_Size,
-                                            fontWeight: pw.FontWeight.bold,
-                                            font: ttf,
-                                          ),
-                                        ),
-                                      )),
-                                  pw.Text(
-                                    'ถึงวันที่',
-                                    textAlign: pw.TextAlign.left,
-                                    style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      font: ttf,
-                                      color: Colors_pd,
-                                    ),
-                                  ),
-                                  pw.Expanded(
-                                      flex: 1,
-                                      child: pw.Container(
-                                        height: 14,
-                                        decoration: pw.BoxDecoration(
-                                            border: pw.Border(
-                                                bottom: pw.BorderSide(
-                                          color: Colors_pd,
-                                          width: 0.3, // Underline thickness
-                                        ))),
-                                        child: pw.Text(
-                                          (quotxSelectModels
-                                                      .where((e) =>
-                                                          e.expser.toString() ==
-                                                              '1' &&
-                                                          // e.unitser.toString() == '1' &&
-                                                          e.amt_ty.toString() !=
-                                                              '')
-                                                      .length ==
-                                                  0)
-                                              ? ' '
-                                              : (Form_rtname.toString() ==
-                                                      'รายวัน')
-                                                  ? (index + 1 ==
-                                                          rentList.length)
-                                                      ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").add(Duration(days: (index + 1))))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00').add(Duration(days: (index + 1)))}").year + 543}'
-                                                      : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").add(Duration(days: (index + 1))))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00').add(Duration(days: (index + 1)))}").year + 543}'
-                                                  : (Form_rtname.toString() ==
-                                                          'รายเดือน')
-                                                      ? (index + 1 ==
-                                                              rentList.length)
-                                                          ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}'
-                                                          : '${DateFormat('dd MMM', 'th').format(DateTime(
-                                                              DateTime.parse(
-                                                                      "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                  .year,
-                                                              DateTime.parse(
-                                                                          "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                      .month +
-                                                                  (index +
-                                                                      1), // Add one to the month
-                                                              DateTime.parse(
-                                                                          "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                      .day -
-                                                                  1,
-                                                              00,
-                                                              00,
-                                                              00,
-                                                            ))} ${DateTime(
-                                                                DateTime.parse(
-                                                                        "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                    .year,
-                                                                DateTime.parse(
-                                                                            "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                        .month +
-                                                                    (index +
-                                                                        1), // Add one to the month
-                                                                DateTime.parse(
-                                                                        "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
-                                                                    .day,
-                                                                00,
-                                                                00,
-                                                                00,
-                                                              ).year + 543}'
-                                                      : (Form_rtname
-                                                                  .toString() ==
-                                                              'รายปี')
-                                                          ? (index + 1 ==
-                                                                  rentList
-                                                                      .length)
-                                                              ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}'
-                                                              : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + (index + 1)}'
-                                                          : (index + 1 ==
-                                                                  rentList
-                                                                      .length)
-                                                              ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}'
-                                                              : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + (index + 1)}',
-                                          textAlign: pw.TextAlign.center,
-                                          style: pw.TextStyle(
-                                            color: Colors_pd,
-                                            fontSize: font_Size,
-                                            fontWeight: pw.FontWeight.bold,
-                                            font: ttf,
-                                          ),
-                                        ),
-                                      )),
-                                ],
-                              ),
-                              pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                              pw.Row(
-                                children: [
-                                  pw.Text(
-                                    ' ' * 12 + 'ชำระค่าเช่าเดือนละ',
-                                    textAlign: pw.TextAlign.left,
-                                    style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      font: ttf,
-                                      color: Colors_pd,
-                                    ),
-                                  ),
-                                  pw.Expanded(
-                                      flex: 1,
-                                      child: pw.Container(
-                                        height: 14,
-                                        decoration: pw.BoxDecoration(
-                                            border: pw.Border(
-                                                bottom: pw.BorderSide(
-                                          color: Colors_pd,
-                                          width: 0.3, // Underline thickness
-                                        ))),
-                                        child: pw.Text(
-                                          (quotxSelectModels
-                                                      .where((e) =>
-                                                          e.expser.toString() ==
-                                                              '1' &&
-                                                          // e.unitser.toString() == '1' &&
-                                                          e.amt_ty.toString() !=
-                                                              '')
-                                                      .length ==
-                                                  0)
-                                              ? ' '
-                                              : (double.parse(rentList[index]
-                                                          .toString()) ==
-                                                      0.00)
-                                                  ? ' 0.00 บาท (~${convertToThaiBaht(0.00)}~)'
-                                                  : " ${nFormat.format(double.parse(rentList[index].toString()))} บาท (~${convertToThaiBaht(double.parse(rentList[index].toString()))}~) ",
+                                                          'รายปี')
+                                                      ? ' ' * 12 +
+                                                          '5.1 อัตราค่าเช่าในปีที่'
+                                                      : ' ' * 12 +
+                                                          '5.1 อัตราค่าเช่าใน$Form_rtnameที่',
+                                          // ' ' * 12 +
+                                          //     '5.${index + 1} อัตราค่าเช่าในปีที่',
                                           textAlign: pw.TextAlign.left,
                                           style: pw.TextStyle(
-                                            color: Colors_pd,
                                             fontSize: font_Size,
-                                            fontWeight: pw.FontWeight.bold,
                                             font: ttf,
+                                            color: Colors_pd,
                                           ),
                                         ),
-                                      )),
-                                ],
-                              ),
-                              pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            ])),
+                                        pw.Container(
+                                          width: 40,
+                                          height: 14,
+                                          decoration: pw.BoxDecoration(
+                                              border: pw.Border(
+                                                  bottom: pw.BorderSide(
+                                            color: Colors_pd,
+                                            width: 0.3, // Underline thickness
+                                          ))),
+                                          child: pw.Text(
+                                            '1 - $FormPeriod_choice ',
+                                            // ((quotxSelectModels
+                                            //             .where((e) =>
+                                            //                 e.expser.toString() ==
+                                            //                     '$exp_check' &&
+                                            //                 // e.unitser.toString() == '1' &&
+                                            //                 e.amt_ty.toString() !=
+                                            //                     '')
+                                            //             .length ==
+                                            //         0))
+                                            //     ? ' '
+                                            //     : "  ${index + 1} ",
+                                            textAlign: pw.TextAlign.center,
+                                            style: pw.TextStyle(
+                                              color: Colors_pd,
+                                              fontSize: font_Size,
+                                              fontWeight: pw.FontWeight.bold,
+                                              font: ttf,
+                                            ),
+                                          ),
+                                        ),
+                                        pw.Text(
+                                          'ตั้งแต่วันที่',
+                                          textAlign: pw.TextAlign.left,
+                                          style: pw.TextStyle(
+                                            fontSize: font_Size,
+                                            font: ttf,
+                                            color: Colors_pd,
+                                          ),
+                                        ),
+                                        pw.Expanded(
+                                            flex: 1,
+                                            child: pw.Container(
+                                              height: 14,
+                                              decoration: pw.BoxDecoration(
+                                                  border: pw.Border(
+                                                      bottom: pw.BorderSide(
+                                                color: Colors_pd,
+                                                width:
+                                                    0.3, // Underline thickness
+                                              ))),
+                                              child: pw.Text(
+                                                (Form_sdate == '0000-00-00' ||
+                                                        Form_sdate == '' ||
+                                                        Form_sdate == null)
+                                                    ? '-'
+                                                    : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543}',
+                                                textAlign: pw.TextAlign.center,
+                                                style: pw.TextStyle(
+                                                  color: Colors_pd,
+                                                  fontSize: font_Size,
+                                                  fontWeight:
+                                                      pw.FontWeight.bold,
+                                                  font: ttf,
+                                                ),
+                                              ),
+                                            )),
+                                        pw.Text(
+                                          'ถึงวันที่',
+                                          textAlign: pw.TextAlign.left,
+                                          style: pw.TextStyle(
+                                            fontSize: font_Size,
+                                            font: ttf,
+                                            color: Colors_pd,
+                                          ),
+                                        ),
+                                        pw.Expanded(
+                                            flex: 1,
+                                            child: pw.Container(
+                                              height: 14,
+                                              decoration: pw.BoxDecoration(
+                                                  border: pw.Border(
+                                                      bottom: pw.BorderSide(
+                                                color: Colors_pd,
+                                                width:
+                                                    0.3, // Underline thickness
+                                              ))),
+                                              child: pw.Text(
+                                                (Form_ldate == '0000-00-00' ||
+                                                        Form_ldate == '' ||
+                                                        Form_ldate == null)
+                                                    ? '-'
+                                                    : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}',
+                                                textAlign: pw.TextAlign.center,
+                                                style: pw.TextStyle(
+                                                  color: Colors_pd,
+                                                  fontSize: font_Size,
+                                                  fontWeight:
+                                                      pw.FontWeight.bold,
+                                                  font: ttf,
+                                                ),
+                                              ),
+                                            )),
+                                      ],
+                                    ),
+                                    pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                                    pw.Row(
+                                      children: [
+                                        pw.Text(
+                                          ' ' * 12 + 'ชำระค่าเช่าเดือนละ',
+                                          textAlign: pw.TextAlign.left,
+                                          style: pw.TextStyle(
+                                            fontSize: font_Size,
+                                            font: ttf,
+                                            color: Colors_pd,
+                                          ),
+                                        ),
+                                        pw.Expanded(
+                                            flex: 1,
+                                            child: pw.Container(
+                                              height: 14,
+                                              decoration: pw.BoxDecoration(
+                                                  border: pw.Border(
+                                                      bottom: pw.BorderSide(
+                                                color: Colors_pd,
+                                                width:
+                                                    0.3, // Underline thickness
+                                              ))),
+                                              child: pw.Text(
+                                                (quotxSelectModels
+                                                            .where((e) =>
+                                                                e.expser.toString() ==
+                                                                    '$exp_check' &&
+                                                                e.unitser
+                                                                        .toString() ==
+                                                                    '2')
+                                                            .length ==
+                                                        0)
+                                                    ? ' 0.00'
+                                                    : ' ${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '$exp_check' && e.unitser.toString() == '2').map((e) => e.pvat != null ? double.parse(e.pvat.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท ',
+
+                                                // ' ${nFormat.format(double.parse(rentGroup[index].amount.toString()))}  บาท (~${rentGroup[index].amountText}~)',
+                                                textAlign: pw.TextAlign.left,
+                                                style: pw.TextStyle(
+                                                  color: Colors_pd,
+                                                  fontSize: font_Size,
+                                                  fontWeight:
+                                                      pw.FontWeight.bold,
+                                                  font: ttf,
+                                                ),
+                                              ),
+                                            )),
+                                        pw.Text(
+                                          (quotxSelectModels
+                                                      .where((e) =>
+                                                          e.expser.toString() ==
+                                                          '$exp_check')
+                                                      .length ==
+                                                  0)
+                                              ? 'หักภาษี ณ ที่จ่าย '
+                                              : (quotxSelectModels
+                                                          .where((e) =>
+                                                              e.expser
+                                                                  .toString() ==
+                                                              '$exp_check')
+                                                          .map((e) => e.nwht !=
+                                                                  null
+                                                              ? double.parse(e
+                                                                  .nwht
+                                                                  .toString())
+                                                              : 0.00)
+                                                          .fold(
+                                                              0.00,
+                                                              (a, b) =>
+                                                                  a + b) ==
+                                                      0)
+                                                  ? 'หักภาษี ณ ที่จ่าย '
+                                                  : 'หักภาษี ณ ที่จ่าย ' +
+                                                      '( ${quotxSelectModels.where((e) => e.expser.toString() == '$exp_check' && e.unitser.toString() != '4').map((e) => e.nwht != null ? double.parse(e.nwht.toString()) : 0.00).fold(0.00, (a, b) => a + b)} ) % ',
+                                          textAlign: pw.TextAlign.left,
+                                          style: pw.TextStyle(
+                                            fontSize: font_Size,
+                                            font: ttf,
+                                            color: Colors_pd,
+                                          ),
+                                        ),
+                                        pw.Expanded(
+                                          flex: 2,
+                                          child: pw.Container(
+                                            decoration: pw.BoxDecoration(
+                                                border: pw.Border(
+                                                    bottom: pw.BorderSide(
+                                              color: Colors_pd,
+                                              width:
+                                                  0.3, // Underline thickness 10096-10-2024
+                                            ))),
+                                            child: pw.Text(
+                                              (quotxSelectModels
+                                                          .where((e) =>
+                                                              e.expser.toString() ==
+                                                                  '$exp_check' &&
+                                                              e.unitser
+                                                                      .toString() ==
+                                                                  '2')
+                                                          .length ==
+                                                      0)
+                                                  ? ' 0.00'
+                                                  : ' ${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '$exp_check' && e.unitser.toString() == '2').map((e) => e.wht != null ? double.parse(e.wht.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท ',
+                                              textAlign: pw.TextAlign.center,
+                                              style: pw.TextStyle(
+                                                color: Colors_pd,
+                                                fontSize: font_Size,
+                                                fontWeight: pw.FontWeight.bold,
+                                                font: ttf,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                                    pw.Row(
+                                      children: [
+                                        pw.Text(
+                                          ' ' * 12 + 'รวมเป็นเงินทั้งสิ้น',
+                                          textAlign: pw.TextAlign.left,
+                                          style: pw.TextStyle(
+                                            fontSize: font_Size,
+                                            font: ttf,
+                                            color: Colors_pd,
+                                          ),
+                                        ),
+                                        pw.Expanded(
+                                          flex: 2,
+                                          child: pw.Container(
+                                            decoration: pw.BoxDecoration(
+                                                border: pw.Border(
+                                                    bottom: pw.BorderSide(
+                                              color: Colors_pd,
+                                              width: 0.3, // Underline thickness
+                                            ))),
+                                            child: pw.Text(
+                                              (quotxSelectModels
+                                                          .where((e) =>
+                                                              e.expser.toString() ==
+                                                                  '$exp_check' &&
+                                                              e.unitser
+                                                                      .toString() ==
+                                                                  '2')
+                                                          .length ==
+                                                      0)
+                                                  ? ' 0.00'
+                                                  : ' ${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '$exp_check' && e.unitser.toString() == '2').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท ' +
+                                                      '(~${convertToThaiBaht(quotxSelectModels.where((e) => e.expser.toString() == '$exp_check' && e.unitser.toString() == '2').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))}~)', // เดิมคือ total
+                                              textAlign: pw.TextAlign.center,
+                                              style: pw.TextStyle(
+                                                color: Colors_pd,
+                                                fontSize: font_Size,
+                                                fontWeight: pw.FontWeight.bold,
+                                                font: ttf,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                                  ]))
+                            ])
+                          :
+                          // for (int index = 0; index < rentGroup.length; index++)
+                          pw.Column(
+                              children:
+                                  List.generate(rentGroup.length, (index) {
+                                final g = rentGroup[index];
+
+                                // ค้นหาลำดับเดือนที่เริ่มต้นและสิ้นสุด
+                                // ใช้ startIndex/endIndex ที่คำนวณไว้ตั้งแต่ตอน build rentGroup
+                                final int startMonthIndex = g.startIndex;
+                                final int endMonthIndex = g.endIndex;
+
+                                return pw.SizedBox(
+                                    child: pw.Column(
+                                        mainAxisAlignment:
+                                            pw.MainAxisAlignment.start,
+                                        crossAxisAlignment:
+                                            pw.CrossAxisAlignment.start,
+                                        children: [
+                                      pw.Row(
+                                        children: [
+                                          pw.Text(
+                                            (Form_rtname.toString() == 'รายวัน')
+                                                ? ' ' * 12 +
+                                                    '5.${index + 1} อัตราค่าเช่าในวันที่'
+                                                : (Form_rtname.toString() ==
+                                                        'รายเดือน')
+                                                    ? ' ' * 12 +
+                                                        '5.${index + 1} อัตราค่าเช่าในเดือนที่'
+                                                    : (Form_rtname.toString() ==
+                                                            'รายปี')
+                                                        ? ' ' * 12 +
+                                                            '5.${index + 1} อัตราค่าเช่าในปีที่'
+                                                        : ' ' * 12 +
+                                                            '5.${index + 1} อัตราค่าเช่าใน$Form_rtnameที่',
+                                            // ' ' * 12 +
+                                            //     '5.${index + 1} อัตราค่าเช่าในปีที่',
+                                            textAlign: pw.TextAlign.left,
+                                            style: pw.TextStyle(
+                                              fontSize: font_Size,
+                                              font: ttf,
+                                              color: Colors_pd,
+                                            ),
+                                          ),
+                                          pw.Container(
+                                            width: 40,
+                                            height: 14,
+                                            decoration: pw.BoxDecoration(
+                                                border: pw.Border(
+                                                    bottom: pw.BorderSide(
+                                              color: Colors_pd,
+                                              width: 0.3, // Underline thickness
+                                            ))),
+                                            child: pw.Text(
+                                              '$startMonthIndex - $endMonthIndex ',
+                                              // ((quotxSelectModels
+                                              //             .where((e) =>
+                                              //                 e.expser.toString() ==
+                                              //                     '$exp_check' &&
+                                              //                 // e.unitser.toString() == '1' &&
+                                              //                 e.amt_ty.toString() !=
+                                              //                     '')
+                                              //             .length ==
+                                              //         0))
+                                              //     ? ' '
+                                              //     : "  ${index + 1} ",
+                                              textAlign: pw.TextAlign.center,
+                                              style: pw.TextStyle(
+                                                color: Colors_pd,
+                                                fontSize: font_Size,
+                                                fontWeight: pw.FontWeight.bold,
+                                                font: ttf,
+                                              ),
+                                            ),
+                                          ),
+                                          pw.Text(
+                                            'ตั้งแต่วันที่',
+                                            textAlign: pw.TextAlign.left,
+                                            style: pw.TextStyle(
+                                              fontSize: font_Size,
+                                              font: ttf,
+                                              color: Colors_pd,
+                                            ),
+                                          ),
+                                          pw.Expanded(
+                                              flex: 1,
+                                              child: pw.Container(
+                                                height: 14,
+                                                decoration: pw.BoxDecoration(
+                                                    border: pw.Border(
+                                                        bottom: pw.BorderSide(
+                                                  color: Colors_pd,
+                                                  width:
+                                                      0.3, // Underline thickness
+                                                ))),
+                                                child: pw.Text(
+                                                  '${rentGroup[index].startDate}',
+                                                  textAlign:
+                                                      pw.TextAlign.center,
+                                                  style: pw.TextStyle(
+                                                    color: Colors_pd,
+                                                    fontSize: font_Size,
+                                                    fontWeight:
+                                                        pw.FontWeight.bold,
+                                                    font: ttf,
+                                                  ),
+                                                ),
+                                              )),
+                                          pw.Text(
+                                            'ถึงวันที่',
+                                            textAlign: pw.TextAlign.left,
+                                            style: pw.TextStyle(
+                                              fontSize: font_Size,
+                                              font: ttf,
+                                              color: Colors_pd,
+                                            ),
+                                          ),
+                                          pw.Expanded(
+                                              flex: 1,
+                                              child: pw.Container(
+                                                height: 14,
+                                                decoration: pw.BoxDecoration(
+                                                    border: pw.Border(
+                                                        bottom: pw.BorderSide(
+                                                  color: Colors_pd,
+                                                  width:
+                                                      0.3, // Underline thickness
+                                                ))),
+                                                child: pw.Text(
+                                                  '${rentGroup[index].endDate}',
+                                                  textAlign:
+                                                      pw.TextAlign.center,
+                                                  style: pw.TextStyle(
+                                                    color: Colors_pd,
+                                                    fontSize: font_Size,
+                                                    fontWeight:
+                                                        pw.FontWeight.bold,
+                                                    font: ttf,
+                                                  ),
+                                                ),
+                                              )),
+                                        ],
+                                      ),
+                                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                                      pw.Row(
+                                        children: [
+                                          pw.Text(
+                                            ' ' * 12 + 'ชำระค่าเช่าเดือนละ',
+                                            textAlign: pw.TextAlign.left,
+                                            style: pw.TextStyle(
+                                              fontSize: font_Size,
+                                              font: ttf,
+                                              color: Colors_pd,
+                                            ),
+                                          ),
+                                          pw.Expanded(
+                                              flex: 1,
+                                              child: pw.Container(
+                                                height: 14,
+                                                decoration: pw.BoxDecoration(
+                                                    border: pw.Border(
+                                                        bottom: pw.BorderSide(
+                                                  color: Colors_pd,
+                                                  width:
+                                                      0.3, // Underline thickness
+                                                ))),
+                                                child: pw.Text(
+                                                  ' ${nFormat.format(double.parse(rentGroup[index].amount.toString()))}  บาท (~${rentGroup[index].amountText}~)', // ยอด tota;?,
+                                                  textAlign: pw.TextAlign.left,
+                                                  style: pw.TextStyle(
+                                                    color: Colors_pd,
+                                                    fontSize: font_Size,
+                                                    fontWeight:
+                                                        pw.FontWeight.bold,
+                                                    font: ttf,
+                                                  ),
+                                                ),
+                                              )),
+                                        ],
+                                      ),
+                                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                                    ]));
+                              }),
+                            ),
+
+                      // for (int index = 0; index < rentList.length; index++)
+                      //   pw.SizedBox(
+                      //       child: pw.Column(
+                      //           mainAxisAlignment: pw.MainAxisAlignment.start,
+                      //           crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      //           children: [
+                      //         pw.Row(
+                      //           children: [
+                      //             pw.Text(
+                      //               (Form_rtname.toString() == 'รายวัน')
+                      //                   ? ' ' * 12 +
+                      //                       '5.${index + 1} อัตราค่าเช่าในวันที่'
+                      //                   : (Form_rtname.toString() == 'รายเดือน')
+                      //                       ? ' ' * 12 +
+                      //                           '5.${index + 1} อัตราค่าเช่าในเดือนที่'
+                      //                       : (Form_rtname.toString() ==
+                      //                               'รายปี')
+                      //                           ? ' ' * 12 +
+                      //                               '5.${index + 1} อัตราค่าเช่าในปีที่'
+                      //                           : ' ' * 12 +
+                      //                               '5.${index + 1} อัตราค่าเช่าใน$Form_rtnameที่',
+                      //               // ' ' * 12 +
+                      //               //     '5.${index + 1} อัตราค่าเช่าในปีที่',
+                      //               textAlign: pw.TextAlign.left,
+                      //               style: pw.TextStyle(
+                      //                 fontSize: font_Size,
+                      //                 font: ttf,
+                      //                 color: Colors_pd,
+                      //               ),
+                      //             ),
+                      //             pw.Container(
+                      //               width: 40,
+                      //               height: 14,
+                      //               decoration: pw.BoxDecoration(
+                      //                   border: pw.Border(
+                      //                       bottom: pw.BorderSide(
+                      //                 color: Colors_pd,
+                      //                 width: 0.3, // Underline thickness
+                      //               ))),
+                      //               child: pw.Text(
+                      //                 ((quotxSelectModels
+                      //                             .where((e) =>
+                      //                                 e.expser.toString() ==
+                      //                                     '$exp_check' &&
+                      //                                 // e.unitser.toString() == '1' &&
+                      //                                 e.amt_ty.toString() != '')
+                      //                             .length ==
+                      //                         0))
+                      //                     ? ' '
+                      //                     : "  ${index + 1} ",
+                      //                 textAlign: pw.TextAlign.center,
+                      //                 style: pw.TextStyle(
+                      //                   color: Colors_pd,
+                      //                   fontSize: font_Size,
+                      //                   fontWeight: pw.FontWeight.bold,
+                      //                   font: ttf,
+                      //                 ),
+                      //               ),
+                      //             ),
+                      //             pw.Text(
+                      //               'ตั้งแต่วันที่',
+                      //               textAlign: pw.TextAlign.left,
+                      //               style: pw.TextStyle(
+                      //                 fontSize: font_Size,
+                      //                 font: ttf,
+                      //                 color: Colors_pd,
+                      //               ),
+                      //             ),
+                      //             pw.Expanded(
+                      //                 flex: 1,
+                      //                 child: pw.Container(
+                      //                   height: 14,
+                      //                   decoration: pw.BoxDecoration(
+                      //                       border: pw.Border(
+                      //                           bottom: pw.BorderSide(
+                      //                     color: Colors_pd,
+                      //                     width: 0.3, // Underline thickness
+                      //                   ))),
+                      //                   child: pw.Text(
+                      //                     (quotxSelectModels
+                      //                                 .where((e) =>
+                      //                                     e.expser.toString() ==
+                      //                                         '$exp_check' &&
+                      //                                     // e.unitser.toString() == '1' &&
+                      //                                     e.amt_ty.toString() !=
+                      //                                         '')
+                      //                                 .length ==
+                      //                             0)
+                      //                         ? ' '
+                      //                         : (Form_rtname.toString() ==
+                      //                                 'รายวัน')
+                      //                             ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").add(Duration(days: index)))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").add(Duration(days: index)).year + 543}'
+                      //                             : (Form_rtname.toString() ==
+                      //                                     'รายเดือน')
+                      //                                 ? '${DateFormat('dd MMM', 'th').format(DateTime(
+                      //                                     DateTime.parse(
+                      //                                             "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                         .year,
+                      //                                     DateTime.parse(
+                      //                                                 "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                             .month +
+                      //                                         index, // Add one to the month
+                      //                                     DateTime.parse(
+                      //                                             "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                         .day,
+                      //                                     00,
+                      //                                     00,
+                      //                                     00,
+                      //                                   ))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543}'
+                      //                                 : (Form_rtname
+                      //                                             .toString() ==
+                      //                                         'รายปี')
+                      //                                     ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + ((index == 0) ? 0 : index + 1)}'
+                      //                                     : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + ((index == 0) ? 0 : index + 1)}',
+                      //                     textAlign: pw.TextAlign.center,
+                      //                     style: pw.TextStyle(
+                      //                       color: Colors_pd,
+                      //                       fontSize: font_Size,
+                      //                       fontWeight: pw.FontWeight.bold,
+                      //                       font: ttf,
+                      //                     ),
+                      //                   ),
+                      //                 )),
+                      //             pw.Text(
+                      //               'ถึงวันที่',
+                      //               textAlign: pw.TextAlign.left,
+                      //               style: pw.TextStyle(
+                      //                 fontSize: font_Size,
+                      //                 font: ttf,
+                      //                 color: Colors_pd,
+                      //               ),
+                      //             ),
+                      //             pw.Expanded(
+                      //                 flex: 1,
+                      //                 child: pw.Container(
+                      //                   height: 14,
+                      //                   decoration: pw.BoxDecoration(
+                      //                       border: pw.Border(
+                      //                           bottom: pw.BorderSide(
+                      //                     color: Colors_pd,
+                      //                     width: 0.3, // Underline thickness
+                      //                   ))),
+                      //                   child: pw.Text(
+                      //                     (quotxSelectModels
+                      //                                 .where((e) =>
+                      //                                     e.expser.toString() ==
+                      //                                         '$exp_check' &&
+                      //                                     // e.unitser.toString() == '1' &&
+                      //                                     e.amt_ty.toString() !=
+                      //                                         '')
+                      //                                 .length ==
+                      //                             0)
+                      //                         ? ' '
+                      //                         : (Form_rtname.toString() ==
+                      //                                 'รายวัน')
+                      //                             ? (index + 1 ==
+                      //                                     rentList.length)
+                      //                                 ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").add(Duration(days: (index + 1))))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00').add(Duration(days: (index + 1)))}").year + 543}'
+                      //                                 : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").add(Duration(days: (index + 1))))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00').add(Duration(days: (index + 1)))}").year + 543}'
+                      //                             : (Form_rtname.toString() ==
+                      //                                     'รายเดือน')
+                      //                                 ? (index + 1 ==
+                      //                                         rentList.length)
+                      //                                     ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}'
+                      //                                     : '${DateFormat('dd MMM', 'th').format(DateTime(
+                      //                                         DateTime.parse(
+                      //                                                 "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                             .year,
+                      //                                         DateTime.parse(
+                      //                                                     "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                                 .month +
+                      //                                             (index +
+                      //                                                 1), // Add one to the month
+                      //                                         DateTime.parse(
+                      //                                                     "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                                 .day -
+                      //                                             1,
+                      //                                         00,
+                      //                                         00,
+                      //                                         00,
+                      //                                       ))} ${DateTime(
+                      //                                           DateTime.parse(
+                      //                                                   "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                               .year,
+                      //                                           DateTime.parse(
+                      //                                                       "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                                   .month +
+                      //                                               (index +
+                      //                                                   1), // Add one to the month
+                      //                                           DateTime.parse(
+                      //                                                   "${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}")
+                      //                                               .day,
+                      //                                           00,
+                      //                                           00,
+                      //                                           00,
+                      //                                         ).year + 543}'
+                      //                                 : (Form_rtname
+                      //                                             .toString() ==
+                      //                                         'รายปี')
+                      //                                     ? (index + 1 ==
+                      //                                             rentList
+                      //                                                 .length)
+                      //                                         ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}'
+                      //                                         : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + (index + 1)}'
+                      //                                     : (index + 1 ==
+                      //                                             rentList
+                      //                                                 .length)
+                      //                                         ? '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_ldate 00:00:00')}").year + 543}'
+                      //                                         : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543 + (index + 1)}',
+                      //                     textAlign: pw.TextAlign.center,
+                      //                     style: pw.TextStyle(
+                      //                       color: Colors_pd,
+                      //                       fontSize: font_Size,
+                      //                       fontWeight: pw.FontWeight.bold,
+                      //                       font: ttf,
+                      //                     ),
+                      //                   ),
+                      //                 )),
+                      //           ],
+                      //         ),
+                      //         pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      //         pw.Row(
+                      //           children: [
+                      //             pw.Text(
+                      //               ' ' * 12 + 'ชำระค่าเช่าเดือนละ',
+                      //               textAlign: pw.TextAlign.left,
+                      //               style: pw.TextStyle(
+                      //                 fontSize: font_Size,
+                      //                 font: ttf,
+                      //                 color: Colors_pd,
+                      //               ),
+                      //             ),
+                      //             pw.Expanded(
+                      //                 flex: 1,
+                      //                 child: pw.Container(
+                      //                   height: 14,
+                      //                   decoration: pw.BoxDecoration(
+                      //                       border: pw.Border(
+                      //                           bottom: pw.BorderSide(
+                      //                     color: Colors_pd,
+                      //                     width: 0.3, // Underline thickness
+                      //                   ))),
+                      //                   child: pw.Text(
+                      //                     (quotxSelectModels
+                      //                                 .where((e) =>
+                      //                                     e.expser.toString() ==
+                      //                                         '$exp_check' &&
+                      //                                     // e.unitser.toString() == '1' &&
+                      //                                     e.amt_ty.toString() !=
+                      //                                         '')
+                      //                                 .length ==
+                      //                             0)
+                      //                         ? ' '
+                      //                         : (double.parse(rentList[index]
+                      //                                     .toString()) ==
+                      //                                 0.00)
+                      //                             ? ' 0.00 บาท (~${convertToThaiBaht(0.00)}~)'
+                      //                             : " ${nFormat.format(double.parse(rentList[index].toString()))} บาท (~${convertToThaiBaht(double.parse(rentList[index].toString()))}~) ",
+                      //                     textAlign: pw.TextAlign.left,
+                      //                     style: pw.TextStyle(
+                      //                       color: Colors_pd,
+                      //                       fontSize: font_Size,
+                      //                       fontWeight: pw.FontWeight.bold,
+                      //                       font: ttf,
+                      //                     ),
+                      //                   ),
+                      //                 )),
+                      //           ],
+                      //         ),
+                      //         pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      //       ])),
                       (rentList.length == 0 || rentList.length == 3)
                           ? pw.SizedBox(height: 10 * PdfPageFormat.mm)
                           : (rentList.length == 2 || rentList.length == 1)
@@ -2880,127 +3632,127 @@ class Pdfgen_Agreement_Choice {
                           color: Colors_pd,
                         ),
                       ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        'ข้อ 13. การแจ้งการประมวลผลข้อมูลส่วนบุคคล (Privacy Notice)',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 + '13.1 การเก็บ และใช้ข้อมูลส่วนบุคคล',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'ผู้ให้เช่าได้เก็บรวบรวมและหรือใช้ข้อมูลส่วนบุคคลของผู้เช่า ได้แก่  สำเนาบัตรประจำตัวประชาชน , สำเนาทะเบียนบ้าน , สำเนาบัญชีธนาคาร\nเอกสารสำคัญใด ๆ  ที่มีข้อมูลส่วนบุคคล (“ข้อมูลส่วนบุคคล”)  เป็นระยะเวลาทั้งหมด  10 ปี (สิบปี) นับจากวันที่สัญญาฉบับนี้สิ้นสุดลงโดยมีวัตถุประสงค์\nเพื่อตรวจสอบความเป็นตัวตนของผู้เช่าเป็นหลักฐานในการก่อตั้งสิทธิเรียกร้องและเพื่อใช้ตามวัตถุประสงค์ตามสัญญาฉบับนี้เรียกร้อง และเพื่อใช้ตามวัตถุ\nประสงค์ตามสัญญาฉบับนี้เท่านั้น โดยไม่นำข้อมูลส่วนบุคคลดังกล่าวไปใช้เพื่อวัตถุประสงค์อื่นใดนอกจากสัญญาฉบับนี้แต่อย่างใด',
-                        textAlign: pw.TextAlign.justify,
-                        maxLines: 4,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'ทั้งนี้   หากผู้เช่าไม่ส่งมอบข้อมูลส่วนบุคคลดังกล่าวแก่ผู้ให้เช่า  จะทำให้การจัดทำสัญญาฉบับนี้ไม่สมบูรณ์  อันเป็นฐานการประมวลผลเพื่อเป็น\nการจำเป็นเพื่อการปฏิบัติตามสัญญาและเป็นการจำเป็นเพื่อประโยชน์โดยชอบด้วยกฎหมาย  ตามมาตรา 24(3) , (5) ของพระราชบัญญัติคุ้มครองข้อมูล\nส่วนบุคคล พ.ศ. 2562 ',
-                        textAlign: pw.TextAlign.justify,
-                        maxLines: 3,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'ทั้งนี้ ผู้เช่าในฐานะเจ้าของข้อมูลส่วนบุคคลรับทราบว่าตนเองมีสิทธิดังนี้ (1) สิทธิในการเข้าถึงและรับสำเนาข้อมูลส่วนบุคคลที่ผู้ให้เช่าได้ทำการ\nเก็บรวบรวมและหรือใช้ได้ ตลอดจนสิทธิในการคัดค้าน การประมวลผลข้อมูลส่วนบุคคล  (2)  เมื่อพ้นระยะเวลาทั้งหมด 10 ปี (สิบปี) นับจากวันที่สัญญา\nฉบับนี้สิ้นสุดลง ผู้ให้เช่าจะทำการลบหรือทำลายข้อมูลส่วนบุคคล    (3)   สิทธิในการขอให้ผู้ให้เช่าระงับการใช้ข้อมูลส่วนบุคคล   หากผู้ให้เช่าได้ใช้ข้อมูล\nส่วนบุคคลไม่เป็นไป  ตามวัตถุประสงค์ตามวรรคแรกข้างต้น   (4)  สิทธิในการขอแก้ไขข้อมูลส่วนบุคคลให้ถูกต้องเป็นปัจจุบัน    สมบูรณ์และไม่ก่อให้เกิด\nความเข้าใจผิด   (5)   สิทธิในการร้องเรียนผู้ให้เช่าใช้สิทธิข้างต้นจะต้องจัดทำเป็นลายลักษณ์อักษร     และแจ้งต่อผู้ให้เช่าภายในระยะเวลาอันสมควร   และไม่เกินระยะเวลาที่กฎหมายกำหนด โดยผู้ให้เช่าจะปฏิบัติตามข้อกำหนดทางกฎหมายที่เกี่ยวข้องกับสิทธิ ของเจ้าของข้อมูลส่วนบุคคล และผู้ให้เช่า\nขอสงวนสิทธิ์ในการคิดค่าเช่าใดๆ ที่เกี่ยวข้องและจำเป็นต่อการใช้สิทธิดังกล่าว',
-                        textAlign: pw.TextAlign.justify,
-                        maxLines: 7,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      (rentList.length > 4)
-                          ? pw.SizedBox(height: 1 * PdfPageFormat.mm)
-                          : pw.SizedBox(height: 3 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 + '13.2 การเปิดเผยข้อมูลส่วนบุคคล',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'เพื่อประโยชน์ของผู้เช่าตามวัตถุประสงค์ในสัญญาเช่านี้   ผู้ให้เช่าอาจเปิดเผยข้อมูลของผู้เช่าให้กับหน่วยงานอื่นของผู้ให้เช่ารวมถึงบริษัทในเครือ\nและบริษัทย่อย  เพื่อวัตถุประสงค์ในการปฏิบัติตามภาระผูกพันตามสัญญา  ประโยชน์ที่ชอบด้วยกฎหมายการปฏิบัติตามกฎหมาย และวัตถุประสงค์อื่น ๆ\nภายใต้กฎหมายไทยผู้เช่ารับทราบว่าหากมีเหตุร้องเรียนเกี่ยวกับข้อมูลส่วนบุคคลสามารถติดต่อประสานงานมายังเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลได้ใน\nช่องทางดังนี้',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (Data Protection Officer: DPO) / ผู้ควบคุมข้อมูลส่วนบุคคล (Data Controller)',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 + 'บริษัท ชอยส์ มินิสโตร์ จำกัด ',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'เลขที่ 7/11 หมู่ที่ 5 ตำบลท่าศาลา อำเภอเมืองเชียงใหม่ จังหวัดเชียงใหม่ 50000',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 + 'Email Address : privacy@choice.co.th',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   'ข้อ 13. การแจ้งการประมวลผลข้อมูลส่วนบุคคล (Privacy Notice)',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 + '13.1 การเก็บ และใช้ข้อมูลส่วนบุคคล',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'ผู้ให้เช่าได้เก็บรวบรวมและหรือใช้ข้อมูลส่วนบุคคลของผู้เช่า ได้แก่  สำเนาบัตรประจำตัวประชาชน , สำเนาทะเบียนบ้าน , สำเนาบัญชีธนาคาร\nเอกสารสำคัญใด ๆ  ที่มีข้อมูลส่วนบุคคล (“ข้อมูลส่วนบุคคล”)  เป็นระยะเวลาทั้งหมด  10 ปี (สิบปี) นับจากวันที่สัญญาฉบับนี้สิ้นสุดลงโดยมีวัตถุประสงค์\nเพื่อตรวจสอบความเป็นตัวตนของผู้เช่าเป็นหลักฐานในการก่อตั้งสิทธิเรียกร้องและเพื่อใช้ตามวัตถุประสงค์ตามสัญญาฉบับนี้เรียกร้อง และเพื่อใช้ตามวัตถุ\nประสงค์ตามสัญญาฉบับนี้เท่านั้น โดยไม่นำข้อมูลส่วนบุคคลดังกล่าวไปใช้เพื่อวัตถุประสงค์อื่นใดนอกจากสัญญาฉบับนี้แต่อย่างใด',
+                      //   textAlign: pw.TextAlign.justify,
+                      //   maxLines: 4,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'ทั้งนี้   หากผู้เช่าไม่ส่งมอบข้อมูลส่วนบุคคลดังกล่าวแก่ผู้ให้เช่า  จะทำให้การจัดทำสัญญาฉบับนี้ไม่สมบูรณ์  อันเป็นฐานการประมวลผลเพื่อเป็น\nการจำเป็นเพื่อการปฏิบัติตามสัญญาและเป็นการจำเป็นเพื่อประโยชน์โดยชอบด้วยกฎหมาย  ตามมาตรา 24(3) , (5) ของพระราชบัญญัติคุ้มครองข้อมูล\nส่วนบุคคล พ.ศ. 2562 ',
+                      //   textAlign: pw.TextAlign.justify,
+                      //   maxLines: 3,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'ทั้งนี้ ผู้เช่าในฐานะเจ้าของข้อมูลส่วนบุคคลรับทราบว่าตนเองมีสิทธิดังนี้ (1) สิทธิในการเข้าถึงและรับสำเนาข้อมูลส่วนบุคคลที่ผู้ให้เช่าได้ทำการ\nเก็บรวบรวมและหรือใช้ได้ ตลอดจนสิทธิในการคัดค้าน การประมวลผลข้อมูลส่วนบุคคล  (2)  เมื่อพ้นระยะเวลาทั้งหมด 10 ปี (สิบปี) นับจากวันที่สัญญา\nฉบับนี้สิ้นสุดลง ผู้ให้เช่าจะทำการลบหรือทำลายข้อมูลส่วนบุคคล    (3)   สิทธิในการขอให้ผู้ให้เช่าระงับการใช้ข้อมูลส่วนบุคคล   หากผู้ให้เช่าได้ใช้ข้อมูล\nส่วนบุคคลไม่เป็นไป  ตามวัตถุประสงค์ตามวรรคแรกข้างต้น   (4)  สิทธิในการขอแก้ไขข้อมูลส่วนบุคคลให้ถูกต้องเป็นปัจจุบัน    สมบูรณ์และไม่ก่อให้เกิด\nความเข้าใจผิด   (5)   สิทธิในการร้องเรียนผู้ให้เช่าใช้สิทธิข้างต้นจะต้องจัดทำเป็นลายลักษณ์อักษร     และแจ้งต่อผู้ให้เช่าภายในระยะเวลาอันสมควร   และไม่เกินระยะเวลาที่กฎหมายกำหนด โดยผู้ให้เช่าจะปฏิบัติตามข้อกำหนดทางกฎหมายที่เกี่ยวข้องกับสิทธิ ของเจ้าของข้อมูลส่วนบุคคล และผู้ให้เช่า\nขอสงวนสิทธิ์ในการคิดค่าเช่าใดๆ ที่เกี่ยวข้องและจำเป็นต่อการใช้สิทธิดังกล่าว',
+                      //   textAlign: pw.TextAlign.justify,
+                      //   maxLines: 7,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // (rentList.length > 4)
+                      //     ? pw.SizedBox(height: 1 * PdfPageFormat.mm)
+                      //     : pw.SizedBox(height: 3 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 + '13.2 การเปิดเผยข้อมูลส่วนบุคคล',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'เพื่อประโยชน์ของผู้เช่าตามวัตถุประสงค์ในสัญญาเช่านี้   ผู้ให้เช่าอาจเปิดเผยข้อมูลของผู้เช่าให้กับหน่วยงานอื่นของผู้ให้เช่ารวมถึงบริษัทในเครือ\nและบริษัทย่อย  เพื่อวัตถุประสงค์ในการปฏิบัติตามภาระผูกพันตามสัญญา  ประโยชน์ที่ชอบด้วยกฎหมายการปฏิบัติตามกฎหมาย และวัตถุประสงค์อื่น ๆ\nภายใต้กฎหมายไทยผู้เช่ารับทราบว่าหากมีเหตุร้องเรียนเกี่ยวกับข้อมูลส่วนบุคคลสามารถติดต่อประสานงานมายังเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลได้ใน\nช่องทางดังนี้',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (Data Protection Officer: DPO) / ผู้ควบคุมข้อมูลส่วนบุคคล (Data Controller)',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 + 'บริษัท ชอยส์ มินิสโตร์ จำกัด ',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'เลขที่ 7/11 หมู่ที่ 5 ตำบลท่าศาลา อำเภอเมืองเชียงใหม่ จังหวัดเชียงใหม่ 50000',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 + 'Email Address : privacy@choice.co.th',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
                       pw.SizedBox(height: 10 * PdfPageFormat.mm),
                       pw.Text(
                         ' ' * 12 +
@@ -3622,35 +4374,35 @@ class Pdfgen_Agreement_Choice {
             doc: pdf,
             context: context,
             ////////////------------------->
-            ///
-            Get_Value_NameShop_index: Get_Value_NameShop_index,
-            Get_Value_cid: Get_Value_cid,
-            verticalGroupValue: _verticalGroupValue,
-            Form_nameshop: Form_nameshop,
-            Form_typeshop: Form_typeshop,
-            Form_bussshop: Form_bussshop,
-            Form_bussscontact: Form_bussscontact,
-            Form_address: Form_address,
-            Form_tel: Form_tel,
-            Form_email: Form_email,
-            Form_tax: Form_tax,
-            Form_ln: Form_ln,
-            Form_zn: Form_zn,
-            Form_area: Form_area,
-            Form_qty: Form_qty,
-            Form_sdate: Form_sdate,
-            Form_ldate: Form_ldate,
-            Form_period: Form_period,
-            Form_rtname: Form_rtname,
-            quotxSelectModels: quotxSelectModels,
-            TransModels: _TransModels,
-            renTal_name: renTal_name,
-            bill_addr: bill_addr,
-            bill_email: bill_email,
-            bill_tel: bill_tel,
-            bill_tax: bill_tax,
-            bill_name: bill_name,
-            newValuePDFimg: newValuePDFimg,
+
+            // Get_Value_NameShop_index: Get_Value_NameShop_index,
+            // Get_Value_cid: Get_Value_cid,
+            // verticalGroupValue: _verticalGroupValue,
+            // Form_nameshop: Form_nameshop,
+            // Form_typeshop: Form_typeshop,
+            // Form_bussshop: Form_bussshop,
+            // Form_bussscontact: Form_bussscontact,
+            // Form_address: Form_address,
+            // Form_tel: Form_tel,
+            // Form_email: Form_email,
+            // Form_tax: Form_tax,
+            // Form_ln: Form_ln,
+            // Form_zn: Form_zn,
+            // Form_area: Form_area,
+            // Form_qty: Form_qty,
+            // Form_sdate: Form_sdate,
+            // Form_ldate: Form_ldate,
+            // Form_period: Form_period,
+            // Form_rtname: Form_rtname,
+            // quotxSelectModels: quotxSelectModels,
+            // TransModels: _TransModels,
+            // renTal_name: renTal_name,
+            // bill_addr: bill_addr,
+            // bill_email: bill_email,
+            // bill_tel: bill_tel,
+            // bill_tax: bill_tax,
+            // bill_name: bill_name,
+            // newValuePDFimg: newValuePDFimg,
           ),
         ));
   }

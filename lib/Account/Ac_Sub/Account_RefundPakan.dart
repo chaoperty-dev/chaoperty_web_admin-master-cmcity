@@ -685,13 +685,13 @@ class _Account_RefundPakanState extends State<Account_RefundPakan> {
             7)
         ? (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.84
-            : 1200
+            : 1400
         : (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.84 +
                 ((ac10_2.where((item) => item["st"] == '1').toList().length -
                         7) *
                     30)
-            : 1200 +
+            : 1400 +
                 ((ac10_2.where((item) => item["st"] == '1').toList().length -
                         7) *
                     30);

@@ -178,7 +178,7 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
         }
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      // print('Error fetching data: $e');
     }
   }
 
@@ -208,7 +208,7 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
         _updateNodes();
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      //   print('Error fetching data: $e');
     }
   }
 
@@ -439,7 +439,7 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
       // print('Response body: ${response.body}');
       var result = json.decode(response.body);
       if (result.toString() == 'true') {
-        print('Node saved successfully');
+        // print('Node saved successfully');
         setState(() {
           controller = InfiniteCanvasController(nodes: [], edges: []);
         });
@@ -449,10 +449,10 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
             'ตั้งค่า',
             'พื้นที่: แผนผังพื้นที่ >> สร้างพื้นที่ในแผนผัง โซน $zone_name  ( พื้นที่  : ${(aser.toString() == '0') ? (type.toString() == 'Text') ? Text_text.text.toString() : type : nodeData.lncode.toString()})');
       } else {
-        print('Failed to save node');
+        //  print('Failed to save node');
       }
     } catch (e) {
-      print('Error saving node to server: $e');
+      // print('Error saving node to server: $e');
     }
   }
 
@@ -509,17 +509,17 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
 
       var result = json.decode(response.body);
       if (result.toString() == 'true') {
-        print('UPDATE_Nodes saved successfully');
+        // print('UPDATE_Nodes saved successfully');
         setState(() {
           controller = InfiniteCanvasController(nodes: [], edges: []);
         });
         red_area();
         red_Trans_Kon();
       } else {
-        print('Failed to save node');
+        // print('Failed to save node');
       }
     } catch (e) {
-      print('Error saving node to server: $e');
+      //print('Error saving node to server: $e');
     }
   }
 
@@ -584,10 +584,10 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
             red_Trans_Kon();
           }
         } else {
-          print('Failed to save node');
+          // print('Failed to save node');
         }
       } catch (e) {
-        print('Error saving node to server: $e');
+        // print('Error saving node to server: $e');
       }
       i = i + 1;
     }
@@ -642,8 +642,8 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
         var result = json.decode(response.body);
         if (result.toString() == 'true') {
           if (i + 1 != controller.nodes.length) {
-            print(
-                'UPDATE_Nodes saved successfully ${nodeData.ser.toString()} /// ${i + 1}');
+            // print(
+            //     'UPDATE_Nodes saved successfully ${nodeData.ser.toString()} /// ${i + 1}');
             // break;
           } else {
             // Navigator.of(context).pop();
@@ -654,10 +654,10 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
             // red_Trans_Kon();
           }
         } else {
-          print('Failed to save node');
+          // print('Failed to save node');
         }
       } catch (e) {
-        print('Error saving node to server: $e');
+        // print('Error saving node to server: $e');
       }
       i = i + 1;
     }
@@ -692,10 +692,10 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
         red_area();
         red_Trans_Kon();
       } else {
-        print('Failed to save node');
+        //print('Failed to save node');
       }
     } catch (e) {
-      print('Error saving node to server: $e');
+      // print('Error saving node to server: $e');
     }
   }
 
@@ -719,7 +719,7 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
 
       var result = json.decode(response.body);
       if (result.toString() == 'true') {
-        print('DELETE_NodesAll saved successfully ');
+        // print('DELETE_NodesAll saved successfully ');
         setState(() {
           controller = InfiniteCanvasController(nodes: [], edges: []);
         });
@@ -728,10 +728,10 @@ class _GeneratedNodesState extends State<GeneratedNodes> {
         Insert_log.Insert_logs('ตั้งค่า',
             'พื้นที่: แผนผังพื้นที่ >> ลบพื้นที่ในแผนผัง โซน $zone_name ทั้งหมด');
       } else {
-        print('Failed to save node');
+        // print('Failed to save node');
       }
     } catch (e) {
-      print('Error saving node to server: $e');
+      //print('Error saving node to server: $e');
     }
   }
 

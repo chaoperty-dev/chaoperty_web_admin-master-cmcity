@@ -38,7 +38,7 @@ String convertToThaiBaht(double amount) {
     'แสน',
     'ล้าน'
   ];
-/////////////////////////////------------------------>(จำนวนเต็ม)
+  /////////////////////////////------------------------>(จำนวนเต็ม)
   String convertNumberToText(int number) {
     String result = '';
     int numberIntPart = number.toInt();
@@ -140,4 +140,72 @@ String convertToThaiBaht(double amount) {
   }
 
   return (amount == 0.00) ? 'ศูนย์บาทจุดศูนย์ศูนย์สตางค์ถ้วน' : text_Number2;
+}
+
+// อ่านแค่จำนวนเต็ม
+String thaiIntegerFromAmount(double amount) {
+  final int n = amount.truncate(); // ตัดทศนิยมทิ้ง ไม่ปัดขึ้น
+  return _thaiNumber(n);
+}
+
+String _thaiNumber(int n) {
+  if (n == 0) return 'ศูนย์';
+  if (n < 0) return 'ลบ${_thaiNumber(-n)}';
+
+  // จัดการทีละ "ล้าน"
+  if (n >= 1000000) {
+    final int millions = n ~/ 1000000;
+    final int rest = n % 1000000;
+    final head = '${_thaiNumber(millions)}ล้าน';
+    return rest == 0 ? head : '$head${_thaiUnderMillion(rest)}';
+  }
+  return _thaiUnderMillion(n);
+}
+
+String _thaiUnderMillion(int n) {
+  final digits = [
+    'ศูนย์',
+    'หนึ่ง',
+    'สอง',
+    'สาม',
+    'สี่',
+    'ห้า',
+    'หก',
+    'เจ็ด',
+    'แปด',
+    'เก้า'
+  ];
+  final units = ['', 'สิบ', 'ร้อย', 'พัน', 'หมื่น', 'แสน'];
+
+  final s = n.toString();
+  final len = s.length;
+  final buf = StringBuffer();
+
+  for (int i = 0; i < len; i++) {
+    final d = int.parse(s[i]);
+    final pos = len - i - 1; // 0=หน่วย,1=สิบ,...,5=แสน
+
+    if (d == 0) continue;
+
+    if (pos == 0) {
+      // หลักหน่วย
+      if (len > 1 && d == 1) {
+        buf.write('เอ็ด'); // …เอ็ด (เมื่อมีหลักสูงกว่าหน่วย)
+      } else {
+        buf.write(digits[d]);
+      }
+    } else if (pos == 1) {
+      // หลักสิบ
+      if (d == 1) {
+        buf.write('สิบ');
+      } else if (d == 2) {
+        buf.write('ยี่สิบ');
+      } else {
+        buf.write('${digits[d]}สิบ');
+      }
+    } else {
+      buf.write('${digits[d]}${units[pos]}');
+    }
+  }
+  return buf.toString();
 }

@@ -7,9 +7,10 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:chaoperty/AdminScaffold/AdminScaffold.dart';
 import 'package:dio/dio.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
+// import 'package:iconsax/iconsax.dart';
 import 'package:im_stepper/stepper.dart';
 
 import 'package:intl/intl.dart';
@@ -21,8 +22,10 @@ import 'package:side_sheet/side_sheet.dart';
 import 'package:slide_switcher/slide_switcher.dart';
 
 import '../Canvas/view_nodes.dart';
+import '../ChiangMai_Municipality/Make_contract_CMM/contractParams.dart';
 import '../ChiangMai_Municipality/Make_contract_CMM/new_contract_cmm.dart';
 import '../ChiangMai_Municipality/Model/Properties_Model.dart';
+import '../ChiangMai_Municipality/request_examiner_plugins_cmm.dart';
 import '../ChiangMai_Municipality/unity/API_properties.dart';
 import '../Constant/Myconstant.dart';
 
@@ -48,7 +51,41 @@ import 'package:xml/xml.dart';
 import 'ChaoArrea_List/Chao_List_Title.dart';
 import 'loadSvgImage.dart';
 import '../Style/view_pagenow.dart';
+import '../Constant/api_cache.dart';
 
+// พาร์ส List<dynamic> -> List<AreaModel> บน isolate
+List<AreaModel> parseAreasIsolate(List<dynamic> data) {
+  return data.map((m) => AreaModel.fromJson(m)).toList();
+}
+
+// แบ่งลิสต์เป็นชิ้น ๆ เพื่อจำกัด concurrency
+List<List<T>> chunked<T>(List<T> list, int size) {
+  final chunks = <List<T>>[];
+  for (var i = 0; i < list.length; i += size) {
+    final end = (i + size < list.length) ? i + size : list.length;
+    chunks.add(list.sublist(i, end));
+  }
+  return chunks;
+}
+
+// ใช้เก็บผลลัพธ์จากการโหลดพื้นที่
+class _AreaLoadResult {
+  _AreaLoadResult({
+    required this.areaModels,
+    required this.areaQuotModels,
+    required this.zone,
+    required this.zoneName,
+    required this.totalMatched,
+  });
+
+  final List<AreaModel> areaModels;
+  final List<AreaQuotModel> areaQuotModels;
+  final String? zone;
+  final String? zoneName;
+  final int totalMatched;
+}
+
+///////////----------------------------------------->
 class ChaoAreaScreen extends StatefulWidget {
   const ChaoAreaScreen({super.key});
 
@@ -57,6 +94,7 @@ class ChaoAreaScreen extends StatefulWidget {
 }
 
 class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
+  static final _apiCache = ApiCache(ttl: const Duration(seconds: 30));
   List<GlobalKey> _btnKeys = [];
   var nFormat = NumberFormat("#,##0.00", "en_US");
   DateTime datex = DateTime.now();
@@ -85,6 +123,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   List<AreaxConModel> areaxConModels = [];
   List<MaintenanceModel> maintenanceModels = [];
   List<PropertiesModel> propertiesModel = [];
+  List<AreaQuotModel> _areaQuotModels = <AreaQuotModel>[];
   List Area_ = [
     'คอมมูนิตี้มอลล์',
     'ออฟฟิศให้เช่า',
@@ -105,12 +144,21 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   ];
   List Status = [
     'ทั้งหมด',
-    'ใกล้หมดสัญญา',
-    'เสนอราคา',
-    'ว่าง',
     'เช่าอยู่',
+    'ใกล้หมดสัญญา',
     'หมดสัญญา',
+    'เสนอราคา',
+    'เสนอราคา(มัดจำ)',
+    'ว่าง',
   ];
+  // List Status = [
+  //   'ทั้งหมด',
+  //   'ใกล้หมดสัญญา',
+  //   'เสนอราคา',
+  //   'ว่าง',
+  //   'เช่าอยู่',
+  //   'หมดสัญญา',
+  // ];
   List Year_ = [
     'ทั้งหมด',
     for (int i = 0; i < 10; i++) '${2565 - i}',
@@ -162,18 +210,45 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   int renTal_lavel = 0;
   String? data_uuid, requestStep, payment_uuid, payment_uuid_amount;
   List<Map<String, dynamic>> payment_jsonx = [];
+  var reques_tstatusx;
+  bool SortCMMProperties = false;
+  bool isLoadingSort = false;
 
   @override
   void initState() {
     super.initState();
     checkPreferance();
-    read_GC_Sub_zone();
-    read_GC_zone();
-    Data_Properties();
+
+    read_GC_zone().then((_) {
+      read_GC_Sub_zone();
+      Data_Properties();
+    });
+
     read_GC_rental();
     addAcListTitle();
     _areaModels = areaModels;
     _zoneModels = zoneModels;
+  }
+
+  ////////////----------------------------------->
+  void add_ContractStore(index) {
+    final aln = areaModels[index].lncode;
+    final aser = areaModels[index].ser;
+    final aarea = areaModels[index].area;
+    final arent = areaModels[index].rent;
+
+    final store = ContractStore();
+    store
+      ..areaIndex = aser.toString()
+      ..areaLn = aln.toString()
+      ..areaSum = aarea.toString()
+      ..rentSum = arent.toString()
+      ..page = a_page.toString()
+      ..uuid = data_uuid.toString()
+      ..step = requestStep.toString()
+      ..paymentUuid = payment_uuid.toString()
+      ..paymentAmount = payment_uuid_amount.toString()
+      ..paymentJson = payment_jsonx;
   }
 
   ////////////----------------------------------->
@@ -199,22 +274,44 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
 
   ////////////----------------------------------->
   Future<Null> read_GC_Sub_zone() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    var ren = preferences.getString('renTalSer');
+    final cacheKey = 'read_GC_Sub_zone_$ren';
+
+    if (_apiCache.isValid(cacheKey)) {
+      final cachedData = _apiCache.get(cacheKey);
+      if (cachedData != null) {
+        setState(() {
+          subzoneModels.clear();
+          subzoneModels.add(SubZoneModel.fromJson({
+            'ser': '0',
+            'rser': '0',
+            'zn': 'ทั้งหมด',
+            'qty': '0',
+            'img': '0',
+            'data_update': '0',
+          }));
+          for (var map in cachedData) {
+            subzoneModels.add(SubZoneModel.fromJson(map));
+          }
+        });
+        return;
+      }
+    }
+
     if (subzoneModels.length != 0) {
       setState(() {
         subzoneModels.clear();
       });
     }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-
-    var ren = preferences.getString('renTalSer');
 
     String url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
 
     try {
       var response = await http.get(Uri.parse(url));
-
       var result = json.decode(response.body);
-      Map<String, dynamic> map = Map();
+
+      Map<String, dynamic> map = {};
       map['ser'] = '0';
       map['rser'] = '0';
       map['zn'] = 'ทั้งหมด';
@@ -234,6 +331,8 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
           subzoneModels.add(subzoneModel);
         });
       }
+
+      _apiCache.set(cacheKey, result);
     } catch (e) {}
   }
 
@@ -264,24 +363,57 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
       renTal_lavel = int.parse(preferences.getString('lavel').toString());
     });
 
-    print('textsearchstart>>>>  $textsearch');
+    //  print('textsearchstart>>>>  $textsearch');
   }
 
   Future<Null> read_GC_rental() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    var ren = preferences.getString('renTalSer');
+    final cacheKey = 'read_GC_rental_$ren';
+
+    if (_apiCache.isValid(cacheKey)) {
+      final cachedData = _apiCache.get(cacheKey);
+      if (cachedData != null) {
+        setState(() {
+          renTalModels.clear();
+          for (var map in cachedData) {
+            RenTalModel renTalModel = RenTalModel.fromJson(map);
+            open_set_date = int.parse(renTalModel.open_set_date!) == 0
+                ? 30
+                : int.parse(renTalModel.open_set_date!);
+            foder = renTalModel.dbn;
+            rtname = renTalModel.rtname;
+            type = renTalModel.type;
+            typex = renTalModel.typex;
+            renname = renTalModel.pn!.trim();
+            pkqty = int.parse(renTalModel.pkqty!);
+            pkuser = int.parse(renTalModel.pkuser!);
+            DBN_ = renTalModel.dbn;
+            pkname = renTalModel.pk!.trim();
+            img_ = renTalModel.img;
+            img_logo = renTalModel.imglogo;
+            ser_Floor_plans = renTalModel.Floor_plans!;
+            renTalModels.add(renTalModel);
+          }
+        });
+        return;
+      }
+    }
+
     if (renTalModels.isNotEmpty) {
       renTalModels.clear();
     }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
+
     String url =
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
     try {
       var response = await http.get(Uri.parse(url));
-
       var result = json.decode(response.body);
-      //  print(result);
+
       if (result != null) {
+        if (result is List) _apiCache.set(cacheKey, result);
+
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
           var rtnamex = renTalModel.rtname;
@@ -295,6 +427,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
           var img = renTalModel.img;
           var imglogo = renTalModel.imglogo;
           var open_set_datex = int.parse(renTalModel.open_set_date!);
+
           setState(() {
             open_set_date = open_set_datex == 0 ? 30 : open_set_datex;
             foder = foderx;
@@ -314,316 +447,865 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
         }
       } else {}
     } catch (e) {}
-    // print('name>>>>>  $renname');
   }
 
-  Future<Null> read_GC_zone() async {
-    if (zoneModels.length != 0) {
-      zoneModels.clear();
-      _zoneModels.clear();
+  List<ZoneModel> limitedList_zoneModels = [];
+  int limit = 3; // The maximum number of items you want
+  int offset = 0; // The starting index of items you want
+  int endIndex = 0;
+  /////////////////--------------------------->
+  // Future<Null> read_zone_limit() async {
+  //   setState(() {
+  //     endIndex = offset + limit;
+  //     zoneModels = limitedList_zoneModels.sublist(
+  //         offset, // Start index
+  //         (endIndex <= limitedList_zoneModels.length)
+  //             ? endIndex
+  //             : limitedList_zoneModels.length // End index
+  //         );
+  //   });
+
+  // }
+
+  String _norm(dynamic v) => v == null ? '' : v.toString().trim();
+
+  void sortZoneModels() {
+    if (limitedList_zoneModels.isEmpty) return;
+
+    // 1) เซ็ตของ zser ที่ใช้ได้จาก areaModels (ไม่นับ '', '0')
+    final Set<String> validZser = {
+      for (final a in areaModels)
+        if (_norm(a.zser).isNotEmpty && _norm(a.zser) != '0') _norm(a.zser)
+    };
+
+    // 2) แบ่งเป็น 3 กอง: ทั้งหมด → match → notMatch (คงลำดับเดิมในแต่ละกอง)
+    final allItems = <ZoneModel>[];
+    final match = <ZoneModel>[];
+    final notMatch = <ZoneModel>[];
+
+    for (final z in limitedList_zoneModels) {
+      if (_norm(z.zn) == 'ทั้งหมด') {
+        allItems.add(z);
+      } else if (validZser.contains(_norm(z.ser))) {
+        match.add(z);
+      } else {
+        notMatch.add(z);
+      }
     }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
 
-    var zoneSubSer = preferences.getString('zoneSubSer');
-    var zonesSubName = preferences.getString('zonesSubName');
-    var ren = preferences.getString('renTalSer');
+    // 3) ต่อกลับ: 'ทั้งหมด' ก่อนเสมอ แล้ว match, แล้ว notMatch
+    limitedList_zoneModels
+      ..clear()
+      ..addAll(allItems)
+      ..addAll(match)
+      ..addAll(notMatch);
 
-    String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
+    // เรียกฟังก์ชันตัดหน้า-หลังแบบมี setState ภายใน
+    read_zone_limit();
+  }
 
-    try {
-      var response = await http.get(Uri.parse(url));
+  Future<void> read_zone_limit() async {
+    // 1) ตัด 'ทั้งหมด' ออก (ser == '0' หรือว่าง)
+    final filtered = <ZoneModel>[
+      for (final z in limitedList_zoneModels)
+        if (_norm(z.ser).isNotEmpty && _norm(z.ser) != '0') z,
+    ];
 
-      var result = json.decode(response.body);
-      //print(result);
-      Map<String, dynamic> map = Map();
-      map['ser'] = '0';
-      map['rser'] = '0';
-      map['zn'] = 'ทั้งหมด';
-      map['qty'] = '0';
-      map['img'] = '0';
-      map['data_update'] = '0';
+    final total = filtered.length;
+    final safeOffset = offset.clamp(0, total);
+    final safeEnd = (safeOffset + limit).clamp(0, total);
 
-      ZoneModel zoneModelx = ZoneModel.fromJson(map);
+    setState(() {
+      endIndex = safeEnd;
+      zoneModels = filtered.sublist(safeOffset, safeEnd);
+    });
+  }
 
-      setState(() {
-        zoneModels.add(zoneModelx);
-      });
+  Future<void> read_GC_zone() async {
+    final prefs = await SharedPreferences.getInstance();
+    final zoneSubSer = prefs.getString('zoneSubSer');
+    final ren = prefs.getString('renTalSer');
+    final cacheKey = 'read_GC_zone_$ren';
 
-      for (var map in result) {
-        ZoneModel zoneModel = ZoneModel.fromJson(map);
-        var sub = zoneModel.sub_zone;
+    if (_apiCache.isValid(cacheKey)) {
+      final cachedData = _apiCache.get(cacheKey);
+      if (cachedData != null) {
         setState(() {
-          if (zoneSubSer == null || zoneSubSer == '0') {
-            zoneModels.add(zoneModel);
-          } else {
-            if (sub == zoneSubSer) {
-              zoneModels.add(zoneModel);
+          limit = 3;
+          offset = 0;
+          endIndex = 0;
+          limitedList_zoneModels.clear();
+          zoneModels.clear();
+          _zoneModels.clear();
+
+          final allItem = ZoneModel.fromJson({
+            'ser': '0',
+            'rser': '0',
+            'zn': 'ทั้งหมด',
+            'qty': '0',
+            'img': '0',
+            'data_update': '0'
+          });
+
+          final tmp = <ZoneModel>[allItem];
+          for (final map in cachedData) {
+            final z = ZoneModel.fromJson(map);
+            final sub = z.sub_zone;
+            final allowBySub =
+                (zoneSubSer == null || zoneSubSer == '0' || sub == zoneSubSer);
+            final hasQty = z.qty.toString() != '0';
+            if (allowBySub && hasQty) {
+              tmp.add(z);
             }
           }
+
+          limitedList_zoneModels = tmp;
+          zoneModels = tmp;
+          _zoneModels = tmp;
+
+          zone_ser = prefs.getString('zoneSer');
+          zone_name = prefs.getString('zonesName');
+          zone_Subser = prefs.getString('zoneSubSer');
+          zone_Subname = prefs.getString('zonesSubName');
+
+          final idx = zoneModels.indexWhere(
+            (e) => e.ser == zone_ser && e.zn == zone_name,
+          );
+          if (idx >= 0) {
+            final img = zoneModels[idx].img;
+            final imgFloor = zoneModels[idx].img_floorplan;
+            Img_Zone = (img == null || img == '0')
+                ? null
+                : '${MyConstant().domain}/files/$DBN_/zone/$img';
+            Imgfloorplan = (imgFloor == null || imgFloor == '0')
+                ? null
+                : '${MyConstant().domain}/files/$DBN_/zone/$imgFloor';
+          }
         });
-      }
-      zoneModels.sort((a, b) {
-        if (a.zn == 'ทั้งหมด') {
-          return -1; // 'all' should come before other elements
-        } else if (b.zn == 'ทั้งหมด') {
-          return 1; // 'all' should come after other elements
+
+        if (Status_ == 1) {
+          sortZoneModels();
         } else {
-          return a.zn!
-              .compareTo(b.zn!); // sort other elements in ascending order
+          read_zone_limit();
         }
-      });
-    } catch (e) {}
-    if (preferences.getString('zonesName').toString() == 'null') {
-      setState(() {
-        preferences.setString('zoneSer', '0');
-        preferences.setString('zonesName', 'ทั้งหมด');
-      });
+        return;
+      }
     }
 
     setState(() {
-      _zoneModels = zoneModels;
-      zone_ser = preferences.getString('zoneSer');
-      zone_name = preferences.getString('zonesName');
-      zone_Subser = preferences.getString('zoneSubSer');
-      zone_Subname = preferences.getString('zonesSubName');
+      limit = 3;
+      offset = 0;
+      endIndex = 0;
+      limitedList_zoneModels.clear();
+      zoneModels.clear();
+      _zoneModels.clear();
     });
 
-    int selectedIndex = zoneModels.indexWhere(
-        (element) => element.ser == zone_ser && element.zn == zone_name);
+    List<ZoneModel> nextLimited = [];
+    List<ZoneModel> nextZones = [];
+    String? nextZoneSer;
+    String? nextZoneName;
+    String? nextZoneSubSer;
+    String? nextZoneSubName;
+    String? nextImgZone;
+    String? nextImgFloorplan;
 
-    // print('Selected index: $selectedIndex');
-    if (selectedIndex == 0) {
-    } else {
-      Img_Zone =
-          '${MyConstant().domain}/files/$DBN_/zone/${zoneModels[selectedIndex].img}';
-      // Img_Zone =
-      //     'https://dzentric.com/chao_perty/chao_api/files/${DBN_}/zone/${zoneModels[selectedIndex].img}';
-      Imgfloorplan =
-          '${MyConstant().domain}/files/$DBN_/zone/${zoneModels[selectedIndex].img_floorplan}';
-    }
+    try {
+      final uri = Uri.parse('${MyConstant().domain}/GC_zone.php').replace(
+        queryParameters: {
+          'isAdd': 'true',
+          'ren': ren ?? '',
+        },
+      );
+
+      final response = await http.get(uri);
+
+      if (response.statusCode != 200) {
+        throw Exception('HTTP ${response.statusCode}');
+      }
+
+      final data = json.decode(response.body);
+
+      if (data is! List) {
+        throw Exception('Invalid JSON: expected List');
+      }
+
+      final allItem = ZoneModel.fromJson({
+        'ser': '0',
+        'rser': '0',
+        'zn': 'ทั้งหมด',
+        'qty': '0',
+        'img': '0',
+        'data_update': '0'
+      });
+
+      final tmp = <ZoneModel>[allItem];
+
+      for (final map in data) {
+        final z = ZoneModel.fromJson(map);
+        final sub = z.sub_zone;
+        final allowBySub =
+            (zoneSubSer == null || zoneSubSer == '0' || sub == zoneSubSer);
+        final hasQty = z.qty.toString() != '0';
+        if (allowBySub && hasQty) {
+          tmp.add(z);
+        }
+      }
+
+      nextLimited = tmp;
+      nextZones = tmp;
+
+      nextZoneSer = prefs.getString('zoneSer');
+      nextZoneName = prefs.getString('zonesName');
+
+      if ((prefs.getString('zonesName') ?? '').toLowerCase() == 'null') {
+        await prefs.setString('zoneSer', '0');
+        await prefs.setString('zonesName', 'ทั้งหมด');
+        nextZoneSer = '0';
+        nextZoneName = 'ทั้งหมด';
+      }
+
+      nextZoneSubSer = prefs.getString('zoneSubSer');
+      nextZoneSubName = prefs.getString('zonesSubName');
+
+      final idx = nextZones.indexWhere(
+        (e) => e.ser == nextZoneSer && e.zn == nextZoneName,
+      );
+      if (idx >= 0) {
+        final img = nextZones[idx].img;
+        final imgFloor = nextZones[idx].img_floorplan;
+        nextImgZone = (img == null || img == '0')
+            ? null
+            : '${MyConstant().domain}/files/$DBN_/zone/$img';
+        nextImgFloorplan = (imgFloor == null || imgFloor == '0')
+            ? null
+            : '${MyConstant().domain}/files/$DBN_/zone/$imgFloor';
+      }
+
+      _apiCache.set(cacheKey, data);
+    } catch (e) {}
 
     setState(() {
-      areaFloorplanModels.clear;
+      limitedList_zoneModels = nextLimited;
+      zoneModels = nextZones;
+      _zoneModels = nextLimited;
+
+      zone_ser = nextZoneSer ?? prefs.getString('zoneSer');
+      zone_name = nextZoneName ?? prefs.getString('zonesName');
+      zone_Subser = nextZoneSubSer ?? prefs.getString('zoneSubSer');
+      zone_Subname = nextZoneSubName ?? prefs.getString('zonesSubName');
+
+      Img_Zone = nextImgZone;
+      Imgfloorplan = nextImgFloorplan;
+
+      areaFloorplanModels.clear();
       areaModels.clear();
       _areaModels.clear();
-      // read_GC_area();
     });
-  }
 
-  final Dio dio = Dio();
+    if (Status_ == 1) {
+      sortZoneModels();
+    } else {
+      read_zone_limit();
+    }
+  }
+  // Future<Null> read_GC_zone() async {
+  //   setState(() {
+  //     limit = 3; // The maximum number of items you want
+  //     offset = 0; // The starting index of items you want
+  //     endIndex = 0;
+  //     limitedList_zoneModels.clear();
+  //     zoneModels.clear();
+  //     _zoneModels.clear();
+  //   });
+
+  //   final preferences = await SharedPreferences.getInstance();
+  //   final zoneSubSer = preferences.getString('zoneSubSer');
+  //   final ren = preferences.getString('renTalSer');
+  //   final url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
+
+  //   try {
+  //     final response = await http.get(Uri.parse(url));
+  //     final result = json.decode(response.body);
+
+  //     // เพิ่ม 'ทั้งหมด' ไว้ก่อนเสมอ
+  //     final ZoneModel allItem = ZoneModel.fromJson({
+  //       'ser': '0',
+  //       'rser': '0',
+  //       'zn': 'ทั้งหมด',
+  //       'qty': '0',
+  //       'img': '0',
+  //       'data_update': '0'
+  //     });
+
+  //     final tmp = <ZoneModel>[allItem];
+
+  //     for (final map in result) {
+  //       final z = ZoneModel.fromJson(map);
+  //       final sub = z.sub_zone;
+  //       if (zoneSubSer == null || zoneSubSer == '0' || sub == zoneSubSer) {
+  //         if (z.qty.toString() != '0') {
+  //           tmp.add(z);
+  //         }
+  //       }
+  //     }
+
+  //     setState(() {
+  //       limitedList_zoneModels =
+  //           tmp; // ยังไม่ sort ตามชื่อ เพราะเราจะให้ sort ด้วยกฎ match/notMatch
+  //     });
+
+  //     // จัดเรียงตามกฎ: 'ทั้งหมด' → พบใน areaModels.zser → ไม่พบ
+  //     if (Status_ == 1) {
+  //       print(Status_);
+  //       sortZoneModels();
+  //     } else {
+  //       print(Status_);
+  //       setState(() {
+  //         zoneModels = limitedList_zoneModels;
+  //       });
+  //     }
+  //     SharedPreferences preferences = await SharedPreferences.getInstance();
+  //     zone_ser = preferences.getString('zoneSer');
+  //     if (zoneModels.length > 1 &&
+  //         (zone_ser.toString() == '0' || zone_ser == '0')) {
+  //       preferences.setString('zoneSer', zoneModels[1].ser.toString());
+  //       preferences.setString('zonesName', zoneModels[1].zn.toString());
+  //     }
+  //   } catch (e) {
+  //     // handle ตามต้องการ
+  //   }
+
+  //   if (preferences.getString('zonesName').toString() == 'null') {
+  //     await preferences.setString('zoneSer', '0');
+  //     await preferences.setString('zonesName', 'ทั้งหมด');
+  //   }
+
+  //   setState(() {
+  //     _zoneModels = limitedList_zoneModels;
+  //     zone_ser = preferences.getString('zoneSer');
+  //     zone_name = preferences.getString('zonesName');
+  //     zone_Subser = preferences.getString('zoneSubSer');
+  //     zone_Subname = preferences.getString('zonesSubName');
+  //   });
+
+  //   final idx = zoneModels.indexWhere(
+  //     (e) => e.ser == zone_ser && e.zn == zone_name,
+  //   );
+  //   if (idx >= 0) {
+  //     Img_Zone =
+  //         '${MyConstant().domain}/files/$DBN_/zone/${zoneModels[idx].img}';
+  //     Imgfloorplan =
+  //         '${MyConstant().domain}/files/$DBN_/zone/${zoneModels[idx].img_floorplan}';
+  //   }
+
+  //   setState(() {
+  //     areaFloorplanModels.clear(); // แก้ () ให้ถูก
+  //     areaModels.clear();
+  //     _areaModels.clear();
+  //     // read_GC_area(); // ถ้าต้องการโหลดต่อให้เปิดบรรทัดนี้
+  //   });
+  // }
+
+// ============================================================
+// ภายใน State class ของคุณ
+// ============================================================
+
+  final Dio dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 30),
+    responseType: ResponseType.json,
+  ));
   final CancelToken cancelToken = CancelToken();
 
+  bool _isLoadingAreas = false;
+
+// ------------------ STEP 1: โหลด properties แล้วค่อยโหลด area ------------------
   Future<void> Data_Properties() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
+    final ren = prefs.getString('renTalSer');
+    zone_ser = prefs.getString('zoneSer');
+    zone_name = prefs.getString('zonesName');
 
-    var ren = preferences.getString('renTalSer');
+    // เงื่อนไขเดิม (ไม่เข้า workflow นี้ก็จบ)
+    if (ren != '50' && ren != '139' && ren != '195') {
+      // await read_GC_area(); // ถ้ามี workflow อื่น
+      return;
+    }
 
+    if (!mounted) return;
     setState(() {
+      _isLoadingAreas = true;
       propertiesModel.clear();
     });
 
-    print('⏳ กำลังโหลด Properties...');
-    final result = await read_GC_properties(null, null);
-
-    print('📦 Properties ที่โหลดได้: ${result.length}');
-    // print(result);
-    // for (var p in result) {
-    //   print('🔸 Property: ${p.newRequest?.aser}');
-    // }
-
-    if (result.isEmpty) {
-      print('⚠️ ไม่พบ Properties ใด ๆ');
-    }
-
-    setState(() {
-      propertiesModel = result;
-    });
-    if (ren.toString() == '50' || ren.toString() == '139') {
-      await read_GC_area_CMM(); // ควรรอหลังจาก setState เพื่อให้ propertiesModel พร้อม
-    } else {
-      await read_GC_area();
-    }
-  }
-
-  Future<void> read_GC_area_CMM() async {
-    final prefs = await SharedPreferences.getInstance();
-    final ren = prefs.getString('renTalSer');
-    final zone = prefs.getString('zoneSer');
-    final zoneName = prefs.getString('zonesName');
-
-    setState(() {
-      areaModels.clear();
-      areaQuotModels.clear();
-      _areaModels.clear();
-      if (zone == null || zone == '0') areaFloorplanModels.clear();
-    });
-
-    final url = Uri.parse(
-      (zone == null || zone == '0')
-          ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
-          : '${MyConstant().domain}/GC_area.php?isAdd=true&ren=$ren&zone=$zone',
-    );
-
     try {
-      final res = await dio.get(url.toString(), cancelToken: cancelToken);
-      final data = res.data;
-
-      if (data == null || data is! List) return;
-
-      // 🧠 Map aser → List<PropertiesModel>
-      final propMap = <String, List<PropertiesModel>>{};
-      for (var p in propertiesModel) {
-        final key = p.newRequest?.aser?.toString();
-        print('🔸 Property: ${key}');
-        if (key != null) propMap.putIfAbsent(key, () => []).add(p);
+      // 1) โหลด properties ก่อน
+      final props = await read_GC_properties(zone_ser, null, null);
+      if (props.isEmpty) {
+        debugPrint('⚠️ ไม่พบ Properties ใด ๆ');
       }
 
-      int totalMatched = 0; // 👈 ตัวนับรวม
+      // 2) โหลด area โดยส่ง properties เข้าไปด้วย (ลดการอ้าง state ภายใน)
+      final updated = await _readGcAreaCmmFast(
+        ren: ren,
+        zone: zone_ser,
+        zoneName: zone_name,
+        properties: props,
+        dio: dio,
+        cancelToken: cancelToken,
+      );
 
-      for (var m in data) {
-        final area = AreaModel.fromJson(m);
-        final key = area.ser?.toString();
-        final matched = propMap[key] ?? [];
-
-        area.properties = matched;
-        areaModels.add(area);
-
-        totalMatched += matched.length; // 👈 นับ match ต่อรอบ
-
-        if (area.quantity != null && area.quantity != '1') {
-          final quotUrl =
-              '${MyConstant().domain}/GC_area_quot.php?isAdd=true&ren=$ren&qin=${area.ln_q}&qinser=${area.ser}';
-          final res = await http.get(Uri.parse(quotUrl));
-          final quotList = json.decode(res.body);
-          if (quotList is List) {
-            areaQuotModels.addAll(
-                quotList.map((e) => AreaQuotModel.fromJson(e)).toList());
-          }
-        }
-      }
-
-      print('✅ จับคู่สำเร็จทั้งหมด: $totalMatched รายการ');
-
+      if (!mounted) return;
       setState(() {
-        _areaModels = [...areaModels];
-        zone_ser = zone;
-        zone_name = zoneName;
+        propertiesModel = props;
+        areaModels = updated.areaModels;
+        _areaModels = [...updated.areaModels];
+        areaQuotModels = updated.areaQuotModels;
+        zone_ser = updated.zone;
+        zone_name = updated.zoneName;
         _btnKeys = List.generate(areaModels.length, (_) => GlobalKey());
       });
 
-      if (zone != null && zone != '0') loadSvg();
-    } catch (e) {
-      print('❌ Error loading area: $e');
+      if (zone_ser != null && zone_ser != '0') {
+        loadSvg();
+      }
+    } catch (e, st) {
+      debugPrint('❌ dataProperties error: $e\n$st');
+      if (!mounted) return;
+      // อาจจะแจ้งเตือนผู้ใช้
+      // ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('โหลดข้อมูลไม่สำเร็จ')));
+    } finally {
+      if (!mounted) return;
+      setState(() => _isLoadingAreas = false);
     }
   }
 
-  Future<Null> read_GC_area() async {
-    if (areaModels.isNotEmpty) {
-      setState(() {
-        areaQuotModels.clear();
-        areaModels.clear();
-        _areaModels.clear();
-      });
-    }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
+  Future<_AreaLoadResult> _readGcAreaCmmFast({
+    required String? ren,
+    required String? zone,
+    required String? zoneName,
+    required List<PropertiesModel> properties,
+    required Dio dio,
+    CancelToken? cancelToken,
+  }) async {
+    final List<AreaModel> areaLocal = [];
+    final List<AreaQuotModel> quotLocal = [];
+//  final url =
+//         '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone&typecid=$Status_';
+    // 1) ดึง area ทั้งหมด
+    final url = Uri.parse(
+      '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=${zone ?? '0'}&typecid=$Status_',
+    );
+    //debugPrint('🔸 GC_areaAll: $url');
 
-    var ren = preferences.getString('renTalSer');
-    var zone = preferences.getString('zoneSer');
+    final res = await dio.getUri(url, cancelToken: cancelToken);
+    final raw = res.data;
 
-    //print('zone >>>>>> $zone');
-
-    String url = zone == null
-        ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
-        : zone == '0'
-            ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
-            : '${MyConstant().domain}/GC_area.php?isAdd=true&ren=$ren&zone=$zone';
-
-    try {
-      // var response = await http.get(Uri.parse(url));
-      final response = await dio.get(
-        Uri.parse(url).toString(),
-        cancelToken: cancelToken,
+    // 2) พาร์ส JSON หนัก ๆ ด้วย compute (แยก isolate)
+    if (raw == null || raw is! List) {
+      return _AreaLoadResult(
+        areaModels: areaLocal,
+        areaQuotModels: quotLocal,
+        zone: zone,
+        zoneName: zoneName,
+        totalMatched: 0,
       );
-      var result = response.data;
-      // var result = json.decode(response.body);
-      // print(result);
-      if (result != null) {
-        for (var map in result) {
-          AreaModel areaModel = AreaModel.fromJson(map);
-
-          setState(() {
-            areaModels.add(areaModel);
-          });
-
-          if (areaModel.quantity != '1' && areaModel.quantity != null) {
-            var qin = areaModel.ln_q;
-            var qinser = areaModel.ser;
-            String url =
-                '${MyConstant().domain}/GC_area_quot.php?isAdd=true&ren=$ren&qin=$qin&qinser=$qinser';
-
-            try {
-              var response = await http.get(Uri.parse(url));
-
-              var result = json.decode(response.body);
-              // print(result);
-              if (result != null) {
-                for (var map in result) {
-                  AreaQuotModel areaQuotModel = AreaQuotModel.fromJson(map);
-                  setState(() {
-                    areaQuotModels.add(areaQuotModel);
-                  });
-                }
-              }
-            } catch (e) {}
-          }
-        }
-        // print(
-        //     'areaQuotModels.length>>>>>>>> ${areaQuotModels.length} ${areaQuotModels.map((e) => '152' == e.ser ? e.docno : '0').toString()}');
-        if (zone == null || zone == '0') {
-          setState(() {
-            areaFloorplanModels.clear();
-          });
-        } else {
-          setState(() {
-            loadSvg();
-          });
-        }
-      } else {
-        setState(() {
-          if (areaModels.isEmpty) {
-            preferences.remove('zoneSer');
-            preferences.remove('zonesName');
-            zone_ser = null;
-            zone_name = null;
-          }
-        });
-      }
-      setState(() {
-        _areaModels = areaModels;
-        zone_ser = preferences.getString('zoneSer');
-        zone_name = preferences.getString('zonesName');
-      });
-      _btnKeys = List.generate(areaModels.length, (_) => GlobalKey());
-
-      // print(
-      //     'zoneModels >>. ${zoneModels.length} ${areaModels.map((e) => e.zser).toString()}');
-    } on DioException catch (e) {
-      if (CancelToken.isCancel(e)) {
-        print('⛔ API ถูกยกเลิก: $e');
-      } else {
-        print('❌ Dio Error: ${e.message}');
-      }
-    } catch (e) {
-      print('❌ Unknown Error: $e');
     }
+
+    final List<dynamic> listDyn = raw;
+    final parsedAreas = await compute(parseAreasIsolate, listDyn);
+
+    // 3) ทำ map aser -> props (O(1) lookup)
+    final propMap = <String, List<PropertiesModel>>{};
+    for (final p in properties) {
+      final key = p.newRequest?.aser?.toString();
+      if (key == null) continue;
+      (propMap[key] ??= []).add(p);
+    }
+
+    // 4) จับคู่ properties กับ area (ไม่แตะ UI)
+    int totalMatched = 0;
+    for (final area in parsedAreas) {
+      final key = area.ser?.toString();
+      final matched = (key != null)
+          ? (propMap[key] ?? const <PropertiesModel>[])
+          : const <PropertiesModel>[];
+      area.properties = matched;
+      areaLocal.add(area);
+      totalMatched += matched.length;
+    }
+    // debugPrint('✅ จับคู่สำเร็จทั้งหมด: $totalMatched รายการ');
+
+    // 5) โหลด quot เฉพาะที่จำเป็น + จำกัด concurrency
+    final targets = areaLocal
+        .where((a) => a.quantity != null && a.quantity != '1')
+        .toList();
+    const parallel = 6;
+    // debugPrint('GC_areaquot_v2 ${targets.length}');
+    for (final chunk in chunked(targets, parallel)) {
+      // debugPrint('GC_areaquot_v2');
+      await Future.wait(chunk.map((area) async {
+        //         final qRes = await dio.post(
+        //   '${MyConstant().domain}/GC_areaquot_v2.php',
+        //   data: json.encode(
+        //       {'isAdd': 'true', 'ren': ren, 'qin': qin, 'qinser': qinser}),
+        //   options: Options(headers: {'Content-Type': 'application/json'}),
+        // );
+
+        final quotUrl = Uri.parse(
+          '${MyConstant().domain}/GC_areaquot_v2.php'
+          '?isAdd=true&ren=$ren&qin=${area.ln_q}&qinser=${area.ser}',
+        );
+        // final quotUrl = Uri.parse(
+        //   '${MyConstant().domain}/GC_area_quot.php'
+        //   '?isAdd=true&ren=$ren&qin=${area.ln_q}&qinser=${area.ser}',
+        // );
+        // debugPrint('⚠️quotUrl: $quotUrl');
+        try {
+          final r = await dio.getUri(
+            quotUrl,
+            cancelToken: cancelToken,
+            options: Options(responseType: ResponseType.json),
+          );
+          final data = r.data;
+          if (data is List) {
+            quotLocal.addAll(data.map((e) => AreaQuotModel.fromJson(e)));
+          }
+        } catch (e) {
+          // debugPrint('⚠️ quot load error: $e');
+        }
+      }));
+    }
+
+    return _AreaLoadResult(
+      areaModels: areaLocal,
+      areaQuotModels: quotLocal,
+      zone: zone,
+      zoneName: zoneName,
+      totalMatched: totalMatched,
+    );
   }
+
+  //////------------------------------------------->
+  // Future<void> Data_Properties() async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+
+  //   var ren = preferences.getString('renTalSer');
+  //   zone_ser = preferences.getString('zoneSer');
+  //   zone_name = preferences.getString('zonesName');
+
+  //   if (ren.toString() == '50' || ren.toString() == '139') {
+  //     setState(() {
+  //       propertiesModel.clear();
+  //     });
+
+  //     print('⏳ กำลังโหลด Properties...');
+  //     final result = await read_GC_properties(
+  //         zone_ser, null, areaModels.length.toString());
+
+  //     print('📦 Properties ที่โหลดได้: ${result.length}');
+  //     // print(result);
+  //     // for (var p in result) {
+  //     //   print('🔸 Property: ${p.newRequest?.aser}');
+  //     // }
+
+  //     if (result.isEmpty) {
+  //       print('⚠️ ไม่พบ Properties ใด ๆ');
+  //     }
+
+  //     setState(() {
+  //       propertiesModel = result;
+  //     });
+  //     await read_GC_area_CMM(); // ควรรอหลังจาก setState เพื่อให้ propertiesModel พร้อม
+  //   } else {
+  //     // await read_GC_area();
+  //   }
+  // }
+
+  // Future<void> read_GC_area_CMM() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final ren = prefs.getString('renTalSer');
+  //   final zone = prefs.getString('zoneSer');
+  //   final zoneName = prefs.getString('zonesName');
+
+  //   setState(() {
+  //     areaModels.clear();
+  //     areaQuotModels.clear();
+  //     _areaModels.clear();
+  //     if (zone == null || zone == '0') areaFloorplanModels.clear();
+  //   });
+
+  //   final url = Uri.parse(
+  //     (zone == null || zone == '0')
+  //         ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //         : '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone',
+  //     // '${MyConstant().domain}/GC_area.php?isAdd=true&ren=$ren&zone=$zone',
+  //   );
+  //   print('🔸 Property: ${url}');
+  //   try {
+  //     final res = await dio.get(url.toString(), cancelToken: cancelToken);
+  //     final data = res.data;
+
+  //     if (data == null || data is! List) return;
+
+  //     // 🧠 Map aser → List<PropertiesModel>
+  //     final propMap = <String, List<PropertiesModel>>{};
+  //     for (var p in propertiesModel) {
+  //       final key = p.newRequest?.aser?.toString();
+  //       print('🔸 Property: ${key}');
+  //       if (key != null) propMap.putIfAbsent(key, () => []).add(p);
+  //     }
+
+  //     int totalMatched = 0; // 👈 ตัวนับรวม
+
+  //     for (var m in data) {
+  //       final area = AreaModel.fromJson(m);
+  //       final key = area.ser?.toString();
+  //       final matched = propMap[key] ?? [];
+
+  //       area.properties = matched;
+  //       areaModels.add(area);
+
+  //       totalMatched += matched.length; // 👈 นับ match ต่อรอบ
+
+  //       if (area.quantity != null && area.quantity != '1') {
+  //         final quotUrl =
+  //             '${MyConstant().domain}/GC_area_quot.php?isAdd=true&ren=$ren&qin=${area.ln_q}&qinser=${area.ser}';
+  //         final res = await http.get(Uri.parse(quotUrl));
+  //         final quotList = json.decode(res.body);
+  //         if (quotList is List) {
+  //           areaQuotModels.addAll(
+  //               quotList.map((e) => AreaQuotModel.fromJson(e)).toList());
+  //         }
+  //       }
+  //     }
+
+  //     print('✅ จับคู่สำเร็จทั้งหมด: $totalMatched รายการ');
+
+  //     setState(() {
+  //       _areaModels = [...areaModels];
+  //       zone_ser = zone;
+  //       zone_name = zoneName;
+  //       _btnKeys = List.generate(areaModels.length, (_) => GlobalKey());
+  //     });
+
+  //     if (zone != null && zone != '0') loadSvg();
+  //   } catch (e) {
+  //     print('❌ Error loading area: $e');
+  //   }
+  // }
+
+  // Future<void> read_GC_area() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final ren = prefs.getString('renTalSer') ?? '';
+  //   final zone = prefs.getString('zoneSer') ?? '0';
+
+  //   setState(() {
+  //     areaModels.clear();
+  //     _areaModels.clear();
+  //     areaQuotModels.clear();
+  //   });
+
+  //   final url =
+  //       '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone&typecid=$Status_';
+  //   // (zone == '0')
+  //   // ? '${MyConstant().domain}/GC_areaAll.php'
+  //   // : '${MyConstant().domain}/GC_area.php';
+  //   print('✅ GC_areaAll: $url ');
+  //   final cacheBase = 'quot:$ren:$zone';
+  //   try {
+  //     final res = await dio.get(url,
+  //         queryParameters: {'isAdd': 'true', 'ren': ren, 'zone': zone});
+  //     if (res.data is! List) return;
+
+  //     final list =
+  //         (res.data as List).map((e) => AreaModel.fromJson(e)).toList();
+  //     final filtered = list.where((a) => (a.ln_q ?? '').isNotEmpty).toList();
+  //     final qin = filtered.map((a) => a.ln_q!).toList();
+  //     final qinser = filtered.map((a) => a.ser ?? '').toList();
+
+  //     setState(() {
+  //       areaModels.addAll(list);
+  //       _areaModels = List.from(list);
+  //       _btnKeys = List.generate(areaModels.length, (_) => GlobalKey());
+  //       zone_ser = zone;
+  //       zone_name = prefs.getString('zonesName');
+  //     });
+
+  //     final key = (List.generate(qin.length, (i) => '${qinser[i]}|${qin[i]}')
+  //           ..sort())
+  //         .join(',');
+  //     final savedKey = prefs.getString('$cacheBase:key');
+  //     final raw = (savedKey == key) ? prefs.getString(cacheBase) : null;
+
+  //     List quotData;
+  //     if (raw != null) {
+  //       quotData = json.decode(raw);
+  //     } else {
+  //       final qRes = await dio.post(
+  //         '${MyConstant().domain}/GC_areaquot_v2.php',
+  //         data: json.encode(
+  //             {'isAdd': 'true', 'ren': ren, 'qin': qin, 'qinser': qinser}),
+  //         options: Options(headers: {'Content-Type': 'application/json'}),
+  //       );
+  //       if (qRes.data is! List) return;
+  //       quotData = qRes.data;
+  //       await prefs.setString(cacheBase, json.encode(quotData));
+  //       await prefs.setString('$cacheBase:key', key);
+  //     }
+  //     setState(() {
+  //       for (var e in quotData) {
+  //         final model = AreaQuotModel.fromJson(e);
+  //         final index = areaQuotModels.indexWhere((m) => m.ser == model.ser);
+  //         if (index >= 0) {
+  //           areaQuotModels.add(model); // เพิ่มใหม่
+  //           // areaQuotModels[index] = model; // อัปเดต
+  //         } else {
+  //           areaQuotModels.add(model); // เพิ่มใหม่
+  //         }
+  //       }
+  //     });
+
+  //     // setState(() {
+  //     //   areaQuotModels = quotData
+  //     //       .map<AreaQuotModel>((e) => AreaQuotModel.fromJson(e))
+  //     //       .toList();
+  //     // });
+
+  //     if (zone == '0') {
+  //       areaFloorplanModels.clear();
+  //     } else {
+  //       loadSvg();
+  //     }
+
+  //     await prefs.remove(cacheBase);
+  //     await prefs.remove('$cacheBase:key');
+  //   } catch (e) {
+  //     print('❌ read_GC_area error: $e');
+  //   }
+  // }
+
+  // Future<Null> read_GC_area() async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   final ren = preferences.getString('renTalSer');
+  //   final zone = preferences.getString('zoneSer');
+
+  //   setState(() {
+  //     areaQuotModels.clear();
+  //     areaModels.clear();
+  //     _areaModels.clear();
+  //   });
+
+  //   final url = (zone == null || zone == '0')
+  //       ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //       : '${MyConstant().domain}/GC_area.php?isAdd=true&ren=$ren&zone=$zone';
+
+  //   print('📡 Fetching Area from: $url');
+
+  //   try {
+  //     final response = await dio.get(
+  //       Uri.parse(url).toString(),
+  //       cancelToken: cancelToken,
+  //     );
+
+  //     final result = response.data;
+
+  //     if (result != null && result is List) {
+  //       final tempAreaModels = <AreaModel>[];
+  //       final qinList = <String>[];
+  //       final qinserList = <String>[];
+
+  //       for (var map in result) {
+  //         final areaModel = AreaModel.fromJson(map);
+  //         tempAreaModels.add(areaModel);
+
+  //         if (areaModel.ln_q != '' && areaModel.ln_q != null) {
+  //           qinList.add(areaModel.ln_q ?? '');
+  //           qinserList.add(areaModel.ser ?? '');
+  //         }
+
+  //         // if (areaModel.quantity != '1' && areaModel.quantity != null) {
+  //         //   qinList.add(areaModel.ln_q ?? '');
+  //         //   qinserList.add(areaModel.ser ?? '');
+  //         // }
+  //       }
+
+  //       setState(() {
+  //         areaModels.addAll(tempAreaModels);
+  //         _areaModels = List.from(tempAreaModels);
+  //         _btnKeys = List.generate(areaModels.length, (_) => GlobalKey());
+  //         zone_ser = preferences.getString('zoneSer');
+  //         zone_name = preferences.getString('zonesName');
+  //       });
+
+  //       // 🔁 Batch POST ไปหา GC_area_quotAll.php
+  //       final quotUrl = '${MyConstant().domain}/GC_areaquot_v2.php';
+
+  //       final quotResponse = await http.post(
+  //         Uri.parse(quotUrl),
+  //         headers: {'Content-Type': 'application/json'},
+  //         body: json.encode({
+  //           'isAdd': 'true',
+  //           'ren': ren ?? '',
+  //           'qin': qinList,
+  //           'qinser': qinserList,
+  //         }),
+  //       );
+
+  //       if (quotResponse.statusCode == 200) {
+  //         final quotData = json.decode(quotResponse.body);
+  //         print(qinList);
+  //         if (quotData is List) {
+  //           setState(() {
+  //             areaQuotModels = quotData
+  //                 .map<AreaQuotModel>((e) => AreaQuotModel.fromJson(e))
+  //                 .toList();
+  //           });
+  //         } else {
+  //           print('❌ Unexpected response format from GC_area_quotAll.php');
+  //         }
+  //       } else {
+  //         print(
+  //             '❌ Failed to fetch GC_area_quotAll.php: ${quotResponse.statusCode}');
+  //       }
+
+  //       if (zone == null || zone == '0') {
+  //         setState(() {
+  //           areaFloorplanModels.clear();
+  //         });
+  //       } else {
+  //         loadSvg();
+  //       }
+  //     }
+
+  //     print('📡OKKKK: $url');
+  //   } on DioException catch (e) {
+  //     if (CancelToken.isCancel(e)) {
+  //       print('⛔ API ถูกยกเลิก: $e');
+  //     } else {
+  //       print('❌ Dio Error: ${e.message}');
+  //     }
+  //   } catch (e) {
+  //     print('❌ Unknown Error: $e');
+  //   }
+  // }
 
   @override
   void dispose() {
     cancelToken.cancel("🔹 User left the page");
+    // ยกเลิกงาน network ที่ค้างอยู่เมื่อ widget ถูกปิด
+    if (!cancelToken.isCancelled) {
+      cancelToken.cancel('Widget disposed');
+    }
     super.dispose();
   }
-////////////------------------------------------------>
+
+  // @override
+  // void dispose() {
+  //   cancelToken.cancel("🔹 User left the page");
+  //   super.dispose();
+  // }
 
   ////////////------------------------------------------>
   Future<Null> loadareaQuot(index) async {
@@ -1008,7 +1690,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
 
     String url =
         '${MyConstant().domain}/GC_maintenance.php?isAdd=true&ren=$ren&aser=$aser';
-    print('result $url');
+    // print('result $url');
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -1077,7 +1759,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                 notfid.contains(text);
           }).toList();
         });
-        print('textsearch>>>>  $textsearch');
+        //   print('textsearch>>>>  $textsearch');
       },
     );
   }
@@ -1120,7 +1802,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
             return notTitle.contains(text);
           }).toList();
         });
-        print('textsearchzone>>>>  $text');
+        //   print('textsearchzone>>>>  $text');
       },
     );
   }
@@ -1158,7 +1840,12 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   Widget build(BuildContext context) {
     double hi_ = MediaQuery.of(context).size.height / 1.7;
     return (Visit_ == 'map')
-        ? NodeDataScreen2()
+        ? NodeDataScreen2(
+            data_uuid: data_uuid,
+            requestStep: requestStep,
+            payment_uuid: payment_uuid,
+            payment_uuid_amount: payment_uuid_amount,
+            payment_jsonx: payment_jsonx)
         : SingleChildScrollView(
             child: Column(
               children: [
@@ -1308,1179 +1995,1459 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                     child: Container(
                       decoration: const BoxDecoration(
                         color: AppbackgroundColor.TiTile_Box,
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                        // border: Border.all(color: Colors.white, width: 1),
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
                       ),
                       padding: const EdgeInsets.all(4.0),
-                      child: Row(
-                        children: [
-                          subzoneModels.length == 1
-                              ? SizedBox()
-                              : MediaQuery.of(context).size.shortestSide <
-                                      MediaQuery.of(context).size.width * 1
-                                  ? Expanded(
-                                      flex: 1,
-                                      child: Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Translate.TranslateAndSetText(
-                                            'โซน:',
-                                            ChaoAreaScreen_Color.Colors_Text1_,
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isMobile = constraints.maxWidth < 900;
+
+                          if (isMobile) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (subzoneModels.length != 1) ...[
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                      'โซน:',
+                                      ChaoAreaScreen_Color.Colors_Text1_,
+                                      TextAlign.left,
+                                      FontWeight.bold,
+                                      FontWeight_.Fonts_T,
+                                      14,
+                                      2,
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppbackgroundColor.Sub_Abg_Colors,
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(10)),
+                                        border: Border.all(
+                                            color: Colors.grey, width: 1),
+                                      ),
+                                      width: double.infinity,
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton2<String>(
+                                          isExpanded: true,
+                                          searchController:
+                                              Dropdown_Controller_zone_Sub,
+                                          searchInnerWidget: Container(
+                                            width: 200,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: Colors.red[100]!
+                                                  .withOpacity(0.5),
+                                              borderRadius:
+                                                  const BorderRadius.all(
+                                                      Radius.circular(8)),
+                                              border: Border.all(
+                                                  color: Colors.grey, width: 1),
+                                            ),
+                                            child: TextFormField(
+                                              expands: true,
+                                              maxLines: null,
+                                              controller:
+                                                  Dropdown_Controller_zone_Sub,
+                                              decoration: InputDecoration(
+                                                isDense: true,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 8,
+                                                ),
+                                                hintText: 'Search...',
+                                                hintStyle: const TextStyle(
+                                                    fontSize: 12),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          hint: Translate.TranslateAndSetText(
+                                            zone_Subname == null
+                                                ? 'ทั้งหมด'
+                                                : '$zone_Subname',
+                                            ChaoAreaScreen_Color.Colors_Text2_,
                                             TextAlign.center,
                                             FontWeight.bold,
                                             FontWeight_.Fonts_T,
                                             14,
-                                            2),
-                                      ))
-                                  : const SizedBox(),
-
-                          subzoneModels.length == 1
-                              ? SizedBox()
-                              : Expanded(
-                                  flex: MediaQuery.of(context)
-                                              .size
-                                              .shortestSide <
-                                          MediaQuery.of(context).size.width * 1
-                                      ? 2
-                                      : 3,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color:
-                                            AppbackgroundColor.Sub_Abg_Colors,
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(10),
-                                            topRight: Radius.circular(10),
-                                            bottomLeft: Radius.circular(10),
-                                            bottomRight: Radius.circular(10)),
-                                        border: Border.all(
-                                            color: Colors.grey, width: 1),
-                                      ),
-                                      width: 200,
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton2<String>(
-                                            isExpanded: true,
-                                            searchController:
-                                                Dropdown_Controller_zone_Sub,
-                                            searchInnerWidget: Container(
-                                              width: 200,
-                                              height: 50,
-                                              decoration: BoxDecoration(
-                                                color: Colors.red[100]!
-                                                    .withOpacity(0.5),
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                        topLeft:
-                                                            Radius.circular(8),
-                                                        topRight:
-                                                            Radius.circular(8),
-                                                        bottomLeft:
-                                                            Radius.circular(8),
-                                                        bottomRight:
-                                                            Radius.circular(8)),
-                                                border: Border.all(
-                                                    color: Colors.grey,
-                                                    width: 1),
-                                              ),
-                                              child: TextFormField(
-                                                expands: true,
-                                                maxLines: null,
-                                                controller:
-                                                    Dropdown_Controller_zone_Sub,
-                                                decoration: InputDecoration(
-                                                  isDense: true,
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 8,
-                                                  ),
-                                                  hintText: 'Search...',
-                                                  // fillColor: Colors.red[300],
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 12),
-                                                  border: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            hint: Translate.TranslateAndSetText(
-                                                zone_Subname == null
-                                                    ? 'ทั้งหมด'
-                                                    : '$zone_Subname',
-                                                ChaoAreaScreen_Color
-                                                    .Colors_Text2_,
-                                                TextAlign.center,
-                                                FontWeight.bold,
-                                                FontWeight_.Fonts_T,
-                                                14,
-                                                2),
-                                            icon: const Icon(
-                                              Icons.arrow_drop_down,
-                                              color: TextHome_Color
-                                                  .TextHome_Colors,
-                                            ),
-                                            style: const TextStyle(
-                                                color: Colors.green,
-                                                fontFamily: Font_.Fonts_T),
-                                            iconSize: 30,
-                                            buttonHeight: 35,
-                                            dropdownDecoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            items: subzoneModels
-                                                .map((item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value:
-                                                          '${item.ser},${item.zn}',
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Text(
-                                                            item.zn!,
-                                                            maxLines: 2,
-                                                            style: const TextStyle(
-                                                                fontSize: 14,
-                                                                fontFamily: Font_
-                                                                    .Fonts_T),
+                                            2,
+                                          ),
+                                          icon: const Icon(
+                                            Icons.arrow_drop_down,
+                                            color:
+                                                TextHome_Color.TextHome_Colors,
+                                          ),
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontFamily: Font_.Fonts_T,
+                                          ),
+                                          iconSize: 30,
+                                          buttonHeight: 35,
+                                          dropdownDecoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          items: subzoneModels
+                                              .map((item) =>
+                                                  DropdownMenuItem<String>(
+                                                    value:
+                                                        '${item.ser},${item.zn}',
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          item.zn!,
+                                                          maxLines: 2,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 14,
+                                                            fontFamily:
+                                                                Font_.Fonts_T,
                                                           ),
-                                                          Divider(
-                                                            color: Colors
-                                                                .grey[300],
-                                                            height: 4.0,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ))
-                                                .toList(),
+                                                        ),
+                                                        Divider(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          height: 4.0,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ))
+                                              .toList(),
+                                          onChanged: (value) async {
+                                            var zones = value!.indexOf(',');
+                                            var zoneSer =
+                                                value.substring(0, zones);
+                                            var zonesName =
+                                                value.substring(zones + 1);
 
-                                            // value: selectedValue,
+                                            SharedPreferences preferences =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            preferences.setString('zoneSubSer',
+                                                zoneSer.toString());
+                                            preferences.setString(
+                                                'zonesSubName',
+                                                zonesName.toString());
+                                            preferences.remove("zoneSer");
+                                            preferences.remove("zonesName");
 
-                                            onChanged: (value) async {
-                                              var zones = value!.indexOf(',');
-                                              var zoneSer =
-                                                  value.substring(0, zones);
-                                              var zonesName =
-                                                  value.substring(zones + 1);
-                                              // print(
-                                              //     'mmmmm ${zoneSer.toString()} $zonesName');
+                                            String? _route =
+                                                preferences.getString('route');
+                                            MaterialPageRoute
+                                                materialPageRoute =
+                                                MaterialPageRoute(
+                                              builder: (BuildContext context) =>
+                                                  AdminScafScreen(
+                                                      route: _route),
+                                            );
+                                            Navigator.pushAndRemoveUntil(
+                                                context,
+                                                materialPageRoute,
+                                                (route) => false);
 
-                                              SharedPreferences preferences =
-                                                  await SharedPreferences
-                                                      .getInstance();
-                                              preferences.setString(
-                                                  'zoneSubSer',
-                                                  zoneSer.toString());
-                                              preferences.setString(
-                                                  'zonesSubName',
-                                                  zonesName.toString());
-                                              preferences.remove("zoneSer");
-                                              preferences.remove("zonesName");
-
-                                              // setState(() {
-                                              //   zoneModels.clear();
-                                              //   zone_ser =
-                                              //       preferences.getString('zoneSer');
-                                              //   zone_name =
-                                              //       preferences.getString('zonesName');
-                                              //   zone_Subser =
-                                              //       preferences.getString('zoneSubSer');
-                                              //   zone_Subname =
-                                              //       preferences.getString('zonesSubName');
-                                              //   read_GC_Sub_zone().then((value) =>
-                                              //       read_GC_zone()
-                                              //           .then((value) => read_GC_area()));
-                                              // });
-
-                                              String? _route = preferences
-                                                  .getString('route');
-                                              MaterialPageRoute
-                                                  materialPageRoute =
-                                                  MaterialPageRoute(
-                                                      builder: (BuildContext
-                                                              context) =>
-                                                          AdminScafScreen(
-                                                              route: _route));
-                                              Navigator.pushAndRemoveUntil(
-                                                  context,
-                                                  materialPageRoute,
-                                                  (route) => false);
-                                            },
-                                            searchMatchFn: (item, searchValue) {
-                                              return item.value
-                                                  .toString()
-                                                  .contains(searchValue);
-                                            },
-                                            onMenuStateChange: (isOpen) {
-                                              if (!isOpen) {
-                                                Dropdown_Controller_zone_Sub
-                                                    .clear();
-                                              }
-                                            }),
+                                            setState(() {
+                                              areaFloorplanModels.clear;
+                                              Data_Properties();
+                                            });
+                                          },
+                                          searchMatchFn: (item, searchValue) {
+                                            return item.value
+                                                .toString()
+                                                .contains(searchValue);
+                                          },
+                                          onMenuStateChange: (isOpen) {
+                                            if (!isOpen) {
+                                              Dropdown_Controller_zone_Sub
+                                                  .clear();
+                                            }
+                                          },
+                                        ),
                                       ),
-
-                                      //  DropdownButtonFormField2(
-                                      //   decoration: InputDecoration(
-                                      //     isDense: true,
-                                      //     contentPadding: EdgeInsets.zero,
-                                      //     border: OutlineInputBorder(
-                                      //       borderRadius:
-                                      //           BorderRadius.circular(10),
-                                      //     ),
-                                      //   ),
-                                      //   isExpanded: true,
-                                      //   hint: Translate.TranslateAndSetText(
-                                      //       zone_Subname == null
-                                      //           ? 'ทั้งหมด'
-                                      //           : '$zone_Subname',
-                                      //       ChaoAreaScreen_Color.Colors_Text2_,
-                                      //       TextAlign.center,
-                                      //       FontWeight.bold,
-                                      //       FontWeight_.Fonts_T,
-                                      //       14,
-                                      //       2),
-
-                                      //   icon: const Icon(
-                                      //     Icons.arrow_drop_down,
-                                      //     color: TextHome_Color.TextHome_Colors,
-                                      //   ),
-                                      //   style: const TextStyle(
-                                      //       color: Colors.green,
-                                      //       fontFamily: Font_.Fonts_T),
-                                      //   iconSize: 30,
-                                      //   buttonHeight: 40,
-                                      //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                                      //   dropdownDecoration: BoxDecoration(
-                                      //     borderRadius:
-                                      //         BorderRadius.circular(10),
-                                      //   ),
-                                      //   items: subzoneModels
-                                      //       .map((item) =>
-                                      //           DropdownMenuItem<String>(
-                                      //             value:
-                                      //                 '${item.ser},${item.zn}',
-                                      //             child: Text(
-                                      //               item.zn!,
-                                      //               style: const TextStyle(
-                                      //                   fontSize: 14,
-                                      //                   fontFamily:
-                                      //                       Font_.Fonts_T),
-                                      //             ),
-                                      //           ))
-                                      //       .toList(),
-
-                                      //   onChanged: (value) async {
-                                      //     var zones = value!.indexOf(',');
-                                      //     var zoneSer =
-                                      //         value.substring(0, zones);
-                                      //     var zonesName =
-                                      //         value.substring(zones + 1);
-                                      //     // print(
-                                      //     //     'mmmmm ${zoneSer.toString()} $zonesName');
-
-                                      //     SharedPreferences preferences =
-                                      //         await SharedPreferences
-                                      //             .getInstance();
-                                      //     preferences.setString(
-                                      //         'zoneSubSer', zoneSer.toString());
-                                      //     preferences.setString('zonesSubName',
-                                      //         zonesName.toString());
-                                      //     preferences.remove("zoneSer");
-                                      //     preferences.remove("zonesName");
-
-                                      //     // setState(() {
-                                      //     //   zoneModels.clear();
-                                      //     //   zone_ser =
-                                      //     //       preferences.getString('zoneSer');
-                                      //     //   zone_name =
-                                      //     //       preferences.getString('zonesName');
-                                      //     //   zone_Subser =
-                                      //     //       preferences.getString('zoneSubSer');
-                                      //     //   zone_Subname =
-                                      //     //       preferences.getString('zonesSubName');
-                                      //     //   read_GC_Sub_zone().then((value) =>
-                                      //     //       read_GC_zone()
-                                      //     //           .then((value) => read_GC_area()));
-                                      //     // });
-
-                                      //     String? _route =
-                                      //         preferences.getString('route');
-                                      //     MaterialPageRoute materialPageRoute =
-                                      //         MaterialPageRoute(
-                                      //             builder:
-                                      //                 (BuildContext context) =>
-                                      //                     AdminScafScreen(
-                                      //                         route: _route));
-                                      //     Navigator.pushAndRemoveUntil(
-                                      //         context,
-                                      //         materialPageRoute,
-                                      //         (route) => false);
-                                      //   },
-                                      //   // onSaved: (value) {
-                                      //   //   // selectedValue = value.toString();
-                                      //   // },
-                                      // ),
                                     ),
                                   ),
-                                ),
-                          MediaQuery.of(context).size.shortestSide <
-                                  MediaQuery.of(context).size.width * 1
-                              ? Expanded(
-                                  flex: 1,
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: Translate.TranslateAndSetText(
-                                        'โซนพื้นที่เช่า:',
-                                        ChaoAreaScreen_Color.Colors_Text2_,
-                                        TextAlign.center,
-                                        FontWeight.bold,
-                                        FontWeight_.Fonts_T,
-                                        14,
-                                        2),
-                                  ))
-                              : const SizedBox(),
-                          Expanded(
-                            flex: MediaQuery.of(context).size.shortestSide <
-                                    MediaQuery.of(context).size.width * 1
-                                ? 2
-                                : 3,
-                            child: StreamBuilder<Object>(
-                                stream: Stream.periodic(
-                                    const Duration(milliseconds: 15), (i) => i),
-                                builder: (context, snapshot) {
-                                  return Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color:
-                                            AppbackgroundColor.Sub_Abg_Colors,
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(10),
-                                            topRight: Radius.circular(10),
-                                            bottomLeft: Radius.circular(10),
-                                            bottomRight: Radius.circular(10)),
-                                        border: Border.all(
-                                            color: Colors.grey, width: 1),
-                                      ),
-                                      width: 200,
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton2<String>(
-                                            isExpanded: true,
-                                            searchController:
-                                                Dropdown_Controller,
-                                            searchInnerWidget: Container(
-                                              width: 200,
-                                              height: 50,
-                                              decoration: BoxDecoration(
-                                                color: Colors.red[100]!
-                                                    .withOpacity(0.5),
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                        topLeft:
-                                                            Radius.circular(8),
-                                                        topRight:
-                                                            Radius.circular(8),
-                                                        bottomLeft:
-                                                            Radius.circular(8),
-                                                        bottomRight:
-                                                            Radius.circular(8)),
-                                                border: Border.all(
-                                                    color: Colors.grey,
-                                                    width: 1),
-                                              ),
-                                              child: TextFormField(
-                                                expands: true,
-                                                maxLines: null,
-                                                controller: Dropdown_Controller,
-                                                decoration: InputDecoration(
-                                                  isDense: true,
-                                                  contentPadding:
-                                                      const EdgeInsets
-                                                          .symmetric(
-                                                    horizontal: 10,
-                                                    vertical: 8,
-                                                  ),
-                                                  hintText: 'Search...',
-                                                  // fillColor: Colors.red[300],
-                                                  hintStyle: const TextStyle(
-                                                      fontSize: 12),
-                                                  border: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            8),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                            hint: Translate.TranslateAndSetText(
-                                                zone_name == null
-                                                    ? 'ทั้งหมด'
-                                                    : '$zone_name',
-                                                ChaoAreaScreen_Color
-                                                    .Colors_Text2_,
-                                                TextAlign.center,
-                                                FontWeight.bold,
-                                                FontWeight_.Fonts_T,
-                                                14,
-                                                2),
-                                            icon: const Icon(
-                                              Icons.arrow_drop_down,
-                                              color: TextHome_Color
-                                                  .TextHome_Colors,
-                                            ),
-                                            style: const TextStyle(
-                                                color: Colors.green,
-                                                fontFamily: Font_.Fonts_T),
-                                            iconSize: 30,
-                                            buttonHeight: 35,
-                                            dropdownDecoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(10),
-                                            ),
-                                            items: zoneModels
-                                                .map((item) =>
-                                                    DropdownMenuItem<String>(
-                                                      value:
-                                                          '${item.ser},${item.zn}',
-                                                      child: Column(
-                                                        crossAxisAlignment:
-                                                            CrossAxisAlignment
-                                                                .start,
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .spaceBetween,
-                                                        children: [
-                                                          Text(
-                                                            item.zn!,
-                                                            maxLines: 2,
-                                                            style: const TextStyle(
-                                                                fontSize: 14,
-                                                                fontFamily: Font_
-                                                                    .Fonts_T),
-                                                          ),
-                                                          Divider(
-                                                            color: Colors
-                                                                .grey[300],
-                                                            height: 4.0,
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ))
-                                                .toList(),
-
-                                            // value: selectedValue,
-                                            onChanged: (value) async {
-                                              //   var zones = value!.indexOf(',');
-                                              // var zoneSer = value.substring(0, zones);
-                                              // var zonesName = value.substring(zones + 1);
-                                              // var zonesNames = zonesName.indexOf(',');
-                                              // var zonesNamenew =
-                                              //     zonesName.substring(0, zonesNames);
-                                              // var zonesNamesub =
-                                              //     zonesName.substring(zonesNames + 1);
-                                              // print(
-                                              //     'mmmmm>> zoneSer $zoneSer mmmm>>zonesName $zonesName mmmm>>zonesNames $zonesNames mmmm>>zonesNamenew $zonesNamenew mmmm>>zonesNamesub $zonesNamesub');
-
-                                              var zones = value!.indexOf(',');
-                                              var zoneSer =
-                                                  value.substring(0, zones);
-                                              var zonesName =
-                                                  value.substring(zones + 1);
-                                              // print('mmmmm ${zoneSer.toString()} $zonesName');
-
-                                              SharedPreferences preferences =
-                                                  await SharedPreferences
-                                                      .getInstance();
-                                              preferences.setString('zoneSer',
-                                                  zoneSer.toString());
-                                              preferences.setString('zonesName',
-                                                  zonesName.toString());
-
-                                              int selectedIndex = zoneModels
-                                                  .indexWhere((element) =>
-                                                      element.ser == zoneSer &&
-                                                      element.zn == zonesName);
-
-                                              // print('Selected index: $selectedIndex');
-                                              if (selectedIndex == 0) {
-                                              } else {
-                                                Img_Zone =
-                                                    '${MyConstant().domain}/files/${DBN_}/zone/${zoneModels[selectedIndex].img}';
-                                                // Img_Zone =
-                                                //     'https://dzentric.com/chao_perty/chao_api/files/${DBN_}/zone/${zoneModels[selectedIndex].img}';
-                                                Imgfloorplan =
-                                                    '${MyConstant().domain}/files/${DBN_}/zone/${zoneModels[selectedIndex].img_floorplan}';
-                                              }
-                                              String? _route = preferences
-                                                  .getString('route');
-                                              MaterialPageRoute
-                                                  materialPageRoute =
-                                                  MaterialPageRoute(
-                                                      builder: (BuildContext
-                                                              context) =>
-                                                          AdminScafScreen(
-                                                              route: _route));
-                                              Navigator.pushAndRemoveUntil(
-                                                  context,
-                                                  materialPageRoute,
-                                                  (route) => false);
-                                              setState(() {
-                                                areaFloorplanModels.clear;
-                                                read_GC_area();
-                                              });
-                                              // print(selectedIndex);
-                                              // print(selectedIndex);
-                                              // print(selectedIndex);
-                                              // print(selectedIndex);
-                                            },
-                                            searchMatchFn: (item, searchValue) {
-                                              return item.value
-                                                  .toString()
-                                                  .contains(searchValue);
-                                            },
-                                            onMenuStateChange: (isOpen) {
-                                              if (!isOpen) {
-                                                Dropdown_Controller.clear();
-                                              }
-                                            }),
-                                      ),
-
-                                      //  DropdownButtonFormField2(
-                                      //   decoration: InputDecoration(
-                                      //     isDense: true,
-                                      //     contentPadding: EdgeInsets.zero,
-                                      //     border: OutlineInputBorder(
-                                      //       borderRadius:
-                                      //           BorderRadius.circular(10),
-                                      //     ),
-                                      //   ),
-                                      //   isExpanded: true,
-                                      //   searchInnerWidget: _searchBar_zone(),
-                                      //   searchController: textEditingController,
-                                      //   searchMatchFn: (item, searchValue) {
-                                      //     if (textzonesearch == null) {
-                                      //       return zoneModels
-                                      //           .map((item) =>
-                                      //               DropdownMenuItem<String>(
-                                      //                 value:
-                                      //                     '${item.ser},${item.zn}',
-                                      //                 child: Text(
-                                      //                   item.zn!,
-                                      //                   style: const TextStyle(
-                                      //                       fontSize: 14,
-                                      //                       fontFamily:
-                                      //                           Font_.Fonts_T),
-                                      //                 ),
-                                      //               ))
-                                      //           .toList()
-                                      //           .contains(searchValue);
-                                      //     } else {
-                                      //       return zoneModels
-                                      //           .map((item) =>
-                                      //               DropdownMenuItem<String>(
-                                      //                 value:
-                                      //                     '${item.ser},${item.zn}',
-                                      //                 child: Text(
-                                      //                   item.zn!,
-                                      //                   style: const TextStyle(
-                                      //                       fontSize: 14,
-                                      //                       fontFamily:
-                                      //                           Font_.Fonts_T),
-                                      //                 ),
-                                      //               ))
-                                      //           .toList()
-                                      //           .contains(textzonesearch);
-                                      //     }
-                                      //   },
-                                      //   hint: Translate.TranslateAndSetText(
-                                      //       zone_name == null
-                                      //           ? 'ทั้งหมด'
-                                      //           : '$zone_name',
-                                      //       ChaoAreaScreen_Color.Colors_Text2_,
-                                      //       TextAlign.center,
-                                      //       FontWeight.bold,
-                                      //       FontWeight_.Fonts_T,
-                                      //       14,
-                                      //       2),
-
-                                      //   icon: const Icon(
-                                      //     Icons.arrow_drop_down,
-                                      //     color: TextHome_Color.TextHome_Colors,
-                                      //   ),
-                                      //   style: const TextStyle(
-                                      //       color: Colors.green,
-                                      //       fontFamily: Font_.Fonts_T),
-                                      //   iconSize: 30,
-                                      //   buttonHeight: 40,
-                                      //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                                      //   dropdownDecoration: BoxDecoration(
-                                      //     borderRadius:
-                                      //         BorderRadius.circular(10),
-                                      //   ),
-                                      //   items: zoneModels
-                                      //       .map((item) =>
-                                      //           DropdownMenuItem<String>(
-                                      //             value:
-                                      //                 '${item.ser},${item.zn}',
-                                      //             child: Text(
-                                      //               item.zn!,
-                                      //               style: const TextStyle(
-                                      //                   fontSize: 14,
-                                      //                   fontFamily:
-                                      //                       Font_.Fonts_T),
-                                      //             ),
-                                      //           ))
-                                      //       .toList(),
-
-                                      //   onChanged: (value) async {
-                                      //     //   var zones = value!.indexOf(',');
-                                      //     // var zoneSer = value.substring(0, zones);
-                                      //     // var zonesName = value.substring(zones + 1);
-                                      //     // var zonesNames = zonesName.indexOf(',');
-                                      //     // var zonesNamenew =
-                                      //     //     zonesName.substring(0, zonesNames);
-                                      //     // var zonesNamesub =
-                                      //     //     zonesName.substring(zonesNames + 1);
-                                      //     // print(
-                                      //     //     'mmmmm>> zoneSer $zoneSer mmmm>>zonesName $zonesName mmmm>>zonesNames $zonesNames mmmm>>zonesNamenew $zonesNamenew mmmm>>zonesNamesub $zonesNamesub');
-
-                                      //     var zones = value!.indexOf(',');
-                                      //     var zoneSer =
-                                      //         value.substring(0, zones);
-                                      //     var zonesName =
-                                      //         value.substring(zones + 1);
-                                      //     // print('mmmmm ${zoneSer.toString()} $zonesName');
-
-                                      //     SharedPreferences preferences =
-                                      //         await SharedPreferences
-                                      //             .getInstance();
-                                      //     preferences.setString(
-                                      //         'zoneSer', zoneSer.toString());
-                                      //     preferences.setString('zonesName',
-                                      //         zonesName.toString());
-
-                                      //     int selectedIndex =
-                                      //         zoneModels.indexWhere((element) =>
-                                      //             element.ser == zoneSer &&
-                                      //             element.zn == zonesName);
-
-                                      //     // print('Selected index: $selectedIndex');
-                                      //     if (selectedIndex == 0) {
-                                      //     } else {
-                                      //       Img_Zone =
-                                      //           '${MyConstant().domain}/files/${DBN_}/zone/${zoneModels[selectedIndex].img}';
-                                      //       // Img_Zone =
-                                      //       //     'https://dzentric.com/chao_perty/chao_api/files/${DBN_}/zone/${zoneModels[selectedIndex].img}';
-                                      //       Imgfloorplan =
-                                      //           '${MyConstant().domain}/files/${DBN_}/zone/${zoneModels[selectedIndex].img_floorplan}';
-                                      //     }
-
-                                      //     setState(() {
-                                      //       areaFloorplanModels.clear;
-                                      //       read_GC_area();
-                                      //     });
-                                      //     // print(selectedIndex);
-                                      //     // print(selectedIndex);
-                                      //     // print(selectedIndex);
-                                      //     // print(selectedIndex);
-                                      //   },
-                                      //   // onSaved: (value) {
-                                      //   //   // selectedValue = value.toString();
-                                      //   // },
-                                      // ),
-                                    ),
-                                  );
-                                }),
-                          ),
-                          Expanded(
-                            flex: MediaQuery.of(context).size.shortestSide <
-                                    MediaQuery.of(context).size.width * 1
-                                ? 1
-                                : 2,
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Translate.TranslateAndSetText(
-                                  'ค้นหา:',
-                                  ChaoAreaScreen_Color.Colors_Text2_,
-                                  TextAlign.center,
-                                  FontWeight.bold,
-                                  FontWeight_.Fonts_T,
-                                  14,
-                                  2),
-                            ),
-                          ),
-                          Expanded(
-                            flex: MediaQuery.of(context).size.shortestSide <
-                                    MediaQuery.of(context).size.width * 1
-                                ? 8
-                                : 6,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppbackgroundColor.Sub_Abg_Colors,
-                                  borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(10),
-                                      topRight: Radius.circular(10),
-                                      bottomLeft: Radius.circular(10),
-                                      bottomRight: Radius.circular(10)),
-                                  border:
-                                      Border.all(color: Colors.grey, width: 1),
-                                ),
-                                // width: 120,
-                                height: 40,
-                                child: _searchBar(),
-                              ),
-                            ),
-                          ),
-
-                          // Expanded(
-                          //   flex: 2,
-                          //   child: SingleChildScrollView(
-                          //     scrollDirection: Axis.horizontal,
-                          //     child: Row(
-                          //       children: [
-                          //         Container(
-                          //           child: Row(
-                          //             children: [
-
-                          //               const Padding(
-                          //                 padding: EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   'โซนพื้นที่เช่า:',
-                          //                   style: TextStyle(
-                          //                       color: PeopleChaoScreen_Color
-                          //                           .Colors_Text1_,
-                          //                       fontWeight: FontWeight.bold,
-                          //                       fontFamily: FontWeight_.Fonts_T),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Container(
-                          //                   decoration: BoxDecoration(
-                          //                     color:
-                          //                         AppbackgroundColor.Sub_Abg_Colors,
-                          //                     borderRadius: const BorderRadius.only(
-                          //                         topLeft: Radius.circular(10),
-                          //                         topRight: Radius.circular(10),
-                          //                         bottomLeft: Radius.circular(10),
-                          //                         bottomRight: Radius.circular(10)),
-                          //                     border: Border.all(
-                          //                         color: Colors.grey, width: 1),
-                          //                   ),
-                          //                   width: 150,
-                          //                   child: DropdownButtonFormField2(
-                          //                     decoration: InputDecoration(
-                          //                       isDense: true,
-                          //                       contentPadding: EdgeInsets.zero,
-                          //                       border: OutlineInputBorder(
-                          //                         borderRadius:
-                          //                             BorderRadius.circular(10),
-                          //                       ),
-                          //                     ),
-                          //                     isExpanded: true,
-                          //                     hint: Text(
-                          //                       zone_name == null
-                          //                           ? 'ทั้งหมด'
-                          //                           : '$zone_name',
-                          //                       maxLines: 1,
-                          //                       style: const TextStyle(
-                          //                           fontSize: 14,
-                          //                           color: PeopleChaoScreen_Color
-                          //                               .Colors_Text2_,
-                          //                           fontFamily: Font_.Fonts_T),
-                          //                     ),
-                          //                     icon: const Icon(
-                          //                       Icons.arrow_drop_down,
-                          //                       color: TextHome_Color.TextHome_Colors,
-                          //                     ),
-                          //                     style: const TextStyle(
-                          //                         color: Colors.green,
-                          //                         fontFamily: Font_.Fonts_T),
-                          //                     iconSize: 30,
-                          //                     buttonHeight: 40,
-                          //                     // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                          //                     dropdownDecoration: BoxDecoration(
-                          //                       borderRadius:
-                          //                           BorderRadius.circular(10),
-                          //                     ),
-                          //                     items: zoneModels
-                          //                         .map((item) =>
-                          //                             DropdownMenuItem<String>(
-                          //                               value:
-                          //                                   '${item.ser},${item.zn}',
-                          //                               child: Text(
-                          //                                 item.zn!,
-                          //                                 style: const TextStyle(
-                          //                                     fontSize: 14,
-                          //                                     fontFamily:
-                          //                                         Font_.Fonts_T),
-                          //                               ),
-                          //                             ))
-                          //                         .toList(),
-
-                          //                     onChanged: (value) async {
-                          //                       var zones = value!.indexOf(',');
-                          //                       var zoneSer =
-                          //                           value.substring(0, zones);
-                          //                       var zonesName =
-                          //                           value.substring(zones + 1);
-                          //                       print(
-                          //                           'mmmmm ${zoneSer.toString()} $zonesName');
-
-                          //                       SharedPreferences preferences =
-                          //                           await SharedPreferences
-                          //                               .getInstance();
-                          //                       preferences.setString(
-                          //                           'zoneSer', zoneSer.toString());
-                          //                       preferences.setString('zonesName',
-                          //                           zonesName.toString());
-
-                          //                       setState(() {
-                          //                         read_GC_area();
-                          //                       });
-                          //                     },
-                          //                     // onSaved: (value) {
-                          //                     //   // selectedValue = value.toString();
-                          //                     // },
-                          //                   ),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: EdgeInsets.all(8.0),
-                          //                 child: Text(
-                          //                   'ค้นหา:',
-                          //                   textAlign: TextAlign.end,
-                          //                   style: TextStyle(
-                          //                       color: PeopleChaoScreen_Color
-                          //                           .Colors_Text1_,
-                          //                       fontWeight: FontWeight.bold,
-                          //                       fontFamily: FontWeight_.Fonts_T),
-                          //                 ),
-                          //               ),
-                          //               Padding(
-                          //                 padding: const EdgeInsets.all(8.0),
-                          //                 child: Container(
-                          //                   decoration: BoxDecoration(
-                          //                     color:
-                          //                         AppbackgroundColor.Sub_Abg_Colors,
-                          //                     borderRadius: const BorderRadius.only(
-                          //                         topLeft: Radius.circular(10),
-                          //                         topRight: Radius.circular(10),
-                          //                         bottomLeft: Radius.circular(10),
-                          //                         bottomRight: Radius.circular(10)),
-                          //                     border: Border.all(
-                          //                         color: Colors.grey, width: 1),
-                          //                   ),
-                          //                   width: 120,
-                          //                   height: 35,
-                          //                   child: _searchBar(),
-                          //                 ),
-                          //               ),
-                          //             ],
-                          //           ),
-                          //         ),
-                          //       ],
-                          //     ),
-                          //   ),
-                          // ),
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: InkWell(
-                              child: Container(
-                                // width: 100,
-                                // height: 50,
-                                decoration: const BoxDecoration(
-                                  color: Colors.blue,
-                                  borderRadius: BorderRadius.only(
-                                      topLeft: Radius.circular(15),
-                                      topRight: Radius.circular(15),
-                                      bottomLeft: Radius.circular(15),
-                                      bottomRight: Radius.circular(15)),
-                                  // border: Border.all(color: Colors.grey, width: 1),
-                                ),
-                                padding: const EdgeInsets.all(8.0),
-                                child: Center(
+                                ],
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
                                   child: Translate.TranslateAndSetText(
-                                      'ดูแผนผัง',
-                                      Colors.white,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
+                                    'โซนพื้นที่เช่า:',
+                                    ChaoAreaScreen_Color.Colors_Text2_,
+                                    TextAlign.left,
+                                    FontWeight.bold,
+                                    FontWeight_.Fonts_T,
+                                    14,
+                                    2,
+                                  ),
                                 ),
-                              ),
-                              onTap: () {
-                                showDialog<String>(
-                                  barrierDismissible: false,
-                                  context: context,
-                                  builder: (BuildContext context) =>
-                                      AlertDialog(
-                                    shape: const RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                            Radius.circular(20.0))),
-                                    title: Center(
-                                      child: Translate.TranslateAndSetText(
-                                          'แผนผัง',
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppbackgroundColor.Sub_Abg_Colors,
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10)),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1),
+                                    ),
+                                    width: double.infinity,
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton2<String>(
+                                        isExpanded: true,
+                                        searchController: Dropdown_Controller,
+                                        searchInnerWidget: Container(
+                                          width: 200,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            color: Colors.red[100]!
+                                                .withOpacity(0.5),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(8)),
+                                            border: Border.all(
+                                                color: Colors.grey, width: 1),
+                                          ),
+                                          child: TextFormField(
+                                            expands: true,
+                                            maxLines: null,
+                                            controller: Dropdown_Controller,
+                                            decoration: InputDecoration(
+                                              isDense: true,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 8,
+                                              ),
+                                              hintText: 'Search...',
+                                              hintStyle:
+                                                  const TextStyle(fontSize: 12),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        hint: Translate.TranslateAndSetText(
+                                          zone_name == null
+                                              ? 'ทั้งหมด'
+                                              : '$zone_name',
                                           ChaoAreaScreen_Color.Colors_Text2_,
                                           TextAlign.center,
                                           FontWeight.bold,
                                           FontWeight_.Fonts_T,
                                           14,
-                                          2),
-                                    ),
-                                    content: SingleChildScrollView(
-                                      child: ListBody(
-                                        children: <Widget>[
-                                          InteractiveViewer(
-                                            child: Container(
-                                              decoration: BoxDecoration(
-                                                color: Colors.brown[100],
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  topRight: Radius.circular(10),
-                                                  bottomLeft:
-                                                      Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10),
-                                                ),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: (img_ == null ||
-                                                      img_.toString() == '')
-                                                  ? const Center(
-                                                      child: Icon(
-                                                        Icons
-                                                            .image_not_supported,
-                                                        color: Colors.black,
+                                          2,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.arrow_drop_down,
+                                          color: TextHome_Color.TextHome_Colors,
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontFamily: Font_.Fonts_T,
+                                        ),
+                                        iconSize: 30,
+                                        buttonHeight: 35,
+                                        dropdownDecoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        items: limitedList_zoneModels
+                                            .map((item) =>
+                                                DropdownMenuItem<String>(
+                                                  value:
+                                                      '${item.ser},${item.zn}',
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        item.zn!,
+                                                        maxLines: 2,
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontFamily:
+                                                              Font_.Fonts_T,
+                                                        ),
                                                       ),
-                                                    )
-                                                  : Image.network(
-                                                      '${MyConstant().domain}/files/$foder/contract/$img_',
-                                                      fit: BoxFit.contain,
-                                                    ),
-                                            ),
-                                            scaleEnabled: true,
-                                            minScale: 0.5,
-                                            maxScale: 5.0,
-                                            transformationController:
-                                                TransformationController()
-                                                  ..value =
-                                                      Matrix4.diagonal3Values(
-                                                          _scaleFactor,
-                                                          _scaleFactor,
-                                                          1),
-                                          ),
-                                        ],
+                                                      Divider(
+                                                        color: Colors.grey[300],
+                                                        height: 4.0,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ))
+                                            .toList(),
+                                        onChanged: (value) async {
+                                          var zones = value!.indexOf(',');
+                                          var zoneSer =
+                                              value.substring(0, zones);
+                                          var zonesName =
+                                              value.substring(zones + 1);
+
+                                          SharedPreferences preferences =
+                                              await SharedPreferences
+                                                  .getInstance();
+                                          preferences.setString(
+                                              'zoneSer', zoneSer.toString());
+                                          preferences.setString('zonesName',
+                                              zonesName.toString());
+
+                                          int selectedIndex =
+                                              limitedList_zoneModels.indexWhere(
+                                            (element) =>
+                                                element.ser == zoneSer &&
+                                                element.zn == zonesName,
+                                          );
+
+                                          if (selectedIndex == 0) {
+                                          } else {
+                                            Img_Zone =
+                                                '${MyConstant().domain}/files/${DBN_}/zone/${limitedList_zoneModels[selectedIndex].img}';
+                                            Imgfloorplan =
+                                                '${MyConstant().domain}/files/${DBN_}/zone/${limitedList_zoneModels[selectedIndex].img_floorplan}';
+                                          }
+
+                                          String? _route =
+                                              preferences.getString('route');
+                                          MaterialPageRoute materialPageRoute =
+                                              MaterialPageRoute(
+                                            builder: (BuildContext context) =>
+                                                AdminScafScreen(route: _route),
+                                          );
+                                          Navigator.pushAndRemoveUntil(
+                                              context,
+                                              materialPageRoute,
+                                              (route) => false);
+
+                                          setState(() {
+                                            areaFloorplanModels.clear;
+                                            Data_Properties();
+                                          });
+                                        },
+                                        searchMatchFn: (item, searchValue) {
+                                          return item.value
+                                              .toString()
+                                              .contains(searchValue);
+                                        },
+                                        onMenuStateChange: (isOpen) {
+                                          if (!isOpen) {
+                                            Dropdown_Controller.clear();
+                                          }
+                                        },
                                       ),
                                     ),
-                                    actions: <Widget>[
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.end,
-                                          children: [
-                                            Container(
-                                              width: 100,
-                                              decoration: const BoxDecoration(
-                                                color: Colors.black,
-                                                borderRadius: BorderRadius.only(
-                                                    topLeft:
-                                                        Radius.circular(10),
-                                                    topRight:
-                                                        Radius.circular(10),
-                                                    bottomLeft:
-                                                        Radius.circular(10),
-                                                    bottomRight:
-                                                        Radius.circular(10)),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: TextButton(
-                                                onPressed: () => Navigator.pop(
-                                                    context, 'OK'),
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ปิด',
-                                                        Colors.white,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        14,
-                                                        2),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Translate.TranslateAndSetText(
+                                    'ค้นหา:',
+                                    ChaoAreaScreen_Color.Colors_Text2_,
+                                    TextAlign.left,
+                                    FontWeight.bold,
+                                    FontWeight_.Fonts_T,
+                                    14,
+                                    2,
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppbackgroundColor.Sub_Abg_Colors,
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10)),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1),
+                                    ),
+                                    height: 40,
+                                    width: double.infinity,
+                                    child: _searchBar(),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              if (subzoneModels.length != 1) ...[
+                                Expanded(
+                                  flex: 1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                      'โซน:',
+                                      ChaoAreaScreen_Color.Colors_Text1_,
+                                      TextAlign.center,
+                                      FontWeight.bold,
+                                      FontWeight_.Fonts_T,
+                                      14,
+                                      2,
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppbackgroundColor.Sub_Abg_Colors,
+                                        borderRadius: const BorderRadius.all(
+                                            Radius.circular(10)),
+                                        border: Border.all(
+                                            color: Colors.grey, width: 1),
+                                      ),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton2<String>(
+                                          isExpanded: true,
+                                          searchController:
+                                              Dropdown_Controller_zone_Sub,
+                                          searchInnerWidget: Container(
+                                            width: 200,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: Colors.red[100]!
+                                                  .withOpacity(0.5),
+                                              borderRadius:
+                                                  const BorderRadius.all(
+                                                      Radius.circular(8)),
+                                              border: Border.all(
+                                                  color: Colors.grey, width: 1),
+                                            ),
+                                            child: TextFormField(
+                                              expands: true,
+                                              maxLines: null,
+                                              controller:
+                                                  Dropdown_Controller_zone_Sub,
+                                              decoration: InputDecoration(
+                                                isDense: true,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 8,
+                                                ),
+                                                hintText: 'Search...',
+                                                hintStyle: const TextStyle(
+                                                    fontSize: 12),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
                                               ),
                                             ),
-                                          ],
+                                          ),
+                                          hint: Translate.TranslateAndSetText(
+                                            zone_Subname == null
+                                                ? 'ทั้งหมด'
+                                                : '$zone_Subname',
+                                            ChaoAreaScreen_Color.Colors_Text2_,
+                                            TextAlign.center,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            14,
+                                            2,
+                                          ),
+                                          icon: const Icon(
+                                            Icons.arrow_drop_down,
+                                            color:
+                                                TextHome_Color.TextHome_Colors,
+                                          ),
+                                          style: const TextStyle(
+                                            color: Colors.green,
+                                            fontFamily: Font_.Fonts_T,
+                                          ),
+                                          iconSize: 30,
+                                          buttonHeight: 35,
+                                          dropdownDecoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          items: subzoneModels
+                                              .map((item) =>
+                                                  DropdownMenuItem<String>(
+                                                    value:
+                                                        '${item.ser},${item.zn}',
+                                                    child: Column(
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment
+                                                              .start,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment
+                                                              .spaceBetween,
+                                                      children: [
+                                                        Text(
+                                                          item.zn!,
+                                                          maxLines: 2,
+                                                          style:
+                                                              const TextStyle(
+                                                            fontSize: 14,
+                                                            fontFamily:
+                                                                Font_.Fonts_T,
+                                                          ),
+                                                        ),
+                                                        Divider(
+                                                          color:
+                                                              Colors.grey[300],
+                                                          height: 4.0,
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ))
+                                              .toList(),
+                                          onChanged: (value) async {
+                                            var zones = value!.indexOf(',');
+                                            var zoneSer =
+                                                value.substring(0, zones);
+                                            var zonesName =
+                                                value.substring(zones + 1);
+
+                                            SharedPreferences preferences =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            preferences.setString('zoneSubSer',
+                                                zoneSer.toString());
+                                            preferences.setString(
+                                                'zonesSubName',
+                                                zonesName.toString());
+                                            preferences.remove("zoneSer");
+                                            preferences.remove("zonesName");
+
+                                            String? _route =
+                                                preferences.getString('route');
+                                            MaterialPageRoute
+                                                materialPageRoute =
+                                                MaterialPageRoute(
+                                              builder: (BuildContext context) =>
+                                                  AdminScafScreen(
+                                                      route: _route),
+                                            );
+                                            Navigator.pushAndRemoveUntil(
+                                                context,
+                                                materialPageRoute,
+                                                (route) => false);
+
+                                            setState(() {
+                                              areaFloorplanModels.clear;
+                                              Data_Properties();
+                                            });
+                                          },
+                                          searchMatchFn: (item, searchValue) {
+                                            return item.value
+                                                .toString()
+                                                .contains(searchValue);
+                                          },
+                                          onMenuStateChange: (isOpen) {
+                                            if (!isOpen) {
+                                              Dropdown_Controller_zone_Sub
+                                                  .clear();
+                                            }
+                                          },
                                         ),
                                       ),
-                                    ],
+                                    ),
                                   ),
-                                );
-                              },
-                            ),
-                          ),
-                          InkWell(
-                            child: Container(
-                                // padding: EdgeInsets.all(8.0),
-                                child: CircleAvatar(
-                              backgroundColor: Colors.green,
-                              radius: 20,
-                              child: PopupMenuButton(
-                                child: const Center(
-                                    child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                )),
-                                itemBuilder: (BuildContext context) => [
-                                  PopupMenuItem(
-                                    child: InkWell(
-                                        onTap: () async {
-                                          if (renTal_lavel <= 2) {
-                                            Navigator.pop(context);
-                                            infomation();
-                                          } else {
-                                            SharedPreferences preferences =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            var zone = preferences
-                                                .getString('zoneSer');
-                                            if (zone == '0' || zone == null) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                  content: Translate
-                                                      .TranslateAndSetText(
-                                                          'กรุณาเลือกโซนพื้นที่เช่า',
-                                                          Colors.white,
-                                                          TextAlign.center,
-                                                          FontWeight.bold,
-                                                          FontWeight_.Fonts_T,
-                                                          14,
-                                                          2),
-                                                ),
-                                              );
-                                            } else {
-                                              setState(() {
-                                                Ser_Body = 1;
-                                                a_ln = null;
-                                                a_ser = null;
-                                                a_area = null;
-                                                a_rent = null;
-                                                a_page = '0';
-                                              });
-                                              Navigator.pop(context);
-                                            }
-                                          }
-                                        },
-                                        child: Container(
-                                            padding: const EdgeInsets.all(10),
-                                            width: MediaQuery.of(context)
-                                                .size
-                                                .width,
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Translate
-                                                      .TranslateAndSetText(
-                                                          '+ เสนอราคา',
-                                                          ChaoAreaScreen_Color
-                                                              .Colors_Text2_,
-                                                          TextAlign.center,
-                                                          FontWeight.bold,
-                                                          FontWeight_.Fonts_T,
-                                                          14,
-                                                          2),
-                                                )
-                                              ],
-                                            ))),
+                                ),
+                              ],
+                              Expanded(
+                                flex: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Translate.TranslateAndSetText(
+                                    'โซนพื้นที่เช่า:',
+                                    ChaoAreaScreen_Color.Colors_Text2_,
+                                    TextAlign.center,
+                                    FontWeight.bold,
+                                    FontWeight_.Fonts_T,
+                                    14,
+                                    2,
                                   ),
-                                  PopupMenuItem(
-                                    child: InkWell(
-                                        onTap: () async {
-                                          if (renTal_lavel <= 2) {
-                                            Navigator.pop(context);
-                                            infomation();
-                                          } else {
-                                            SharedPreferences preferences =
-                                                await SharedPreferences
-                                                    .getInstance();
-                                            var zone = preferences
-                                                .getString('zoneSer');
-                                            if (zone == '0' || zone == null) {
-                                              ScaffoldMessenger.of(context)
-                                                  .showSnackBar(
-                                                SnackBar(
-                                                    content: Translate
-                                                        .TranslateAndSetText(
-                                                            'กรุณาเลือกโซนพื้นที่เช่า',
-                                                            Colors.white,
-                                                            TextAlign.center,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2)),
-                                              );
-                                            } else {
-                                              setState(() {
-                                                Ser_Body = 2;
-                                                a_ln = null;
-                                                a_ser = null;
-                                                a_area = null;
-                                                a_rent = null;
-                                                a_page = '0';
-                                              });
-                                              Navigator.pop(context);
-                                            }
-                                          }
-                                        },
-                                        child: Container(
-                                            padding: const EdgeInsets.all(10),
-                                            width: MediaQuery.of(context)
-                                                .size
-                                                .width,
-                                            child: Row(
-                                              children: [
-                                                Expanded(
-                                                  child: Translate
-                                                      .TranslateAndSetText(
-                                                          '+ ทำ/ต่อสัญญา',
-                                                          ChaoAreaScreen_Color
-                                                              .Colors_Text2_,
-                                                          TextAlign.center,
-                                                          FontWeight.bold,
-                                                          FontWeight_.Fonts_T,
-                                                          14,
-                                                          2),
-                                                )
-                                              ],
-                                            ))),
-                                  ),
-                                ],
+                                ),
                               ),
-                            )),
-                          ),
-                        ],
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppbackgroundColor.Sub_Abg_Colors,
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10)),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1),
+                                    ),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton2<String>(
+                                        isExpanded: true,
+                                        searchController: Dropdown_Controller,
+                                        searchInnerWidget: Container(
+                                          width: 200,
+                                          height: 50,
+                                          decoration: BoxDecoration(
+                                            color: Colors.red[100]!
+                                                .withOpacity(0.5),
+                                            borderRadius:
+                                                const BorderRadius.all(
+                                                    Radius.circular(8)),
+                                            border: Border.all(
+                                                color: Colors.grey, width: 1),
+                                          ),
+                                          child: TextFormField(
+                                            expands: true,
+                                            maxLines: null,
+                                            controller: Dropdown_Controller,
+                                            decoration: InputDecoration(
+                                              isDense: true,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                horizontal: 10,
+                                                vertical: 8,
+                                              ),
+                                              hintText: 'Search...',
+                                              hintStyle:
+                                                  const TextStyle(fontSize: 12),
+                                              border: OutlineInputBorder(
+                                                borderRadius:
+                                                    BorderRadius.circular(8),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        hint: Translate.TranslateAndSetText(
+                                          zone_name == null
+                                              ? 'ทั้งหมด'
+                                              : '$zone_name',
+                                          ChaoAreaScreen_Color.Colors_Text2_,
+                                          TextAlign.center,
+                                          FontWeight.bold,
+                                          FontWeight_.Fonts_T,
+                                          14,
+                                          2,
+                                        ),
+                                        icon: const Icon(
+                                          Icons.arrow_drop_down,
+                                          color: TextHome_Color.TextHome_Colors,
+                                        ),
+                                        style: const TextStyle(
+                                          color: Colors.green,
+                                          fontFamily: Font_.Fonts_T,
+                                        ),
+                                        iconSize: 30,
+                                        buttonHeight: 35,
+                                        dropdownDecoration: BoxDecoration(
+                                          borderRadius:
+                                              BorderRadius.circular(10),
+                                        ),
+                                        items: limitedList_zoneModels
+                                            .map((item) =>
+                                                DropdownMenuItem<String>(
+                                                  value:
+                                                      '${item.ser},${item.zn}',
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        item.zn!,
+                                                        maxLines: 2,
+                                                        style: const TextStyle(
+                                                          fontSize: 14,
+                                                          fontFamily:
+                                                              Font_.Fonts_T,
+                                                        ),
+                                                      ),
+                                                      Divider(
+                                                        color: Colors.grey[300],
+                                                        height: 4.0,
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ))
+                                            .toList(),
+                                        onChanged: (value) async {
+                                          var zones = value!.indexOf(',');
+                                          var zoneSer =
+                                              value.substring(0, zones);
+                                          var zonesName =
+                                              value.substring(zones + 1);
+
+                                          SharedPreferences preferences =
+                                              await SharedPreferences
+                                                  .getInstance();
+                                          preferences.setString(
+                                              'zoneSer', zoneSer.toString());
+                                          preferences.setString('zonesName',
+                                              zonesName.toString());
+
+                                          int selectedIndex =
+                                              limitedList_zoneModels.indexWhere(
+                                            (element) =>
+                                                element.ser == zoneSer &&
+                                                element.zn == zonesName,
+                                          );
+
+                                          if (selectedIndex == 0) {
+                                          } else {
+                                            Img_Zone =
+                                                '${MyConstant().domain}/files/${DBN_}/zone/${limitedList_zoneModels[selectedIndex].img}';
+                                            Imgfloorplan =
+                                                '${MyConstant().domain}/files/${DBN_}/zone/${limitedList_zoneModels[selectedIndex].img_floorplan}';
+                                          }
+
+                                          String? _route =
+                                              preferences.getString('route');
+                                          MaterialPageRoute materialPageRoute =
+                                              MaterialPageRoute(
+                                            builder: (BuildContext context) =>
+                                                AdminScafScreen(route: _route),
+                                          );
+                                          Navigator.pushAndRemoveUntil(
+                                              context,
+                                              materialPageRoute,
+                                              (route) => false);
+
+                                          setState(() {
+                                            areaFloorplanModels.clear;
+                                            Data_Properties();
+                                          });
+                                        },
+                                        searchMatchFn: (item, searchValue) {
+                                          return item.value
+                                              .toString()
+                                              .contains(searchValue);
+                                        },
+                                        onMenuStateChange: (isOpen) {
+                                          if (!isOpen) {
+                                            Dropdown_Controller.clear();
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Translate.TranslateAndSetText(
+                                    'ค้นหา:',
+                                    ChaoAreaScreen_Color.Colors_Text2_,
+                                    TextAlign.center,
+                                    FontWeight.bold,
+                                    FontWeight_.Fonts_T,
+                                    14,
+                                    2,
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                flex: 2,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: AppbackgroundColor.Sub_Abg_Colors,
+                                      borderRadius: const BorderRadius.all(
+                                          Radius.circular(10)),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1),
+                                    ),
+                                    height: 40,
+                                    child: _searchBar(),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   ),
+                // Padding(
+                //   padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                //   child: ScrollConfiguration(
+                //     behavior: ScrollConfiguration.of(context)
+                //         .copyWith(dragDevices: {
+                //       PointerDeviceKind.touch,
+                //       PointerDeviceKind.mouse,
+                //     }),
+                //     child: SingleChildScrollView(
+                //       scrollDirection: Axis.horizontal,
+                //       child: Container(
+                //         width: (MediaQuery.of(context).size.width < 1200)
+                //             ? 1400
+                //             : MediaQuery.of(context).size.width,
+                //         decoration: const BoxDecoration(
+                //           color: AppbackgroundColor.TiTile_Box,
+                //           borderRadius: BorderRadius.only(
+                //               topLeft: Radius.circular(10),
+                //               topRight: Radius.circular(10),
+                //               bottomLeft: Radius.circular(10),
+                //               bottomRight: Radius.circular(10)),
+                //           // border: Border.all(color: Colors.white, width: 1),
+                //         ),
+                //         padding: const EdgeInsets.all(4.0),
+                //         child: Row(
+                //           children: [
+                //             subzoneModels.length == 1
+                //                 ? SizedBox()
+                //                 : MediaQuery.of(context).size.shortestSide <
+                //                         MediaQuery.of(context).size.width * 1
+                //                     ? Expanded(
+                //                         flex: 1,
+                //                         child: Padding(
+                //                           padding: EdgeInsets.all(8.0),
+                //                           child:
+                //                               Translate.TranslateAndSetText(
+                //                                   'โซน:',
+                //                                   ChaoAreaScreen_Color
+                //                                       .Colors_Text1_,
+                //                                   TextAlign.center,
+                //                                   FontWeight.bold,
+                //                                   FontWeight_.Fonts_T,
+                //                                   14,
+                //                                   2),
+                //                         ))
+                //                     : const SizedBox(),
+                //             subzoneModels.length == 1
+                //                 ? SizedBox()
+                //                 : Expanded(
+                //                     flex: MediaQuery.of(context)
+                //                                 .size
+                //                                 .shortestSide <
+                //                             MediaQuery.of(context)
+                //                                     .size
+                //                                     .width *
+                //                                 1
+                //                         ? 2
+                //                         : 3,
+                //                     child: Padding(
+                //                       padding: const EdgeInsets.all(8.0),
+                //                       child: Container(
+                //                         decoration: BoxDecoration(
+                //                           color: AppbackgroundColor
+                //                               .Sub_Abg_Colors,
+                //                           borderRadius: const BorderRadius
+                //                                   .only(
+                //                               topLeft: Radius.circular(10),
+                //                               topRight: Radius.circular(10),
+                //                               bottomLeft: Radius.circular(10),
+                //                               bottomRight:
+                //                                   Radius.circular(10)),
+                //                           border: Border.all(
+                //                               color: Colors.grey, width: 1),
+                //                         ),
+                //                         width: 200,
+                //                         child: DropdownButtonHideUnderline(
+                //                           child: DropdownButton2<String>(
+                //                               isExpanded: true,
+                //                               searchController:
+                //                                   Dropdown_Controller_zone_Sub,
+                //                               searchInnerWidget: Container(
+                //                                 width: 200,
+                //                                 height: 50,
+                //                                 decoration: BoxDecoration(
+                //                                   color: Colors.red[100]!
+                //                                       .withOpacity(0.5),
+                //                                   borderRadius:
+                //                                       const BorderRadius.only(
+                //                                           topLeft:
+                //                                               Radius.circular(
+                //                                                   8),
+                //                                           topRight:
+                //                                               Radius.circular(
+                //                                                   8),
+                //                                           bottomLeft:
+                //                                               Radius.circular(
+                //                                                   8),
+                //                                           bottomRight:
+                //                                               Radius.circular(
+                //                                                   8)),
+                //                                   border: Border.all(
+                //                                       color: Colors.grey,
+                //                                       width: 1),
+                //                                 ),
+                //                                 child: TextFormField(
+                //                                   expands: true,
+                //                                   maxLines: null,
+                //                                   controller:
+                //                                       Dropdown_Controller_zone_Sub,
+                //                                   decoration: InputDecoration(
+                //                                     isDense: true,
+                //                                     contentPadding:
+                //                                         const EdgeInsets
+                //                                             .symmetric(
+                //                                       horizontal: 10,
+                //                                       vertical: 8,
+                //                                     ),
+                //                                     hintText: 'Search...',
+                //                                     // fillColor: Colors.red[300],
+                //                                     hintStyle:
+                //                                         const TextStyle(
+                //                                             fontSize: 12),
+                //                                     border:
+                //                                         OutlineInputBorder(
+                //                                       borderRadius:
+                //                                           BorderRadius
+                //                                               .circular(8),
+                //                                     ),
+                //                                   ),
+                //                                 ),
+                //                               ),
+                //                               hint: Translate
+                //                                   .TranslateAndSetText(
+                //                                       zone_Subname == null
+                //                                           ? 'ทั้งหมด'
+                //                                           : '$zone_Subname',
+                //                                       ChaoAreaScreen_Color
+                //                                           .Colors_Text2_,
+                //                                       TextAlign.center,
+                //                                       FontWeight.bold,
+                //                                       FontWeight_.Fonts_T,
+                //                                       14,
+                //                                       2),
+                //                               icon: const Icon(
+                //                                 Icons.arrow_drop_down,
+                //                                 color: TextHome_Color
+                //                                     .TextHome_Colors,
+                //                               ),
+                //                               style: const TextStyle(
+                //                                   color: Colors.green,
+                //                                   fontFamily: Font_.Fonts_T),
+                //                               iconSize: 30,
+                //                               buttonHeight: 35,
+                //                               dropdownDecoration:
+                //                                   BoxDecoration(
+                //                                 borderRadius:
+                //                                     BorderRadius.circular(10),
+                //                               ),
+                //                               items: subzoneModels
+                //                                   .map((item) =>
+                //                                       DropdownMenuItem<
+                //                                           String>(
+                //                                         value:
+                //                                             '${item.ser},${item.zn}',
+                //                                         child: Column(
+                //                                           crossAxisAlignment:
+                //                                               CrossAxisAlignment
+                //                                                   .start,
+                //                                           mainAxisAlignment:
+                //                                               MainAxisAlignment
+                //                                                   .spaceBetween,
+                //                                           children: [
+                //                                             Text(
+                //                                               item.zn!,
+                //                                               maxLines: 2,
+                //                                               style: const TextStyle(
+                //                                                   fontSize:
+                //                                                       14,
+                //                                                   fontFamily:
+                //                                                       Font_
+                //                                                           .Fonts_T),
+                //                                             ),
+                //                                             Divider(
+                //                                               color: Colors
+                //                                                   .grey[300],
+                //                                               height: 4.0,
+                //                                             ),
+                //                                           ],
+                //                                         ),
+                //                                       ))
+                //                                   .toList(),
+
+                //                               // value: selectedValue,
+
+                //                               onChanged: (value) async {
+                //                                 var zones =
+                //                                     value!.indexOf(',');
+                //                                 var zoneSer =
+                //                                     value.substring(0, zones);
+                //                                 var zonesName = value
+                //                                     .substring(zones + 1);
+                //                                 // print(
+                //                                 //     'mmmmm ${zoneSer.toString()} $zonesName');
+
+                //                                 SharedPreferences
+                //                                     preferences =
+                //                                     await SharedPreferences
+                //                                         .getInstance();
+                //                                 preferences.setString(
+                //                                     'zoneSubSer',
+                //                                     zoneSer.toString());
+                //                                 preferences.setString(
+                //                                     'zonesSubName',
+                //                                     zonesName.toString());
+                //                                 preferences.remove("zoneSer");
+                //                                 preferences
+                //                                     .remove("zonesName");
+
+                //                                 // setState(() {
+                //                                 //   zoneModels.clear();
+                //                                 //   zone_ser =
+                //                                 //       preferences.getString('zoneSer');
+                //                                 //   zone_name =
+                //                                 //       preferences.getString('zonesName');
+                //                                 //   zone_Subser =
+                //                                 //       preferences.getString('zoneSubSer');
+                //                                 //   zone_Subname =
+                //                                 //       preferences.getString('zonesSubName');
+                //                                 //   read_GC_Sub_zone().then((value) =>
+                //                                 //       read_GC_zone()
+                //                                 //           .then((value) => read_GC_area()));
+                //                                 // });
+
+                //                                 String? _route = preferences
+                //                                     .getString('route');
+                //                                 MaterialPageRoute
+                //                                     materialPageRoute =
+                //                                     MaterialPageRoute(
+                //                                         builder: (BuildContext
+                //                                                 context) =>
+                //                                             AdminScafScreen(
+                //                                                 route:
+                //                                                     _route));
+                //                                 Navigator.pushAndRemoveUntil(
+                //                                     context,
+                //                                     materialPageRoute,
+                //                                     (route) => false);
+                //                                 setState(() {
+                //                                   areaFloorplanModels.clear;
+                //                                   Data_Properties();
+                //                                   // read_GC_area();
+                //                                 });
+                //                               },
+                //                               searchMatchFn:
+                //                                   (item, searchValue) {
+                //                                 return item.value
+                //                                     .toString()
+                //                                     .contains(searchValue);
+                //                               },
+                //                               onMenuStateChange: (isOpen) {
+                //                                 if (!isOpen) {
+                //                                   Dropdown_Controller_zone_Sub
+                //                                       .clear();
+                //                                 }
+                //                               }),
+                //                         ),
+
+                //                         //  DropdownButtonFormField2(
+                //                         //   decoration: InputDecoration(
+                //                         //     isDense: true,
+                //                         //     contentPadding: EdgeInsets.zero,
+                //                         //     border: OutlineInputBorder(
+                //                         //       borderRadius:
+                //                         //           BorderRadius.circular(10),
+                //                         //     ),
+                //                         //   ),
+                //                         //   isExpanded: true,
+                //                         //   hint: Translate.TranslateAndSetText(
+                //                         //       zone_Subname == null
+                //                         //           ? 'ทั้งหมด'
+                //                         //           : '$zone_Subname',
+                //                         //       ChaoAreaScreen_Color.Colors_Text2_,
+                //                         //       TextAlign.center,
+                //                         //       FontWeight.bold,
+                //                         //       FontWeight_.Fonts_T,
+                //                         //       14,
+                //                         //       2),
+
+                //                         //   icon: const Icon(
+                //                         //     Icons.arrow_drop_down,
+                //                         //     color: TextHome_Color.TextHome_Colors,
+                //                         //   ),
+                //                         //   style: const TextStyle(
+                //                         //       color: Colors.green,
+                //                         //       fontFamily: Font_.Fonts_T),
+                //                         //   iconSize: 30,
+                //                         //   buttonHeight: 40,
+                //                         //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                //                         //   dropdownDecoration: BoxDecoration(
+                //                         //     borderRadius:
+                //                         //         BorderRadius.circular(10),
+                //                         //   ),
+                //                         //   items: subzoneModels
+                //                         //       .map((item) =>
+                //                         //           DropdownMenuItem<String>(
+                //                         //             value:
+                //                         //                 '${item.ser},${item.zn}',
+                //                         //             child: Text(
+                //                         //               item.zn!,
+                //                         //               style: const TextStyle(
+                //                         //                   fontSize: 14,
+                //                         //                   fontFamily:
+                //                         //                       Font_.Fonts_T),
+                //                         //             ),
+                //                         //           ))
+                //                         //       .toList(),
+
+                //                         //   onChanged: (value) async {
+                //                         //     var zones = value!.indexOf(',');
+                //                         //     var zoneSer =
+                //                         //         value.substring(0, zones);
+                //                         //     var zonesName =
+                //                         //         value.substring(zones + 1);
+                //                         //     // print(
+                //                         //     //     'mmmmm ${zoneSer.toString()} $zonesName');
+
+                //                         //     SharedPreferences preferences =
+                //                         //         await SharedPreferences
+                //                         //             .getInstance();
+                //                         //     preferences.setString(
+                //                         //         'zoneSubSer', zoneSer.toString());
+                //                         //     preferences.setString('zonesSubName',
+                //                         //         zonesName.toString());
+                //                         //     preferences.remove("zoneSer");
+                //                         //     preferences.remove("zonesName");
+
+                //                         //     // setState(() {
+                //                         //     //   zoneModels.clear();
+                //                         //     //   zone_ser =
+                //                         //     //       preferences.getString('zoneSer');
+                //                         //     //   zone_name =
+                //                         //     //       preferences.getString('zonesName');
+                //                         //     //   zone_Subser =
+                //                         //     //       preferences.getString('zoneSubSer');
+                //                         //     //   zone_Subname =
+                //                         //     //       preferences.getString('zonesSubName');
+                //                         //     //   read_GC_Sub_zone().then((value) =>
+                //                         //     //       read_GC_zone()
+                //                         //     //           .then((value) => read_GC_area()));
+                //                         //     // });
+
+                //                         //     String? _route =
+                //                         //         preferences.getString('route');
+                //                         //     MaterialPageRoute materialPageRoute =
+                //                         //         MaterialPageRoute(
+                //                         //             builder:
+                //                         //                 (BuildContext context) =>
+                //                         //                     AdminScafScreen(
+                //                         //                         route: _route));
+                //                         //     Navigator.pushAndRemoveUntil(
+                //                         //         context,
+                //                         //         materialPageRoute,
+                //                         //         (route) => false);
+                //                         //   },
+                //                         //   // onSaved: (value) {
+                //                         //   //   // selectedValue = value.toString();
+                //                         //   // },
+                //                         // ),
+                //                       ),
+                //                     ),
+                //                   ),
+                //             MediaQuery.of(context).size.shortestSide <
+                //                     MediaQuery.of(context).size.width * 1
+                //                 ? Expanded(
+                //                     flex: 1,
+                //                     child: Padding(
+                //                       padding: EdgeInsets.all(8.0),
+                //                       child: Translate.TranslateAndSetText(
+                //                           'โซนพื้นที่เช่า:',
+                //                           ChaoAreaScreen_Color.Colors_Text2_,
+                //                           TextAlign.center,
+                //                           FontWeight.bold,
+                //                           FontWeight_.Fonts_T,
+                //                           14,
+                //                           2),
+                //                     ))
+                //                 : const SizedBox(),
+                //             Expanded(
+                //               flex: MediaQuery.of(context).size.shortestSide <
+                //                       MediaQuery.of(context).size.width * 1
+                //                   ? 2
+                //                   : 3,
+                //               child: StreamBuilder<Object>(
+                //                   stream: Stream.periodic(
+                //                       const Duration(milliseconds: 15),
+                //                       (i) => i),
+                //                   builder: (context, snapshot) {
+                //                     return Padding(
+                //                       padding: const EdgeInsets.all(8.0),
+                //                       child: Container(
+                //                         decoration: BoxDecoration(
+                //                           color: AppbackgroundColor
+                //                               .Sub_Abg_Colors,
+                //                           borderRadius: const BorderRadius
+                //                                   .only(
+                //                               topLeft: Radius.circular(10),
+                //                               topRight: Radius.circular(10),
+                //                               bottomLeft: Radius.circular(10),
+                //                               bottomRight:
+                //                                   Radius.circular(10)),
+                //                           border: Border.all(
+                //                               color: Colors.grey, width: 1),
+                //                         ),
+                //                         width: 200,
+                //                         child: DropdownButtonHideUnderline(
+                //                           child: DropdownButton2<String>(
+                //                               isExpanded: true,
+                //                               searchController:
+                //                                   Dropdown_Controller,
+                //                               searchInnerWidget: Container(
+                //                                 width: 200,
+                //                                 height: 50,
+                //                                 decoration: BoxDecoration(
+                //                                   color: Colors.red[100]!
+                //                                       .withOpacity(0.5),
+                //                                   borderRadius:
+                //                                       const BorderRadius.only(
+                //                                           topLeft:
+                //                                               Radius.circular(
+                //                                                   8),
+                //                                           topRight:
+                //                                               Radius.circular(
+                //                                                   8),
+                //                                           bottomLeft:
+                //                                               Radius.circular(
+                //                                                   8),
+                //                                           bottomRight:
+                //                                               Radius.circular(
+                //                                                   8)),
+                //                                   border: Border.all(
+                //                                       color: Colors.grey,
+                //                                       width: 1),
+                //                                 ),
+                //                                 child: TextFormField(
+                //                                   expands: true,
+                //                                   maxLines: null,
+                //                                   controller:
+                //                                       Dropdown_Controller,
+                //                                   decoration: InputDecoration(
+                //                                     isDense: true,
+                //                                     contentPadding:
+                //                                         const EdgeInsets
+                //                                             .symmetric(
+                //                                       horizontal: 10,
+                //                                       vertical: 8,
+                //                                     ),
+                //                                     hintText: 'Search...',
+                //                                     // fillColor: Colors.red[300],
+                //                                     hintStyle:
+                //                                         const TextStyle(
+                //                                             fontSize: 12),
+                //                                     border:
+                //                                         OutlineInputBorder(
+                //                                       borderRadius:
+                //                                           BorderRadius
+                //                                               .circular(8),
+                //                                     ),
+                //                                   ),
+                //                                 ),
+                //                               ),
+                //                               hint: Translate
+                //                                   .TranslateAndSetText(
+                //                                       zone_name == null
+                //                                           ? 'ทั้งหมด'
+                //                                           : '$zone_name',
+                //                                       ChaoAreaScreen_Color
+                //                                           .Colors_Text2_,
+                //                                       TextAlign.center,
+                //                                       FontWeight.bold,
+                //                                       FontWeight_.Fonts_T,
+                //                                       14,
+                //                                       2),
+                //                               icon: const Icon(
+                //                                 Icons.arrow_drop_down,
+                //                                 color: TextHome_Color
+                //                                     .TextHome_Colors,
+                //                               ),
+                //                               style: const TextStyle(
+                //                                   color: Colors.green,
+                //                                   fontFamily: Font_.Fonts_T),
+                //                               iconSize: 30,
+                //                               buttonHeight: 35,
+                //                               dropdownDecoration:
+                //                                   BoxDecoration(
+                //                                 borderRadius:
+                //                                     BorderRadius.circular(10),
+                //                               ),
+                //                               items: limitedList_zoneModels
+                //                                   .map((item) =>
+                //                                       DropdownMenuItem<
+                //                                           String>(
+                //                                         value:
+                //                                             '${item.ser},${item.zn}',
+                //                                         child: Column(
+                //                                           crossAxisAlignment:
+                //                                               CrossAxisAlignment
+                //                                                   .start,
+                //                                           mainAxisAlignment:
+                //                                               MainAxisAlignment
+                //                                                   .spaceBetween,
+                //                                           children: [
+                //                                             Text(
+                //                                               item.zn!,
+                //                                               maxLines: 2,
+                //                                               style: const TextStyle(
+                //                                                   fontSize:
+                //                                                       14,
+                //                                                   fontFamily:
+                //                                                       Font_
+                //                                                           .Fonts_T),
+                //                                             ),
+                //                                             Divider(
+                //                                               color: Colors
+                //                                                   .grey[300],
+                //                                               height: 4.0,
+                //                                             ),
+                //                                           ],
+                //                                         ),
+                //                                       ))
+                //                                   .toList(),
+
+                //                               // value: selectedValue,
+                //                               onChanged: (value) async {
+                //                                 var zones =
+                //                                     value!.indexOf(',');
+                //                                 var zoneSer =
+                //                                     value.substring(0, zones);
+                //                                 var zonesName = value
+                //                                     .substring(zones + 1);
+                //                                 // print('mmmmm ${zoneSer.toString()} $zonesName');
+
+                //                                 SharedPreferences
+                //                                     preferences =
+                //                                     await SharedPreferences
+                //                                         .getInstance();
+                //                                 preferences.setString(
+                //                                     'zoneSer',
+                //                                     zoneSer.toString());
+                //                                 preferences.setString(
+                //                                     'zonesName',
+                //                                     zonesName.toString());
+
+                //                                 int selectedIndex =
+                //                                     limitedList_zoneModels
+                //                                         .indexWhere(
+                //                                             (element) =>
+                //                                                 element.ser ==
+                //                                                     zoneSer &&
+                //                                                 element.zn ==
+                //                                                     zonesName);
+
+                //                                 // print('Selected index: $selectedIndex');
+                //                                 if (selectedIndex == 0) {
+                //                                 } else {
+                //                                   Img_Zone =
+                //                                       '${MyConstant().domain}/files/${DBN_}/zone/${limitedList_zoneModels[selectedIndex].img}';
+                //                                   // Img_Zone =
+                //                                   //     'https://dzentric.com/chao_perty/chao_api/files/${DBN_}/zone/${zoneModels[selectedIndex].img}';
+                //                                   Imgfloorplan =
+                //                                       '${MyConstant().domain}/files/${DBN_}/zone/${limitedList_zoneModels[selectedIndex].img_floorplan}';
+                //                                 }
+                //                                 String? _route = preferences
+                //                                     .getString('route');
+                //                                 MaterialPageRoute
+                //                                     materialPageRoute =
+                //                                     MaterialPageRoute(
+                //                                         builder: (BuildContext
+                //                                                 context) =>
+                //                                             AdminScafScreen(
+                //                                                 route:
+                //                                                     _route));
+                //                                 Navigator.pushAndRemoveUntil(
+                //                                     context,
+                //                                     materialPageRoute,
+                //                                     (route) => false);
+                //                                 setState(() {
+                //                                   areaFloorplanModels.clear;
+                //                                   Data_Properties();
+                //                                   // read_GC_area();
+                //                                 });
+                //                                 // print(selectedIndex);
+                //                                 // print(selectedIndex);
+                //                                 // print(selectedIndex);
+                //                                 // print(selectedIndex);
+                //                               },
+                //                               searchMatchFn:
+                //                                   (item, searchValue) {
+                //                                 return item.value
+                //                                     .toString()
+                //                                     .contains(searchValue);
+                //                               },
+                //                               onMenuStateChange: (isOpen) {
+                //                                 if (!isOpen) {
+                //                                   Dropdown_Controller.clear();
+                //                                 }
+                //                               }),
+                //                         ),
+                //                       ),
+                //                     );
+                //                   }),
+                //             ),
+                //             Expanded(
+                //               flex: MediaQuery.of(context).size.shortestSide <
+                //                       MediaQuery.of(context).size.width * 1
+                //                   ? 1
+                //                   : 2,
+                //               child: Padding(
+                //                 padding: EdgeInsets.all(8.0),
+                //                 child: Translate.TranslateAndSetText(
+                //                     'ค้นหา:',
+                //                     ChaoAreaScreen_Color.Colors_Text2_,
+                //                     TextAlign.center,
+                //                     FontWeight.bold,
+                //                     FontWeight_.Fonts_T,
+                //                     14,
+                //                     2),
+                //               ),
+                //             ),
+                //             Expanded(
+                //               flex: MediaQuery.of(context).size.shortestSide <
+                //                       MediaQuery.of(context).size.width * 1
+                //                   ? 8
+                //                   : 6,
+                //               child: Padding(
+                //                 padding: const EdgeInsets.all(8.0),
+                //                 child: Container(
+                //                   decoration: BoxDecoration(
+                //                     color: AppbackgroundColor.Sub_Abg_Colors,
+                //                     borderRadius: const BorderRadius.only(
+                //                         topLeft: Radius.circular(10),
+                //                         topRight: Radius.circular(10),
+                //                         bottomLeft: Radius.circular(10),
+                //                         bottomRight: Radius.circular(10)),
+                //                     border: Border.all(
+                //                         color: Colors.grey, width: 1),
+                //                   ),
+                //                   // width: 120,
+                //                   height: 40,
+                //                   child: _searchBar(),
+                //                 ),
+                //               ),
+                //             ),
+
+                //           ],
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
                 if ((Ser_Body == 0))
                   Padding(
                     padding: const EdgeInsets.fromLTRB(8, 5, 8, 0),
@@ -2523,14 +3490,16 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                               padding:
                                                   const EdgeInsets.all(8.0),
                                               child: InkWell(
-                                                onTap: () {
+                                                onTap: () async {
                                                   setState(() {
                                                     tappedIndex_ = '';
                                                   });
                                                   setState(() {
                                                     Status_ = i + 1;
                                                   });
-                                                  read_GC_areaSelect(i + 1);
+                                                  await read_GC_zone();
+                                                  Data_Properties();
+                                                  // read_GC_areaSelect(i + 1);
                                                 },
                                                 child: Container(
                                                   decoration: BoxDecoration(
@@ -2541,33 +3510,37 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                         : (i + 1 == 2)
                                                             ? (Status_ == i + 1)
                                                                 ? Colors
-                                                                    .orange[700]
+                                                                    .red[700]
                                                                 : Colors
-                                                                    .orange[200]
+                                                                    .red[200]
                                                             : (i + 1 == 3)
                                                                 ? (Status_ ==
                                                                         i + 1)
-                                                                    ? Colors.blue[
+                                                                    ? Colors.orange[
                                                                         700]
-                                                                    : Colors.blue[
+                                                                    : Colors.orange[
                                                                         200]
                                                                 : (i + 1 == 4)
                                                                     ? (Status_ ==
                                                                             i +
                                                                                 1)
-                                                                        ? Colors.green[
+                                                                        ? Colors.grey[
                                                                             700]
-                                                                        : Colors.green[
-                                                                            200]
+                                                                        : Colors.grey[
+                                                                            300]
                                                                     : (i + 1 ==
-                                                                            4)
+                                                                            5)
                                                                         ? (Status_ ==
                                                                                 i + 1)
-                                                                            ? Colors.red[700]
-                                                                            : Colors.red[200]
-                                                                        : (Status_ == i + 1)
-                                                                            ? Colors.grey[700]
-                                                                            : Colors.grey[300],
+                                                                            ? Colors.blue[700]
+                                                                            : Colors.blue[200]
+                                                                        : (i + 1 == 6)
+                                                                            ? (Status_ == i + 1)
+                                                                                ? Colors.deepPurple[700]
+                                                                                : Colors.deepPurple[200]
+                                                                            : (Status_ == i + 1)
+                                                                                ? Colors.green[700]
+                                                                                : Colors.green[200],
                                                     borderRadius:
                                                         const BorderRadius.only(
                                                             topLeft:
@@ -2730,15 +3703,17 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                         const EdgeInsets.all(
                                                             8.0),
                                                     child: InkWell(
-                                                      onTap: () {
+                                                      onTap: () async {
                                                         setState(() {
                                                           tappedIndex_ = '';
                                                         });
                                                         setState(() {
                                                           Status_ = i + 1;
                                                         });
-                                                        read_GC_areaSelect(
-                                                            Status_);
+                                                        await read_GC_zone();
+                                                        Data_Properties();
+                                                        // read_GC_areaSelect(
+                                                        //     Status_);
                                                       },
                                                       child: Container(
                                                         decoration:
@@ -2753,30 +3728,34 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                               : (i + 1 == 2)
                                                                   ? (Status_ ==
                                                                           i + 1)
-                                                                      ? Colors.orange[
+                                                                      ? Colors.red[
                                                                           700]
-                                                                      : Colors.orange[
+                                                                      : Colors.red[
                                                                           200]
                                                                   : (i + 1 == 3)
                                                                       ? (Status_ ==
                                                                               i +
                                                                                   1)
-                                                                          ? Colors.blue[
+                                                                          ? Colors.orange[
                                                                               700]
-                                                                          : Colors.blue[
+                                                                          : Colors.orange[
                                                                               200]
                                                                       : (i + 1 ==
                                                                               4)
                                                                           ? (Status_ == i + 1)
-                                                                              ? Colors.green[700]
-                                                                              : Colors.green[200]
+                                                                              ? Colors.grey[700]
+                                                                              : Colors.grey[300]
                                                                           : (i + 1 == 5)
                                                                               ? (Status_ == i + 1)
-                                                                                  ? Colors.red[700]
-                                                                                  : Colors.red[200]
-                                                                              : (Status_ == i + 1)
-                                                                                  ? Colors.grey[700]
-                                                                                  : Colors.grey[300],
+                                                                                  ? Colors.blue[700]
+                                                                                  : Colors.blue[200]
+                                                                              : (i + 1 == 6)
+                                                                                  ? (Status_ == i + 1)
+                                                                                      ? Colors.deepPurple[700]
+                                                                                      : Colors.deepPurple[200]
+                                                                                  : (Status_ == i + 1)
+                                                                                      ? Colors.green[700]
+                                                                                      : Colors.green[200],
                                                           borderRadius: const BorderRadius
                                                                   .only(
                                                               topLeft: Radius
@@ -2857,19 +3836,35 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                 });
                                               } else if (index + 1 == 2) {
                                                 setState(() {
-                                                  Ser_Body = 5;
-                                                  Visit_ = 'calendar';
+                                                  Visit_ = 'list';
                                                 });
                                               } else if (index + 1 == 3) {
                                                 setState(() {
-                                                  Visit_ = 'list';
-                                                });
-                                              } else if (index + 1 == 4) {
-                                                setState(() {
                                                   Visit_ = 'map';
                                                 });
-                                                read_GC_area();
+                                                Data_Properties();
+                                                // read_GC_area();
                                               }
+                                              // if (index + 1 == 1) {
+                                              //   setState(() {
+                                              //     Visit_ = 'grid';
+                                              //   });
+                                              // } else if (index + 1 == 2) {
+                                              //   setState(() {
+                                              //     Ser_Body = 5;
+                                              //     Visit_ = 'calendar';
+                                              //   });
+                                              // } else if (index + 1 == 3) {
+                                              //   setState(() {
+                                              //     Visit_ = 'list';
+                                              //   });
+                                              // } else if (index + 1 == 4) {
+                                              //   setState(() {
+                                              //     Visit_ = 'map';
+                                              //   });
+                                              //   Data_Properties();
+                                              //   // read_GC_area();
+                                              // }
                                             },
                                             containerHeight: 40,
                                             containerWight: 130,
@@ -2881,24 +3876,24 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                     ? Colors.blue[900]
                                                     : Colors.black,
                                               ),
-                                              Icon(
-                                                Icons.calendar_month_rounded,
-                                                color: (Visit_ == 'calendar')
-                                                    ? Colors.blue[900]
-                                                    : Colors.black,
-                                              ),
+                                              // Icon(
+                                              //   Icons.calendar_month_rounded,
+                                              //   color: (Visit_ == 'calendar')
+                                              //       ? Colors.blue[900]
+                                              //       : Colors.black,
+                                              // ),
                                               Icon(
                                                 Icons.list,
                                                 color: (Visit_ == 'list')
                                                     ? Colors.blue[900]
                                                     : Colors.black,
                                               ),
-                                              Icon(
-                                                Icons.map_outlined,
-                                                color: (Visit_ == 'map')
-                                                    ? Colors.blue[900]
-                                                    : Colors.black,
-                                              )
+                                              // Icon(
+                                              //   Icons.map_outlined,
+                                              //   color: (Visit_ == 'map')
+                                              //       ? Colors.blue[900]
+                                              //       : Colors.black,
+                                              // )
                                             ],
                                           ),
                                         ),
@@ -2939,7 +3934,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                         Get_Value_indexpage: '4',
                                         updateMessage: updateMessage,
                                       )
-                                    : Homereservespace_calendar()
+                                    : SizedBox()
               ],
             ),
           );
@@ -2954,325 +3949,290 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
     checkPreferance();
     read_GC_zone();
     read_GC_rental();
-    read_GC_area();
+    Data_Properties();
+    // read_GC_area();
   }
 
   Widget BodyHome_Web(context) {
+    // 👇 ใส่ไว้ตรงนี้ (ระดับเดียวกับ initState)
+    int _crossAxisCount(BuildContext context) {
+      final w = MediaQuery.sizeOf(context).width;
+      if (w >= 1200) return 10; // desktop ใหญ่
+      if (w >= 800) return 6; // tablet
+      if (w >= 400) return 3; // โทรศัพท์จอใหญ่
+      return 2; // โทรศัพท์จอเล็ก
+    }
+
     return (Visit_ == 'list')
-        ? Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  decoration: BoxDecoration(
-                    color: AppbackgroundColor.TiTile_Colors,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(0),
-                        bottomRight: Radius.circular(0)),
-                  ),
-                  padding: const EdgeInsets.all(8.0),
-                  child: Column(
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.fromLTRB(0, 2, 2, 2),
-                            child: Container(
-                              height: 35,
-                              decoration: BoxDecoration(
-                                color: AppbackgroundColor.Sub_Abg_Colors,
-                                // .withOpacity(0.5),
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(8),
-                                    topRight: Radius.circular(8),
-                                    bottomLeft: Radius.circular(8),
-                                    bottomRight: Radius.circular(8)),
-                                // border: Border.all(
-                                //     color:
-                                //         Colors.grey,
-                                //     width: 1),
-                              ),
-                              width: 130,
-                              // height: 30,
-                              padding: const EdgeInsets.all(2.0),
-                              child: DropdownButtonHideUnderline(
-                                child: DropdownButton2<String>(
-                                  isExpanded: true,
-                                  hint: Center(
-                                    child: Text(
-                                      'หัวข้อ',
-                                      style: const TextStyle(
-                                        fontSize: 14,
-                                        color:
-                                            AccountScreen_Color.Colors_Text1_,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: Font_.Fonts_T,
+        ? ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+              PointerDeviceKind.touch,
+              PointerDeviceKind.mouse,
+            }),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: (MediaQuery.of(context).size.width < 1200)
+                    ? 1400
+                    : (Responsive.isDesktop(context))
+                        ? MediaQuery.of(context).size.width * 0.85
+                        : 1400,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                      child: Container(
+                        width: (MediaQuery.of(context).size.width < 1200)
+                            ? 1400
+                            : (Responsive.isDesktop(context))
+                                ? MediaQuery.of(context).size.width * 0.85
+                                : 1400,
+                        decoration: BoxDecoration(
+                          color: AppbackgroundColor.TiTile_Colors,
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(10),
+                              topRight: Radius.circular(10),
+                              bottomLeft: Radius.circular(0),
+                              bottomRight: Radius.circular(0)),
+                        ),
+                        padding: const EdgeInsets.all(8.0),
+                        child: Column(
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 2, 2, 2),
+                                  child: Container(
+                                    height: 35,
+                                    decoration: BoxDecoration(
+                                      color: AppbackgroundColor.Sub_Abg_Colors,
+                                      // .withOpacity(0.5),
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(8),
+                                          topRight: Radius.circular(8),
+                                          bottomLeft: Radius.circular(8),
+                                          bottomRight: Radius.circular(8)),
+                                      // border: Border.all(
+                                      //     color:
+                                      //         Colors.grey,
+                                      //     width: 1),
+                                    ),
+                                    width: 130,
+                                    // height: 30,
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: DropdownButtonHideUnderline(
+                                      child: DropdownButton2<String>(
+                                        isExpanded: true,
+                                        hint: Center(
+                                          child: Text(
+                                            'หัวข้อ',
+                                            style: const TextStyle(
+                                              fontSize: 14,
+                                              color: AccountScreen_Color
+                                                  .Colors_Text1_,
+                                              fontWeight: FontWeight.bold,
+                                              fontFamily: Font_.Fonts_T,
+                                            ),
+                                          ),
+                                        ),
+
+                                        items: chaolist1
+                                            .asMap()
+                                            .entries
+                                            .map((entry) {
+                                          int index =
+                                              entry.key; // Get the index
+                                          var item = entry.value;
+                                          return DropdownMenuItem<String>(
+                                            value: item[
+                                                "ser"], // Use "ser" as the value
+                                            enabled:
+                                                false, // Set to true to allow selection
+                                            child: StatefulBuilder(
+                                              builder: (context, menuSetState) {
+                                                // final isSelected = selectedItems.contains(item);
+                                                return InkWell(
+                                                  onTap: () {
+                                                    int selectedIndex =
+                                                        chaolist1.indexWhere(
+                                                            (items) =>
+                                                                items["ser"] ==
+                                                                item["ser"]);
+                                                    // print(ac1[selectedIndex]
+                                                    //     [
+                                                    //     "pn"]);
+                                                    // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
+                                                    //This rebuilds the StatefulWidget to update the button's text
+                                                    setState(() {
+                                                      if (item["st"]! == '1') {
+                                                        chaolist1[selectedIndex]
+                                                            ["st"] = '0';
+                                                      } else {
+                                                        chaolist1[selectedIndex]
+                                                            ["st"] = '1';
+                                                      }
+                                                    });
+                                                    //This rebuilds the dropdownMenu Widget to update the check mark
+                                                    menuSetState(() {});
+                                                  },
+                                                  child: Container(
+                                                    height: double.infinity,
+                                                    padding: const EdgeInsets
+                                                            .symmetric(
+                                                        horizontal: 4.0),
+                                                    child: Row(
+                                                      children: [
+                                                        if (item["st"]! == '1')
+                                                          Icon(
+                                                            Icons
+                                                                .check_box_outlined,
+                                                            color: Colors
+                                                                .green[400],
+                                                          )
+                                                        else
+                                                          const Icon(Icons
+                                                              .check_box_outline_blank),
+                                                        Expanded(
+                                                          child: Text(
+                                                            item["pn"]!,
+                                                            maxLines: 2,
+                                                            style:
+                                                                const TextStyle(
+                                                              fontSize: 12,
+                                                              color: AccountScreen_Color
+                                                                  .Colors_Text1_,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .w600,
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          );
+                                        }).toList(),
+                                        //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
+                                        // value: selectedItems.isEmpty ? null : selectedItems.last,
+                                        onChanged: (value) {},
                                       ),
                                     ),
                                   ),
-
-                                  items: chaolist1.asMap().entries.map((entry) {
-                                    int index = entry.key; // Get the index
-                                    var item = entry.value;
-                                    return DropdownMenuItem<String>(
-                                      value:
-                                          item["ser"], // Use "ser" as the value
-                                      enabled:
-                                          false, // Set to true to allow selection
-                                      child: StatefulBuilder(
-                                        builder: (context, menuSetState) {
-                                          // final isSelected = selectedItems.contains(item);
-                                          return InkWell(
-                                            onTap: () {
-                                              int selectedIndex = chaolist1
-                                                  .indexWhere((items) =>
-                                                      items["ser"] ==
-                                                      item["ser"]);
-                                              // print(ac1[selectedIndex]
-                                              //     [
-                                              //     "pn"]);
-                                              // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
-                                              //This rebuilds the StatefulWidget to update the button's text
-                                              setState(() {
-                                                if (item["st"]! == '1') {
-                                                  chaolist1[selectedIndex]
-                                                      ["st"] = '0';
-                                                } else {
-                                                  chaolist1[selectedIndex]
-                                                      ["st"] = '1';
-                                                }
-                                              });
-                                              //This rebuilds the dropdownMenu Widget to update the check mark
-                                              menuSetState(() {});
-                                            },
-                                            child: Container(
-                                              height: double.infinity,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 4.0),
-                                              child: Row(
-                                                children: [
-                                                  if (item["st"]! == '1')
-                                                    Icon(
-                                                      Icons.check_box_outlined,
-                                                      color: Colors.green[400],
-                                                    )
-                                                  else
-                                                    const Icon(Icons
-                                                        .check_box_outline_blank),
-                                                  Expanded(
-                                                    child: Text(
-                                                      item["pn"]!,
-                                                      maxLines: 2,
-                                                      style: const TextStyle(
-                                                        fontSize: 12,
-                                                        color:
-                                                            AccountScreen_Color
-                                                                .Colors_Text1_,
-                                                        fontWeight:
-                                                            FontWeight.w600,
-                                                        fontFamily:
-                                                            Font_.Fonts_T,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          );
-                                        },
-                                      ),
-                                    );
-                                  }).toList(),
-                                  //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                                  // value: selectedItems.isEmpty ? null : selectedItems.last,
-                                  onChanged: (value) {},
                                 ),
+                              ],
+                            ),
+                            Container(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: chaolist1
+                                    .where((item) =>
+                                        item["st"] == '1') // Filter items
+                                    .toList() // Convert to a list
+                                    .asMap()
+                                    .entries
+                                    .map((entry) {
+                                  int index = entry.key; // Get the index
+                                  var item = entry.value; // Get the item
+
+                                  return Expanded(
+                                    flex: 1,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(0.0),
+                                      child: Translate.TranslateAndSetText(
+                                        item["pn"] ??
+                                            "", // Use "pn" or an empty string if null
+                                        AccountScreen_Color.Colors_Text1_,
+                                        (item["ser"] == '2' ||
+                                                item["ser"] == '3' ||
+                                                item["ser"] == '6' ||
+                                                item["ser"] == '7')
+                                            ? TextAlign.right
+                                            : (item["ser"] == '4' ||
+                                                    item["ser"] == '5' ||
+                                                    item["ser"] == '8' ||
+                                                    item["ser"] == '9' ||
+                                                    item["ser"] == '10')
+                                                ? TextAlign.center
+                                                : TextAlign.start,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        1,
+                                      ),
+                                    ),
+                                  );
+                                }).toList(),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                      Container(
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: chaolist1
-                              .where(
-                                  (item) => item["st"] == '1') // Filter items
-                              .toList() // Convert to a list
-                              .asMap()
-                              .entries
-                              .map((entry) {
-                            int index = entry.key; // Get the index
-                            var item = entry.value; // Get the item
-
-                            return Expanded(
-                              flex: 1,
-                              child: Padding(
-                                padding: EdgeInsets.all(0.0),
-                                child: Translate.TranslateAndSetText(
-                                  item["pn"] ??
-                                      "", // Use "pn" or an empty string if null
-                                  AccountScreen_Color.Colors_Text1_,
-                                  (item["ser"] == '2' ||
-                                          item["ser"] == '3' ||
-                                          item["ser"] == '6' ||
-                                          item["ser"] == '7')
-                                      ? TextAlign.right
-                                      : (item["ser"] == '4' ||
-                                              item["ser"] == '5' ||
-                                              item["ser"] == '8')
-                                          ? TextAlign.center
-                                          : TextAlign.start,
-                                  FontWeight.bold,
-                                  FontWeight_.Fonts_T,
-                                  14,
-                                  1,
-                                ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Column(
+                        children: [
+                          Container(
+                              height: (!Responsive.isDesktop(context))
+                                  ? MediaQuery.of(context).size.height * 0.85
+                                  : MediaQuery.of(context).size.height * 0.6,
+                              width: (MediaQuery.of(context).size.width < 1200)
+                                  ? 1400
+                                  : (Responsive.isDesktop(context))
+                                      ? MediaQuery.of(context).size.width * 0.85
+                                      : 1400,
+                              decoration: const BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors,
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(0),
+                                    topRight: Radius.circular(0),
+                                    bottomLeft: Radius.circular(0),
+                                    bottomRight: Radius.circular(0)),
+                                // border: Border.all(color: Colors.grey, width: 1),
                               ),
-                            );
-                          }).toList(),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                child: Column(
-                  children: [
-                    Container(
-                        height: (!Responsive.isDesktop(context))
-                            ? MediaQuery.of(context).size.height * 0.85
-                            : MediaQuery.of(context).size.height * 0.6,
-                        width: MediaQuery.of(context).size.width,
-                        decoration: const BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors,
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(0)),
-                          // border: Border.all(color: Colors.grey, width: 1),
-                        ),
-                        child: areaModels.isEmpty
-                            ? SizedBox(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const CircularProgressIndicator(),
-                                    StreamBuilder(
-                                      stream: Stream.periodic(
-                                          const Duration(milliseconds: 25),
-                                          (i) => i),
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData)
-                                          return const Text('');
-                                        double elapsed = double.parse(
-                                                snapshot.data.toString()) *
-                                            0.05;
-                                        return Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: (elapsed > 8.00)
-                                              ? const Text(
-                                                  'ไม่พบข้อมูล',
-                                                  style: TextStyle(
-                                                      color:
-                                                          PeopleChaoScreen_Color
-                                                              .Colors_Text2_,
-                                                      fontFamily: Font_.Fonts_T
-                                                      //fontSize: 10.0
-                                                      ),
-                                                )
-                                              : Text(
-                                                  'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
-                                                  // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-                                                  style: const TextStyle(
-                                                      color:
-                                                          PeopleChaoScreen_Color
-                                                              .Colors_Text2_,
-                                                      fontFamily: Font_.Fonts_T
-                                                      //fontSize: 10.0
-                                                      ),
-                                                ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : ListView.builder(
-                                controller: _scrollController1,
-                                // itemExtent: 50,
-                                physics:
-                                    const AlwaysScrollableScrollPhysics(), //const NeverScrollableScrollPhysics(),
-                                shrinkWrap: true,
-                                itemCount: areaModels.length,
-                                itemBuilder: (BuildContext context, int index) {
-                                  int daysBetween(DateTime from, DateTime to) {
-                                    from = DateTime(
-                                        from.year, from.month, from.day);
-                                    to = DateTime(to.year, to.month, to.day);
-                                    return (to.difference(from).inHours / 24)
-                                        .round();
-                                  }
-
-                                  var daterz = areaModels[index].ldate == null
-                                      ? '0000-00-00'
-                                      : areaModels[index].ldate;
-
-                                  var birthday =
-                                      DateTime.parse('$daterz 00:00:00.000')
-                                          .add(const Duration(days: -30));
-                                  var date2 = DateTime.now();
-                                  var difference = daysBetween(birthday, date2);
-
-                                  return Material(
-                                    color: tappedIndex_ == index.toString()
-                                        ? tappedIndex_Color.tappedIndex_Colors
-                                        : AppbackgroundColor.Sub_Abg_Colors,
-                                    child: Container(
-                                      child: ListTile(
-                                          onTap: () {
-                                            setState(() {
-                                              tappedIndex_ = index.toString();
-                                            });
-                                          },
-                                          title: Container(
-                                            decoration: BoxDecoration(
-                                              // color: Colors.green[100]!
-                                              //     .withOpacity(0.5),
-                                              border: Border(
-                                                bottom: BorderSide(
-                                                  color: Colors.black12,
-                                                  width: 1,
-                                                ),
-                                              ),
-                                            ),
-                                            child: Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                if (where_chao1("0") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Text(
-                                                        (areaModels[index].zn ==
-                                                                null)
-                                                            ? ''
-                                                            : '${areaModels[index].zn}',
-                                                        textAlign:
-                                                            TextAlign.start,
-                                                        maxLines: 1,
+                              child: areaModels.isEmpty
+                                  ? SizedBox(
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          const CircularProgressIndicator(),
+                                          StreamBuilder(
+                                            stream: Stream.periodic(
+                                                const Duration(
+                                                    milliseconds: 25),
+                                                (i) => i),
+                                            builder: (context, snapshot) {
+                                              if (!snapshot.hasData)
+                                                return const Text('');
+                                              double elapsed = double.parse(
+                                                      snapshot.data
+                                                          .toString()) *
+                                                  0.05;
+                                              return Padding(
+                                                padding:
+                                                    const EdgeInsets.all(8.0),
+                                                child: (elapsed > 8.00)
+                                                    ? const Text(
+                                                        'ไม่พบข้อมูล',
+                                                        style: TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            fontFamily:
+                                                                Font_.Fonts_T
+                                                            //fontSize: 10.0
+                                                            ),
+                                                      )
+                                                    : Text(
+                                                        'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
+                                                        // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
                                                         style: const TextStyle(
                                                             color: PeopleChaoScreen_Color
                                                                 .Colors_Text2_,
@@ -3281,581 +4241,939 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                             //fontSize: 10.0
                                                             ),
                                                       ),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("1") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].ln_c ==
-                                                              null
-                                                          ? areaModels[index]
-                                                                      .ln_q ==
-                                                                  null
-                                                              ? '${areaModels[index].lncode}'
-                                                              : '${areaModels[index].ln_q}'
-                                                          : '${areaModels[index].ln_c}',
-                                                      textAlign:
-                                                          TextAlign.start,
-                                                      maxLines: 1,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          fontFamily:
-                                                              Font_.Fonts_T
-                                                          //fontSize: 10.0
-                                                          ),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("2") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index]
-                                                                  .area_c ==
-                                                              null
-                                                          ? areaModels[index]
-                                                                      .ln_q ==
-                                                                  null
-                                                              ? nFormat.format(
-                                                                  double.parse(
-                                                                      areaModels[index]
-                                                                          .area!))
-                                                              : nFormat.format(
-                                                                  double.parse(
-                                                                      areaModels[index]
-                                                                          .area_q!))
-                                                          : nFormat.format(
-                                                              double.parse(
-                                                                  areaModels[index]
-                                                                      .area_c!)),
-                                                      textAlign: TextAlign.end,
-                                                      maxLines: 1,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          fontFamily:
-                                                              Font_.Fonts_T
-                                                          //fontSize: 10.0
-                                                          ),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("3") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].total ==
-                                                              null
-                                                          ? areaModels[index]
-                                                                      .total_q ==
-                                                                  null
-                                                              ? nFormat.format(
-                                                                  double.parse(
-                                                                      areaModels[index]
-                                                                          .rent!))
-                                                              : nFormat.format(
-                                                                  double.parse(
-                                                                      areaModels[index]
-                                                                          .total_q!))
-                                                          : nFormat.format(
-                                                              double.parse(
-                                                                  areaModels[index]
-                                                                      .total!)),
-                                                      textAlign: TextAlign.end,
-                                                      maxLines: 1,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          fontFamily:
-                                                              Font_.Fonts_T
-                                                          //fontSize: 10.0
-                                                          ),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("4") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].cid ==
-                                                              null
-                                                          ? ''
-                                                          : '${areaModels[index].cid}',
-                                                      maxLines: 1,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("5") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].docno ==
-                                                              null
-                                                          ? ''
-                                                          : '${areaModels[index].docno}',
-                                                      maxLines: 1,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: TextStyle(
-                                                          color: areaModels[
-                                                                          index]
-                                                                      .docno !=
-                                                                  null
-                                                              ? Colors.blue
-                                                              : PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("6") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].sdate ==
-                                                              null
-                                                          ? areaModels[index]
-                                                                      .sdate ==
-                                                                  null
-                                                              ? ''
-                                                              : DateFormat(
-                                                                      'dd-MM-yyyy')
-                                                                  .format(DateTime
-                                                                      .parse(
-                                                                          '${areaModels[index].sdate_q} 00:00:00'))
-                                                                  .toString()
-                                                          : DateFormat(
-                                                                  'dd-MM-yyyy')
-                                                              .format(DateTime
-                                                                  .parse(
-                                                                      '${areaModels[index].sdate} 00:00:00'))
-                                                              .toString(),
-                                                      maxLines: 1,
-                                                      textAlign: TextAlign.end,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: TextStyle(
-                                                          color: Colors.black,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("7") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].ldate ==
-                                                              null
-                                                          ? areaModels[index]
-                                                                      .ldate_q ==
-                                                                  null
-                                                              ? ''
-                                                              : DateFormat(
-                                                                      'dd-MM-yyyy')
-                                                                  .format(DateTime
-                                                                      .parse(
-                                                                          '${areaModels[index].ldate_q} 00:00:00'))
-                                                                  .toString()
-                                                          : DateFormat(
-                                                                  'dd-MM-yyyy')
-                                                              .format(DateTime
-                                                                  .parse(
-                                                                      '${areaModels[index].ldate} 00:00:00'))
-                                                              .toString(),
-                                                      maxLines: 1,
-                                                      textAlign: TextAlign.end,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: TextStyle(
-                                                          color: areaModels[
-                                                                          index]
-                                                                      .quantity ==
-                                                                  '1'
-                                                              ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) ==
-                                                                      true
-                                                                  ? Colors.red
-                                                                  : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) ==
-                                                                          true
-                                                                      ? Colors
-                                                                          .orange
-                                                                          .shade900
-                                                                      : Colors
-                                                                          .black
-                                                              : areaModels[index]
-                                                                          .quantity ==
-                                                                      '2'
-                                                                  ? Colors.blue
-                                                                  : areaModels[index]
-                                                                              .quantity ==
-                                                                          '3'
-                                                                      ? Colors
-                                                                          .blue
-                                                                      : Colors
-                                                                          .green,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("8") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      areaModels[index].stype ==
-                                                              null
-                                                          ? ''
-                                                          : '${areaModels[index].stype}',
-                                                      maxLines: 1,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: TextStyle(
-                                                          color: areaModels[
-                                                                          index]
-                                                                      .docno !=
-                                                                  null
-                                                              ? Colors.blue
-                                                              : PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                if (where_chao1("9") == false)
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Card(
-                                                      color: areaModels[index]
-                                                                  .quantity ==
-                                                              '1'
-                                                          ? (areaModels[index].ldate ==
-                                                                  null)
-                                                              ? Colors
-                                                                  .red.shade200
-                                                              : datex.isAfter(DateTime.parse('${areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) ==
-                                                                      true //datex
-                                                                  ? datex.isAfter(DateTime.parse('${areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: 0))) ==
-                                                                          false
-                                                                      ? Colors
-                                                                          .orange
-                                                                          .shade200
-                                                                      : Colors
-                                                                          .grey
-                                                                          .shade200
-                                                                  : Colors.red
-                                                                      .shade200
-                                                          : areaModels[index]
-                                                                      .quantity ==
-                                                                  '2'
-                                                              ? Colors
-                                                                  .blue.shade200
-                                                              : areaModels[index].quantity ==
-                                                                      '3'
-                                                                  ? Colors
-                                                                      .purple
-                                                                      .shade200
-                                                                  : Colors.green
-                                                                      .shade200,
-                                                      child: MaterialButton(
-                                                        key: _btnKeys[index],
-                                                        onPressed: () async {
-                                                          setState(() {
-                                                            read_GC_con_area(
-                                                                index);
-                                                          });
-                                                          if (areaModels[index]
-                                                                  .quantity !=
-                                                              '1') {
-                                                            for (int i = 0;
-                                                                i <
-                                                                    areaQuotModels
-                                                                        .length;
-                                                                i++) {
-                                                              var oo = areaQuotModels[
-                                                                      i]
-                                                                  .ln_q!
-                                                                  .contains(areaModels[
-                                                                          index]
-                                                                      .ln
-                                                                      .toString());
-                                                            }
-                                                          }
+                                              );
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    )
+                                  : ListView.builder(
+                                      controller: _scrollController1,
+                                      // itemExtent: 50,
+                                      physics:
+                                          const AlwaysScrollableScrollPhysics(), //const NeverScrollableScrollPhysics(),
+                                      shrinkWrap: true,
+                                      itemCount: areaModels.length,
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        int daysBetween(
+                                            DateTime from, DateTime to) {
+                                          from = DateTime(
+                                              from.year, from.month, from.day);
+                                          to = DateTime(
+                                              to.year, to.month, to.day);
+                                          return (to.difference(from).inHours /
+                                                  24)
+                                              .round();
+                                        }
 
-                                                          Future.delayed(
-                                                              const Duration(
-                                                                  milliseconds:
-                                                                      400), () {
-                                                            maxColumn(
-                                                                index, context);
-                                                          });
-                                                        },
-                                                        child: Translate.TranslateAndSetText(
-                                                            areaModels[index].quantity == '1'
-                                                                ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                    ? 'หมดสัญญา'
-                                                                    : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                        ? 'ใกล้หมดสัญญา'
-                                                                        : 'เช่าอยู่'
-                                                                : areaModels[index].quantity == '2'
-                                                                    ? 'เสนอราคา'
-                                                                    : areaModels[index].quantity == '3'
-                                                                        ? 'เสนอราคา(มัดจำ)'
-                                                                        : 'ว่าง',
-                                                            areaModels[index].quantity == '1'
-                                                                ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                    ? Colors.red
-                                                                    : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                        ? Colors.orange.shade900
-                                                                        : Colors.black
-                                                                : areaModels[index].quantity == '2'
-                                                                    ? Colors.blue
-                                                                    : areaModels[index].quantity == '3'
-                                                                        ? Colors.blue
-                                                                        : Colors.green,
-                                                            TextAlign.end,
-                                                            null,
-                                                            Font_.Fonts_T,
-                                                            14,
-                                                            2),
+                                        var daterz =
+                                            areaModels[index].ldate == null
+                                                ? '0000-00-00'
+                                                : areaModels[index].ldate;
+
+                                        var birthday = DateTime.parse(
+                                                '$daterz 00:00:00.000')
+                                            .add(const Duration(days: -30));
+                                        var date2 = DateTime.now();
+                                        var difference =
+                                            daysBetween(birthday, date2);
+                                        var data_tstatusx;
+
+                                        // ===== เตรียมค่าจาก properties (เอาอันแรกพอ) =====
+                                        final a = areaModels[index];
+                                        final firstProp =
+                                            a.properties.isNotEmpty
+                                                ? a.properties.first
+                                                : null;
+                                        final nr = firstProp?.newRequest;
+
+                                        data_tstatusx = nr
+                                            ?.requestStatus; // ใช้ตัวแปรเดิมที่คุณมี
+
+                                        return Material(
+                                          color:
+                                              tappedIndex_ == index.toString()
+                                                  ? tappedIndex_Color
+                                                      .tappedIndex_Colors
+                                                  : AppbackgroundColor
+                                                      .Sub_Abg_Colors,
+                                          child: Container(
+                                            child: ListTile(
+                                                onTap: () {
+                                                  setState(() {
+                                                    tappedIndex_ =
+                                                        index.toString();
+                                                  });
+                                                },
+                                                title: Container(
+                                                  decoration: BoxDecoration(
+                                                    // color: Colors.green[100]!
+                                                    //     .withOpacity(0.5),
+                                                    border: Border(
+                                                      bottom: BorderSide(
+                                                        color: Colors.black12,
+                                                        width: 1,
                                                       ),
                                                     ),
-
-                                                    // Text(
-                                                    //   areaModels[index].quantity ==
-                                                    //           '1'
-                                                    //       ? datex.isAfter(DateTime.parse(
-                                                    //                       '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-                                                    //                   .subtract(const Duration(
-                                                    //                       days:
-                                                    //                           0))) ==
-                                                    //               true
-                                                    //           ? 'หมดสัญญา'
-                                                    //           : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(
-                                                    //                       Duration(
-                                                    //                           days:
-                                                    //                               open_set_date))) ==
-                                                    //                   true
-                                                    //               ? 'ใกล้หมดสัญญา'
-                                                    //               : 'เช่าอยู่'
-                                                    //       : areaModels[index]
-                                                    //                   .quantity ==
-                                                    //               '2'
-                                                    //           ? 'เสนอราคา'
-                                                    //           : areaModels[index]
-                                                    //                       .quantity ==
-                                                    //                   '3'
-                                                    //               ? 'เสนอราคา(มัดจำ)'
-                                                    //               : 'ว่าง',
-                                                    //   textAlign: TextAlign.end,
-                                                    //   style: TextStyle(
-                                                    //       color: areaModels[index]
-                                                    //                   .quantity ==
-                                                    //               '1'
-                                                    //           ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(
-                                                    //                       const Duration(
-                                                    //                           days:
-                                                    //                               0))) ==
-                                                    //                   true
-                                                    //               ? Colors.red
-                                                    //               : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) ==
-                                                    //                       true
-                                                    //                   ? Colors
-                                                    //                       .orange
-                                                    //                       .shade900
-                                                    //                   : Colors
-                                                    //                       .black
-                                                    //           : areaModels[index]
-                                                    //                       .quantity ==
-                                                    //                   '2'
-                                                    //               ? Colors.blue
-                                                    //               : areaModels[index]
-                                                    //                           .quantity ==
-                                                    //                       '3'
-                                                    //                   ? Colors.blue
-                                                    //                   : Colors.green,
-                                                    //       fontFamily: Font_.Fonts_T
-                                                    //       //fontSize: 10.0
-                                                    //       ),
-                                                    // ),
                                                   ),
-                                              ],
-                                            ),
-                                          )),
-                                    ),
-                                  );
-                                })),
-                    Container(
-                        width: MediaQuery.of(context).size.width,
-                        decoration: const BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors,
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10)),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Align(
-                              alignment: Alignment.centerLeft,
-                              child: Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: InkWell(
-                                      onTap: () {
-                                        _scrollController1.animateTo(
-                                          0,
-                                          duration: const Duration(seconds: 1),
-                                          curve: Curves.easeOut,
-                                        );
-                                      },
-                                      child: Container(
-                                          decoration: BoxDecoration(
-                                            // color: AppbackgroundColor
-                                            //     .TiTile_Colors,
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                    topLeft: Radius.circular(6),
-                                                    topRight:
-                                                        Radius.circular(6),
-                                                    bottomLeft:
-                                                        Radius.circular(6),
-                                                    bottomRight:
-                                                        Radius.circular(8)),
-                                            border: Border.all(
-                                                color: Colors.grey, width: 1),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .center,
+                                                    children: [
+                                                      if (where_chao1("0") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(8.0),
+                                                            child: Text(
+                                                              (areaModels[index]
+                                                                          .zn ==
+                                                                      null)
+                                                                  ? ''
+                                                                  : '${areaModels[index].zn}',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .start,
+                                                              maxLines: 1,
+                                                              style: const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  fontFamily:
+                                                                      Font_
+                                                                          .Fonts_T
+                                                                  //fontSize: 10.0
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("1") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .ln_c ==
+                                                                    null
+                                                                ? areaModels[index]
+                                                                            .ln_q ==
+                                                                        null
+                                                                    ? '${areaModels[index].lncode}'
+                                                                    : '${areaModels[index].ln_q}'
+                                                                : '${areaModels[index].ln_c}',
+                                                            textAlign:
+                                                                TextAlign.start,
+                                                            maxLines: 1,
+                                                            style: const TextStyle(
+                                                                color: PeopleChaoScreen_Color
+                                                                    .Colors_Text2_,
+                                                                fontFamily:
+                                                                    Font_
+                                                                        .Fonts_T
+                                                                //fontSize: 10.0
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("2") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .area_c ==
+                                                                    null
+                                                                ? areaModels[index]
+                                                                            .ln_q ==
+                                                                        null
+                                                                    ? nFormat.format(double.parse(
+                                                                        areaModels[index]
+                                                                            .area!))
+                                                                    : nFormat.format(
+                                                                        double.parse(areaModels[index]
+                                                                            .area_q!))
+                                                                : nFormat.format(
+                                                                    double.parse(
+                                                                        areaModels[index]
+                                                                            .area_c!)),
+                                                            textAlign:
+                                                                TextAlign.end,
+                                                            maxLines: 1,
+                                                            style: const TextStyle(
+                                                                color: PeopleChaoScreen_Color
+                                                                    .Colors_Text2_,
+                                                                fontFamily:
+                                                                    Font_
+                                                                        .Fonts_T
+                                                                //fontSize: 10.0
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("3") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .total ==
+                                                                    null
+                                                                ? areaModels[index]
+                                                                            .total_q ==
+                                                                        null
+                                                                    ? nFormat.format(double.parse(
+                                                                        areaModels[index]
+                                                                            .rent!))
+                                                                    : nFormat.format(
+                                                                        double.parse(areaModels[index]
+                                                                            .total_q!))
+                                                                : nFormat.format(
+                                                                    double.parse(
+                                                                        areaModels[index]
+                                                                            .total!)),
+                                                            textAlign:
+                                                                TextAlign.end,
+                                                            maxLines: 1,
+                                                            style: const TextStyle(
+                                                                color: PeopleChaoScreen_Color
+                                                                    .Colors_Text2_,
+                                                                fontFamily:
+                                                                    Font_
+                                                                        .Fonts_T
+                                                                //fontSize: 10.0
+                                                                ),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("4") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .cid ==
+                                                                    null
+                                                                ? ''
+                                                                : '${areaModels[index].cid}',
+                                                            maxLines: 1,
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: const TextStyle(
+                                                                color: PeopleChaoScreen_Color
+                                                                    .Colors_Text2_,
+                                                                fontFamily: Font_
+                                                                    .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("5") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .docno ==
+                                                                    null
+                                                                ? ''
+                                                                : '${areaModels[index].docno}',
+                                                            maxLines: 1,
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                                color: areaModels[index]
+                                                                            .docno !=
+                                                                        null
+                                                                    ? Colors
+                                                                        .blue
+                                                                    : PeopleChaoScreen_Color
+                                                                        .Colors_Text2_,
+                                                                fontFamily: Font_
+                                                                    .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("6") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .sdate ==
+                                                                    null
+                                                                ? areaModels[index]
+                                                                            .sdate ==
+                                                                        null
+                                                                    ? ''
+                                                                    : DateFormat(
+                                                                            'dd-MM-yyyy')
+                                                                        .format(DateTime.parse(
+                                                                            '${areaModels[index].sdate_q} 00:00:00'))
+                                                                        .toString()
+                                                                : DateFormat(
+                                                                        'dd-MM-yyyy')
+                                                                    .format(DateTime
+                                                                        .parse(
+                                                                            '${areaModels[index].sdate} 00:00:00'))
+                                                                    .toString(),
+                                                            maxLines: 1,
+                                                            textAlign:
+                                                                TextAlign.end,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                                color: Colors
+                                                                    .black,
+                                                                fontFamily: Font_
+                                                                    .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("7") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .ldate ==
+                                                                    null
+                                                                ? areaModels[index]
+                                                                            .ldate_q ==
+                                                                        null
+                                                                    ? ''
+                                                                    : DateFormat(
+                                                                            'dd-MM-yyyy')
+                                                                        .format(DateTime.parse(
+                                                                            '${areaModels[index].ldate_q} 00:00:00'))
+                                                                        .toString()
+                                                                : DateFormat(
+                                                                        'dd-MM-yyyy')
+                                                                    .format(DateTime
+                                                                        .parse(
+                                                                            '${areaModels[index].ldate} 00:00:00'))
+                                                                    .toString(),
+                                                            maxLines: 1,
+                                                            textAlign:
+                                                                TextAlign.end,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                                color: areaModels[index]
+                                                                            .quantity ==
+                                                                        '1'
+                                                                    ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) ==
+                                                                            true
+                                                                        ? Colors
+                                                                            .red
+                                                                        : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) ==
+                                                                                true
+                                                                            ? Colors
+                                                                                .orange.shade900
+                                                                            : Colors
+                                                                                .black
+                                                                    : areaModels[index].quantity ==
+                                                                            '2'
+                                                                        ? Colors
+                                                                            .blue
+                                                                        : areaModels[index].quantity ==
+                                                                                '3'
+                                                                            ? Colors
+                                                                                .blue
+                                                                            : Colors
+                                                                                .green,
+                                                                fontFamily: Font_
+                                                                    .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("8") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Text(
+                                                            areaModels[index]
+                                                                        .stype ==
+                                                                    null
+                                                                ? ''
+                                                                : '${areaModels[index].stype}',
+                                                            maxLines: 1,
+                                                            textAlign: TextAlign
+                                                                .center,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style: TextStyle(
+                                                                color: areaModels[index]
+                                                                            .docno !=
+                                                                        null
+                                                                    ? Colors
+                                                                        .blue
+                                                                    : PeopleChaoScreen_Color
+                                                                        .Colors_Text2_,
+                                                                fontFamily: Font_
+                                                                    .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      if (where_chao1("9") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: (areaModels[
+                                                                      index]
+                                                                  .properties
+                                                                  .isNotEmpty)
+                                                              ? Translate
+                                                                  .TranslateAndSet_TextAutoSize(
+                                                                  (areaModels[index]
+                                                                              .properties
+                                                                              .first
+                                                                              .newRequest!
+                                                                              .requestStep ==
+                                                                          null)
+                                                                      ? '${areaModels[index].properties.first.newRequest!.requestStep ?? "Warning"}'
+                                                                      : data_tstatusx ??
+                                                                          'กำลังดำเดินการ',
+                                                                  CustomerScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  TextAlign
+                                                                      .start,
+                                                                  null,
+                                                                  Font_.Fonts_T,
+                                                                  12,
+                                                                  15,
+                                                                  1,
+                                                                )
+                                                              : Translate
+                                                                  .TranslateAndSet_TextAutoSize(
+                                                                  "-",
+                                                                  CustomerScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  TextAlign
+                                                                      .center,
+                                                                  null,
+                                                                  Font_.Fonts_T,
+                                                                  12,
+                                                                  15,
+                                                                  1,
+                                                                ),
+                                                        ),
+                                                      if (where_chao1("10") ==
+                                                          false)
+                                                        Expanded(
+                                                          flex: 1,
+                                                          child: Card(
+                                                            color: areaModels[index]
+                                                                        .quantity ==
+                                                                    '1'
+                                                                ? (areaModels[index].ldate ==
+                                                                        null)
+                                                                    ? Colors.red
+                                                                        .shade200
+                                                                    : datex.isAfter(DateTime.parse('${areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) ==
+                                                                            true //datex
+                                                                        ? datex.isAfter(DateTime.parse('${areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: 0))) ==
+                                                                                false
+                                                                            ? Colors
+                                                                                .orange.shade200
+                                                                            : Colors
+                                                                                .grey.shade200
+                                                                        : Colors
+                                                                            .red
+                                                                            .shade200
+                                                                : areaModels[index]
+                                                                            .quantity ==
+                                                                        '2'
+                                                                    ? Colors
+                                                                        .blue
+                                                                        .shade200
+                                                                    : areaModels[index].quantity ==
+                                                                            '3'
+                                                                        ? Colors
+                                                                            .purple
+                                                                            .shade200
+                                                                        : Colors
+                                                                            .green
+                                                                            .shade200,
+                                                            child:
+                                                                MaterialButton(
+                                                              key: _btnKeys[
+                                                                  index],
+                                                              onPressed:
+                                                                  () async {
+                                                                setState(() {
+                                                                  read_GC_con_area(
+                                                                      index);
+                                                                });
+                                                                if (areaModels[
+                                                                            index]
+                                                                        .quantity !=
+                                                                    '1') {
+                                                                  for (int i =
+                                                                          0;
+                                                                      i <
+                                                                          areaQuotModels
+                                                                              .length;
+                                                                      i++) {
+                                                                    var oo = areaQuotModels[
+                                                                            i]
+                                                                        .ln_q!
+                                                                        .contains(areaModels[index]
+                                                                            .ln
+                                                                            .toString());
+                                                                  }
+                                                                }
+
+                                                                Future.delayed(
+                                                                    const Duration(
+                                                                        milliseconds:
+                                                                            400),
+                                                                    () {
+                                                                  maxColumn(
+                                                                      index,
+                                                                      context);
+                                                                });
+                                                              },
+                                                              child: Translate.TranslateAndSetText(
+                                                                  areaModels[index].quantity == '1'
+                                                                      ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                          ? 'หมดสัญญา'
+                                                                          : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                              ? 'ใกล้หมดสัญญา'
+                                                                              : 'เช่าอยู่'
+                                                                      : areaModels[index].quantity == '2'
+                                                                          ? 'เสนอราคา'
+                                                                          : areaModels[index].quantity == '3'
+                                                                              ? 'เสนอราคา(มัดจำ)'
+                                                                              : 'ว่าง',
+                                                                  areaModels[index].quantity == '1'
+                                                                      ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                          ? Colors.red
+                                                                          : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                              ? Colors.orange.shade900
+                                                                              : Colors.black
+                                                                      : areaModels[index].quantity == '2'
+                                                                          ? Colors.blue
+                                                                          : areaModels[index].quantity == '3'
+                                                                              ? Colors.blue
+                                                                              : Colors.green,
+                                                                  TextAlign.end,
+                                                                  null,
+                                                                  Font_.Fonts_T,
+                                                                  14,
+                                                                  2),
+                                                            ),
+                                                          ),
+
+                                                          // Text(
+                                                          //   areaModels[index].quantity ==
+                                                          //           '1'
+                                                          //       ? datex.isAfter(DateTime.parse(
+                                                          //                       '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
+                                                          //                   .subtract(const Duration(
+                                                          //                       days:
+                                                          //                           0))) ==
+                                                          //               true
+                                                          //           ? 'หมดสัญญา'
+                                                          //           : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(
+                                                          //                       Duration(
+                                                          //                           days:
+                                                          //                               open_set_date))) ==
+                                                          //                   true
+                                                          //               ? 'ใกล้หมดสัญญา'
+                                                          //               : 'เช่าอยู่'
+                                                          //       : areaModels[index]
+                                                          //                   .quantity ==
+                                                          //               '2'
+                                                          //           ? 'เสนอราคา'
+                                                          //           : areaModels[index]
+                                                          //                       .quantity ==
+                                                          //                   '3'
+                                                          //               ? 'เสนอราคา(มัดจำ)'
+                                                          //               : 'ว่าง',
+                                                          //   textAlign: TextAlign.end,
+                                                          //   style: TextStyle(
+                                                          //       color: areaModels[index]
+                                                          //                   .quantity ==
+                                                          //               '1'
+                                                          //           ? datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(
+                                                          //                       const Duration(
+                                                          //                           days:
+                                                          //                               0))) ==
+                                                          //                   true
+                                                          //               ? Colors.red
+                                                          //               : datex.isAfter(DateTime.parse('${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) ==
+                                                          //                       true
+                                                          //                   ? Colors
+                                                          //                       .orange
+                                                          //                       .shade900
+                                                          //                   : Colors
+                                                          //                       .black
+                                                          //           : areaModels[index]
+                                                          //                       .quantity ==
+                                                          //                   '2'
+                                                          //               ? Colors.blue
+                                                          //               : areaModels[index]
+                                                          //                           .quantity ==
+                                                          //                       '3'
+                                                          //                   ? Colors.blue
+                                                          //                   : Colors.green,
+                                                          //       fontFamily: Font_.Fonts_T
+                                                          //       //fontSize: 10.0
+                                                          //       ),
+                                                          // ),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                )),
                                           ),
-                                          padding: const EdgeInsets.all(3.0),
-                                          child: const Text(
-                                            'Top',
-                                            style: TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 10.0,
-                                                fontFamily:
-                                                    FontWeight_.Fonts_T),
-                                          )),
-                                    ),
-                                  ),
-                                  InkWell(
-                                    onTap: () {
-                                      if (_scrollController1.hasClients) {
-                                        final position = _scrollController1
-                                            .position.maxScrollExtent;
-                                        _scrollController1.animateTo(
-                                          position,
-                                          duration: const Duration(seconds: 1),
-                                          curve: Curves.easeOut,
                                         );
-                                      }
-                                    },
-                                    child: Container(
-                                        decoration: BoxDecoration(
-                                          // color: AppbackgroundColor
-                                          //     .TiTile_Colors,
-                                          borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(6),
-                                              topRight: Radius.circular(6),
-                                              bottomLeft: Radius.circular(6),
-                                              bottomRight: Radius.circular(6)),
-                                          border: Border.all(
-                                              color: Colors.grey, width: 1),
+                                      })),
+                          Container(
+                              width: MediaQuery.of(context).size.width,
+                              decoration: const BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors,
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(0),
+                                    topRight: Radius.circular(0),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: InkWell(
+                                            onTap: () {
+                                              _scrollController1.animateTo(
+                                                0,
+                                                duration:
+                                                    const Duration(seconds: 1),
+                                                curve: Curves.easeOut,
+                                              );
+                                            },
+                                            child: Container(
+                                                decoration: BoxDecoration(
+                                                  // color: AppbackgroundColor
+                                                  //     .TiTile_Colors,
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  6),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  6),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  6),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  8)),
+                                                  border: Border.all(
+                                                      color: Colors.grey,
+                                                      width: 1),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.all(3.0),
+                                                child: const Text(
+                                                  'Top',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 10.0,
+                                                      fontFamily:
+                                                          FontWeight_.Fonts_T),
+                                                )),
+                                          ),
                                         ),
-                                        padding: const EdgeInsets.all(3.0),
-                                        child: const Text(
-                                          'Down',
-                                          style: TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 10.0,
-                                              fontFamily: FontWeight_.Fonts_T),
-                                        )),
+                                        InkWell(
+                                          onTap: () {
+                                            if (_scrollController1.hasClients) {
+                                              final position =
+                                                  _scrollController1
+                                                      .position.maxScrollExtent;
+                                              _scrollController1.animateTo(
+                                                position,
+                                                duration:
+                                                    const Duration(seconds: 1),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
+                                          },
+                                          child: Container(
+                                              decoration: BoxDecoration(
+                                                // color: AppbackgroundColor
+                                                //     .TiTile_Colors,
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                        topLeft:
+                                                            Radius.circular(6),
+                                                        topRight:
+                                                            Radius.circular(6),
+                                                        bottomLeft:
+                                                            Radius.circular(6),
+                                                        bottomRight:
+                                                            Radius.circular(6)),
+                                                border: Border.all(
+                                                    color: Colors.grey,
+                                                    width: 1),
+                                              ),
+                                              padding:
+                                                  const EdgeInsets.all(3.0),
+                                              child: const Text(
+                                                'Down',
+                                                style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 10.0,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T),
+                                              )),
+                                        ),
+                                      ],
+                                    ),
                                   ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Row(
+                                      children: [
+                                        InkWell(
+                                          onTap: _moveUp1,
+                                          child: const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Icon(
+                                                  Icons.arrow_upward,
+                                                  color: Colors.grey,
+                                                ),
+                                              )),
+                                        ),
+                                        Container(
+                                            decoration: BoxDecoration(
+                                              // color: AppbackgroundColor
+                                              //     .TiTile_Colors,
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(6),
+                                                      topRight:
+                                                          Radius.circular(6),
+                                                      bottomLeft:
+                                                          Radius.circular(6),
+                                                      bottomRight:
+                                                          Radius.circular(6)),
+                                              border: Border.all(
+                                                  color: Colors.grey, width: 1),
+                                            ),
+                                            padding: const EdgeInsets.all(3.0),
+                                            child: const Text(
+                                              'Scroll',
+                                              style: TextStyle(
+                                                  color: Colors.grey,
+                                                  fontSize: 10.0,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T),
+                                            )),
+                                        InkWell(
+                                          onTap: _moveDown1,
+                                          child: const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: Icon(
+                                                  Icons.arrow_downward,
+                                                  color: Colors.grey,
+                                                ),
+                                              )),
+                                        ),
+                                      ],
+                                    ),
+                                  )
                                 ],
-                              ),
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: Row(
-                                children: [
-                                  InkWell(
-                                    onTap: _moveUp1,
-                                    child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Align(
-                                          alignment: Alignment.centerLeft,
-                                          child: Icon(
-                                            Icons.arrow_upward,
-                                            color: Colors.grey,
-                                          ),
-                                        )),
-                                  ),
-                                  Container(
-                                      decoration: BoxDecoration(
-                                        // color: AppbackgroundColor
-                                        //     .TiTile_Colors,
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6)),
-                                        border: Border.all(
-                                            color: Colors.grey, width: 1),
-                                      ),
-                                      padding: const EdgeInsets.all(3.0),
-                                      child: const Text(
-                                        'Scroll',
-                                        style: TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 10.0,
-                                            fontFamily: FontWeight_.Fonts_T),
-                                      )),
-                                  InkWell(
-                                    onTap: _moveDown1,
-                                    child: const Padding(
-                                        padding: EdgeInsets.all(8.0),
-                                        child: Align(
-                                          alignment: Alignment.centerRight,
-                                          child: Icon(
-                                            Icons.arrow_downward,
-                                            color: Colors.grey,
-                                          ),
-                                        )),
-                                  ),
-                                ],
-                              ),
-                            )
-                          ],
-                        )),
+                              )),
+                        ],
+                      ),
+                    )
                   ],
                 ),
-              )
-            ],
+              ),
+            ),
           )
         : (Visit_ == 'grid')
             ? Column(
                 children: [
                   Padding(
-                    padding: const EdgeInsets.all(8.0),
+                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
                     child: Container(
                       decoration: const BoxDecoration(
                         color: AppbackgroundColor.Sub_Abg_Colors,
                         borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(10),
                             topRight: Radius.circular(10),
+                            bottomLeft: Radius.circular(0),
+                            bottomRight: Radius.circular(0)),
+                        // border: Border.all(color: Colors.grey, width: 1),
+                      ),
+                      padding: const EdgeInsets.all(2),
+                      child: (Status_ != 1)
+                          ? Row(
+                              children: [
+                                SizedBox(
+                                  height: 10,
+                                ),
+                              ],
+                            )
+                          : (zone_ser.toString() != '0' && zone_ser != null)
+                              ? Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                  ],
+                                )
+                              : Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // TextButton.icon(
+                                    //   onPressed:
+                                    //       (_zonePage > 0) ? prevZonePage : null,
+                                    //   icon: const Icon(Icons.chevron_left),
+                                    //   label: Text('ก่อนหน้า'),
+                                    // ),
+                                    InkWell(
+                                        onTap: (offset == 0)
+                                            ? null
+                                            : () async {
+                                                if (offset == 0) {
+                                                } else {
+                                                  setState(() {
+                                                    // quotxSelectModels_Select.clear();
+                                                    // ser_indexShow = null;
+                                                    offset = offset - limit;
+
+                                                    read_zone_limit();
+                                                    tappedIndex_ = '';
+                                                  });
+                                                  _scrollController1.animateTo(
+                                                    0,
+                                                    duration: const Duration(
+                                                        seconds: 1),
+                                                    curve: Curves.easeOut,
+                                                  );
+                                                }
+                                              },
+                                        child: Icon(
+                                          Icons.arrow_left,
+                                          color: (offset == 0)
+                                              ? Colors.grey[200]
+                                              : Colors.black,
+                                          size: 25,
+                                        )),
+                                    SizedBox(
+                                      child: Row(
+                                        children: [
+                                          Icon(
+                                            Icons.menu_book,
+                                            color: Colors.grey,
+                                            size: 20,
+                                          ),
+                                          Text(
+                                              ' ${(endIndex / limit).ceil()}/${(limitedList_zoneModels.length / limit).ceil()}'
+
+                                              // ' ${(endIndex / limit)}/${(limitedList_zoneModels.length / limit).ceil()}',
+                                              // 'หน้า ${_zonePage + 1} / ${_totalZonePages}'
+                                              ),
+                                        ],
+                                      ),
+                                    ),
+                                    InkWell(
+                                        onTap: (endIndex >=
+                                                limitedList_zoneModels.length)
+                                            ? null
+                                            : () async {
+                                                setState(() {
+                                                  offset = offset + limit;
+                                                  tappedIndex_ = '';
+                                                  read_zone_limit();
+                                                });
+                                                _scrollController1.animateTo(
+                                                  0,
+                                                  duration: const Duration(
+                                                      seconds: 1),
+                                                  curve: Curves.easeOut,
+                                                );
+                                              },
+                                        child: Icon(
+                                          Icons.chevron_right,
+                                          color: (endIndex >=
+                                                  limitedList_zoneModels.length)
+                                              ? Colors.grey[200]
+                                              : Colors.black,
+                                          size: 25,
+                                        )),
+                                    // TextButton.icon(
+                                    //   onPressed: (_zonePage < _totalZonePages - 1)
+                                    //       ? nextZonePage
+                                    //       : null,
+                                    //   icon: const Icon(Icons.chevron_right),
+                                    //   label: const Text('ถัดไป'),
+                                    // ),
+                                  ],
+                                ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+                    child: Container(
+                        color: AppbackgroundColor.Sub_Abg_Colors,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'กรอง : ',
+                              style: TextStyle(
+                                color: PeopleChaoScreen_Color.Colors_Text2_,
+                                fontFamily: Font_.Fonts_T,
+                                fontWeight: FontWeight.w500,
+                                //fontSize: 10.0
+                              ),
+                            ),
+                            IconButton(
+                              onPressed: () async {
+                                setState(() {
+                                  SortCMMProperties =
+                                      !SortCMMProperties; // toggle ค่า
+                                });
+                              },
+                              icon: Icon(
+                                Icons.sort,
+                                color: (SortCMMProperties == false)
+                                    ? Colors.grey
+                                    : Colors.blue,
+                              ),
+                            )
+                          ],
+                        )),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppbackgroundColor.Sub_Abg_Colors,
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(0),
+                            topRight: Radius.circular(0),
                             bottomLeft: Radius.circular(10),
                             bottomRight: Radius.circular(10)),
                         // border: Border.all(color: Colors.grey, width: 1),
@@ -3931,21 +5249,10 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                 PointerDeviceKind.mouse,
                                               }),
                                               child: GridView.count(
-                                                crossAxisCount: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .shortestSide <
-                                                        MediaQuery.of(context)
-                                                                .size
-                                                                .width *
-                                                            1
-                                                    ? 12
-                                                    : (MediaQuery.of(context)
-                                                                .size
-                                                                .width <
-                                                            400)
-                                                        ? 4
-                                                        : 6,
+                                                crossAxisSpacing: 10,
+                                                mainAxisSpacing: 10,
+                                                crossAxisCount:
+                                                    _crossAxisCount(context),
                                                 children: [
                                                   for (int i = 0;
                                                       i < areaModels.length;
@@ -4176,14 +5483,20 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                                             ),
                                                                           )
                                                                         : GridView.count(
-                                                                            crossAxisCount: MediaQuery.of(context).size.shortestSide < MediaQuery.of(context).size.width * 1
-                                                                                ? 12
-                                                                                : (MediaQuery.of(context).size.width < 400)
-                                                                                    ? 4
-                                                                                    : 6,
+                                                                            crossAxisSpacing:
+                                                                                10,
+                                                                            mainAxisSpacing:
+                                                                                10,
+                                                                            crossAxisCount:
+                                                                                _crossAxisCount(context),
                                                                             children: [
                                                                               for (int i = 0; i < areaModels.length; i++)
-                                                                                if (zoneModels[zindex].ser == areaModels[i].zser) createCard(i, context),
+                                                                                if (zoneModels[zindex].ser == areaModels[i].zser)
+                                                                                  if (SortCMMProperties == true) ...[
+                                                                                    if (areaModels[i].properties.isNotEmpty) createCard(i, context),
+                                                                                  ] else ...[
+                                                                                    createCard(i, context),
+                                                                                  ]
                                                                             ],
                                                                           ),
                                                                   ),
@@ -4391,31 +5704,30 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                         ),
                                                       )
                                                     : GridView.count(
-                                                        crossAxisCount: MediaQuery.of(
-                                                                        context)
-                                                                    .size
-                                                                    .shortestSide <
-                                                                MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width *
-                                                                    1
-                                                            ? 12
-                                                            : (MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width <
-                                                                    400)
-                                                                ? 4
-                                                                : 6,
+                                                        crossAxisSpacing: 10,
+                                                        mainAxisSpacing: 10,
+                                                        crossAxisCount:
+                                                            _crossAxisCount(
+                                                                context),
                                                         children: [
                                                           for (int i = 0;
                                                               i <
                                                                   areaModels
                                                                       .length;
                                                               i++)
-                                                            createCard(
-                                                                i, context),
+                                                            if (SortCMMProperties ==
+                                                                true) ...[
+                                                              if (areaModels[i]
+                                                                  .properties
+                                                                  .isNotEmpty)
+                                                                createCard(
+                                                                    i, context),
+                                                            ] else ...[
+                                                              createCard(
+                                                                  i, context),
+                                                            ]
+                                                          // createCard(
+                                                          //     i, context),
                                                         ],
                                                       ),
                                               )
@@ -6793,16 +8105,17 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       areaxConModels.clear();
       for (var map in result) {
         AreaxConModel areaxConModel = AreaxConModel.fromJson(map);
         var cid = areaModels[index].cid;
         var cser = areaxConModel.cser;
         setState(() {
-          if (cid != cser) {
-            areaxConModels.add(areaxConModel);
-          }
+          areaxConModels.add(areaxConModel);
+          // if (cid != cser) {
+          //   areaxConModels.add(areaxConModel);
+          // }
         });
       }
     } catch (e) {}
@@ -6904,7 +8217,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                   fontFamily: Font_.Fonts_T),
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right_outlined,
                               color: getRandomColor(index)),
                         ],
                       ),
@@ -6957,7 +8270,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                   fontFamily: Font_.Fonts_T),
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right_outlined,
                               color: getRandomColor(index)),
                         ],
                       ),
@@ -7007,7 +8320,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                     fontFamily: Font_.Fonts_T),
                               ),
                             ),
-                            Icon(Iconsax.arrow_circle_right,
+                            Icon(Icons.arrow_circle_right_outlined,
                                 color: getRandomColor(index)),
                           ],
                         ),
@@ -7076,7 +8389,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                     fontFamily: Font_.Fonts_T),
                               ),
                             ),
-                            Icon(Iconsax.arrow_circle_right,
+                            Icon(Icons.arrow_circle_right_outlined,
                                 color: getRandomColor(index)),
                           ],
                         ),
@@ -7144,7 +8457,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                   fontFamily: Font_.Fonts_T),
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right_outlined,
                               color: getRandomColor(index)),
                         ],
                       ),
@@ -7212,7 +8525,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                   fontFamily: Font_.Fonts_T),
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right_outlined,
                               color: getRandomColor(index)),
                         ],
                       ),
@@ -7267,7 +8580,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                       fontFamily: Font_.Fonts_T),
                                 ),
                               ),
-                              Icon(Iconsax.arrow_circle_right,
+                              Icon(Icons.arrow_circle_right_outlined,
                                   color: getRandomColor(index)),
                             ],
                           ),
@@ -7323,7 +8636,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                       fontFamily: Font_.Fonts_T),
                                 ),
                               ),
-                              Icon(Iconsax.arrow_circle_right,
+                              Icon(Icons.arrow_circle_right_outlined,
                                   color: getRandomColor(index)),
                             ],
                           ),
@@ -7563,7 +8876,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Iconsax.note, color: getRandomColor(index)),
+                    Icon(Icons.note, color: getRandomColor(index)),
                     Expanded(
                       child: Text(
                         ' : ${areaModels[index].mainten_note1}',
@@ -7639,7 +8952,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Iconsax.note, color: getRandomColor(index)),
+                    Icon(Icons.note, color: getRandomColor(index)),
                     Expanded(
                       child: Text(
                         (areaModels[index].date_note2.toString() ==
@@ -8013,7 +9326,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                                           .start,
                                                                   children: [
                                                                     Icon(
-                                                                        Iconsax
+                                                                        Icons
                                                                             .note,
                                                                         color: getRandomColor(
                                                                             index)),
@@ -8131,7 +9444,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                                           .start,
                                                                   children: [
                                                                     Icon(
-                                                                        Iconsax
+                                                                        Icons
                                                                             .note,
                                                                         color: getRandomColor(
                                                                             index)),
@@ -8213,7 +9526,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                   14,
                                   1),
                               Icon(
-                                Iconsax.arrow_circle_right,
+                                Icons.arrow_circle_right_outlined,
                                 color: Colors.white,
                                 size: 18,
                               ),
@@ -8230,7 +9543,8 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
     menu!.show(widgetKey: _btnKeys[index]);
   }
 
-  maxColumn_Approved(int index, context, reques_tstatus) {
+  maxColumn_Approved(
+      int index, context, reques_tstatus, requestStepx, requestUuid) {
     menu = PopupMenu(
       context: context,
 
@@ -8277,13 +9591,21 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                 children: [
                   Icon(Icons.notifications),
                   Text(
-                    ' ใบอนุญาติ',
+                    ' ใบอนุญาต',
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                         color: PeopleChaoScreen_Color.Colors_Text2_,
                         //fontWeight: FontWeight.bold,
                         fontFamily: Font_.Fonts_T),
                   ),
+                  // Text(
+                  //   '(Step: $requestStepx)',
+                  //   overflow: TextOverflow.ellipsis,
+                  //   style: const TextStyle(
+                  //       color: PeopleChaoScreen_Color.Colors_Text2_,
+                  //       //fontWeight: FontWeight.bold,
+                  //       fontFamily: Font_.Fonts_T),
+                  // ),
                   // Icon(Iconsax.arrow_circle_right,
                   //     color: getRandomColor(index)),
                 ],
@@ -8293,12 +9615,63 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
         ),
         PopUpMenuItem(
           image: InkWell(
-            onTap: () async {
-              // menu!.dismiss();
-              // Future.delayed(const Duration(milliseconds: 300), () {
-              //   maxColumn2(index, context);
-              // });
-            },
+            onTap: (requestStepx.toString() == '4' ||
+                    requestStepx.toString() == '5' ||
+                    requestStepx.toString() == '6')
+                ? () async {
+                    menu!.dismiss();
+                    SharedPreferences preferences =
+                        await SharedPreferences.getInstance();
+                    String? _route = preferences.getString('route');
+                    MaterialPageRoute materialPageRoute = MaterialPageRoute(
+                        builder: (BuildContext context) => AdminScafScreen(
+                              route: 'ใบอนุญาต',
+                              route_getdata: requestUuid.toString(),
+                            ));
+                    Navigator.pushAndRemoveUntil(
+                        context, materialPageRoute, (route) => false);
+                  }
+                :
+                // (requestStepx.toString() == '2' ||
+                //         requestStepx.toString() == '3')
+                //     ? () async {
+                //         menu!.dismiss();
+                //         SharedPreferences preferences =
+                //             await SharedPreferences.getInstance();
+                //         String? _route = preferences.getString('route');
+                //         MaterialPageRoute materialPageRoute = MaterialPageRoute(
+                //             builder: (BuildContext context) => AdminScafScreen(
+                //                   route: 'ใบอนุญาต',
+                //                   route_getdata: requestUuid.toString(),
+                //                   ser_title: -1,
+                //                 ));
+                //         Navigator.pushAndRemoveUntil(
+                //             context, materialPageRoute, (route) => false);
+                //       }
+                //     :
+                () async {
+                    if (renTal_lavel <= 2) {
+                      menu!.dismiss();
+                      infomation();
+                    } else {
+                      SharedPreferences preferences =
+                          await SharedPreferences.getInstance();
+                      preferences.setString(
+                          'zoneSer', areaModels[index].zser.toString());
+                      preferences.setString(
+                          'zonesName', areaModels[index].zn.toString());
+
+                      setState(() {
+                        Ser_Body = 2;
+                        a_ln = areaModels[index].lncode;
+                        a_ser = areaModels[index].ser;
+                        a_area = areaModels[index].area;
+                        a_rent = areaModels[index].rent;
+                        a_page = '1';
+                      });
+                      menu!.dismiss();
+                    }
+                  },
             child: Container(
               decoration: const BoxDecoration(
                   border: Border(
@@ -8312,7 +9685,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
               child: Row(
                 children: [
                   Translate.TranslateAndSetText(
-                      'Approved : ',
+                      'สถานะ : ',
                       PeopleChaoScreen_Color.Colors_Text2_,
                       TextAlign.center,
                       FontWeight.w500,
@@ -8329,7 +9702,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                           fontFamily: Font_.Fonts_T),
                     ),
                   ),
-                  Icon(Iconsax.arrow_circle_right,
+                  Icon(Icons.arrow_circle_right_outlined,
                       color: getRandomColor(index)),
                 ],
               ),
@@ -8393,6 +9766,1133 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
     // });
   }
 
+  Future<String?> cancel(BuildContext context, int index,
+      void Function(void Function()) setState) {
+    final Formbecause_ = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20.0))),
+        backgroundColor: AppbackgroundColor.Sub_Abg_Colors,
+        titlePadding: const EdgeInsets.all(0.0),
+        contentPadding: const EdgeInsets.all(10.0),
+        actionsPadding: const EdgeInsets.all(6.0),
+        title: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                InkWell(
+                  onTap: () {
+                    setState(() {
+                      Formbecause_.clear();
+                    });
+                    Navigator.pop(context, 'OK');
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Icon(Icons.highlight_off,
+                        size: 30, color: Colors.red[700]),
+                  ),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(2.0),
+              child: Center(
+                  child: Text(
+                'ยกใบเสนอราคา',
+                style: TextStyle(
+                    color: AdminScafScreen_Color.Colors_Text1_,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: FontWeight_.Fonts_T),
+              )),
+            ),
+            Align(
+                alignment: Alignment.center,
+                child: Text(
+                  '( ทั้งหมด ${areaQuot.length} )',
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey,
+                      fontFamily: Font_.Fonts_T),
+                )),
+          ],
+        ),
+        content: Padding(
+          padding: EdgeInsets.all(8.0),
+          child: TextFormField(
+            keyboardType: TextInputType.number,
+            controller: Formbecause_,
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                return 'ใส่ข้อมูลให้ครบถ้วน ';
+              }
+              // if (int.parse(value.toString()) < 13) {
+              //   return '< 13';
+              // }
+              return null;
+            },
+            // maxLength: 13,
+            cursorColor: Colors.green,
+            decoration: InputDecoration(
+                fillColor: Colors.white.withOpacity(0.3),
+                filled: true,
+                // prefixIcon: const Icon(Icons.water,
+                //     color: Colors.blue),
+                // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                focusedBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    topLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  borderSide: BorderSide(
+                    width: 1,
+                    color: Colors.black,
+                  ),
+                ),
+                enabledBorder: const OutlineInputBorder(
+                  borderRadius: BorderRadius.only(
+                    topRight: Radius.circular(8),
+                    topLeft: Radius.circular(8),
+                    bottomRight: Radius.circular(8),
+                    bottomLeft: Radius.circular(8),
+                  ),
+                  borderSide: BorderSide(
+                    width: 1,
+                    color: Colors.grey,
+                  ),
+                ),
+                labelText: 'หมายเหตุ',
+                labelStyle: const TextStyle(
+                  color: ManageScreen_Color.Colors_Text2_,
+                  // fontWeight:
+                  //     FontWeight.bold,
+                  fontFamily: Font_.Fonts_T,
+                )),
+            // inputFormatters: <TextInputFormatter>[
+            //   // for below version 2 use this
+            //   FilteringTextInputFormatter.allow(
+            //       RegExp(r'[0-9]')),
+            //   // for version 2 and greater youcan also use this
+            //   FilteringTextInputFormatter.digitsOnly
+            // ],
+          ),
+        ),
+        actions: <Widget>[
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Container(
+                width: 120,
+                decoration: const BoxDecoration(
+                  color: Colors.green,
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10)),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: TextButton(
+                  onPressed: () async {
+                    String because_ = '${Formbecause_.text.toString()}';
+
+                    if (because_ == '') {
+                      showDialog<String>(
+                        context: context,
+                        builder: (BuildContext context) => AlertDialog(
+                          shape: const RoundedRectangleBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(20.0))),
+                          title: const Center(
+                              child: Text(
+                            'กรุณากรอกเหตุผล !!',
+                            style: TextStyle(
+                                color: AdminScafScreen_Color.Colors_Text1_,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T),
+                          )),
+                          actions: <Widget>[
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Container(
+                                    width: 100,
+                                    decoration: const BoxDecoration(
+                                      color: Colors.redAccent,
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(10),
+                                          topRight: Radius.circular(10),
+                                          bottomLeft: Radius.circular(10),
+                                          bottomRight: Radius.circular(10)),
+                                    ),
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: TextButton(
+                                      onPressed: () =>
+                                          Navigator.pop(context, 'OK'),
+                                      child: const Text(
+                                        'ปิด',
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    } else {
+                      SharedPreferences preferences =
+                          await SharedPreferences.getInstance();
+                      var ren = preferences.getString('renTalSer');
+
+                      // เตรียมข้อมูลที่จะส่ง
+                      final uri = Uri.parse(
+                          '${MyConstant().domain}/DC_Area_quotAll.php');
+
+                      final selectedDocnos = areaQuot
+                          .where((element) => element.st.toString() == '1')
+                          .map((e) => e.docno)
+                          .toList()
+                          .join(',');
+
+                      final body = {
+                        'isAdd': 'true',
+                        'ren': ren ?? '',
+                        'ciddocall':
+                            "'${selectedDocnos.replaceAll(',', "','")}'", // ต้องมี ' ' รอบ docno
+                        'because': because_,
+                      };
+
+                      try {
+                        final response = await http.post(uri, body: body);
+
+                        if (response.statusCode == 200) {
+                          final raw = response.body.trim();
+                          // print('📥 RAW: $raw');
+                          // print('📦 BODY: $body');
+
+                          final result = json.decode(raw);
+                          if (result['success'] == true) {
+                            // print('success: success123');
+
+                            // ล้างข้อมูลหรืออัปเดต UI ตามความต้องการ
+                            setState(() {
+                              areaQuot
+                                  .removeWhere((e) => e.st.toString() == '1');
+                              // ลบข้อมูลที่เกี่ยวข้องหรือทำการรีเฟรชข้อมูลในพื้นที่ที่ต้องการ
+                              areaQuotModels.removeWhere((e) =>
+                                  e.st.toString() == '1' &&
+                                  e.aser! == areaModels[index].ser!);
+                              if (areaModels[index].quantity.toString() ==
+                                      '2' ||
+                                  areaModels[index].quantity.toString() ==
+                                      '3') {
+                                areaModels[index].quantity = '';
+                              }
+                            });
+
+                            Navigator.pop(context, 'OK'); // ปิดหน้าจอ
+
+                            // คุณสามารถรีเซ็ตข้อมูลที่เกี่ยวข้องใน `Formbecause_` ได้
+                            Formbecause_.clear();
+                          } else {
+                            //  print(
+                            //     '❌ ไม่สำเร็จ: ${result['message'] ?? result['error']}');
+                          }
+                        } else {
+                          // print('❌ HTTP Error: ${response.statusCode}');
+                        }
+                      } catch (e) {
+                        //print('❌ เกิดข้อผิดพลาด: $e');
+                      }
+
+                      // color: areaModels[index].quantity == '1'
+                      //                     ? (areaModels[index].ldate == null)
+                      //                         ? Colors.red.shade200
+                      //                         : datex.isAfter(DateTime.parse(
+                      //                                         '${areaModels[index].ldate} 00:00:00.000')
+                      //                                     .subtract(
+                      //                                         Duration(days: open_set_date))) ==
+                      //                                 true //datex
+                      //                             ? datex.isAfter(DateTime.parse(
+                      //                                             '${areaModels[index].ldate} 00:00:00.000')
+                      //                                         .subtract(Duration(days: 0))) ==
+                      //                                     false
+                      //                                 ? Colors.orange.shade200
+                      //                                 : Colors.grey.shade200
+                      //                             : Colors.red.shade200
+                      //                     : areaModels[index].quantity == '2'
+                      //                         ? Colors.blue.shade200
+                      //                         : areaModels[index].quantity == '3'
+                      //                             ? Colors.purple.shade200
+                      //                             : Colors.green.shade200,
+                    }
+
+                    // Navigator.pop(context, 'OK');
+                  },
+                  child: const Text(
+                    'ยืนยัน',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: FontWeight_.Fonts_T),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+////////------------------------>
+  // List<AreaQuotModel> _areaQuotModels = <AreaQuotModel>[];
+  // ฟังก์ชันค้นหา _areaQuotModels
+  List<AreaQuotModel> areaQuot = [];
+  void onSearchChanged(String query, void Function(void Function()) setState) {
+    setState(() {
+      areaQuot = _areaQuotModels.where((customerModel) {
+        var notTitle = customerModel.cname_q.toString().toLowerCase();
+        var notTitle2 = customerModel.docno.toString().toLowerCase();
+
+        return notTitle.contains(query) || notTitle2.contains(query);
+      }).toList();
+    });
+    // print(areaQuotModels.map((e) => e.docno));
+  }
+
+////////------------------------>
+  contract_SideSheetWidget(
+      index, context, void Function(void Function()) setState) async {
+    //  (areaQuotModels[index_sub]
+    //                                                                   .ln_q!
+    //                                                                   .contains(areaModels[index]
+    //                                                                       .lncode
+    //                                                                       .toString()) ==
+    // true)
+    final currentAser = areaModels[index].ser;
+    if (currentAser != null) {
+      setState(() {
+        areaQuot = areaQuotModels
+            .where(
+                (element) => element.aser.toString() == currentAser.toString())
+            .toList();
+      });
+    }
+    setState(() {
+      _areaQuotModels = areaQuot;
+    });
+    int open_de = 0;
+    menu!.dismiss();
+    final data = await SideSheet.right(
+        width: 350,
+        body: StatefulBuilder(builder: (context, setState) {
+          return Container(
+            height: MediaQuery.of(context).size.height,
+            color: AppbackgroundColor.Abg_Colors,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                          ),
+                          padding: const EdgeInsets.all(4.0),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          '${areaModels[index].lncode} (${areaModels[index].ln})',
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: SingupScreen_Color.Colors_Text1_,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: FontWeight_.Fonts_T),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(10, 4, 2, 5),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      ' # ข้อมูลสัญญา',
+                      style: TextStyle(
+                          color: SingupScreen_Color.Colors_Text1_,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: FontWeight_.Fonts_T),
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(8, 15, 8, 0),
+                  child: Container(
+                    // width: 300,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8)),
+                    ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 30, //Date_ser
+                                // width: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(8),
+                                      topRight: Radius.circular(8),
+                                      bottomLeft: Radius.circular(8),
+                                      bottomRight: Radius.circular(8)),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1),
+                                ),
+                                padding: const EdgeInsets.all(2.0),
+                                child: TextField(
+                                  onChanged: (value) =>
+                                      onSearchChanged(value, setState),
+                                  decoration: const InputDecoration(
+                                    // labelText:
+                                    //     (isLoading_main) ? 'ดาวน์โหลดข้อมูล...' : null,
+                                    border: OutlineInputBorder(),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    prefixIcon: Icon(Icons.search),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                      padding: const EdgeInsets.all(0.0),
+                      child: (areaxConModels.length == 0)
+                          ? Center(
+                              child: SizedBox(
+                                height: 100,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        'ไม่พบข้อมูล', // ตัวบ่งชี้กำลังโหลด
+                                        // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                        style: const TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text2_,
+                                            fontFamily: Font_.Fonts_T
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: areaxConModels.length,
+                              itemBuilder:
+                                  (BuildContext context, int index_sub) {
+                                final areaxCon = areaxConModels[index_sub];
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(2, 4, 2, 4),
+                                  child: Column(
+                                    children: [
+                                      InkWell(
+                                        onTap: () {
+                                          if (renTal_lavel <= 2) {
+                                            Navigator.pop(context);
+                                            // menu!.dismiss();
+                                            infomation();
+                                          } else {
+                                            Navigator.pop(context, {
+                                              'message': 'true',
+                                              'cid': '${areaxCon.cser}',
+                                              'ldate': '${areaxCon.ldate}'
+                                            });
+                                          }
+                                        },
+                                        child: Card(
+                                            color: Colors.grey[50],
+                                            clipBehavior: Clip.hardEdge,
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Align(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: AutoSizeText(
+                                                              'เลขที่ : ${areaxCon.cser}',
+                                                              maxLines: 1,
+                                                              minFontSize: 10,
+                                                              maxFontSize: 20,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              softWrap: false,
+                                                              style: TextStyle(
+                                                                  // fontSize: 20,
+                                                                  color: SingupScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontFamily:
+                                                                      FontWeight_
+                                                                          .Fonts_T)),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.people_sharp),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: AutoSizeText(
+                                                              ' ${areaxCon.cname}',
+                                                              maxLines: 1,
+                                                              minFontSize: 10,
+                                                              maxFontSize: 20,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              softWrap: false,
+                                                              style: TextStyle(
+                                                                  // fontSize: 20,
+                                                                  color: SingupScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T)),
+                                                        ),
+                                                      ),
+                                                      Icon(
+                                                          Icons.calendar_month),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: AutoSizeText(
+                                                              '${DateFormat('dd-MM-yyyy').format(DateTime.parse(areaxCon.sdate!)) ?? ''} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse(areaxCon.ldate!)) ?? ''}',
+                                                              // ' ${areaQuotModels[index_sub].sdate} - ${areaQuotModels[index_sub].ldate_q}',
+                                                              maxLines: 1,
+                                                              minFontSize: 10,
+                                                              maxFontSize: 20,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              softWrap: false,
+                                                              style: TextStyle(
+                                                                  // fontSize: 20,
+                                                                  color: SingupScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T)),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              })),
+                ),
+                Container(
+                  // height: 40,
+                  decoration: BoxDecoration(
+                    color: getRandomColor(index).withOpacity(0.7),
+                    // AppBarColors.ABar_Colors,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                        bottomLeft: Radius.circular(0),
+                        bottomRight: Radius.circular(0)),
+                  ),
+                  child: const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(2.0),
+                      child: Text(
+                        '',
+                        // '© 2023-2024  Dzentric Co.,Ltd. All Rights Reserved',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: SingupScreen_Color.Colors_Text2_,
+                            fontFamily: Font_.Fonts_T,
+                            // fontWeight: FontWeight.bold,
+                            fontSize: 10.0),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        context: context);
+
+    return data;
+  }
+
+  SideSheetWidget(
+      index, context, void Function(void Function()) setState) async {
+    //  (areaQuotModels[index_sub]
+    //                                                                   .ln_q!
+    //                                                                   .contains(areaModels[index]
+    //                                                                       .lncode
+    //                                                                       .toString()) ==
+    // true)
+    final currentAser = areaModels[index].ser;
+    if (currentAser != null) {
+      setState(() {
+        areaQuot = areaQuotModels
+            .where(
+                (element) => element.aser.toString() == currentAser.toString())
+            .toList();
+      });
+    }
+    setState(() {
+      _areaQuotModels = areaQuot;
+    });
+    int open_de = 0;
+    menu!.dismiss();
+    final data = await SideSheet.right(
+        width: 350,
+        body: StatefulBuilder(builder: (context, setState) {
+          return Container(
+            height: MediaQuery.of(context).size.height,
+            color: AppbackgroundColor.Abg_Colors,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.pop(context);
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                          ),
+                          padding: const EdgeInsets.all(4.0),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          '${areaModels[index].lncode} (${areaModels[index].ln})',
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: SingupScreen_Color.Colors_Text1_,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: FontWeight_.Fonts_T),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(10, 4, 2, 5),
+                  child: Align(
+                    alignment: Alignment.bottomLeft,
+                    child: Text(
+                      ' # ข้อมูลการเสนอราคา',
+                      style: TextStyle(
+                          color: SingupScreen_Color.Colors_Text1_,
+                          fontWeight: FontWeight.w500,
+                          fontFamily: FontWeight_.Fonts_T),
+                    ),
+                  ),
+                ),
+                if (areaQuot.length != 0)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      (open_de == 0)
+                          ? SizedBox()
+                          : Padding(
+                              padding: EdgeInsets.fromLTRB(10, 4, 2, 2),
+                              child: Align(
+                                alignment: Alignment.bottomRight,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.black,
+                                  ),
+                                  onPressed: () async {
+                                    setState(() {
+                                      open_de = 0;
+                                    });
+                                  },
+                                  child: Text(
+                                    'ปิดการยกเลิกทั้งหมด',
+                                    style: TextStyle(
+                                        // decoration: TextDecoration.underline,
+                                        fontSize: 14,
+                                        color: Colors.white,
+                                        fontFamily: Font_.Fonts_T),
+                                  ),
+                                ),
+                              ),
+                            ),
+                      // if (open_de == 0)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(10, 4, 2, 2),
+                        child: Align(
+                          alignment: Alignment.bottomRight,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.grey,
+                            ),
+                            onPressed: (open_de == 1 &&
+                                    areaQuot
+                                            .where((element) =>
+                                                element.st.toString() == '1')
+                                            .length >
+                                        0)
+                                ? () async {
+                                    cancel(context, index, setState);
+                                  }
+                                : () async {
+                                    setState(() {
+                                      open_de = 1;
+                                    });
+                                  },
+                            child: Text(
+                              (open_de == 1)
+                                  ? 'ยืนยันการยกเลิก'
+                                  : 'ยกเลิกทั้งหมด',
+                              style: TextStyle(
+                                  // decoration: TextDecoration.underline,
+                                  fontSize: 14,
+                                  color: Colors.black,
+                                  fontFamily: Font_.Fonts_T),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(8, 15, 8, 0),
+                  child: Container(
+                    // width: 300,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8)),
+                    ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 30, //Date_ser
+                                // width: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(8),
+                                      topRight: Radius.circular(8),
+                                      bottomLeft: Radius.circular(8),
+                                      bottomRight: Radius.circular(8)),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1),
+                                ),
+                                padding: const EdgeInsets.all(2.0),
+                                child: TextField(
+                                  onChanged: (value) =>
+                                      onSearchChanged(value, setState),
+                                  decoration: const InputDecoration(
+                                    // labelText:
+                                    //     (isLoading_main) ? 'ดาวน์โหลดข้อมูล...' : null,
+                                    border: OutlineInputBorder(),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    prefixIcon: Icon(Icons.search),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Divider(),
+                      ],
+                    ),
+                  ),
+                ),
+                Expanded(
+                  flex: 1,
+                  child: Container(
+                      padding: const EdgeInsets.all(0.0),
+                      child: (areaQuot.length == 0)
+                          ? Center(
+                              child: SizedBox(
+                                height: 100,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const CircularProgressIndicator(),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        'ไม่พบข้อมูล', // ตัวบ่งชี้กำลังโหลด
+                                        // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                        style: const TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text2_,
+                                            fontFamily: Font_.Fonts_T
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: areaQuot.length,
+                              itemBuilder:
+                                  (BuildContext context, int index_sub) {
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(2, 4, 2, 4),
+                                  child: Column(
+                                    children: [
+                                      if (open_de == 1)
+                                        Row(
+                                          children: [
+                                            (areaQuot[index_sub]
+                                                        .st
+                                                        .toString() !=
+                                                    '1')
+                                                ? InkWell(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        areaQuot[index_sub].st =
+                                                            '1';
+                                                      });
+                                                    },
+                                                    child: Icon(
+                                                      Icons.square_outlined,
+                                                      color: Colors.black,
+                                                    ),
+                                                  )
+                                                : InkWell(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        areaQuot[index_sub].st =
+                                                            '0';
+                                                      });
+                                                    },
+                                                    child: Icon(
+                                                      Icons.check_box,
+                                                      color: Colors.red,
+                                                    ),
+                                                  ),
+                                            Expanded(
+                                              flex: 1,
+                                              child: Align(
+                                                alignment: Alignment.topLeft,
+                                                child: AutoSizeText(' เลือก',
+                                                    maxLines: 1,
+                                                    minFontSize: 10,
+                                                    maxFontSize: 20,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    softWrap: false,
+                                                    style: TextStyle(
+                                                        // fontSize: 20,
+                                                        color:
+                                                            SingupScreen_Color
+                                                                .Colors_Text1_,
+                                                        // fontWeight: FontWeight.bold,
+                                                        fontFamily:
+                                                            Font_.Fonts_T)),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      InkWell(
+                                        onTap: () {
+                                          if (renTal_lavel <= 2) {
+                                            Navigator.pop(context);
+                                            // menu!.dismiss();
+                                            infomation();
+                                          } else {
+                                            Navigator.pop(context, {
+                                              'message': 'true',
+                                              'cid':
+                                                  '${areaQuot[index_sub].docno}'
+                                            });
+                                          }
+                                        },
+                                        child: Card(
+                                            color: Colors.grey[50],
+                                            clipBehavior: Clip.hardEdge,
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  children: [
+                                                    Expanded(
+                                                      child: Padding(
+                                                        padding:
+                                                            EdgeInsets.all(8.0),
+                                                        child: Align(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: AutoSizeText(
+                                                              //                                                   for (int i = 0; i < areaQuotModels.length; i++)
+                                                              // if (areaQuotModels[i]
+                                                              //         .ln_q!
+                                                              //         .contains(areaModels[index].lncode.toString()) ==
+                                                              //     true)
+                                                              (areaQuot[index_sub]
+                                                                              .paydoc ==
+                                                                          null ||
+                                                                      areaQuot[index_sub]
+                                                                              .paydoc
+                                                                              .toString() ==
+                                                                          '' ||
+                                                                      areaQuot[
+                                                                                  index_sub]
+                                                                              .paydoc
+                                                                              .toString() ==
+                                                                          'null')
+                                                                  ? 'เลขที่ : ${areaQuot[index_sub].docno}'
+                                                                  : 'เลขที่ : (มัดจำ)${areaQuot[index_sub].docno}',
+                                                              maxLines: 1,
+                                                              minFontSize: 10,
+                                                              maxFontSize: 20,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              softWrap: false,
+                                                              style: TextStyle(
+                                                                  // fontSize: 20,
+                                                                  color: (areaQuot[index_sub].paydoc ==
+                                                                              null ||
+                                                                          areaQuot[index_sub].paydoc.toString() ==
+                                                                              '' ||
+                                                                          areaQuot[index_sub].paydoc.toString() ==
+                                                                              'null')
+                                                                      ? SingupScreen_Color
+                                                                          .Colors_Text1_
+                                                                      : Colors
+                                                                          .deepPurple,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontFamily:
+                                                                      FontWeight_
+                                                                          .Fonts_T)),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                Padding(
+                                                  padding: EdgeInsets.all(8.0),
+                                                  child: Row(
+                                                    children: [
+                                                      Icon(Icons.people_sharp),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: AutoSizeText(
+                                                              ' ${areaQuot[index_sub].cname_q}',
+                                                              maxLines: 1,
+                                                              minFontSize: 10,
+                                                              maxFontSize: 20,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              softWrap: false,
+                                                              style: TextStyle(
+                                                                  // fontSize: 20,
+                                                                  color: SingupScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T)),
+                                                        ),
+                                                      ),
+                                                      Icon(
+                                                          Icons.calendar_month),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment:
+                                                              Alignment.topLeft,
+                                                          child: AutoSizeText(
+                                                              '${DateFormat('dd-MM-yyyy').format(DateTime.parse(areaQuot[index_sub].sdate!)) ?? ''} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse(areaQuot[index_sub].ldate_q!)) ?? ''}',
+                                                              // ' ${areaQuotModels[index_sub].sdate} - ${areaQuotModels[index_sub].ldate_q}',
+                                                              maxLines: 1,
+                                                              minFontSize: 10,
+                                                              maxFontSize: 20,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              softWrap: false,
+                                                              style: TextStyle(
+                                                                  // fontSize: 20,
+                                                                  color: SingupScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T)),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              })),
+                ),
+                Container(
+                  // height: 40,
+                  decoration: BoxDecoration(
+                    color: getRandomColor(index).withOpacity(0.7),
+                    // AppBarColors.ABar_Colors,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                        bottomLeft: Radius.circular(0),
+                        bottomRight: Radius.circular(0)),
+                  ),
+                  child: const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(2.0),
+                      child: Text(
+                        '',
+                        // '© 2023-2024  Dzentric Co.,Ltd. All Rights Reserved',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: SingupScreen_Color.Colors_Text2_,
+                            fontFamily: Font_.Fonts_T,
+                            // fontWeight: FontWeight.bold,
+                            fontSize: 10.0),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+        context: context);
+
+    return data;
+  }
+
   maxColumn(int index, context) {
     menu = PopupMenu(
       context: context,
@@ -8421,19 +10921,6 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                 Future.delayed(const Duration(milliseconds: 300), () {
                   maxColumn2(index, context);
                 });
-
-                // PanaraInfoDialog.showAnimatedGrow(
-                //   context,
-                //   title: "Oops",
-                //   message: "กรุณากรอกข้อมูลให้ครบถ้วน...!",
-                //   buttonText: "รับทราบ",
-                //   onTapDismiss: () async {
-                //     Navigator.pop(context);
-                //   },
-                //   panaraDialogType: PanaraDialogType.warning,
-                //   barrierDismissible:
-                //       false, // optional parameter (default is true)
-                // );
               },
               child: Container(
                 decoration: const BoxDecoration(
@@ -8467,304 +10954,308 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                             fontFamily: Font_.Fonts_T),
                       ),
                     ),
-                    Icon(Iconsax.arrow_circle_right,
+                    Icon(Icons.arrow_circle_right_outlined,
                         color: getRandomColor(index)),
                   ],
                 ),
               ),
             ),
           ),
-        if (areaModels[index].quantity == '1' &&
-            areaModels[index].docno != null)
+        if (areaQuotModels
+                .where((element) =>
+                    element.aser.toString() == areaModels[index].ser.toString())
+                .toList()
+                .length !=
+            0)
           PopUpMenuItem(
-              // title:
-              //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      setState(() {
-                        Ser_Body = 3;
-                        Value_stasus = '1';
-                        Value_cid = areaModels[index].docno;
-                        ser_cidtan = '2';
-                      });
-                      menu!.dismiss();
+            image: InkWell(
+              onTap: (areaQuotModels
+                          .where((element) =>
+                              element.aser.toString() ==
+                              areaModels[index].ser.toString())
+                          .toList()
+                          .length ==
+                      1)
+                  ? () async {
+                      if (renTal_lavel <= 2) {
+                        menu!.dismiss();
+                        infomation();
+                      } else {
+                        setState(() {
+                          Ser_Body = 3;
+                          Value_stasus = '1';
+                          Value_cid = areaModels[index].docno;
+                          ser_cidtan = '2';
+                        });
+                        menu!.dismiss();
+                      }
                     }
-                    // if (renTal_lavel <= 2) {
-                    //   menu!.dismiss();
-                    //   infomation();
-                    // } else {
-                    //   SharedPreferences preferences =
-                    //       await SharedPreferences.getInstance();
-                    //   preferences.setString(
-                    //       'zoneSer', areaModels[index].zser.toString());
-                    //   preferences.setString(
-                    //       'zonesName', areaModels[index].zn.toString());
-                    //   setState(() {
-                    //     Ser_Body = 1;
-                    //     a_ln = areaModels[index].lncode;
-                    //     a_ser = areaModels[index].ser;
-                    //     a_area = areaModels[index].area;
-                    //     a_rent = areaModels[index].rent;
-                    //     a_page = '1';
-                    //   });
-                    //   menu!.dismiss();
-                    // }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
+                  : () async {
+                      // menu!.dismiss();
+                      final result =
+                          await SideSheetWidget(index, context, setState);
+                      if (result['message'] == 'true') {
+                        setState(() {
+                          Ser_Body = 3;
+                          Value_stasus = '1';
+                          Value_cid = result['cid']; // หรือค่าที่คุณส่งกลับ
+                          ser_cidtan = '2';
+                        });
+                      }
+                    },
+              child: Container(
+                decoration: const BoxDecoration(
+                    border: Border(
+                  bottom: BorderSide(
+                    //                    <--- top side
+                    width: 0.5,
+                  ),
+                )),
+                padding: const EdgeInsets.all(4.0),
+                width: 270,
+                child: Row(
+                  children: [
+                    Translate.TranslateAndSetText(
+                        'เสนอราคา: ',
+                        PeopleChaoScreen_Color.Colors_Text2_,
+                        TextAlign.center,
+                        FontWeight.w500,
+                        Font_.Fonts_T,
+                        14,
+                        1),
+                    Expanded(
+                      child: Text(
+                        (areaQuotModels
+                                    .where((element) =>
+                                        element.aser.toString() ==
+                                        areaModels[index].ser.toString())
+                                    .toList()
+                                    .length ==
+                                1)
+                            ? ' ${areaModels[index].docno} (${areaModels[index].sname_q})'
+                            : ' (ทั้งหมด ${areaQuotModels.where((element) => element.aser.toString() == areaModels[index].ser.toString()).toList().length})',
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: PeopleChaoScreen_Color.Colors_Text2_,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: Font_.Fonts_T),
                       ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เสนอราคา: ',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            ' ${areaModels[index].docno} (${areaModels[index].sname_q})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
                     ),
-                  ))),
-        if (areaModels[index].quantity != '1')
+                    Icon(Icons.arrow_circle_right_outlined,
+                        color: getRandomColor(index)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        if (areaxConModels.length != 0)
           PopUpMenuItem(
-              // title:
-              //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      SharedPreferences preferences =
-                          await SharedPreferences.getInstance();
-                      preferences.setString(
-                          'zoneSer', areaModels[index].zser.toString());
-                      preferences.setString(
-                          'zonesName', areaModels[index].zn.toString());
-                      setState(() {
-                        Ser_Body = 1;
-                        a_ln = areaModels[index].lncode;
-                        a_ser = areaModels[index].ser;
-                        a_area = areaModels[index].area;
-                        a_rent = areaModels[index].rent;
-                        a_page = '1';
-                      });
-                      menu!.dismiss();
+            image: InkWell(
+              onTap: (areaxConModels.length == 1)
+                  ? () async {
+                      if (renTal_lavel <= 2) {
+                        menu!.dismiss();
+                        infomation();
+                      } else {
+                        final model = areaModels[index];
+                        String status;
+
+                        switch (model.quantity) {
+                          case '1':
+                            final ldate = DateTime.tryParse(
+                                '${model.ldate} 00:00:00.000');
+                            if (ldate != null) {
+                              if (datex.isAfter(ldate)) {
+                                status = 'หมดสัญญา';
+                              } else if (datex.isAfter(ldate
+                                  .subtract(Duration(days: open_set_date)))) {
+                                status = 'ใกล้หมดสัญญา';
+                              } else {
+                                status = 'เช่าอยู่';
+                              }
+                            } else {
+                              status = 'เช่าอยู่';
+                            }
+                            break;
+                          case '2':
+                            status = 'เสนอราคา5';
+                            break;
+                          case '3':
+                            status = 'เสนอราคา(มัดจำ)';
+                            break;
+                          default:
+                            status = 'ว่าง';
+                        }
+
+                        setState(() {
+                          Ser_Body = 3;
+                          Value_stasus = status;
+                          Value_cid = model.cid;
+                          ser_cidtan = '1';
+                        });
+
+                        menu!.dismiss();
+                      }
                     }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
+                  : () async {
+                      final result = await contract_SideSheetWidget(
+                          index, context, setState);
+
+                      if (result['message'] == 'true') {
+                        final ldateStr = result['ldate'] ?? '';
+                        final model = areaModels[index];
+                        final quantity = model.quantity;
+                        String status = 'ว่าง';
+
+                        DateTime? ldate;
+                        if (ldateStr.isNotEmpty) {
+                          try {
+                            ldate = DateTime.parse('$ldateStr 00:00:00.000');
+                          } catch (e) {
+                            //  print('❌ ไม่สามารถแปลงวันที่: $ldateStr');
+                          }
+                        }
+
+                        switch (quantity) {
+                          case '1':
+                            if (ldate != null) {
+                              if (datex.isAfter(ldate)) {
+                                status = 'หมดสัญญา';
+                              } else if (datex.isAfter(ldate
+                                  .subtract(Duration(days: open_set_date)))) {
+                                status = 'ใกล้หมดสัญญา';
+                              } else {
+                                status = 'เช่าอยู่';
+                              }
+                            } else {
+                              status = 'ไม่พบวันหมดสัญญา';
+                            }
+                            break;
+                          case '2':
+                            status = 'เสนอราคา';
+                            break;
+                          case '3':
+                            status = 'เสนอราคา(มัดจำ)';
+                            break;
+                          default:
+                            status = 'ว่าง';
+                        }
+
+                        setState(() {
+                          Ser_Body = 3;
+                          Value_stasus = status;
+                          Value_cid = result['cid'];
+                          ser_cidtan = '1';
+                        });
+                      }
+                    },
+              child: Container(
+                decoration: const BoxDecoration(
+                    border: Border(
+                  bottom: BorderSide(
+                    //                    <--- top side
+                    width: 0.5,
+                  ),
+                )),
+                padding: const EdgeInsets.all(4.0),
+                width: 270,
+                child: Row(
+                  children: [
+                    Translate.TranslateAndSetText(
+                        'เช่าอยู่: ',
+                        PeopleChaoScreen_Color.Colors_Text2_,
+                        TextAlign.center,
+                        FontWeight.w500,
+                        Font_.Fonts_T,
+                        14,
+                        1),
+                    Expanded(
+                      child: Text(
+                        (areaxConModels.length == 1)
+                            ? '${areaxConModels[0].cser ?? ''} (${areaModels[index].cname})'
+                            : ' (ทั้งหมด ${areaxConModels.length})',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            color: PeopleChaoScreen_Color.Colors_Text2_,
+                            //fontWeight: FontWeight.bold,
+                            fontFamily: Font_.Fonts_T),
                       ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เสนอราคา: ',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            ' ${areaModels[index].lncode} (${areaModels[index].ln})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
                     ),
-                  ))),
-        if (areaModels[index].quantity == '1' &&
-            areaModels[index].cc_date != null &&
-            areaModels[index].cc_date.toString() != "0000-00-00")
-          PopUpMenuItem(
-              // title:
-              //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      SharedPreferences preferences =
-                          await SharedPreferences.getInstance();
-                      preferences.setString(
-                          'zoneSer', areaModels[index].zser.toString());
-                      preferences.setString(
-                          'zonesName', areaModels[index].zn.toString());
-                      setState(() {
-                        Ser_Body = 1;
-                        a_ln = areaModels[index].lncode;
-                        a_ser = areaModels[index].ser;
-                        a_area = areaModels[index].area;
-                        a_rent = areaModels[index].rent;
-                        a_page = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เสนอราคา: ',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            '  ${areaModels[index].lncode} (${areaModels[index].ln})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
+                    Icon(Icons.arrow_circle_right_outlined,
+                        color: getRandomColor(index)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+        // if (areaModels[index].quantity != '1' ||
+        //     areaModels[index].cc_date.toString() != "0000-00-00")
+        //   PopUpMenuItem(
+        //       image: InkWell(
+        //           onTap: () async {
+        //             if (renTal_lavel <= 2) {
+        //               menu!.dismiss();
+        //               infomation();
+        //             } else {
+        //               SharedPreferences preferences =
+        //                   await SharedPreferences.getInstance();
+        //               preferences.setString(
+        //                   'zoneSer', areaModels[index].zser.toString());
+        //               preferences.setString(
+        //                   'zonesName', areaModels[index].zn.toString());
+        //               setState(() {
+        //                 Ser_Body = 1;
+        //                 a_ln = areaModels[index].lncode;
+        //                 a_ser = areaModels[index].ser;
+        //                 a_area = areaModels[index].area;
+        //                 a_rent = areaModels[index].rent;
+        //                 a_page = '1';
+        //               });
+        //               menu!.dismiss();
+        //             }
+        //             // Navigator.pop(context);
+        //           },
+        //           child: Container(
+        //             decoration: const BoxDecoration(
+        //                 border: Border(
+        //               bottom: BorderSide(
+        //                 //                    <--- top side
+        //                 width: 0.5,
+        //               ),
+        //             )),
+        //             padding: const EdgeInsets.all(4.0),
+        //             width: 270,
+        //             child: Row(
+        //               children: [
+        //                 Translate.TranslateAndSetText(
+        //                     '+ เสนอราคา: ',
+        //                     PeopleChaoScreen_Color.Colors_Text2_,
+        //                     TextAlign.center,
+        //                     FontWeight.w500,
+        //                     Font_.Fonts_T,
+        //                     14,
+        //                     1),
+        //                 Expanded(
+        //                   child: Text(
+        //                     ' ${areaModels[index].lncode} (${areaModels[index].ln})',
+        //                     overflow: TextOverflow.ellipsis,
+        //                     style: const TextStyle(
+        //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                         //fontWeight: FontWeight.bold,
+        //                         fontFamily: Font_.Fonts_T),
+        //                   ),
+        //                 ),
+        //                 Icon(Iconsax.arrow_circle_right,
+        //                     color: getRandomColor(index)),
+        //               ],
+        //             ),
+        //           ))),
 
 ////////////-------------------------->
         ///
-        if (areaModels[index].quantity != '1')
-          PopUpMenuItem(
-              // title:
-              //     'ทำสัญญา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      SharedPreferences preferences =
-                          await SharedPreferences.getInstance();
-                      preferences.setString(
-                          'zoneSer', areaModels[index].zser.toString());
-                      preferences.setString(
-                          'zonesName', areaModels[index].zn.toString());
-
-                      setState(() {
-                        Ser_Body = 2;
-                        a_ln = areaModels[index].lncode;
-                        a_ser = areaModels[index].ser;
-                        a_area = areaModels[index].area;
-                        a_rent = areaModels[index].rent;
-                        a_page = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        color: Colors.grey,
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'ทำสัญญา: ',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            ' ${areaModels[index].lncode} (${areaModels[index].ln})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
-
-        if (areaModels[index].quantity == '1' &&
-            areaModels[index].cc_date != null &&
+        if (areaModels[index].quantity != '1' ||
             areaModels[index].cc_date.toString() != "0000-00-00")
           PopUpMenuItem(
               // title:
@@ -8812,7 +11303,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                     child: Row(
                       children: [
                         Translate.TranslateAndSetText(
-                            'ทำสัญญา: ',
+                            '+ ทำสัญญา: ',
                             PeopleChaoScreen_Color.Colors_Text2_,
                             TextAlign.center,
                             FontWeight.w500,
@@ -8829,509 +11320,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                 fontFamily: Font_.Fonts_T),
                           ),
                         ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
-////////////-------------------------->
-        if (areaModels[index].quantity == '1')
-          for (int i = 0; i < areaxConModels.length; i++)
-            PopUpMenuItem(
-                // title: '${areaxConModels[i].cser} (${areaxConModels[i].cname})',
-                // textStyle: const TextStyle(
-                //     color: PeopleChaoScreen_Color.Colors_Text2_,
-                //     //fontWeight: FontWeight.bold,
-                //     fontFamily: Font_.Fonts_T),
-                image: InkWell(
-                    onTap: () async {
-                      if (renTal_lavel <= 2) {
-                        menu!.dismiss();
-                        infomation();
-                      } else {
-                        setState(() {
-                          Ser_Body = 3;
-                          Value_stasus = '0';
-                          Value_cid = areaxConModels[i].cser;
-                          ser_cidtan = '1';
-                        });
-                        menu!.dismiss();
-                      }
-                      // Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                          border: Border(
-                        bottom: BorderSide(
-                          //                    <--- top side
-                          color: Colors.grey,
-                          width: 0.5,
-                        ),
-                      )),
-                      padding: const EdgeInsets.all(4.0),
-                      width: 270,
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              '${areaxConModels[i].cser} (${areaxConModels[i].cname})',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: PeopleChaoScreen_Color.Colors_Text2_,
-                                  //fontWeight: FontWeight.bold,
-                                  fontFamily: Font_.Fonts_T),
-                            ),
-                          ),
-                          Icon(Iconsax.arrow_circle_right,
-                              color: getRandomColor(index)),
-                        ],
-                      ),
-                    ))),
-        if (areaModels[index].quantity == '1')
-          if (areaModels[index].cid != areaModels[index].fid &&
-              areaModels[index].con_st_cid == 'สัญญาปัจจุบัน')
-            PopUpMenuItem(
-                // title:
-                //     'เช่าอยู่: ${areaModels[index].cid} (${areaModels[index].cname})',
-                // textStyle: const TextStyle(
-                //     color: PeopleChaoScreen_Color.Colors_Text2_,
-                //     //fontWeight: FontWeight.bold,
-                //     fontFamily: Font_.Fonts_T),
-                image: InkWell(
-                    onTap: () async {
-                      if (renTal_lavel <= 2) {
-                        menu!.dismiss();
-                        infomation();
-                      } else {
-                        setState(() {
-                          Ser_Body = 3;
-                          Value_stasus = areaModels[index].quantity == '1'
-                              ? datex.isAfter(DateTime.parse(
-                                              '${areaModels[index].ldate} 00:00:00.000')
-                                          .subtract(const Duration(days: 0))) ==
-                                      true
-                                  ? 'หมดสัญญา'
-                                  : datex.isAfter(DateTime.parse(
-                                                  '${areaModels[index].ldate} 00:00:00.000')
-                                              .subtract(Duration(
-                                                  days: open_set_date))) ==
-                                          true
-                                      ? 'ใกล้หมดสัญญา'
-                                      : 'เช่าอยู่'
-                              : areaModels[index].quantity == '2'
-                                  ? 'เสนอราคา'
-                                  : areaModels[index].quantity == '3'
-                                      ? 'เสนอราคา(มัดจำ)'
-                                      : 'ว่าง';
-                          Value_cid = areaModels[index].fid;
-                          ser_cidtan = '1';
-                        });
-                        menu!.dismiss();
-                      }
-                      // Navigator.pop(context);
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                          border: Border(
-                        bottom: BorderSide(
-                          //                    <--- top side
-                          color: Colors.grey,
-                          width: 0.5,
-                        ),
-                      )),
-                      padding: const EdgeInsets.all(4.0),
-                      width: 270,
-                      child: Row(
-                        children: [
-                          Translate.TranslateAndSetText(
-                              'สัญญาเดิม: ',
-                              PeopleChaoScreen_Color.Colors_Text2_,
-                              TextAlign.center,
-                              FontWeight.w500,
-                              Font_.Fonts_T,
-                              14,
-                              1),
-                          Expanded(
-                            child: Text(
-                              ' ${areaModels[index].fid} (${areaModels[index].cname})',
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: PeopleChaoScreen_Color.Colors_Text2_,
-                                  //fontWeight: FontWeight.bold,
-                                  fontFamily: Font_.Fonts_T),
-                            ),
-                          ),
-                          Icon(Iconsax.arrow_circle_right,
-                              color: getRandomColor(index)),
-                        ],
-                      ),
-                    ))),
-////////////-------------------------->
-        if (areaModels[index].quantity == '1')
-          PopUpMenuItem(
-              // title:
-              //     'เช่าอยู่: ${areaModels[index].cid} (${areaModels[index].cname})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      setState(() {
-                        Ser_Body = 3;
-                        Value_stasus = areaModels[index].quantity == '1'
-                            ? datex.isAfter(DateTime.parse(
-                                            '${areaModels[index].ldate} 00:00:00.000')
-                                        .subtract(const Duration(days: 0))) ==
-                                    true
-                                ? 'หมดสัญญา'
-                                : datex.isAfter(DateTime.parse(
-                                                '${areaModels[index].ldate} 00:00:00.000')
-                                            .subtract(Duration(
-                                                days: open_set_date))) ==
-                                        true
-                                    ? 'ใกล้หมดสัญญา'
-                                    : 'เช่าอยู่'
-                            : areaModels[index].quantity == '2'
-                                ? 'เสนอราคา'
-                                : areaModels[index].quantity == '3'
-                                    ? 'เสนอราคา(มัดจำ)'
-                                    : 'ว่าง';
-                        Value_cid = areaModels[index].cid;
-                        ser_cidtan = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        color: Colors.grey,
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            areaModels[index].scfid == 'N' ? 'N:' : 'เช่าอยู่:',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            areaModels[index].scfid == 'N'
-                                ? ' ${areaModels[index].cid} (${areaModels[index].cname})'
-                                : ' ${areaModels[index].cid} (${areaModels[index].cname})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
-
-////////////-------------------------->
-        if (areaModels[index].quantity == '1')
-          PopUpMenuItem(
-              // title:
-              //     'รับชำระ: ${areaModels[index].cid} (${areaModels[index].cname})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      setState(() {
-                        Value_stasus = areaModels[index].quantity == '1'
-                            ? datex.isAfter(DateTime.parse(
-                                            '${areaModels[index].ldate} 00:00:00.000')
-                                        .subtract(const Duration(days: 0))) ==
-                                    true
-                                ? 'หมดสัญญา'
-                                : datex.isAfter(DateTime.parse(
-                                                '${areaModels[index].ldate} 00:00:00.000')
-                                            .subtract(Duration(
-                                                days: open_set_date))) ==
-                                        true
-                                    ? 'ใกล้หมดสัญญา'
-                                    : 'เช่าอยู่'
-                            : areaModels[index].quantity == '2'
-                                ? 'เสนอราคา'
-                                : areaModels[index].quantity == '3'
-                                    ? 'เสนอราคา(มัดจำ)'
-                                    : 'ว่าง';
-                        Ser_Body = 4;
-                        Value_cid = areaModels[index].cid;
-                        ser_cidtan = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        color: Colors.grey,
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            areaModels[index].scfid == 'N' ? 'N:' : 'รับชำระ: ',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            areaModels[index].scfid == 'N'
-                                ? ' ${areaModels[index].cid} (${areaModels[index].cname})'
-                                : ' ${areaModels[index].cid} (${areaModels[index].cname})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
-        ////////////-------------------------->
-        if (areaModels[index].quantity == '2')
-          for (int i = 0; i < areaQuotModels.length; i++)
-            if (areaQuotModels[i]
-                    .ln_q!
-                    .contains(areaModels[index].lncode.toString()) ==
-                true)
-              PopUpMenuItem(
-                  // title: 'เสนอราคา: ${areaQuotModels[i].docno}',
-                  // textStyle: const TextStyle(
-                  //     color: PeopleChaoScreen_Color.Colors_Text2_,
-                  //     //fontWeight: FontWeight.bold,
-                  //     fontFamily: Font_.Fonts_T),
-                  image: InkWell(
-                      onTap: () async {
-                        if (renTal_lavel <= 2) {
-                          menu!.dismiss();
-                          infomation();
-                        } else {
-                          setState(() {
-                            Ser_Body = 3;
-                            Value_stasus = '1';
-                            Value_cid = areaQuotModels[i].docno;
-                            ser_cidtan = '2';
-                          });
-                          menu!.dismiss();
-                        }
-                        // Navigator.pop(context);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                            border: Border(
-                          bottom: BorderSide(
-                            //                    <--- top side
-                            color: Colors.grey,
-                            width: 0.5,
-                          ),
-                        )),
-                        padding: const EdgeInsets.all(4.0),
-                        width: 270,
-                        child: Row(
-                          children: [
-                            Translate.TranslateAndSetText(
-                                'เสนอราคา: ',
-                                PeopleChaoScreen_Color.Colors_Text2_,
-                                TextAlign.center,
-                                FontWeight.w500,
-                                Font_.Fonts_T,
-                                14,
-                                1),
-                            Expanded(
-                              child: Text(
-                                ' ${areaQuotModels[i].docno}',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: PeopleChaoScreen_Color.Colors_Text2_,
-                                    //fontWeight: FontWeight.bold,
-                                    fontFamily: Font_.Fonts_T),
-                              ),
-                            ),
-                            Icon(Iconsax.arrow_circle_right,
-                                color: getRandomColor(index)),
-                          ],
-                        ),
-                      ))),
-        ////////////-------------------------->
-        if (areaModels[index].quantity == '3')
-          // for (int i = 0; i < areaQuotModels.length; i++)
-          for (int i = 0; i < areaQuotModels.length; i++)
-            if (areaQuotModels[i]
-                    .ln_q!
-                    .contains(areaModels[index].lncode.toString()) ==
-                true)
-              PopUpMenuItem(
-                  // title: 'เสนอราคา: (มัดจำ) ${areaQuotModels[i].docno}',
-                  // textStyle: const TextStyle(
-                  //     color: PeopleChaoScreen_Color.Colors_Text2_,
-                  //     //fontWeight: FontWeight.bold,
-                  //     fontFamily: Font_.Fonts_T),
-                  image: InkWell(
-                      onTap: () async {
-                        if (renTal_lavel <= 2) {
-                          menu!.dismiss();
-                          infomation();
-                        } else {
-                          setState(() {
-                            Ser_Body = 3;
-                            Value_stasus = '1';
-                            Value_cid = areaQuotModels[i].docno;
-                            ser_cidtan = '2';
-                          });
-                          menu!.dismiss();
-                        }
-                        // Navigator.pop(context);
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                            border: Border(
-                          bottom: BorderSide(
-                            //                    <--- top side
-                            color: Colors.grey,
-                            width: 0.5,
-                          ),
-                        )),
-                        padding: const EdgeInsets.all(4.0),
-                        width: 270,
-                        child: Row(
-                          children: [
-                            Translate.TranslateAndSetText(
-                                'เสนอราคา: (มัดจำ) ',
-                                PeopleChaoScreen_Color.Colors_Text2_,
-                                TextAlign.center,
-                                FontWeight.w500,
-                                Font_.Fonts_T,
-                                14,
-                                1),
-                            Expanded(
-                              child: Text(
-                                ' ${areaQuotModels[i].docno}',
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    color: PeopleChaoScreen_Color.Colors_Text2_,
-                                    //fontWeight: FontWeight.bold,
-                                    fontFamily: Font_.Fonts_T),
-                              ),
-                            ),
-                            Icon(Iconsax.arrow_circle_right,
-                                color: getRandomColor(index)),
-                          ],
-                        ),
-                      ))),
-
-        if (areaModels[index].quantity == '1' && areaModels[index].cfid != null)
-          PopUpMenuItem(
-              // title:
-              //     'เช่าอยู่: ${areaModels[index].cid} (${areaModels[index].cname})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation();
-                    } else {
-                      setState(() {
-                        Ser_Body = 3;
-                        Value_stasus = areaModels[index].quantity == '1'
-                            ? datex.isAfter(DateTime.parse(
-                                            '${areaModels[index].ldate} 00:00:00.000')
-                                        .subtract(const Duration(days: 0))) ==
-                                    true
-                                ? 'หมดสัญญา'
-                                : datex.isAfter(DateTime.parse(
-                                                '${areaModels[index].ldate} 00:00:00.000')
-                                            .subtract(Duration(
-                                                days: open_set_date))) ==
-                                        true
-                                    ? 'ใกล้หมดสัญญา'
-                                    : 'เช่าอยู่'
-                            : areaModels[index].quantity == '2'
-                                ? 'เสนอราคา'
-                                : areaModels[index].quantity == '3'
-                                    ? 'เสนอราคา(มัดจำ)'
-                                    : 'ว่าง';
-                        Value_cid = areaModels[index].cfid;
-                        ser_cidtan = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        color: Colors.grey,
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เช่าอยู่: ',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            FontWeight.w500,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            ' ${areaModels[index].cfid}',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
+                        Icon(Icons.arrow_circle_right_outlined,
                             color: getRandomColor(index)),
                       ],
                     ),
@@ -9368,277 +11357,460 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
     );
   }
 
+  // Widget createCard(int index, BuildContext context) {
+  //   // ===== helpers (ภายในฟังก์ชัน) =====
+  //   Color _tileColor(String qty, String? ldate) {
+  //     if (qty == '1') {
+  //       if (ldate == null) return Colors.red.shade200;
+  //       final d = DateTime.parse('$ldate 00:00:00.000');
+  //       final near = datex.isAfter(d.subtract(Duration(days: open_set_date))) &&
+  //           !datex.isAfter(d);
+  //       if (near) return Colors.orange.shade200;
+  //       return datex.isAfter(d) ? Colors.red.shade200 : Colors.grey.shade200;
+  //     }
+  //     if (qty == '2') return Colors.blue.shade200;
+  //     if (qty == '3') return Colors.purple.shade200;
+  //     return Colors.green.shade200;
+  //   }
+
+  //   String _statusText(AreaModel a) {
+  //     if (a.quantity == '1') {
+  //       final cc = (a.cc_date != null && a.cc_date != '0000-00-00')
+  //           ? ' ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${a.cc_date} 00:00:00.000'))}'
+  //           : '';
+  //       final base = a.ldate ?? DateFormat('yyyy-MM-dd').format(datex);
+  //       final d = DateTime.parse('$base 00:00:00.000');
+
+  //       if (datex.isAfter(d)) return 'หมดสัญญา';
+  //       if (datex.isAfter(d.subtract(Duration(days: open_set_date))))
+  //         return 'ใกล้หมดสัญญา';
+  //       return 'เช่าอยู่';
+  //     }
+  //     if (a.quantity == '2') return 'เสนอราคา';
+  //     if (a.quantity == '3') return 'เสนอราคา(มัดจำ)';
+  //     return 'ว่าง';
+  //   }
+
+  //   // ===== เตรียมค่าจาก properties (เอาอันแรกพอ) =====
+  //   final a = areaModels[index];
+  //   final firstProp = a.properties.isNotEmpty ? a.properties.first : null;
+  //   final nr = firstProp?.newRequest;
+
+  //   final uuidx = nr?.requestUuid;
+  //   final requestStepx = nr?.requestStep;
+  //   final paymentUuid = nr?.paymentUuid;
+  //   final paymentAmount = nr?.paymentAmount;
+  //   reques_tstatusx = nr?.requestStatus; // ใช้ตัวแปรเดิมที่คุณมี
+
+  //   // parse payment_json เป็น local ก่อน (ไม่ setState ตรงนี้)
+  //   List<Map<String, dynamic>> localPaymentJson = [];
+  //   final raw = nr?.payment_json;
+  //   try {
+  //     if (raw is String) {
+  //       final dec = json.decode(raw);
+  //       if (dec is List)
+  //         localPaymentJson = List<Map<String, dynamic>>.from(dec);
+  //     } else if (raw is List) {
+  //       localPaymentJson = List<Map<String, dynamic>>.from(raw!);
+  //     }
+  //   } catch (e) {
+  //     print('❌ payment_json parse error: $e');
+  //   }
+
+  //   if (_btnKeys.isEmpty) return const SizedBox();
+
+  //   final tileColor = _tileColor(a.quantity ?? '', a.ldate);
+
+  //   return Stack(
+  //     children: [
+  //       Card(
+  //         color: tileColor,
+  //         child: MaterialButton(
+  //           key: _btnKeys[index],
+  //           onPressed: () async {
+  //             final prefs = await SharedPreferences.getInstance();
+  //             await prefs.setString('zoneSer', a.zser.toString());
+  //             await prefs.setString('zonesName', a.zn.toString());
+
+  //             print('📦 payment_jsonx local: $localPaymentJson');
+
+  //             setState(() {
+  //               data_uuid = a.properties.isNotEmpty ? uuidx : null;
+  //               requestStep = a.properties.isNotEmpty ? requestStepx : null;
+  //               reques_tstatusx =
+  //                   a.properties.isNotEmpty ? reques_tstatusx : null;
+  //               payment_uuid =
+  //                   a.properties.isNotEmpty ? paymentUuid?.toString() : null;
+  //               payment_uuid_amount = a.properties.isNotEmpty
+  //                   ? paymentAmount?.toString()
+  //                   : '0.00';
+  //               payment_jsonx = localPaymentJson; // อัปเดตจาก local
+  //               read_GC_con_area(index);
+  //             });
+
+  //             if (a.quantity != '1') {
+  //               // ถ้าต้อง debug การ match โซน
+  //               for (final q in areaQuotModels) {
+  //                 final oo = (q.ln_q ?? '').contains(a.ln.toString());
+  //                 // print('$oo');
+  //               }
+  //             }
+
+  //             // เรียก UI ต่อในเฟรมถัดไป (นิ่งกว่า delay)
+  //             WidgetsBinding.instance.addPostFrameCallback((_) {
+  //               add_ContractStore(index);
+  //               print('📦 $data_uuid   // reques_tstatusx: $reques_tstatusx');
+  //               if (reques_tstatusx == null) {
+  //                 maxColumn(index, context);
+  //               } else {
+  //                 maxColumn_Approved(
+  //                     index, context, reques_tstatusx, requestStepx);
+  //               }
+  //             });
+  //           },
+  //           child:
+  // Container(
+  //             color: tileColor,
+  //             width: MediaQuery.of(context).size.width * 0.1,
+  //             child: Column(
+  //               mainAxisAlignment: MainAxisAlignment.center,
+  //               children: [
+  //                 Center(
+  //                   child: AutoSizeText(
+  //                     '${a.lncode} (${a.ln})',
+  //                     minFontSize: 8,
+  //                     maxFontSize: (Responsive.isDesktop(context)) ? 16 : 12,
+  //                     textAlign: TextAlign.center,
+  //                     style: const TextStyle(
+  //                       fontFamily: Font_.Fonts_T,
+  //                       color: PeopleChaoScreen_Color.Colors_Text2_,
+  //                     ),
+  //                     maxLines: 2,
+  //                     overflow: TextOverflow.ellipsis,
+  //                   ),
+  //                 ),
+  //                 if (a.properties.isNotEmpty)
+  //                   Translate.TranslateAndSet_TextAutoSize(
+  //                     (nr?.requestStep == null)
+  //                         ? '${nr?.requestStep ?? "⚠️Warning"}'
+  //                         : reques_tstatusx ?? 'กำลังดำเดินการ',
+  //                     CustomerScreen_Color.Colors_Text1_,
+  //                     TextAlign.center,
+  //                     null,
+  //                     Font_.Fonts_T,
+  //                     12,
+  //                     15,
+  //                     1,
+  //                   ),
+  //                 Translate.TranslateAndSet_TextAutoSize(
+  //                   _statusText(a),
+  //                   CustomerScreen_Color.Colors_Text1_,
+  //                   TextAlign.center,
+  //                   null,
+  //                   Font_.Fonts_T,
+  //                   8,
+  //                   (a.properties.isNotEmpty) ? 14 : 16,
+  //                   (a.properties.isNotEmpty) ? 1 : 2,
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ),
+  //       ),
+
+  //       // ไอคอน cc_date
+  //       Column(
+  //         mainAxisAlignment: MainAxisAlignment.end,
+  //         crossAxisAlignment: CrossAxisAlignment.end,
+  //         children: [
+  //           Row(
+  //             mainAxisAlignment: MainAxisAlignment.end,
+  //             children: [
+  //               (a.cc_date != null && a.cc_date != "0000-00-00")
+  //                   ? const Icon(Icons.closed_caption)
+  //                   : const SizedBox(),
+  //             ],
+  //           ),
+  //         ],
+  //       ),
+
+  //       // ไอคอนซ่อมบำรุง
+  //       if (a.mainten.toString() == '1' || a.mainten.toString() == '2')
+  //         Positioned(
+  //           top: 0,
+  //           left: (a.properties.isNotEmpty) ? 0 : null,
+  //           right: (a.properties.isNotEmpty) ? null : 0,
+  //           child: CircleAvatar(
+  //             backgroundColor: Colors.red,
+  //             radius: 12,
+  //             child: Icon(Icons.build,
+  //                 size: 14, color: Colors.white.withOpacity(0.9)),
+  //           ),
+  //         ),
+
+  //       // ไอคอน handshake
+  //       if (a.properties.isNotEmpty)
+  //         Positioned(
+  //           top: 0,
+  //           right: 0,
+  //           child: CircleAvatar(
+  //             backgroundColor: Colors.deepPurple,
+  //             radius: 12,
+  //             child: Icon(Icons.edit,
+  //                 // Icons.handshake,
+  //                 size: 14,
+  //                 color: Colors.white.withOpacity(0.9)),
+  //           ),
+  //         ),
+  //     ],
+  //   );
+  // }
+
   Widget createCard(int index, context) {
+    // ===== helpers (ภายในฟังก์ชัน) =====
+    // Color _tileColor(String qty, String? ldate) {
+    //   if (qty == '1') {
+    //     if (ldate == null) return Colors.red.shade200;
+    //     final d = DateTime.parse('$ldate 00:00:00.000');
+    //     final near = datex.isAfter(d.subtract(Duration(days: open_set_date))) &&
+    //         !datex.isAfter(d);
+    //     if (near) return Colors.orange.shade200;
+    //     return datex.isAfter(d) ? Colors.red.shade200 : Colors.grey.shade200;
+    //   }
+    //   if (qty == '2') return Colors.blue.shade200;
+    //   if (qty == '3') return Colors.purple.shade200;
+    //   return Colors.green.shade200;
+    // }
+    Color _tileColor(String qty, String? ldate) {
+      final baseDateString = ldate ?? DateFormat('yyyy-MM-dd').format(datex);
+      final targetDate = DateTime.parse('$baseDateString 00:00:00.000');
+
+      return qty == '1'
+          ? (ldate == null)
+              ? Colors.red.shade200
+              : datex.isAfter(DateTime.parse('${ldate} 00:00:00.000')
+                          .subtract(Duration(days: open_set_date))) ==
+                      true //datex
+                  ? datex.isAfter(DateTime.parse('${ldate} 00:00:00.000')
+                              .subtract(Duration(days: 0))) ==
+                          false
+                      ? Colors.orange.shade200
+                      : Colors.grey.shade200
+                  : Colors.red.shade200
+          : qty == '2'
+              ? Colors.blue.shade200
+              : qty == '3'
+                  ? Colors.purple.shade200
+                  : Colors.green.shade200;
+    }
+
+    String _statusText(AreaModel a) {
+      if (a.quantity == '1') {
+        final cc = (a.cc_date != null && a.cc_date != '0000-00-00')
+            ? ' ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${a.cc_date} 00:00:00.000'))}'
+            : '';
+        final base = a.ldate ?? DateFormat('yyyy-MM-dd').format(datex);
+        final d = DateTime.parse('$base 00:00:00.000');
+
+        if (datex.isAfter(d)) return 'หมดสัญญา';
+        if (datex.isAfter(d.subtract(Duration(days: open_set_date))))
+          return 'ใกล้หมดสัญญา';
+        return 'เช่าอยู่';
+      }
+      if (a.quantity == '2') return 'เสนอราคา';
+      if (a.quantity == '3') return 'เสนอราคา(มัดจำ)';
+      return 'ว่าง';
+    }
+
+    var data_tstatusx;
+
+    // ===== เตรียมค่าจาก properties (เอาอันแรกพอ) =====
+    final a = areaModels[index];
+    final firstProp = a.properties.isNotEmpty ? a.properties.first : null;
+    final nr = firstProp?.newRequest;
+
+    data_tstatusx = nr?.requestStatus; // ใช้ตัวแปรเดิมที่คุณมี
+
+    final tileColor =
+        _tileColor(areaModels[index].quantity ?? '', areaModels[index].ldate);
     return (_btnKeys.length == 0)
         ? SizedBox()
         : Stack(
             children: [
               Card(
-                  color: areaModels[index].quantity == '1'
-                      ? (areaModels[index].ldate == null)
-                          ? Colors.red.shade200
-                          : datex.isAfter(DateTime.parse(
-                                          '${areaModels[index].ldate} 00:00:00.000')
-                                      .subtract(
-                                          Duration(days: open_set_date))) ==
-                                  true //datex
-                              ? datex.isAfter(DateTime.parse(
-                                              '${areaModels[index].ldate} 00:00:00.000')
-                                          .subtract(Duration(days: 0))) ==
-                                      false
-                                  ? Colors.orange.shade200
-                                  : Colors.grey.shade200
-                              : Colors.red.shade200
-                      : areaModels[index].quantity == '2'
-                          ? Colors.blue.shade200
-                          : areaModels[index].quantity == '3'
-                              ? Colors.purple.shade200
-                              : Colors.green.shade200,
+                  color: tileColor,
                   child: MaterialButton(
                     key: _btnKeys[index],
-                    onPressed: (renTal_user.toString() == '50' ||
-                            renTal_user.toString() == '139')
-                        ? () async {
-                            var uuidx;
-                            var requestStepx;
-                            var payment_uuidx;
-                            var payment_amountx;
-                            var reques_tstatusx;
-                            // List<Map<String, dynamic>> payment_jsonx = [];
-                            areaModels[index].properties.forEach((p) {
-                              print(
-                                  '🔹 request_uuid: ${p.newRequest?.requestUuid}');
-                              uuidx = p.newRequest?.requestUuid;
-                              requestStepx = p.newRequest?.requestStep;
-                              payment_uuidx = p.newRequest?.paymentUuid;
-                              payment_amountx = p.newRequest?.paymentAmount;
-                              reques_tstatusx = p.newRequest?.requestStatus;
-                              if (p.newRequest?.payment_json != null) {
-                                try {
-                                  final raw = p.newRequest?.payment_json;
+                    onPressed: () async {
+                      var uuidx;
+                      var requestStepx;
+                      var payment_uuidx;
+                      var payment_amountx;
 
-                                  if (raw is String) {
-                                    final decoded = json.decode(raw);
-                                    if (decoded is List) {
-                                      setState(() {
-                                        payment_jsonx =
-                                            List<Map<String, dynamic>>.from(
-                                                decoded);
-                                      });
-                                    }
-                                  } else if (raw is List) {
-                                    setState(() {
-                                      payment_jsonx =
-                                          List<Map<String, dynamic>>.from(raw!);
-                                    });
-                                  }
-                                } catch (e) {
-                                  print(
-                                      '❌ Error while parsing payment_json: $e');
-                                }
+                      // List<Map<String, dynamic>> payment_jsonx = [];
+                      areaModels[index].properties.forEach((p) {
+                        //print('🔹 request_uuid: ${p.newRequest?.requestUuid}');
+                        uuidx = p.newRequest?.requestUuid;
+                        requestStepx = p.newRequest?.requestStep;
+                        payment_uuidx = p.newRequest?.paymentUuid;
+                        payment_amountx = p.newRequest?.paymentAmount;
+                        reques_tstatusx = p.newRequest?.requestStatus;
+                        if (p.newRequest?.payment_json != null) {
+                          try {
+                            final raw = p.newRequest?.payment_json;
+
+                            if (raw is String) {
+                              final decoded = json.decode(raw);
+                              if (decoded is List) {
+                                setState(() {
+                                  payment_jsonx =
+                                      List<Map<String, dynamic>>.from(decoded);
+                                });
                               }
-                            });
-                            print(
-                                '📦 payment_jsonx payment_jsonx: $payment_jsonx');
-                            setState(() {
-                              data_uuid =
-                                  areaModels[index].properties.isNotEmpty
-                                      ? uuidx
-                                      : null;
-                              requestStep =
-                                  areaModels[index].properties.isNotEmpty
-                                      ? requestStepx
-                                      : null;
-                              reques_tstatusx =
-                                  areaModels[index].properties.isNotEmpty
-                                      ? reques_tstatusx
-                                      : null;
-                              payment_uuid =
-                                  areaModels[index].properties.isNotEmpty
-                                      ? payment_uuidx.toString()
-                                      : null;
-                              payment_uuid_amount =
-                                  areaModels[index].properties.isNotEmpty
-                                      ? payment_amountx.toString()
-                                      : '0.00';
-                              // payment_jsonx = areaModels[index].properties.isNotEmpty under_review
-                              //     ? jsonx
-                              //     : {};
-                              read_GC_con_area(index);
-                              // if (areaModels[index].quantity == '2' ||
-                              //     areaModels[index].quantity == '3') {
-                              //   loadareaQuot(index);
-                              // }
-                            });
-                            if (areaModels[index].quantity != '1') {
-                              for (int i = 0; i < areaQuotModels.length; i++) {
-                                var oo = areaQuotModels[i]
-                                    .ln_q!
-                                    .contains(areaModels[index].ln.toString());
-                                // print('$oo');
-                                // print('${areaQuotModels[i].ln_q}');
-                                // print('${areaModels[index].ln}');
-                              }
+                            } else if (raw is List) {
+                              setState(() {
+                                payment_jsonx =
+                                    List<Map<String, dynamic>>.from(raw!);
+                              });
                             }
-
-                            // showLoaderDialog(context);
-                            Future.delayed(const Duration(milliseconds: 400),
-                                () {        print(
-                                '📦 reques_tstatusx: $reques_tstatusx');
-                              // reques_tstatusx == null
-                              //     ? maxColumn(index, context)
-                              //     : maxColumn_Approved(
-                              //         index, context, reques_tstatusx);
-                              maxColumn(index, context);
-                            });
+                          } catch (e) {
+                            //  print('❌ Error while parsing payment_json: $e');
                           }
-                        : () async {
-                            print(
-                                '📦 payment_jsonx payment_jsonx: $payment_jsonx');
-                            setState(() {
-                              read_GC_con_area(index);
-                              // if (areaModels[index].quantity == '2' ||
-                              //     areaModels[index].quantity == '3') {
-                              //   loadareaQuot(index);
-                              // }
-                            });
-                            if (areaModels[index].quantity != '1') {
-                              for (int i = 0; i < areaQuotModels.length; i++) {
-                                var oo = areaQuotModels[i]
-                                    .ln_q!
-                                    .contains(areaModels[index].ln.toString());
-                                // print('$oo');
-                                // print('${areaQuotModels[i].ln_q}');
-                                // print('${areaModels[index].ln}');
-                              }
-                            }
+                        }
+                      });
+                      SharedPreferences preferences =
+                          await SharedPreferences.getInstance();
+                      preferences.setString(
+                          'zoneSer', areaModels[index].zser.toString());
+                      preferences.setString(
+                          'zonesName', areaModels[index].zn.toString());
+                      //    print('📦 payment_jsonx payment_jsonx: $payment_jsonx');
+                      setState(() {
+                        data_uuid = areaModels[index].properties.isNotEmpty
+                            ? uuidx
+                            : null;
+                        requestStep = areaModels[index].properties.isNotEmpty
+                            ? requestStepx
+                            : null;
+                        reques_tstatusx =
+                            areaModels[index].properties.isNotEmpty
+                                ? reques_tstatusx
+                                : null;
+                        payment_uuid = areaModels[index].properties.isNotEmpty
+                            ? payment_uuidx.toString()
+                            : null;
+                        payment_uuid_amount =
+                            areaModels[index].properties.isNotEmpty
+                                ? payment_amountx.toString()
+                                : '0.00';
+                        // payment_jsonx = areaModels[index].properties.isNotEmpty under_review
+                        //     ? jsonx
+                        //     : {};
+                        read_GC_con_area(index);
+                        // if (areaModels[index].quantity == '2' ||
+                        //     areaModels[index].quantity == '3') {
+                        //   loadareaQuot(index);
+                        // }
+                      });
+                      if (areaModels[index].quantity != '1') {
+                        for (int i = 0; i < areaQuotModels.length; i++) {
+                          var oo = areaQuotModels[i]
+                              .ln_q!
+                              .contains(areaModels[index].ln.toString());
+                          // print('$oo');
+                          // print('${areaQuotModels[i].ln_q}');
+                          // print('${areaModels[index].ln}');
+                        }
+                      }
 
-                            // showLoaderDialog(context);
-                            Future.delayed(const Duration(milliseconds: 400),
-                                () {
-                              maxColumn(index, context);
-                            });
-                          },
+                      // showLoaderDialog(context);
+                      Future.delayed(const Duration(milliseconds: 400), () {
+                        add_ContractStore(index);
+                        print(
+                            '📦 $data_uuid   // reques_tstatusx: $reques_tstatusx');
+                        (reques_tstatusx == null)
+                            ? maxColumn(index, context)
+                            : maxColumn_Approved(index, context,
+                                reques_tstatusx, requestStepx, uuidx);
+                        // maxColumn(index, context);
+                      });
+                    },
+                    // onPressed: () async {
+                    //   setState(() {
+                    //     read_GC_con_area(index);
+                    //     // if (areaModels[index].quantity == '2' ||
+                    //     //     areaModels[index].quantity == '3') {
+                    //     //   loadareaQuot(index);
+                    //     // }
+                    //   });
+                    //   if (areaModels[index].quantity != '1') {
+                    //     for (int i = 0; i < areaQuotModels.length; i++) {
+                    //       var oo = areaQuotModels[i]
+                    //           .ln_q!
+                    //           .contains(areaModels[index].ln.toString());
+                    //       // print('$oo');
+                    //       // print('${areaQuotModels[i].ln_q}');
+                    //       // print('${areaModels[index].ln}');
+                    //     }
+                    //   }
+
+                    //   // showLoaderDialog(context);
+                    //   Future.delayed(const Duration(milliseconds: 400), () {
+                    //     maxColumn(index, context);
+                    //   });
+                    // },
                     child: Container(
-                        color: areaModels[index].quantity == '1'
-                            ? (areaModels[index].ldate == null)
-                                ? Colors.red.shade200
-                                : datex.isAfter(DateTime.parse(
-                                                '${areaModels[index].ldate} 00:00:00.000')
-                                            .subtract(Duration(
-                                                days: open_set_date))) ==
-                                        true //datex
-                                    ? datex.isAfter(DateTime.parse(
-                                                    '${areaModels[index].ldate} 00:00:00.000')
-                                                .subtract(Duration(days: 0))) ==
-                                            false
-                                        ? Colors.orange.shade200
-                                        : Colors.grey.shade200
-                                    : Colors.red.shade200
-                            : areaModels[index].quantity == '2'
-                                ? Colors.blue.shade200
-                                : areaModels[index].quantity == '3'
-                                    ? Colors.purple.shade200
-                                    : Colors.green.shade200,
-                        width: MediaQuery.of(context).size.width * 0.1,
-                        // height: 70,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Center(
-                                child: AutoSizeText(
+                      color: tileColor,
+                      width: MediaQuery.of(context).size.width * 0.1,
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Center(
+                            child: AutoSizeText(
                               '${areaModels[index].lncode} (${areaModels[index].ln})',
                               minFontSize: 8,
                               maxFontSize:
-                                  (Responsive.isDesktop(context)) ? 18 : 12,
+                                  (Responsive.isDesktop(context)) ? 16 : 12,
                               textAlign: TextAlign.center,
                               style: const TextStyle(
-                                // fontSize: 20,
                                 fontFamily: Font_.Fonts_T,
                                 color: PeopleChaoScreen_Color.Colors_Text2_,
                               ),
-                              maxLines: (Responsive.isDesktop(context)) ? 4 : 2,
+                              maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                            )),
+                            ),
+                          ),
+                          if (areaModels[index].properties.isNotEmpty)
                             Translate.TranslateAndSet_TextAutoSize(
-                                areaModels[index].quantity == '1'
-                                    ? (areaModels[index].ldate == null)
-                                        ? 'หมดสัญญา'
-                                        : datex.isAfter(DateTime.parse(
-                                                        '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-                                                    .subtract(const Duration(
-                                                        days: 0))) ==
-                                                true
-                                            ? 'หมดสัญญา ${areaModels[index].cc_date != null ? areaModels[index].cc_date == "0000-00-00" ? '' : DateFormat('dd-MM-yyyy').format(DateTime.parse('${areaModels[index].cc_date} 00:00:00.000')) : ''}'
-                                            : datex.isAfter(DateTime.parse(
-                                                            '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-                                                        .subtract(Duration(
-                                                            days:
-                                                                open_set_date))) ==
-                                                    true
-                                                ? 'ใกล้หมดสัญญา ${areaModels[index].cc_date != null ? areaModels[index].cc_date == "0000-00-00" ? '' : DateFormat('dd-MM-yyyy').format(DateTime.parse('${areaModels[index].cc_date} 00:00:00.000')) : ''}'
-                                                : 'เช่าอยู่ ${areaModels[index].cc_date != null ? areaModels[index].cc_date == "0000-00-00" ? '' : DateFormat('dd-MM-yyyy').format(DateTime.parse('${areaModels[index].cc_date} 00:00:00.000')) : ''}'
-                                    : areaModels[index].quantity == '2'
-                                        ? 'เสนอราคา'
-                                        : areaModels[index].quantity == '3'
-                                            ? 'เสนอราคา(มัดจำ)'
-                                            : (areaModels[index]
-                                                        .properties
-                                                        .toList()
-                                                        .length !=
-                                                    0)
-                                                ? (areaModels[index]
-                                                            .properties
-                                                            .first
-                                                            .newRequest!
-                                                            .requestStep ==
-                                                        null)
-                                                    ? '${areaModels[index].properties.first.newRequest!.requestStep ?? "⚠️Warning"}'
-                                                    : 'เกือบว่าง(Step:${areaModels[index].properties.first.newRequest!.requestStep ?? "0"})'
-                                                : 'ว่าง',
-                                CustomerScreen_Color.Colors_Text1_,
-                                TextAlign.center,
-                                null,
-                                Font_.Fonts_T,
-                                8,
-                                18,
-                                3),
-                            // AutoSizeText(
-                            //   areaModels[index].quantity == '1'
-                            //       ? (areaModels[index].ldate == null)
-                            //           ? 'หมดสัญญา'
-                            //           : datex.isAfter(DateTime.parse(
-                            //                           '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-                            //                       .subtract(const Duration(
-                            //                           days: 0))) ==
-                            //                   true
-                            //               ? 'หมดสัญญา ${areaModels[index].cc_date != null ? areaModels[index].cc_date == "0000-00-00" ? '' : DateFormat('dd-MM-yyyy').format(DateTime.parse('${areaModels[index].cc_date} 00:00:00.000')) : ''}'
-                            //               : datex.isAfter(DateTime.parse(
-                            //                               '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-                            //                           .subtract(Duration(
-                            //                               days:
-                            //                                   open_set_date))) ==
-                            //                       true
-                            //                   ? 'ใกล้หมดสัญญา ${areaModels[index].cc_date != null ? areaModels[index].cc_date == "0000-00-00" ? '' : DateFormat('dd-MM-yyyy').format(DateTime.parse('${areaModels[index].cc_date} 00:00:00.000')) : ''}'
-                            //                   : 'เช่าอยู่ ${areaModels[index].cc_date != null ? areaModels[index].cc_date == "0000-00-00" ? '' : DateFormat('dd-MM-yyyy').format(DateTime.parse('${areaModels[index].cc_date} 00:00:00.000')) : ''}'
-                            //       : areaModels[index].quantity == '2'
-                            //           ? 'เสนอราคา'
-                            //           : areaModels[index].quantity == '3'
-                            //               ? 'เสนอราคา(มัดจำ)'
-                            //               : 'ว่าง',
-                            //   minFontSize: 8,
-                            //   maxFontSize: 12,
-                            //   textAlign: TextAlign.center,
-                            //   style: const TextStyle(
-                            //     // fontSize: 20,
-                            //     fontFamily: Font_.Fonts_T,
-                            //     color: PeopleChaoScreen_Color.Colors_Text2_,
-                            //   ),
-                            //   maxLines: 2,
-                            //   overflow: TextOverflow.ellipsis,
-                            // )
-                          ],
-                        )),
+                              (areaModels[index]
+                                          .properties
+                                          .first
+                                          .newRequest!
+                                          .requestStep ==
+                                      null)
+                                  ? '${areaModels[index].properties.first.newRequest!.requestStep ?? "Warning"}'
+                                  : data_tstatusx ?? 'กำลังดำเดินการ',
+                              CustomerScreen_Color.Colors_Text1_,
+                              TextAlign.center,
+                              null,
+                              Font_.Fonts_T,
+                              12,
+                              15,
+                              1,
+                            ),
+                          Translate.TranslateAndSet_TextAutoSize(
+                            _statusText(areaModels[index]),
+                            CustomerScreen_Color.Colors_Text1_,
+                            TextAlign.center,
+                            null,
+                            Font_.Fonts_T,
+                            8,
+                            (areaModels[index].properties.isNotEmpty) ? 14 : 16,
+                            (areaModels[index].properties.isNotEmpty) ? 1 : 2,
+                          ),
+                        ],
+                      ),
+                    ),
                   )),
               Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -9658,355 +11830,37 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                   ),
                 ],
               ),
+              // ไอคอนซ่อมบำรุง
               if (areaModels[index].mainten.toString() == '1' ||
                   areaModels[index].mainten.toString() == '2')
                 Positioned(
                   top: 0,
-                  right: 0,
+                  left: (areaModels[index].properties.isNotEmpty) ? 5 : null,
+                  right: (areaModels[index].properties.isNotEmpty) ? null : 5,
                   child: CircleAvatar(
                     backgroundColor: Colors.red,
                     radius: 12,
-                    child: Icon(
-                      Icons.build,
-                      size: 14,
-                      color: Colors.white.withOpacity(0.9),
-                    ),
+                    child: Icon(Icons.build,
+                        size: 14, color: Colors.white.withOpacity(0.9)),
+                  ),
+                ),
+
+              // ไอคอน handshake
+              if (areaModels[index].properties.isNotEmpty)
+                Positioned(
+                  top: 5,
+                  right: 10,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.deepPurple,
+                    radius: 12,
+                    child: Icon(Icons.edit,
+                        // Icons.handshake,
+                        size: 14,
+                        color: Colors.white.withOpacity(0.9)),
                   ),
                 ),
             ],
           );
-
-    // PopupMenuButton(
-    //   onOpened: () {
-    //     setState(() {
-    //       read_GC_con_area(index);
-    //     });
-    //   },
-    //   itemBuilder: (BuildContext context) => [
-    //     if (areaModels[index].quantity != '1')
-    //       PopupMenuItem(
-    //         child: InkWell(
-    //             onTap: () async {
-    //               SharedPreferences preferences =
-    //                   await SharedPreferences.getInstance();
-    //               preferences.setString(
-    //                   'zoneSer', areaModels[index].zser.toString());
-    //               preferences.setString(
-    //                   'zonesName', areaModels[index].zn.toString());
-    //               setState(() {
-    //                 Ser_Body = 1;
-    //                 a_ln = areaModels[index].lncode;
-    //                 a_ser = areaModels[index].ser;
-    //                 a_area = areaModels[index].area;
-    //                 a_rent = areaModels[index].rent;
-    //                 a_page = '1';
-    //               });
-
-    //               Navigator.pop(context);
-    //             },
-    //             child: Container(
-    //                 padding: const EdgeInsets.all(10),
-    //                 width: MediaQuery.of(context).size.width,
-    //                 child: Row(
-    //                   children: [
-    //                     Expanded(
-    //                         child:
-    // Text(
-    //                       'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-    //                       overflow: TextOverflow.ellipsis,
-    //                       style: const TextStyle(
-    //                           color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                           //fontWeight: FontWeight.bold,
-    //                           fontFamily: Font_.Fonts_T),
-    //                     )
-    // )
-    //                   ],
-    //                 ))),
-    //       ),
-    //     if (areaModels[index].quantity != '1')
-    //       PopupMenuItem(
-    //         child: InkWell(
-    //             onTap: () async {
-    //               SharedPreferences preferences =
-    //                   await SharedPreferences.getInstance();
-    //               preferences.setString(
-    //                   'zoneSer', areaModels[index].zser.toString());
-    //               preferences.setString(
-    //                   'zonesName', areaModels[index].zn.toString());
-
-    //               setState(() {
-    //                 Ser_Body = 2;
-    //                 a_ln = areaModels[index].lncode;
-    //                 a_ser = areaModels[index].ser;
-    //                 a_area = areaModels[index].area;
-    //                 a_rent = areaModels[index].rent;
-    //                 a_page = '1';
-    //               });
-    //               Navigator.pop(context);
-    //             },
-    //             child: Container(
-    //                 padding: const EdgeInsets.all(10),
-    //                 width: MediaQuery.of(context).size.width,
-    //                 child: Row(
-    //                   children: [
-    //                     Expanded(
-    //                         child: Text(
-    //                       'ทำสัญญา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-    //                       overflow: TextOverflow.ellipsis,
-    //                       style: const TextStyle(
-    //                           color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                           //fontWeight: FontWeight.bold,
-    //                           fontFamily: Font_.Fonts_T),
-    //                     ))
-    //                   ],
-    //                 ))),
-    //       ),
-    //     if (areaModels[index].quantity == '1')
-    //       for (int i = 0; i < areaxConModels.length; i++)
-    //         PopupMenuItem(
-    //           child: InkWell(
-    //               onTap: () async {
-    //                 setState(() {
-    //                   Ser_Body = 3;
-    //                   Value_stasus = '0';
-    //                   Value_cid = areaxConModels[i].cser;
-    //                   ser_cidtan = '1';
-    //                 });
-    //                 Navigator.pop(context);
-    //               },
-    //               child: Container(
-    //                   padding: const EdgeInsets.all(10),
-    //                   width: MediaQuery.of(context).size.width,
-    //                   child: Row(
-    //                     children: [
-    //                       Expanded(
-    //                           child: Text(
-    //                         '${areaxConModels[i].cser} (${areaxConModels[i].cname})',
-    //                         overflow: TextOverflow.ellipsis,
-    //                         style: const TextStyle(
-    //                             color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                             //fontWeight: FontWeight.bold,
-    //                             fontFamily: Font_.Fonts_T),
-    //                       ))
-    //                     ],
-    //                   ))),
-    //         ),
-    //     if (areaModels[index].quantity == '1')
-    //       PopupMenuItem(
-    //         child: InkWell(
-    //             onTap: () async {
-    //               setState(() {
-    //                 Ser_Body = 3;
-    //                 Value_stasus = areaModels[index].quantity == '1'
-    //                     ? datex.isAfter(DateTime.parse(
-    //                                     '${areaModels[index].ldate} 00:00:00.000')
-    //                                 .subtract(const Duration(days: 0))) ==
-    //                             true
-    //                         ? 'หมดสัญญา'
-    //                         : datex.isAfter(DateTime.parse(
-    //                                         '${areaModels[index].ldate} 00:00:00.000')
-    //                                     .subtract(const Duration(days: open_set_date))) ==
-    //                                 true
-    //                             ? 'ใกล้หมดสัญญา'
-    //                             : 'เช่าอยู่'
-    //                     : areaModels[index].quantity == '2'
-    //                         ? 'เสนอราคา'
-    //                         : areaModels[index].quantity == '3'
-    //                             ? 'เสนอราคา(มัดจำ)'
-    //                             : 'ว่าง';
-    //                 Value_cid = areaModels[index].cid;
-    //                 ser_cidtan = '1';
-    //               });
-    //               Navigator.pop(context);
-    //             },
-    //             child: Container(
-    //                 padding: const EdgeInsets.all(10),
-    //                 width: MediaQuery.of(context).size.width,
-    //                 child: Row(
-    //                   children: [
-    //                     Expanded(
-    //                         child: Text(
-    //                       'เช่าอยู่: ${areaModels[index].cid} (${areaModels[index].cname})',
-    //                       overflow: TextOverflow.ellipsis,
-    //                       style: const TextStyle(
-    //                           color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                           //fontWeight: FontWeight.bold,
-    //                           fontFamily: Font_.Fonts_T),
-    //                     ))
-    //                   ],
-    //                 ))),
-    //       ),
-    //     if (areaModels[index].quantity == '1')
-    //       PopupMenuItem(
-    //         child: InkWell(
-    //             onTap: () async {
-    //               setState(() {
-    //                 Value_stasus = areaModels[index].quantity == '1'
-    //                     ? datex.isAfter(DateTime.parse(
-    //                                     '${areaModels[index].ldate} 00:00:00.000')
-    //                                 .subtract(const Duration(days: 0))) ==
-    //                             true
-    //                         ? 'หมดสัญญา'
-    //                         : datex.isAfter(DateTime.parse(
-    //                                         '${areaModels[index].ldate} 00:00:00.000')
-    //                                     .subtract(const Duration(days: open_set_date))) ==
-    //                                 true
-    //                             ? 'ใกล้หมดสัญญา'
-    //                             : 'เช่าอยู่'
-    //                     : areaModels[index].quantity == '2'
-    //                         ? 'เสนอราคา'
-    //                         : areaModels[index].quantity == '3'
-    //                             ? 'เสนอราคา(มัดจำ)'
-    //                             : 'ว่าง';
-    //                 Ser_Body = 4;
-    //                 Value_cid = areaModels[index].cid;
-    //                 ser_cidtan = '1';
-    //               });
-    //               Navigator.pop(context);
-    //             },
-    //             child: Container(
-    //                 padding: const EdgeInsets.all(10),
-    //                 width: MediaQuery.of(context).size.width,
-    //                 child: Row(
-    //                   children: [
-    //                     Expanded(
-    //                         child: Text(
-    //                       'รับชำระ: ${areaModels[index].cid} (${areaModels[index].cname})',
-    //                       overflow: TextOverflow.ellipsis,
-    //                       style: const TextStyle(
-    //                           color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                           //fontWeight: FontWeight.bold,
-    //                           fontFamily: Font_.Fonts_T),
-    //                     ))
-    //                   ],
-    //                 ))),
-    //       ),
-    //     if (areaModels[index].quantity == '2')
-    //       for (int i = 0; i < areaQuotModels.length; i++)
-    //         if (areaModels[index].ser == areaQuotModels[i].ser)
-    //           PopupMenuItem(
-    //             child: InkWell(
-    //                 onTap: () async {
-    //                   setState(() {
-    //                     Ser_Body = 3;
-    //                     Value_stasus = '1';
-    //                     Value_cid = areaQuotModels[i].docno;
-    //                     ser_cidtan = '2';
-    //                   });
-    //                   Navigator.pop(context);
-    //                 },
-    //                 child: Container(
-    //                     padding: const EdgeInsets.all(10),
-    //                     width: MediaQuery.of(context).size.width,
-    //                     child: Row(
-    //                       children: [
-    //                         Expanded(
-    //                             child: Text(
-    //                           'เสนอราคา: ${areaQuotModels[i].docno}',
-    //                           overflow: TextOverflow.ellipsis,
-    //                           style: const TextStyle(
-    //                               color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                               //fontWeight: FontWeight.bold,
-    //                               fontFamily: Font_.Fonts_T),
-    //                         ))
-    //                       ],
-    //                     ))),
-    //           ),
-    //     if (areaModels[index].quantity == '3')
-    //       for (int i = 0; i < areaQuotModels.length; i++)
-    //         if (areaModels[index].ser == areaQuotModels[i].ser)
-    //           PopupMenuItem(
-    //             child: InkWell(
-    //                 onTap: () async {
-    //                   setState(() {
-    //                     Ser_Body = 3;
-    //                     Value_stasus = '1';
-    //                     Value_cid = areaQuotModels[i].docno;
-    //                     ser_cidtan = '2';
-    //                   });
-    //                   Navigator.pop(context);
-    //                 },
-    //                 child: Container(
-    //                     padding: const EdgeInsets.all(10),
-    //                     width: MediaQuery.of(context).size.width,
-    //                     child: Row(
-    //                       children: [
-    //                         Expanded(
-    //                             child: Text(
-    //                           'เสนอราคา: (มัดจำ) ${areaQuotModels[i].docno}',
-    //                           overflow: TextOverflow.ellipsis,
-    //                           style: const TextStyle(
-    //                               color: PeopleChaoScreen_Color.Colors_Text2_,
-    //                               //fontWeight: FontWeight.bold,
-    //                               fontFamily: Font_.Fonts_T),
-    //                         ))
-    //                       ],
-    //                     ))),
-    //           ),
-    //   ],
-    //   child: Card(
-    //       child: InkWell(
-    //     // onTap: () async {},
-    //     child: Container(
-    //         color: areaModels[index].quantity == '1'
-    //             ? Colors.red.shade200
-    //             : areaModels[index].quantity == '2'
-    //                 ? Colors.blue.shade200
-    //                 : areaModels[index].quantity == '3'
-    //                     ? Colors.purple.shade200
-    //                     : Colors.green.shade200,
-    //         width: MediaQuery.of(context).size.width * 0.1,
-    //         height: 50,
-    //         child: Column(
-    //           mainAxisAlignment: MainAxisAlignment.center,
-    //           children: [
-    //             Center(
-    //                 child: AutoSizeText(
-    //               '${areaModels[index].lncode} (${areaModels[index].ln})',
-    //               minFontSize: 10,
-    //               maxFontSize: 18,
-    //               textAlign: TextAlign.center,
-    //               style: const TextStyle(
-    //                 // fontSize: 20,
-    //                 fontFamily: Font_.Fonts_T,
-    //                 color: PeopleChaoScreen_Color.Colors_Text2_,
-    //               ),
-    //               maxLines: 4,
-    //               overflow: TextOverflow.ellipsis,
-    //             )),
-    //             AutoSizeText(
-    //               areaModels[index].quantity == '1'
-    //                   ? datex.isAfter(DateTime.parse(
-    //                                   '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-    //                               .subtract(const Duration(days: 0))) ==
-    //                           true
-    //                       ? 'หมดสัญญา'
-    //                       : datex.isAfter(DateTime.parse(
-    //                                       '${areaModels[index].ldate == null ? DateFormat('yyyy-MM-dd').format(datex) : areaModels[index].ldate} 00:00:00.000')
-    //                                   .subtract(const Duration(days: open_set_date))) ==
-    //                               true
-    //                           ? 'ใกล้หมดสัญญา'
-    //                           : 'เช่าอยู่'
-    //                   : areaModels[index].quantity == '2'
-    //                       ? 'เสนอราคา'
-    //                       : areaModels[index].quantity == '3'
-    //                           ? 'เสนอราคา(มัดจำ)'
-    //                           : 'ว่าง',
-    //               minFontSize: 8,
-    //               maxFontSize: 12,
-    //               textAlign: TextAlign.center,
-    //               style: const TextStyle(
-    //                 // fontSize: 20,
-    //                 fontFamily: Font_.Fonts_T,
-    //                 color: PeopleChaoScreen_Color.Colors_Text2_,
-    //               ),
-    //               maxLines: 1,
-    //               overflow: TextOverflow.ellipsis,
-    //             )
-    //           ],
-    //         )),
-    //   )),
-    // );
   }
 
   Widget createCardNull(value) {
@@ -10886,34 +12740,67 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   // }
 
   Widget Body_Renew(context) {
-    return (renTal_user.toString() == '50' || renTal_user.toString() == '139')
-        ? Newcontract_cmm(
-            Get_Value_area_index: a_ser,
-            Get_Value_area_ln: a_ln,
-            Get_Value_area_sum: a_area,
-            Get_Value_rent_sum: a_rent,
-            Get_Value_page: a_page,
-            Get_Value_uuid: data_uuid.toString(),
-            Get_Value_step: requestStep.toString(),
-            Get_Value_payment_uuid: payment_uuid.toString(),
-            Get_Value_payment_amount: payment_uuid_amount.toString(),
-            paymentjsonx: payment_jsonx)
-        : ChaoAreaRenewScreen(
-            Get_Value_area_index: a_ser,
-            Get_Value_area_ln: a_ln,
-            Get_Value_area_sum: a_area,
-            Get_Value_rent_sum: a_rent,
-            Get_Value_page: a_page,
-          );
-  }
-
-  Widget Body_bid(context) {
-    return ChaoAreaBidScreen(
+    return Newcontract_cmm(
       Get_Value_area_index: a_ser,
       Get_Value_area_ln: a_ln,
       Get_Value_area_sum: a_area,
       Get_Value_rent_sum: a_rent,
       Get_Value_page: a_page,
+      Get_Value_uuid: data_uuid.toString(),
+      Get_Value_step: requestStep.toString(),
+      Get_Value_payment_uuid: payment_uuid.toString(),
+      Get_Value_payment_amount: payment_uuid_amount.toString(),
+      paymentjsonx: payment_jsonx,
+      Get_TeNantModels: [],
+      status_uuid: reques_tstatusx.toString(),
     );
+
+    // (renTal_user.toString() == '50' || renTal_user.toString() == '139')
+    //     ?
+    // Newcontract_cmm(
+    //         Get_Value_area_index: a_ser,
+    //         Get_Value_area_ln: a_ln,
+    //         Get_Value_area_sum: a_area,
+    //         Get_Value_rent_sum: a_rent,
+    //         Get_Value_page: a_page,
+    //         Get_Value_uuid: data_uuid.toString(),
+    //         Get_Value_step: requestStep.toString(),
+    //         Get_Value_payment_uuid: payment_uuid.toString(),
+    //         Get_Value_payment_amount: payment_uuid_amount.toString(),
+    //         paymentjsonx: payment_jsonx,
+    //         Get_TeNantModels: [],
+    //       )
+    //     : ChaoAreaRenewScreen(
+    //         Get_Value_area_index: a_ser,
+    //         Get_Value_area_ln: a_ln,
+    //         Get_Value_area_sum: a_area,
+    //         Get_Value_rent_sum: a_rent,
+    //         Get_Value_page: a_page,
+    //       );
+  }
+
+  Widget Body_bid(context) {
+    return Newcontract_cmm(
+      Get_Value_area_index: a_ser,
+      Get_Value_area_ln: a_ln,
+      Get_Value_area_sum: a_area,
+      Get_Value_rent_sum: a_rent,
+      Get_Value_page: a_page,
+      Get_Value_uuid: data_uuid.toString(),
+      Get_Value_step: requestStep.toString(),
+      Get_Value_payment_uuid: payment_uuid.toString(),
+      Get_Value_payment_amount: payment_uuid_amount.toString(),
+      paymentjsonx: payment_jsonx,
+      Get_TeNantModels: [],
+      status_uuid: reques_tstatusx.toString(),
+    );
+
+    // ChaoAreaBidScreen(
+    //   Get_Value_area_index: a_ser,
+    //   Get_Value_area_ln: a_ln,
+    //   Get_Value_area_sum: a_area,
+    //   Get_Value_rent_sum: a_rent,
+    //   Get_Value_page: a_page,
+    // );
   }
 }

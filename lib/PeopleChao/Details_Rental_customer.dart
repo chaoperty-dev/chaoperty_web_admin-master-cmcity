@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetArea_Model.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../Model/GetTeNant_Model.dart';
@@ -90,7 +91,7 @@ class _Details_Rental_customerState extends State<Details_Rental_customer> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
     renTal_name = preferences.getString('renTalName');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       print(result);
@@ -149,7 +150,7 @@ class _Details_Rental_customerState extends State<Details_Rental_customer> {
         '${MyConstant().domain}/GC_tenantAll_cust.php?isAdd=true&ren=$ren&custno=${custno_s}';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -184,7 +185,7 @@ class _Details_Rental_customerState extends State<Details_Rental_customer> {
           '${MyConstant().domain}/GC_tran_paysCustomer.php?isAdd=true&ren=$ren&ciddoc=${teNantModels[index].cid}';
 
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         //  print('${teNantModels[index].cid}');

@@ -10,11 +10,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_admin_scaffold/admin_scaffold.dart';
-import 'package:iconsax/iconsax.dart';
+// import 'package:iconsax/iconsax.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:side_sheet/side_sheet.dart';
 
-import '../Account/Account_Screen.dart';
+import '../Account/Ac_Sub/Account_Screen.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
 import '../Constant/Myconstant.dart';
@@ -87,17 +87,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<Null> Viewpagenow() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    var seremail_login = preferences.getString('ser');
-    String url =
-        '${MyConstant().domain}/Up_Viewpagenow.php?isAdd=true&ren=$ren&page=0&seruser=$seremail_login';
-    try {
-      var response = await http.get(Uri.parse(url));
+    // SharedPreferences preferences = await SharedPreferences.getInstance();
+    // var ren = preferences.getString('renTalSer');
+    // var seremail_login = preferences.getString('ser');
+    // String url =
+    //     '${MyConstant().domain}/Up_Viewpagenow.php?isAdd=true&ren=$ren&page=0&seruser=$seremail_login';
+    // try {
+    //   var response = await http.get(Uri.parse(url));
 
-      var result = json.decode(response.body);
-      if (result.toString() == 'true') {}
-    } catch (e) {}
+    //   var result = json.decode(response.body);
+    //   if (result.toString() == 'true') {}
+    // } catch (e) {}
   }
 
   Future<Null> red_Trans_c_maintenance() async {
@@ -390,7 +390,7 @@ class _HomeScreenState extends State<HomeScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('GC_rental>>> $result');
+      // print('GC_rental>>> $result');
       for (var map in result) {
         RenTalModel renTalModel = RenTalModel.fromJson(map);
         var pksdatex = renTalModel.pksdate;
@@ -410,11 +410,11 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<Null> readupdate() async {
-    print('pkldate >>> $pkldate 0000-00-00  data_update >> $data_update');
-    print(
-        'pkldateif >>> ${datex.isAfter(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000').subtract(const Duration(days: 7)))}');
-    print(
-        'pkldateifelse >>> ${datex.isAfter(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000').subtract(const Duration(days: 0)))}');
+    //  print('pkldate >>> $pkldate 0000-00-00  data_update >> $data_update');
+    //  print(
+    //     'pkldateif >>> ${datex.isAfter(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000').subtract(const Duration(days: 7)))}');
+    // print(
+    //   'pkldateifelse >>> ${datex.isAfter(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000').subtract(const Duration(days: 0)))}');
     if (datex.isAfter(DateTime.parse(pkldate == '0000-00-00'
                 ? '$data_update'
                 : '$pkldate 00:00:00.000')
@@ -480,7 +480,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
-                    '${DateFormat.MMMMEEEEd('th').format(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000'))} ${int.parse(DateFormat('yyyy').format(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000'))) + 543}',
+                    '${DateFormat.MMMMEEEEd('th').format(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000'))} ${int.parse(DateFormat('yyyy').format(DateTime.parse(pkldate == '0000-00-00' ? '$data_update' : '$pkldate 00:00:00.000'))) + 0}',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: Colors.red,
@@ -610,57 +610,77 @@ class _HomeScreenState extends State<HomeScreen> {
 
   ///----------------->
   _moveUp1() {
-    _scrollController1.animateTo(_scrollController1.offset - 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController1.hasClients) {
+      _scrollController1.animateTo(_scrollController1.offset - 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   _moveDown1() {
-    _scrollController1.animateTo(_scrollController1.offset + 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController1.hasClients) {
+      _scrollController1.animateTo(_scrollController1.offset + 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   ///----------------->
   _moveUp2() {
-    _scrollController2.animateTo(_scrollController2.offset - 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController2.hasClients) {
+      _scrollController2.animateTo(_scrollController2.offset - 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   _moveDown2() {
-    _scrollController2.animateTo(_scrollController2.offset + 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController2.hasClients) {
+      _scrollController2.animateTo(_scrollController2.offset + 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   ///----------------->
   _moveUp3() {
-    _scrollController3.animateTo(_scrollController3.offset - 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController3.hasClients) {
+      _scrollController3.animateTo(_scrollController3.offset - 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   _moveDown3() {
-    _scrollController3.animateTo(_scrollController3.offset + 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController3.hasClients) {
+      _scrollController3.animateTo(_scrollController3.offset + 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   ///----------------->
   _moveUp4() {
-    _scrollController4.animateTo(_scrollController4.offset - 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController4.hasClients) {
+      _scrollController4.animateTo(_scrollController4.offset - 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   _moveDown4() {
-    _scrollController4.animateTo(_scrollController4.offset + 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController4.hasClients) {
+      _scrollController4.animateTo(_scrollController4.offset + 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   ///----------------->
   _moveUp5() {
-    _scrollController5.animateTo(_scrollController5.offset - 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController5.hasClients) {
+      _scrollController5.animateTo(_scrollController5.offset - 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
   _moveDown5() {
-    _scrollController5.animateTo(_scrollController5.offset + 250,
-        curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    if (_scrollController5.hasClients) {
+      _scrollController5.animateTo(_scrollController5.offset + 250,
+          curve: Curves.linear, duration: const Duration(milliseconds: 500));
+    }
   }
 
 //////////---------------------------------------------------->
@@ -684,14 +704,15 @@ class _HomeScreenState extends State<HomeScreen> {
             : show_Dashboard == 2
                 ? HomeReserveSpace()
                 : show_Dashboard == 3
-                    ? Homereservespace_calendar()
+                    ? SizedBox() // Homereservespace_calendar()
                     : BodyHome_mobile()
         : show_Dashboard == 1
             ? const HomeDashboard()
             : show_Dashboard == 2
                 ? HomeReserveSpace()
                 : show_Dashboard == 3
-                    ? Homereservespace_calendar()
+                    ? SizedBox()
+                    // Homereservespace_calendar()
                     : BodyHome_Web();
     // return (!Responsive.isDesktop(context))
     //     ? show_Dashboard == 1
@@ -721,89 +742,89 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Expanded(
-                        flex: 2,
-                        child: Padding(
-                          padding: EdgeInsets.all(4.0),
-                          child: InkWell(
-                            onTap: () async {
-                              setState(() {
-                                show_Dashboard = 1;
-                              });
+                      // Expanded(
+                      //   flex: 2,
+                      //   child: Padding(
+                      //     padding: EdgeInsets.all(4.0),
+                      //     child: InkWell(
+                      //       onTap: () async {
+                      //         setState(() {
+                      //           show_Dashboard = 1;
+                      //         });
 
-                              SharedPreferences preferences =
-                                  await SharedPreferences.getInstance();
-                              var name = preferences.getString('fname');
-                              Insert_log.Insert_logs(
-                                  'หน้าหลัก', '$name>Dashboard');
-                            },
-                            child: Container(
-                                width: 130,
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: AppBarColors.hexColor,
-                                  borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                      bottomLeft: Radius.circular(8),
-                                      bottomRight: Radius.circular(8)),
-                                  border:
-                                      Border.all(color: Colors.white, width: 1),
-                                ),
-                                child: Center(
-                                  child: Translate.TranslateAndSetText(
-                                      'แดชบอร์ด',
-                                      Colors.white,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                )),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        flex: 2,
-                        child: Padding(
-                          padding: EdgeInsets.all(4.0),
-                          child: InkWell(
-                            onTap: () async {
-                              setState(() {
-                                show_Dashboard = 2;
-                              });
-                              SharedPreferences preferences =
-                                  await SharedPreferences.getInstance();
-                              var name = preferences.getString('fname');
-                              Insert_log.Insert_logs(
-                                  'หน้าหลัก', '$name>Reserve Space');
-                            },
-                            child: Container(
-                                width: 130,
-                                padding: const EdgeInsets.all(8.0),
-                                decoration: BoxDecoration(
-                                  color: AppBarColors.hexColor.withOpacity(0.8),
-                                  borderRadius: const BorderRadius.only(
-                                      topLeft: Radius.circular(8),
-                                      topRight: Radius.circular(8),
-                                      bottomLeft: Radius.circular(8),
-                                      bottomRight: Radius.circular(8)),
-                                  border:
-                                      Border.all(color: Colors.white, width: 1),
-                                ),
-                                child: Center(
-                                  child: Translate.TranslateAndSetText(
-                                      'จองล็อกเสียบ/พื้นที่สำรอง',
-                                      Colors.white,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                )),
-                          ),
-                        ),
-                      ),
+                      //         SharedPreferences preferences =
+                      //             await SharedPreferences.getInstance();
+                      //         var name = preferences.getString('fname');
+                      //         Insert_log.Insert_logs(
+                      //             'หน้าหลัก', '$name>Dashboard');
+                      //       },
+                      //       child: Container(
+                      //           width: 130,
+                      //           padding: const EdgeInsets.all(8.0),
+                      //           decoration: BoxDecoration(
+                      //             color: AppBarColors.hexColor,
+                      //             borderRadius: const BorderRadius.only(
+                      //                 topLeft: Radius.circular(8),
+                      //                 topRight: Radius.circular(8),
+                      //                 bottomLeft: Radius.circular(8),
+                      //                 bottomRight: Radius.circular(8)),
+                      //             border:
+                      //                 Border.all(color: Colors.white, width: 1),
+                      //           ),
+                      //           child: Center(
+                      //             child: Translate.TranslateAndSetText(
+                      //                 'แดชบอร์ด',
+                      //                 Colors.white,
+                      //                 TextAlign.center,
+                      //                 FontWeight.bold,
+                      //                 FontWeight_.Fonts_T,
+                      //                 14,
+                      //                 1),
+                      //           )),
+                      //     ),
+                      //   ),
+                      // ),
+                      // Expanded(
+                      //   flex: 2,
+                      //   child: Padding(
+                      //     padding: EdgeInsets.all(4.0),
+                      //     child: InkWell(
+                      //       onTap: () async {
+                      //         setState(() {
+                      //           show_Dashboard = 2;
+                      //         });
+                      //         SharedPreferences preferences =
+                      //             await SharedPreferences.getInstance();
+                      //         var name = preferences.getString('fname');
+                      //         Insert_log.Insert_logs(
+                      //             'หน้าหลัก', '$name>Reserve Space');
+                      //       },
+                      //       child: Container(
+                      //           width: 130,
+                      //           padding: const EdgeInsets.all(8.0),
+                      //           decoration: BoxDecoration(
+                      //             color: AppBarColors.hexColor.withOpacity(0.8),
+                      //             borderRadius: const BorderRadius.only(
+                      //                 topLeft: Radius.circular(8),
+                      //                 topRight: Radius.circular(8),
+                      //                 bottomLeft: Radius.circular(8),
+                      //                 bottomRight: Radius.circular(8)),
+                      //             border:
+                      //                 Border.all(color: Colors.white, width: 1),
+                      //           ),
+                      //           child: Center(
+                      //             child: Translate.TranslateAndSetText(
+                      //                 'จองล็อกเสียบ/พื้นที่สำรอง',
+                      //                 Colors.white,
+                      //                 TextAlign.center,
+                      //                 FontWeight.bold,
+                      //                 FontWeight_.Fonts_T,
+                      //                 14,
+                      //                 1),
+                      //           )),
+                      //     ),
+                      //   ),
+                      // ),
                       // Expanded(
                       //   flex: 2,
                       //   child: Padding(
@@ -929,8 +950,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 var renTals = value!.indexOf(',');
                                 var renTalSer = value.substring(0, renTals);
                                 var renTalName = value.substring(renTals + 1);
-                                print(
-                                    'mmmmm ${renTalSer.toString()} $renTalName');
+                                // print(
+                                //     'mmmmm ${renTalSer.toString()} $renTalName');
 
                                 SharedPreferences preferences =
                                     await SharedPreferences.getInstance();
@@ -1089,8 +1110,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                         renTalModels[i].ser;
                                                     var renTalName =
                                                         renTalModels[i].pn;
-                                                    print(
-                                                        'mmmmm ${renTalSer.toString()} $renTalName');
+                                                    // print(
+                                                    //     'mmmmm ${renTalSer.toString()} $renTalName');
 
                                                     SharedPreferences
                                                         preferences =
@@ -1446,20 +1467,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     body: {
                                                       'note': value.toString(),
                                                     }).then((value) async {
-                                                  print('$value');
+                                                  //   print('$value');
                                                   // var result = json.decode(value.body);
                                                   // print('$result ');
                                                   var result =
                                                       json.decode(value.body);
-                                                  print(result);
+                                                  //  print(result);
                                                   if (result.toString() ==
                                                       'true') {
                                                     setState(() {
                                                       read_GC_note();
                                                     });
 
-                                                    print(
-                                                        '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                    //  print(
+                                                    //      '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                   } else {}
                                                 });
 
@@ -1468,15 +1489,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                                 var result =
                                                     json.decode(response.body);
-                                                print(result);
+                                                //    print(result);
                                                 if (result.toString() ==
                                                     'true') {
                                                   setState(() {
                                                     read_GC_note();
                                                   });
 
-                                                  print(
-                                                      '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                  //  print(
+                                                  //     '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                 } else {}
                                                 // var response = await http
                                                 //     .get(Uri.parse(url));
@@ -1643,7 +1664,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       // print('$result ');
                                                       var result = json
                                                           .decode(value.body);
-                                                      print(result);
+                                                      //  print(result);
                                                       if (result.toString() ==
                                                           'true') {
                                                         setState(() {
@@ -1663,8 +1684,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                               .Fonts_T))),
                                                         );
 
-                                                        print(
-                                                            '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                        //   print(
+                                                        //       '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                       }
                                                     });
 
@@ -1673,7 +1694,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                                     var result = json
                                                         .decode(response.body);
-                                                    print(result);
+                                                    // print(result);
                                                     if (result.toString() ==
                                                         'null') {
                                                       setState(() {
@@ -1693,11 +1714,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                             .Fonts_T))),
                                                       );
 
-                                                      print(
-                                                          '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                      //  print(
+                                                      //     '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                     } else {
-                                                      print(
-                                                          '00000000>>>>>>>>>>>>>>>>> no nost');
+                                                      // print(
+                                                      //    '00000000>>>>>>>>>>>>>>>>> no nost');
                                                     }
                                                   } catch (e) {}
                                                 },
@@ -2989,7 +3010,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                               2,
                                                                           child:
                                                                               Text(
-                                                                            '${DateFormat('dd-MM').format((DateTime.parse('${maintenanceModels[index].mdate} 00:00:00')))}-${DateTime.parse('${maintenanceModels[index].mdate} 00:00:00').year + 543}',
+                                                                            '${DateFormat('dd-MM').format((DateTime.parse('${maintenanceModels[index].mdate} 00:00:00')))}-${DateTime.parse('${maintenanceModels[index].mdate} 00:00:00').year + 0}',
                                                                             maxLines:
                                                                                 1,
                                                                             overflow:
@@ -4431,7 +4452,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                                 const EdgeInsets.all(8.0),
                                                                             child:
                                                                                 Text(
-                                                                              '${DateFormat('dd-MM').format(DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00'))}-${DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00').year + 543}',
+                                                                              '${DateFormat('dd-MM').format(DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00'))}-${DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00').year + 0}',
                                                                               maxLines: 1,
                                                                               overflow: TextOverflow.ellipsis,
                                                                               textAlign: TextAlign.end,
@@ -5020,7 +5041,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   var response = await http.get(Uri.parse(url));
 
                                   var result = json.decode(response.body);
-                                  print(result);
+                                  //  print(result);
                                   if (result.toString() != 'Not data') {
                                     setState(() {
                                       Body3Form2_text.text = 'A';
@@ -5160,9 +5181,9 @@ class _HomeScreenState extends State<HomeScreen> {
         zoneModels.clear();
       });
     }
-    print('ชื่อสถานที่ : $Value_lacotion_');
-    print('โซนชั้น : $Value_Zone_');
-    print('จำนวนห้อง : $Value_QTYROOM_');
+    // print('ชื่อสถานที่ : $Value_lacotion_');
+    // print('โซนชั้น : $Value_Zone_');
+    // print('จำนวนห้อง : $Value_QTYROOM_');
     String location = Value_lacotion_;
     String zone = Value_Zone_;
     String qtyroom = Value_QTYROOM_;
@@ -5182,7 +5203,7 @@ class _HomeScreenState extends State<HomeScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result.toString());
+      //  print(result.toString());
 
       if (result.toString() != 'Not data') {
         for (var map in result) {
@@ -5235,7 +5256,7 @@ class _HomeScreenState extends State<HomeScreen> {
         var response = await http.get(Uri.parse(url));
 
         var result = json.decode(response.body);
-        print(result.toString());
+        //  print(result.toString());
 
         if (result.toString() != 'Not data') {
           for (var map in result) {
@@ -5398,8 +5419,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                       .substring(0, renTals);
                                                   var renTalName = value
                                                       .substring(renTals + 1);
-                                                  print(
-                                                      'mmmmm ${renTalSer.toString()} $renTalName');
+                                                  // print(
+                                                  //     'mmmmm ${renTalSer.toString()} $renTalName');
 
                                                   SharedPreferences
                                                       preferences =
@@ -5598,8 +5619,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                       renTalModels[
                                                                               i]
                                                                           .pn;
-                                                                  print(
-                                                                      'mmmmm ${renTalSer.toString()} $renTalName');
+                                                                  // print(
+                                                                  //     'mmmmm ${renTalSer.toString()} $renTalName');
 
                                                                   SharedPreferences
                                                                       preferences =
@@ -5857,8 +5878,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     value.substring(0, renTals);
                                                 var renTalName = value
                                                     .substring(renTals + 1);
-                                                print(
-                                                    'mmmmm ${renTalSer.toString()} $renTalName');
+                                                // print(
+                                                //     'mmmmm ${renTalSer.toString()} $renTalName');
 
                                                 SharedPreferences preferences =
                                                     await SharedPreferences
@@ -6927,7 +6948,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                                   var note = Form_note.text;
 
-                                                  print(sernote);
+                                                  //  print(sernote);
 
                                                   String url =
                                                       '${MyConstant().domain}/UDC_Note.php?isAdd=true&ren=$ren&ser_user=$ser_user&sernote=$sernote';
@@ -6939,20 +6960,20 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           'note':
                                                               value.toString(),
                                                         }).then((value) async {
-                                                      print('$value');
+                                                      //  print('$value');
                                                       // var result = json.decode(value.body);
                                                       // print('$result ');
                                                       var result = json
                                                           .decode(value.body);
-                                                      print(result);
+                                                      // print(result);
                                                       if (result.toString() ==
                                                           'true') {
                                                         setState(() {
                                                           read_GC_note();
                                                         });
 
-                                                        print(
-                                                            '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                        // print(
+                                                        //     '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                       } else {}
                                                     });
 
@@ -6961,15 +6982,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                                     var result = json
                                                         .decode(response.body);
-                                                    print(result);
+                                                    //  print(result);
                                                     if (result.toString() ==
                                                         'true') {
                                                       setState(() {
                                                         read_GC_note();
                                                       });
 
-                                                      print(
-                                                          '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                      // print(
+                                                      //     '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                     } else {}
                                                   } catch (e) {}
                                                 },
@@ -7090,7 +7111,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                   .post(Uri.parse(url), body: {
                                                 'note': note.toString(),
                                               }).then((value) async {
-                                                print('$value');
+                                                // print('$value');
                                                 // var result = json.decode(value.body);
                                                 // print('$result ');
                                                 var result =
@@ -7102,8 +7123,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                     read_GC_note();
                                                   });
 
-                                                  print(
-                                                      '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                  // print(
+                                                  //     '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                                 } else {}
                                               });
 
@@ -7112,14 +7133,14 @@ class _HomeScreenState extends State<HomeScreen> {
 
                                               var result =
                                                   json.decode(response.body);
-                                              print(result);
+                                              //  print(result);
                                               if (result.toString() == 'true') {
                                                 setState(() {
                                                   read_GC_note();
                                                 });
 
-                                                print(
-                                                    '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
+                                                // print(
+                                                //     '00000000>>>>>>>>>>>>>>>>> ${teNantModels.length}');
                                               } else {}
                                               // var response = await http
                                               //     .get(Uri.parse(url));
@@ -8161,7 +8182,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                           Expanded(
                                                             flex: 2,
                                                             child: Text(
-                                                              '${DateFormat('dd-MM').format((DateTime.parse('${maintenanceModels[index].mdate} 00:00:00')))}-${DateTime.parse('${maintenanceModels[index].mdate} 00:00:00').year + 543}',
+                                                              '${DateFormat('dd-MM').format((DateTime.parse('${maintenanceModels[index].mdate} 00:00:00')))}-${DateTime.parse('${maintenanceModels[index].mdate} 00:00:00').year + 0}',
                                                               maxLines: 1,
                                                               textAlign:
                                                                   TextAlign
@@ -9329,7 +9350,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                                                 const EdgeInsets
                                                                     .all(8.0),
                                                             child: Text(
-                                                              '${DateFormat('dd-MM').format(DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00'))}-${DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00').year + 543}',
+                                                              '${DateFormat('dd-MM').format(DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00'))}-${DateTime.parse('${teNantTwoModels[index].sdate} 00:00:00').year + 0}',
                                                               maxLines: 1,
                                                               textAlign:
                                                                   TextAlign

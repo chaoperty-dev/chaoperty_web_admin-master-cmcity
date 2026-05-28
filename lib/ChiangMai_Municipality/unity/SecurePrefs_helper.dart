@@ -2,9 +2,31 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'EncryptText.dart';
 
+// enum SecurePrefsType {
+//   UuidRequest,
+//   UuidUser,
+//   AuthService_token,
+//   AuthService_Uuid,
+//   AuthService_tokentype
+// }
 enum SecurePrefsType {
   UuidRequest,
   UuidUser,
+  // ✅ Auth related (ใช้ prefix สั้นลงเป็น "auth")
+  authAccessToken, // 🔐 access token สำหรับ API
+  authRefreshToken, // 🔄 token สำหรับ refresh (ถ้ามี)
+  authTokenType, // 🔖 Bearer, JWT, etc.
+  authUserUuid, // 🆔 UUID ของ user
+  authUserEmail, // 📧 email
+  authUserTel, // 📧 tel
+  authUserTax, // 📧 tax
+  authUserId, // 🔢 ID ของ user
+  authUserObject, // 👤 เก็บ JSON user object ที่เข้ารหัสไว้
+  flowUuid, // 👤 เก็บ JSON user object ที่เข้ารหัสไว้
+  expjson, // 👤 เก็บ JSON exp object ที่เข้ารหัสไว้
+  approverAll,
+  lastCheckTime,
+  lastCheckResult,
 }
 
 extension SecurePrefsKey on SecurePrefsType {

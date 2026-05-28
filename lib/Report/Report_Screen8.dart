@@ -454,7 +454,7 @@ class _ReportScreen8State extends State<ReportScreen8> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('result $url');
+      //  print('result $url');
       if (result.toString() != 'null') {
         setState(() {
           Await_Status_Report1 = 1;
@@ -577,7 +577,7 @@ class _ReportScreen8State extends State<ReportScreen8> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       if (result != null) {
         setState(() {
           Await_Status_Report2 = 1;
@@ -815,7 +815,7 @@ class _ReportScreen8State extends State<ReportScreen8> {
       setState(() {});
     });
 
-    print(Value_teNantDate_Daily);
+    // print(Value_teNantDate_Daily);
   }
 
   void selectionChanged_month1(DateRangePickerSelectionChangedArgs args) {
@@ -828,8 +828,8 @@ class _ReportScreen8State extends State<ReportScreen8> {
         Mon_transMeter_Mon = DateFormat('MM').format(selectedDate);
         YE_transMeter_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_transMeter_Mon}, Year: ${YE_transMeter_Mon}');
+      // print(
+      //     'Selected month: ${Mon_transMeter_Mon}, Year: ${YE_transMeter_Mon}');
     }
   }
 
@@ -843,7 +843,7 @@ class _ReportScreen8State extends State<ReportScreen8> {
         Mon_teNant_Mon = DateFormat('MM').format(selectedDate);
         YE_teNant_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Mon_teNant_Mon}, Year: ${YE_teNant_Mon}');
+      //   print('Selected month: ${Mon_teNant_Mon}, Year: ${YE_teNant_Mon}');
     }
   }
   //////////------------------>
@@ -5694,7 +5694,7 @@ class _ReportScreen8State extends State<ReportScreen8> {
                             setState(() {
                               _ReportValue_type = value ?? '';
                             });
-                            print(_ReportValue_type);
+                            //  print(_ReportValue_type);
                           },
                           items: const <String>[
                             "ปกติ",

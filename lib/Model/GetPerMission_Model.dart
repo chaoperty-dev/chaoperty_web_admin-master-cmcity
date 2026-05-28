@@ -6,6 +6,8 @@ class PerMissionModel {
   String? icon;
   String? st;
   String? data_update;
+  String? menuid;
+  String? order;
 
   PerMissionModel(
       {this.ser,
@@ -23,6 +25,8 @@ class PerMissionModel {
     icon = json['icon'];
     st = json['st'];
     data_update = json['data_update'];
+    menuid = json['menuid'];
+    order = json['order'];
   }
 
   Map<String, dynamic> toJson() {
@@ -34,6 +38,8 @@ class PerMissionModel {
     data['icon'] = this.icon;
     data['st'] = this.st;
     data['data_update'] = this.data_update;
+    data['menuid'] = this.menuid;
+    data['order'] = this.order;
     return data;
   }
 }

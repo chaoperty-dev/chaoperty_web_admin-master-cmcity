@@ -185,7 +185,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           ExpModel expModel = ExpModel.fromJson(map);
@@ -213,7 +213,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -256,9 +256,9 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
         }
       } else {}
     } catch (e) {
-      // print('Error-Dis(read_GC_rental) : ${e}');
+      // //print('Error-Dis(read_GC_rental) : ${e}');
     }
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
 ////////--------------------------------------------------------------->
@@ -277,7 +277,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       Map<String, dynamic> map = Map();
       map['ser'] = '0';
       map['rser'] = '0';
@@ -339,12 +339,12 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
     String url = zone == null || zone == '0'
         ? '${MyConstant().domain}/GC_Repeatspace_ChoiceReport.php?isAdd=true&ren=$ren&zone=0'
         : '${MyConstant().domain}/GC_Repeatspace_ChoiceReport.php?isAdd=true&ren=$ren&zone=$zone';
-    // print(url);
+    // //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantModel teNantModelss = TeNantModel.fromJson(map);
@@ -371,13 +371,13 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
     String url = zone == null || zone == '0'
         ? '${MyConstant().domain}/GC_AreaAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=0'
         : '${MyConstant().domain}/GC_AreaAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=$zone';
-    // print(url);
+    // //print(url);
 
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -402,18 +402,18 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
     var ren = preferences.getString('renTalSer');
     var zone = Value_Chang_Zone_People_Ser;
 
-    // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $Status_pe_ser');   Mon_Cid_ldate   YE_Cid_ldate Ser_Cid_ldate
+    // //print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $Status_pe_ser');   Mon_Cid_ldate   YE_Cid_ldate Ser_Cid_ldate
     String url = zone == null
         ? '${MyConstant().domain}/GC_tenantAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=0&type=$Ser_Cid_ldate&Mon=$Mon_Cid_ldate&YE=$YE_Cid_ldate'
         : zone == '0'
             ? '${MyConstant().domain}/GC_tenantAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=0&type=$Ser_Cid_ldate&Mon=$Mon_Cid_ldate&YE=$YE_Cid_ldate'
             : '${MyConstant().domain}/GC_tenantAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=$zone&type=$Ser_Cid_ldate&Mon=$Mon_Cid_ldate&YE=$YE_Cid_ldate';
-    // print(url);
+    // //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -479,7 +479,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //   var ren = preferences.getString('renTalSer');
   //   var zone = Value_Chang_Zone_People_Ser;
 
-  //   // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $Status_pe_ser');
+  //   // //print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $Status_pe_ser');
 
   //   if (Status_pe_ser == '1') {
   //     String url = zone == null
@@ -492,7 +492,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //       var response = await http.get(Uri.parse(url));
 
   //       var result = json.decode(response.body);
-  //       // print(result);
+  //       // //print(result);
   //       if (result != null) {
   //         for (var map in result) {
   //           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -513,7 +513,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //               var date2 = DateTime.now();
   //               var difference = daysBetween(birthday, date2);
 
-  //               // print('difference == $difference');
+  //               // //print('difference == $difference');
 
   //               var daterx_now = DateTime.now();
 
@@ -522,8 +522,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //               final now = DateTime.now();
   //               final earlier = daterx_ldate.subtract(const Duration(days: 0));
   //               var daterx_A = now.isAfter(earlier);
-  //               // print(now.isAfter(earlier)); // true
-  //               // print(now.isBefore(earlier)); // true
+  //               // //print(now.isAfter(earlier)); // true
+  //               // //print(now.isBefore(earlier)); // true
 
   //               if (daterx_A != true) {
   //                 setState(() {
@@ -550,7 +550,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //       var response = await http.get(Uri.parse(url));
 
   //       var result = json.decode(response.body);
-  //       // print(result);
+  //       // //print(result);
   //       if (result != null) {
   //         for (var map in result) {
   //           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -570,7 +570,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //             var date2 = DateTime.now();
   //             var difference = daysBetween(birthday, date2);
 
-  //             // print('difference == $difference');
+  //             // //print('difference == $difference');
 
   //             var daterx_now = DateTime.now();
 
@@ -579,8 +579,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //             final now = DateTime.now();
   //             final earlier = daterx_ldate.subtract(const Duration(days: 0));
   //             var daterx_A = now.isAfter(earlier);
-  //             // print(now.isAfter(earlier)); // true
-  //             // print(now.isBefore(earlier)); // true
+  //             // //print(now.isAfter(earlier)); // true
+  //             // //print(now.isBefore(earlier)); // true
 
   //             if (daterx_A == true) {
   //               setState(() {
@@ -607,7 +607,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //       var response = await http.get(Uri.parse(url));
 
   //       var result = json.decode(response.body);
-  //       // print(result);
+  //       // //print(result);
   //       if (result != null) {
   //         for (var map in result) {
   //           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -632,7 +632,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //                 var date2 = DateTime.now();
   //                 var difference = daysBetween(birthday, date2);
 
-  //                 // print('difference == $difference');
+  //                 // //print('difference == $difference');
 
   //                 var daterx_now = DateTime.now();
 
@@ -642,8 +642,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //                 final earlier =
   //                     daterx_ldate.subtract(const Duration(days: 0));
   //                 var daterx_A = now.isAfter(earlier);
-  //                 // print(now.isAfter(earlier)); // true
-  //                 // print(now.isBefore(earlier)); // true
+  //                 // //print(now.isAfter(earlier)); // true
+  //                 // //print(now.isBefore(earlier)); // true
 
   //                 if (daterx_A != true) {
   //                   setState(() {
@@ -670,7 +670,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //       var response = await http.get(Uri.parse(url));
 
   //       var result = json.decode(response.body);
-  //       // print(result);
+  //       // //print(result);
   //       if (result != null) {
   //         for (var map in result) {
   //           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -712,7 +712,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
   //       var response = await http.get(Uri.parse(url));
 
   //       var result = json.decode(response.body);
-  //       // print(result);
+  //       // //print(result);
   //       if (result != null) {
   //         for (var map in result) {
   //           QuotxSelectModel quotxSelectModel = QuotxSelectModel.fromJson(map);
@@ -917,7 +917,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
                                     zone_ser_Pe_Mon =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $zone_name_Cannotice_Mon  //${zone_ser_Cannotice_Mon}');
                                 },
                                 onMenuStateChange: (isOpen) {
@@ -938,8 +938,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
                             Dia_log();
                             try {
                               read_GC_tenant().then((result) {
-                                // print('red_InvoiceMonFull_bill');
-                                // print('red_InvoiceMonFull_bill');
+                                // //print('red_InvoiceMonFull_bill');
+                                // //print('red_InvoiceMonFull_bill');
                                 setState(() {
                                   Await_Status_Report3 = 1;
                                 });
@@ -1215,7 +1215,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
 //                                 Status_pe = Status[selectedIndex]!;
 //                                 Status_pe_ser = '${selectedIndex + 1}';
 //                               });
-//                               // print(selectedIndex);
+//                               // //print(selectedIndex);
 //                             },
 //                           ),
 //                         ),
@@ -1359,7 +1359,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
 //                                     Value_Chang_Zone_People_Ser =
 //                                         zoneModels_report[selectedIndex].ser!;
 //                                   });
-//                                   // print(
+//                                   // //print(
 //                                   //     'Selected Index: $Value_Chang_Zone_People  //${Value_Chang_Zone_People_Ser}');
 //                                 },
 //                                 onMenuStateChange: (isOpen) {
@@ -1441,7 +1441,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
 //                           //       Value_Chang_Zone_People_Ser =
 //                           //           zoneModels_report[selectedIndex].ser!;
 //                           //     });
-//                           //     // print(
+//                           //     // //print(
 //                           //     //     'Selected Index: $Value_Chang_Zone_People  //${Value_Chang_Zone_People_Ser}');
 //                           //   },
 //                           // ),
@@ -1570,7 +1570,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
 //                                 Mon_Cid_ldate = null;
 //                               });
 
-//                               // print(Ser_Cid_ldate);
+//                               // //print(Ser_Cid_ldate);
 //                             },
 //                           ),
 //                         ),
@@ -1838,8 +1838,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
 //                             if (Ser_Cid_ldate == 0) {
 //                               try {
 //                                 read_GC_tenantSelect().then((result) {
-//                                   // print('red_InvoiceMonFull_bill');
-//                                   // print('red_InvoiceMonFull_bill');
+//                                   // //print('red_InvoiceMonFull_bill');
+//                                   // //print('red_InvoiceMonFull_bill');
 //                                   setState(() {
 //                                     Await_Status_Report2 = 1;
 //                                   });
@@ -1855,8 +1855,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
 //                             } else {
 //                               try {
 //                                 read_GC_tenantSelect().then((result) {
-//                                   // print('red_InvoiceMonFull_bill');
-//                                   // print('red_InvoiceMonFull_bill');
+//                                   // //print('red_InvoiceMonFull_bill');
+//                                   // //print('red_InvoiceMonFull_bill');
 //                                   setState(() {
 //                                     Await_Status_Report2 = 1;
 //                                   });
@@ -2173,7 +2173,7 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
                                     zone_ser_Area =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $zone_name_Cannotice_Mon  //${zone_ser_Cannotice_Mon}');
                                 },
                                 onMenuStateChange: (isOpen) {
@@ -2194,8 +2194,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
                             Dia_log();
                             try {
                               read_GC_AreaAll().then((result) {
-                                // print('red_InvoiceMonFull_bill');
-                                // print('red_InvoiceMonFull_bill');
+                                // //print('red_InvoiceMonFull_bill');
+                                // //print('red_InvoiceMonFull_bill');
                                 setState(() {
                                   Await_Status_Report4 = 1;
                                 });
@@ -2997,8 +2997,8 @@ class _Report_Choice_ScreenEState extends State<Report_Choice_ScreenE> {
                                             int selectedIndex =
                                                 expModels.indexWhere((items) =>
                                                     items.ser == item.ser);
-                                            print(expModels[selectedIndex]
-                                                .expname);
+                                            //print(expModels[selectedIndex]
+                                            //  .expname);
                                             // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                             //This rebuilds the StatefulWidget to update the button's text
                                             setState(() {

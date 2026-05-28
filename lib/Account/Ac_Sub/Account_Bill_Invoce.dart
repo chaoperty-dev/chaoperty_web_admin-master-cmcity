@@ -325,7 +325,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -383,7 +383,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           PayMentModel _PayMentModel = PayMentModel.fromJson(map);
@@ -445,7 +445,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           InvoiceReModel transMeterModel = InvoiceReModel.fromJson(map);
@@ -529,10 +529,10 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       });
     } else {
       // Handle the case where contractxPakanModels is empty
-      // print("contractxPakanModels is empty, no data to add. $data");
+      // //print("contractxPakanModels is empty, no data to add. $data");
     }
 
-    // print("Data added: $data");
+    // //print("Data added: $data");
   }
 
   //-------------------------------------->
@@ -638,12 +638,12 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
     String url =
         '${MyConstant().domain}/GC_bill_invoice_history.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docnoin=$docnoin';
-    // print(url);
+    // //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           InvoiceHistoryModel _InvoiceHistoryModel =
@@ -818,7 +818,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
     // Check if the difference is greater than 15 minutes
     if (difference.inMinutes > int.parse('${time_check}')) {
-      // print('เกิน กำหนด.');
+      // //print('เกิน กำหนด.');
       // Count_time_check = Count_time_check + 1;
       return true;
     } else {
@@ -828,7 +828,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
 /////////----------------------------------------------------------->
   Future<Null> red_Trans_selectPay(index) async {
-    // print(
+    // //print(
     //     'Ser : ${InvoiceModels[index].ser} // docno :  ${InvoiceModels[index].docno} ///total : ${InvoiceModels[index].total_dis}');
     if (_InvoiceHistoryModels.length != 0) {
       setState(() {
@@ -854,7 +854,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           InvoiceHistoryModel _InvoiceHistoryModel =
@@ -972,9 +972,9 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'No') {
-        // print('result.toString() != No');
+        // //print('result.toString() != No');
         for (var map in result) {
           CFinnancetransModel cFinnancetransModel =
               CFinnancetransModel.fromJson(map);
@@ -983,7 +983,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
             doctax = cFinnancetransModel.doctax;
           });
-          // print('zzzzasaaa123454>>>>  $cFinn');
+          // //print('zzzzasaaa123454>>>>  $cFinn');
         }
         // setState(() {
         //   Invoic_selectAllSuccess.add(InvoiceModels[index].docno.toString());
@@ -1014,7 +1014,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
           _InvoiceModels.clear();
           _InvoiceHistoryModels.clear();
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -1042,7 +1042,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           InvoiceHistoryModel _InvoiceHistoryModel =
@@ -1123,9 +1123,9 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'No') {
-        // print('result.toString() != No');
+        // //print('result.toString() != No');
         for (var map in result) {
           CFinnancetransModel cFinnancetransModel =
               CFinnancetransModel.fromJson(map);
@@ -1134,7 +1134,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
             doctax = cFinnancetransModel.doctax;
           });
-          // print('zzzzasaaa123454>>>>  $cFinn');
+          // //print('zzzzasaaa123454>>>>  $cFinn');
         }
 
         Insert_log.Insert_logs('บัญชี', 'ประวัติวางบิล --> อนุมัติ:$cFinn ');
@@ -1149,13 +1149,13 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
         (ac4_1.where((item) => item["st"] == '1').toList().length <= 10)
             ? (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.83
-                : 1200
+                : 1400
             : (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.83 +
                     ((ac4_1.where((item) => item["st"] == '1').toList().length -
                             10) *
                         30)
-                : 1200 +
+                : 1400 +
                     ((ac4_1.where((item) => item["st"] == '1').toList().length -
                             10) *
                         30);
@@ -1315,7 +1315,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                         int selectedIndex = ac4_1.indexWhere(
                                             (items) =>
                                                 items["ser"] == item["ser"]);
-                                        // print(ac1[selectedIndex]
+                                        // //print(ac1[selectedIndex]
                                         //     [
                                         //     "pn"]);
                                         // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
@@ -1968,7 +1968,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                                     index]
                                                                 .date;
 
-                                                        // print('$refapi $insum $incid $indocno $name $datec');
+                                                        // //print('$refapi $insum $incid $indocno $name $datec');
                                                         // if (_InvoiceModels[index].ser_noti != null) {
                                                         SharedPreferences
                                                             preferences =
@@ -1993,8 +1993,8 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                           if (result
                                                                   .toString() !=
                                                               'No') {
-                                                            print(result
-                                                                .toString());
+                                                            //  //print(result
+                                                            //    .toString());
                                                             ChackpayinvoiceModel
                                                                 chackpayinvoiceModel =
                                                                 ChackpayinvoiceModel
@@ -2020,7 +2020,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                             var Value_newDatepay =
                                                                 chackpayinvoiceModel
                                                                     .transDate;
-                                                            // print('>>>> $amountx $ref_idx $transTimex $reference2x $reference1x $Value_newDatepay');
+                                                            // //print('>>>> $amountx $ref_idx $transTimex $reference2x $reference1x $Value_newDatepay');
                                                             red_Trans_selectPay_check(
                                                                     index)
                                                                 .then((value) =>
@@ -2030,15 +2030,15 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                                         Value_newDatepay,
                                                                         '0'));
                                                           } else {
-                                                            print(
-                                                                'ยังไม่มีการชำระ');
+                                                            //print(
+                                                            //    'ยังไม่มีการชำระ');
                                                           }
                                                         } catch (e) {
-                                                          // print('Error-Dis(read_GC_rental) : ${e}');
+                                                          // //print('Error-Dis(read_GC_rental) : ${e}');
                                                         }
                                                       } else {
-                                                        print(
-                                                            ' ${_InvoiceModels[index].cid}');
+                                                        //print(
+                                                        // ' ${_InvoiceModels[index].cid}');
                                                       }
                                                     }
                                                     setState(() {
@@ -2155,7 +2155,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                           if (result
                                                                   .toString() ==
                                                               'Line Successfully') {
-                                                            // print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+                                                            // //print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
                                                             // ScaffoldMessenger.of(context).showSnackBar(
                                                             //   SnackBar(
                                                             //     content: Text(
@@ -2165,7 +2165,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                             //   ),
                                                             // );
                                                           } else {
-                                                            // print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+                                                            // //print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
                                                             // ScaffoldMessenger.of(context).showSnackBar(
                                                             //   SnackBar(
                                                             //     content: Text(
@@ -2176,7 +2176,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                             // );
                                                           }
                                                         } catch (e) {
-                                                          // print('Error-Dis(read_GC_rental) : ${e}');
+                                                          // //print('Error-Dis(read_GC_rental) : ${e}');
                                                         }
                                                       }
                                                     }
@@ -2836,7 +2836,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                           .clear();
                                                       invoice_select.clear();
                                                     });
-                                                    // print(InvoiceModels
+                                                    // //print(InvoiceModels
                                                     //     .length);
                                                     for (int index = 0;
                                                         index <
@@ -3408,7 +3408,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
                                           if (result.toString() ==
                                               'Line Successfully') {
-                                            //print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+                                            ////print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               SnackBar(
@@ -3428,7 +3428,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                               ),
                                             );
                                           } else {
-                                            // print('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
+                                            // //print('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
                                             ScaffoldMessenger.of(context)
                                                 .showSnackBar(
                                               SnackBar(
@@ -3449,8 +3449,8 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                             );
                                           }
                                         } catch (e) {
-                                          print(
-                                              'Error-Dis(read_GC_rental) : ${e}');
+                                          //print(
+                                          //    'Error-Dis(read_GC_rental) : ${e}');
                                         }
                                       }
                                       Navigator.pop(context);
@@ -3865,21 +3865,21 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
     var ciddoc = Get_Value_cid;
     var qutser = Get_Value_NameShop_index;
     var because = Formbecause_.text?.toString() ?? '';
-    // print('numinvoice 1 $numinvoice');
+    // //print('numinvoice 1 $numinvoice');
     String url =
         '${MyConstant().domain}/UPC_Invoice_history.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&numinvoice=$numinvoice&remark=$because';
     try {
-      print('numinvoice 2 $numinvoice');
+      //print('numinvoice 2 $numinvoice');
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result>>>>>>> $result');
-      // print('numinvoice 3 $numinvoice');
+      // //print('result>>>>>>> $result');
+      // //print('numinvoice 3 $numinvoice');
 
       if (result.toString() == 'true') {
         setState(() async {
           Loading_Trans_bill();
-          // print('numinvoice 4 $numinvoice');
+          // //print('numinvoice 4 $numinvoice');
           // red_InvoiceMon_bill();
           _InvoiceHistoryModels.clear();
           sum_pvat = 0;
@@ -3889,7 +3889,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
           sum_disamt = 0;
           sum_disp = 0;
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
     Navigator.pop(context, 'OK');
@@ -3903,21 +3903,21 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
     var ciddoc = Get_Value_cid;
     var qutser = Get_Value_NameShop_index;
     var because = Formbecause_.text.toString() ?? '';
-    // print('numinvoice 1 $numinvoice');
+    // //print('numinvoice 1 $numinvoice');
     String url =
         '${MyConstant().domain}/UPC_Invoice_history.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&numinvoice=$numinvoice&remark=$because';
     try {
-      // print('numinvoice 2 $numinvoice');
+      // //print('numinvoice 2 $numinvoice');
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result>>>>>>> $result');
-      // print('numinvoice 3 $numinvoice');
+      // //print('result>>>>>>> $result');
+      // //print('numinvoice 3 $numinvoice');
 
       if (result.toString() == 'true') {
         setState(() async {
           Loading_Trans_bill();
-          // print('numinvoice 4 $numinvoice');
+          // //print('numinvoice 4 $numinvoice');
           // red_InvoiceMon_bill();
           _InvoiceHistoryModels.clear();
           sum_pvat = 0;
@@ -3927,7 +3927,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
           sum_disamt = 0;
           sum_disp = 0;
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -3949,7 +3949,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           Regis_model regis_model = Regis_model.fromJson(map);
@@ -3961,9 +3961,9 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
         }
       } else {}
     } catch (e) {
-      print('Error-Dis(read_GC_rental) : ${e}');
+      //print('Error-Dis(read_GC_rental) : ${e}');
     }
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
   ///---------------------------------------------------------------------->
@@ -5396,21 +5396,21 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                                     .toString(),
                                                               }),
                                                             );
-                                                            print({
-                                                              "isAdd": true,
-                                                              "ren": renTal_Ser
-                                                                  .toString(),
-                                                              "invoice":
-                                                                  "'${numinvoice.toString()}'",
-                                                              "custno":
-                                                                  InvoiceModels[
-                                                                          index]
-                                                                      .custno
-                                                                      .toString(),
-                                                            });
-                                                            print(
-                                                                "=== Response Status Code: ${response.statusCode} ===");
-                                                            // print(
+                                                            // //print({
+                                                            //   "isAdd": true,
+                                                            //   "ren": renTal_Ser
+                                                            //       .toString(),
+                                                            //   "invoice":
+                                                            //       "'${numinvoice.toString()}'",
+                                                            //   "custno":
+                                                            //       InvoiceModels[
+                                                            //               index]
+                                                            //           .custno
+                                                            //           .toString(),
+                                                            // });
+                                                            //print(
+                                                            //     "=== Response Status Code: ${response.statusCode} ===");
+                                                            // //print(
                                                             //     "=== Response Body: ${response.body} ===");
 
                                                             // ตรวจสอบว่าได้ response 200 และมีข้อมูลไม่ว่าง
@@ -5603,7 +5603,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                                                     onTap: () {
                                                                                       if (numinvoice != null) {
                                                                                         Insert_log.Insert_logs('ผู้เช่า', 'วางบิล>>ประวัติวางบิล>>ยกเลิกการวางบิล(${numinvoice.toString()})');
-                                                                                        // print(numinvoice);
+                                                                                        // //print(numinvoice);
                                                                                         de_invoice(numinvoice, '1');
                                                                                         Navigator.pop(context);
                                                                                         ScaffoldMessenger.of(context).showSnackBar(
@@ -5844,7 +5844,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                                                   onTap: () {
                                                                                     if (numinvoice != null) {
                                                                                       Insert_log.Insert_logs('ผู้เช่า', 'วางบิล>>ประวัติวางบิล>>ยกเลิกการวางบิล(${numinvoice.toString()})');
-                                                                                      // print(numinvoice);
+                                                                                      // //print(numinvoice);
                                                                                       de_invoice(numinvoice, '1');
                                                                                       Navigator.pop(context);
                                                                                       ScaffoldMessenger.of(context).showSnackBar(
@@ -6429,14 +6429,14 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                 var result = json.decode(response.body);
 
                                 if (result.toString() == 'Line Successfully') {
-                                  print(
-                                      'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+                                  //print(
+                                  //'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
                                 } else {
-                                  print(
-                                      'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
+                                  //print(
+                                  // 'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
                                 }
                               } catch (e) {
-                                print('Error-Dis(read_GC_rental) : ${e}');
+                                //print('Error-Dis(read_GC_rental) : ${e}');
                               }
                               Navigator.pop(context);
                             },
@@ -6668,7 +6668,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
 
                                                     if (result.toString() ==
                                                         'Line Successfully') {
-                                                      //print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+                                                      ////print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
                                                       ScaffoldMessenger.of(
                                                               context)
                                                           .showSnackBar(
@@ -6692,7 +6692,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                         ),
                                                       );
                                                     } else {
-                                                      // print('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
+                                                      // //print('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
                                                       ScaffoldMessenger.of(
                                                               context)
                                                           .showSnackBar(
@@ -6717,8 +6717,8 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                                       );
                                                     }
                                                   } catch (e) {
-                                                    print(
-                                                        'Error-Dis(read_GC_rental) : ${e}');
+                                                    //print(
+                                                    //    'Error-Dis(read_GC_rental) : ${e}');
                                                   }
                                                 }
                                                 Navigator.pop(context);
@@ -7113,7 +7113,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                       TitleType_Default_Receipt_Name = value;
                                     });
                                   }
-                                  // print(TitleType_Default_Receipt_Name);
+                                  // //print(TitleType_Default_Receipt_Name);
                                 },
                                 items: const <String>[
                                   'ไม่ระบุ',
@@ -7162,7 +7162,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                           });
                                         }
                                         if (innerloop == false) {
-                                          // print('stop/break ');
+                                          // //print('stop/break ');
                                           setState(() {
                                             preferences.setString('name_page',
                                                 '${currentPage_1 + 1} / ${(filteredData.length / rowsPerPage_1).ceil()}');
@@ -7214,7 +7214,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                           });
                                           Future.delayed(
                                               const Duration(seconds: 3), () {
-                                            // print('')
+                                            // //print('')
 
                                             Navigator.pop(context, 'OK');
                                             if (Folder_File! == 'Folder') {
@@ -8156,7 +8156,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                                       setState(() {
                                         bills_name_ = bill_set;
                                       });
-                                      // print(bills_name_);
+                                      // //print(bills_name_);
                                     },
                                     // onSaved: (value) {
                                     //   // selectedValue = value.toString();
@@ -8328,7 +8328,7 @@ class _Account_Bill_InvoceState extends State<Account_Bill_Invoce> {
                         padding: const EdgeInsets.all(4.0),
                         child: InkWell(
                           onTap: () async {
-                            // print(
+                            // //print(
                             //     'Docno InvoiceModels1 >>>>> ${InvoiceModels[index].docno}');
                             in_Trans_invoice_refnoPay(index, Value_newDateY1,
                                     Value_newDatepay, '0')

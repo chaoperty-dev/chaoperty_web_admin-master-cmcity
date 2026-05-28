@@ -361,8 +361,8 @@ class _Report_Ortor_ScreenAState extends State<Report_Ortor_ScreenA> {
         : (zone_ser_Trans_Daily == null)
             ? 0
             : zone_ser_Trans_Daily;
-    print('serzone_s');
-    print(serzone_s);
+     //print('serzone_s');
+    // print(serzone_s);
     String url =
         // (Value_Report == 'รายงานการเคลื่อนไหวธนาคาร' ||
         //         Value_Report == 'รายงานการเคลื่อนไหวธนาคารประจำวัน')

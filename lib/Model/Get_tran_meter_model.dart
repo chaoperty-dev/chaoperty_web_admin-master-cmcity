@@ -114,6 +114,7 @@ class TransMeterModel {
   String? serzone;
   String? ovalue_count;
   String? nvalue_count;
+  String? zn_code;
 
   TransMeterModel({
     this.ser,
@@ -227,6 +228,7 @@ class TransMeterModel {
     this.serzone,
     this.ovalue_count,
     this.nvalue_count,
+    this.zn_code,
   });
 
   TransMeterModel.fromJson(Map<String, dynamic> json) {
@@ -342,6 +344,7 @@ class TransMeterModel {
     serzone = json['serzone'];
     ovalue_count = json['ovalue_count'];
     nvalue_count = json['nvalue_count'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -459,6 +462,7 @@ class TransMeterModel {
     data['serzone'] = this.serzone;
     data['ovalue_count'] = this.ovalue_count;
     data['nvalue_count'] = this.nvalue_count;
+    data['zn_code'] = this.zn_code;
 
     return data;
   }

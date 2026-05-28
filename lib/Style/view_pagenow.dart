@@ -16,6 +16,9 @@ import '../Responsive/responsive.dart';
 import 'Translate.dart';
 import 'colors.dart';
 import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
+
+import 'viewPageBadge.dart';
+
 Widget Timer_Countdown(context, time_check) {
   DateTime? endTime;
 
@@ -92,45 +95,46 @@ Future<Null> red_Trans_bill(context) async {
       // );
     }
   } else {
-    print(Auto_cancel);
+    // print(Auto_cancel);
   }
 }
+
 dynamic Now_viewpage(context, Ser_page) async {
-  var nFormat = NumberFormat("#,##0.00", "en_US");
-  var nFormat2 = NumberFormat("###0.00", "en_US");
-  List<UserModel> userModels = [];
-  SharedPreferences preferences = await SharedPreferences.getInstance();
-  var ren = preferences.getString('renTalSer');
-  var renTal_Email = preferences.getString('renTalEmail');
-  var seremail_login = preferences.getString('ser');
-  int total = 0;
-  /////////////////////-------------------->Up_Viewpage_now
-  String url1 =
-      '${MyConstant().domain}/Up_Viewpagenow.php?isAdd=true&ren=$ren&page=$Ser_page&seruser=$seremail_login';
-  try {
-    var response = await http.get(Uri.parse(url1));
+  // var nFormat = NumberFormat("#,##0.00", "en_US");
+  // var nFormat2 = NumberFormat("###0.00", "en_US");
+  // List<UserModel> userModels = [];
+  // SharedPreferences preferences = await SharedPreferences.getInstance();
+  // var ren = preferences.getString('renTalSer');
+  // var renTal_Email = preferences.getString('renTalEmail');
+  // var seremail_login = preferences.getString('ser');
+  // int total = 0;
+  // /////////////////////-------------------->Up_Viewpage_now
+  // String url1 =
+  //     '${MyConstant().domain}/Up_Viewpagenow.php?isAdd=true&ren=$ren&page=$Ser_page&seruser=$seremail_login';
+  // try {
+  //   var response = await http.get(Uri.parse(url1));
 
-    var result = json.decode(response.body);
-    if (result.toString() == 'true') {}
-  } catch (e) {}
-  /////////////////////-------------------->GC_Viewpage_now
-  String url2 =
-      '${MyConstant().domain}/GC_Viewpage_now.php?isAdd=true&ren=$ren&page=$Ser_page&emailrental=$renTal_Email';
-  try {
-    var response = await http.get(Uri.parse(url2));
+  //   var result = json.decode(response.body);
+  //   if (result.toString() == 'true') {}
+  // } catch (e) {}
+  // /////////////////////-------------------->GC_Viewpage_now
+  // String url2 =
+  //     '${MyConstant().domain}/GC_Viewpage_now.php?isAdd=true&ren=$ren&page=$Ser_page&emailrental=$renTal_Email';
+  // try {
+  //   var response = await http.get(Uri.parse(url2));
 
-    var result = json.decode(response.body);
-    // print(result);
-    if (result != null) {
-      for (var map in result) {
-        UserModel userModel = UserModel.fromJson(map);
-        total = total + 1;
-        userModels.add(userModel);
-      }
-    } else {}
-  } catch (e) {}
-  /////////////////////-------------------->
-  return '$total';
+  //   var result = json.decode(response.body);
+  //   // print(result);
+  //   if (result != null) {
+  //     for (var map in result) {
+  //       UserModel userModel = UserModel.fromJson(map);
+  //       total = total + 1;
+  //       userModels.add(userModel);
+  //     }
+  //   } else {}
+  // } catch (e) {}
+  // /////////////////////-------------------->
+  // return '$total';
 }
 
 dynamic Now_viewpageAlldata(context, Ser_page) async {
@@ -489,149 +493,16 @@ dynamic Now_viewpageAlldata(context, Ser_page) async {
   );
 }
 
-List colorList = [
-  Colors.orange,
-  Colors.grey,
-  Colors.black,
-  Colors.white,
-  Colors.green,
-  Colors.white
-];
-// Random random = Random();
-// Color randomColor = colorList[random.nextInt(colorList.length)];
 Widget viewpage(context, Ser_page) {
   var nFormat = NumberFormat("#,##0", "en_US");
   var nFormat2 = NumberFormat("###0.00", "en_US");
   return Padding(
     padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-    child: InkWell(
-        onTap: () async {
-          Now_viewpageAlldata(context, Ser_page);
-        },
-        child: Container(
-          height: 35,
-          padding: const EdgeInsets.all(5.0),
-          decoration: BoxDecoration(
-            color: AppbackgroundColor.TiTile_Colors,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(10),
-              topRight: Radius.circular(10),
-              bottomLeft: Radius.circular(10),
-              bottomRight: Radius.circular(10),
-            ),
-            border: Border.all(color: Colors.white, width: 2),
-          ),
-          child: Row(
-            children: [
-              // const Icon(Icons.people, color: Colors.yellow),
-              StreamBuilder(
-                  stream: Stream.periodic(const Duration(minutes: 1)),
-                  builder: (context, snapshot) {
-                    return Padding(
-                        padding: const EdgeInsets.all(0),
-                        child: FutureBuilder(
-                          future: Now_viewpage(context, Ser_page),
-                          builder: (context, snapshot) {
-                            if (snapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              // While fetching data
-                              return const SizedBox(
-                                  height: 20,
-                                  child: CircularProgressIndicator());
-                            } else if (snapshot.hasError) {
-                              // If there's an error
-                              return const Text('ผู้ใช้งาน: ??');
-                            } else {
-                              // Data fetched successfully
-                              return Row(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Stack(
-                                    children: [
-                                      StreamBuilder(
-                                          stream: Stream.periodic(
-                                              const Duration(
-                                                  milliseconds: 1600)),
-                                          builder: (context, snapshot) {
-                                            int randomIndex = Random()
-                                                .nextInt(colorList.length);
-                                            return Padding(
-                                              padding:
-                                                  const EdgeInsets.all(4.0),
-                                              child: Icon(
-                                                Icons.people,
-                                                color: colorList[randomIndex],
-                                                size: 16,
-                                              ),
-                                            );
-                                          }),
-                                      Positioned(
-                                          top: -5,
-                                          left: 0,
-                                          child: Container(
-                                            // decoration: const BoxDecoration(
-                                            //   color: Colors.white,
-                                            //   borderRadius: BorderRadius.only(
-                                            //       topLeft: Radius.circular(20),
-                                            //       topRight: Radius.circular(20),
-                                            //       bottomLeft: Radius.circular(20),
-                                            //       bottomRight: Radius.circular(20)),
-                                            // ),
-                                            padding: const EdgeInsets.all(2.0),
-                                            child: Text(
-                                              '${nFormat.format(double.parse(snapshot.data.toString()))}',
-                                              // '${userModels.length}***/$connected_Minutes/$ser_user/$email_user',
-                                              style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.white,
-                                                  fontFamily:
-                                                      FontWeight_.Fonts_T),
-                                            ),
-                                          ))
-                                    ],
-                                  ),
-                                  Translate.TranslateAndSetText(
-                                      'ผู้ใช้งาน',
-                                      SettingScreen_Color.Colors_Text1_,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1)
-                                  // const AutoSizeText(
-                                  //   'ผู้ใช้งาน',
-                                  //   overflow: TextOverflow.ellipsis,
-                                  //   textAlign: TextAlign.end,
-                                  //   minFontSize: 10,
-                                  //   maxFontSize: 20,
-                                  //   style: TextStyle(
-                                  //     // decoration: TextDecoration.underline,
-                                  //     color: Colors.black,
-                                  //     fontWeight: FontWeight.bold,
-                                  //     fontFamily: FontWeight_.Fonts_T,
-                                  //   ),
-                                  // ),
-                                ],
-                              );
-                            }
-                          },
-                        )
-
-                        //  AutoSizeText(
-                        //   'ผู้ใช้งาน ${Now_viewpage('5')} คน',
-                        //   overflow: TextOverflow.ellipsis,
-                        //   minFontSize: 10,
-                        //   maxFontSize: 20,
-                        //   style: TextStyle(
-                        //     color: Colors.white,
-                        //     fontWeight: FontWeight.bold,
-                        //     fontFamily: FontWeight_.Fonts_T,
-                        //   ),
-                        // ),
-                        );
-                  })
-            ],
-          ),
-        )),
+    child: ViewPageBadge(
+      ser: Ser_page,
+      onTap: () {
+        // Now_viewpageAlldata(context, Ser_page);
+      },
+    ),
   );
 }

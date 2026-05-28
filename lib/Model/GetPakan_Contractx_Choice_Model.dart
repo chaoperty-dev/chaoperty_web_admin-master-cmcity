@@ -60,6 +60,7 @@ class ContractxPakanChoiceModel {
   String? ref3;
   String? ref4;
   String? renew_cid;
+  String? zn_code;
 
   ContractxPakanChoiceModel({
     this.ser,
@@ -120,6 +121,7 @@ class ContractxPakanChoiceModel {
     this.ref3,
     this.ref4,
     this.renew_cid,
+    this.zn_code,
   });
 
   ContractxPakanChoiceModel.fromJson(Map<String, dynamic> json) {
@@ -183,6 +185,7 @@ class ContractxPakanChoiceModel {
     ref3 = json['ref3'];
     ref4 = json['ref4'];
     renew_cid = json['renew_cid'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -247,6 +250,7 @@ class ContractxPakanChoiceModel {
     data['ref3'] = this.ref3;
     data['ref4'] = this.ref4;
     data['renew_cid'] = this.renew_cid;
+    data['zn_code'] = this.zn_code;
 
     return data;
   }

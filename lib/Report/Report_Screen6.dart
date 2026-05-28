@@ -547,7 +547,7 @@ class _ReportScreen6State extends State<ReportScreen6> {
       setState(() {});
     });
 
-    print(Value_selectDate_syslog);
+    // print(Value_selectDate_syslog);
   }
 
   void selectionChanged2(DateRangePickerSelectionChangedArgs args) {
@@ -569,7 +569,7 @@ class _ReportScreen6State extends State<ReportScreen6> {
       setState(() {});
     });
 
-    print(Value_selectDate_syslog_User);
+    // print(Value_selectDate_syslog_User);
   }
 
   void selectionChanged_month1(DateRangePickerSelectionChangedArgs args) {
@@ -582,7 +582,7 @@ class _ReportScreen6State extends State<ReportScreen6> {
         Mon_syslog_Mon = DateFormat('MM').format(selectedDate);
         YE_syslog_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Mon_syslog_Mon}, Year: ${YE_syslog_Mon}');
+      // print('Selected month: ${Mon_syslog_Mon}, Year: ${YE_syslog_Mon}');
     }
   }
 
@@ -596,8 +596,8 @@ class _ReportScreen6State extends State<ReportScreen6> {
         Mon_syslog_Mon_User = DateFormat('MM').format(selectedDate);
         YE_syslog_Mon_User = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_syslog_Mon_User}, Year: ${YE_syslog_Mon_User}');
+      // print(
+      //     'Selected month: ${Mon_syslog_Mon_User}, Year: ${YE_syslog_Mon_User}');
     }
   }
 

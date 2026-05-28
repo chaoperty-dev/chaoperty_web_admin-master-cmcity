@@ -12,6 +12,7 @@ import 'package:panara_dialogs/panara_dialogs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetPayMent_Model.dart';
 import '../Model/GetRenTal_Model.dart';
@@ -125,7 +126,7 @@ class _MiterScreenState extends State<MiterScreen> {
 
     String url = '${MyConstant().domain}/GC_payMent.php?isAdd=true&ren=$ren';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -189,7 +190,7 @@ class _MiterScreenState extends State<MiterScreen> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -236,7 +237,7 @@ class _MiterScreenState extends State<MiterScreen> {
 
     String url = '${MyConstant().domain}/GC_exp_sz.php?isAdd=true&ren=$ren';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -313,7 +314,7 @@ class _MiterScreenState extends State<MiterScreen> {
     print('GC_trans_mitterManage $url');
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -665,7 +666,6 @@ class _MiterScreenState extends State<MiterScreen> {
         curve: Curves.linear, duration: const Duration(milliseconds: 500));
   }
 
-
 /////////////----------------------------------------------------------->
   var extension_;
   var file_;
@@ -730,7 +730,7 @@ class _MiterScreenState extends State<MiterScreen> {
         final url =
             '${MyConstant().domain}/File_uploadMeter.php?name=$fileName_Slip&Foder=$foder&extension=$extension_';
 
-        final response = await http.post(
+        final response = await httpClient.post(
           Uri.parse(url),
           body: {
             'image': base64_Slip,
@@ -768,7 +768,7 @@ class _MiterScreenState extends State<MiterScreen> {
     print('$docno_ /// $ren /// $user /// $fileName_Slip ');
     print('$url');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
 
@@ -785,936 +785,887 @@ class _MiterScreenState extends State<MiterScreen> {
   ////////-------------------------->
   @override
   Widget build(BuildContext context) {
-    double calculatedWidth = (Responsive.isDesktop(context))
-        ? MediaQuery.of(context).size.width * 0.85
-        : 1200;
+    return LayoutBuilder(builder: (context, cts) {
+      final screenW = cts.maxWidth;
+      final tableMinW = Responsive.isDesktop(context) ? screenW : 980.0;
 
-    // For the first round, use the extracted data as is, no need to sort.
-    List<Map<String, dynamic>> displayedData;
+      double calculatedWidth = Responsive.isDesktop(context) ? screenW : 980.0;
+      //  (Responsive.isDesktop(context))
+      //     ? MediaQuery.of(context).size.width * 0.85
+      //     : 1200;
 
-    if (firstRound) {
-      displayedData = filteredData; // Use the extracted data without sorting
-      displayedData = filteredData
-          .skip(currentPage_1 * rowsPerPage_1)
-          .take(rowsPerPage_1)
-          .toList();
-    } else {
-      // For subsequent rounds, apply sorting
-      filteredData.sort((a, b) {
-        if (sortAscending) {
-          return a[sortColumn].toString().compareTo(b[sortColumn].toString());
-        } else {
-          return b[sortColumn].toString().compareTo(a[sortColumn].toString());
-        }
-      });
+      // For the first round, use the extracted data as is, no need to sort.
+      List<Map<String, dynamic>> displayedData;
 
-      // Apply pagination
-      displayedData = filteredData
-          .skip(currentPage_1 * rowsPerPage_1)
-          .take(rowsPerPage_1)
-          .toList();
-    }
+      if (firstRound) {
+        displayedData = filteredData; // Use the extracted data without sorting
+        displayedData = filteredData
+            .skip(currentPage_1 * rowsPerPage_1)
+            .take(rowsPerPage_1)
+            .toList();
+      } else {
+        // For subsequent rounds, apply sorting
+        filteredData.sort((a, b) {
+          if (sortAscending) {
+            return a[sortColumn].toString().compareTo(b[sortColumn].toString());
+          } else {
+            return b[sortColumn].toString().compareTo(a[sortColumn].toString());
+          }
+        });
 
-    // ดึงคีย์จากแถวแรกเพื่อใช้เป็นคอลัมน์
-    final columnHeaders =
-        filteredData.isNotEmpty ? filteredData[0].keys.toList() : [];
-    // final Expan = columnHeaders.skip(1).map().toList();
+        // Apply pagination
+        displayedData = filteredData
+            .skip(currentPage_1 * rowsPerPage_1)
+            .take(rowsPerPage_1)
+            .toList();
+      }
+
+      // ดึงคีย์จากแถวแรกเพื่อใช้เป็นคอลัมน์
+      final columnHeaders =
+          filteredData.isNotEmpty ? filteredData[0].keys.toList() : [];
+      // final Expan = columnHeaders.skip(1).map().toList();
 //////////---------------------------->
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(23, 8, 8, 0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                for (int index = 0; index < expSZModels.length; index++)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
-                    child: InkWell(
-                      onTap: () async {
-                        setState(() {
-                          Ser_BodySta1 = int.parse(expSZModels[index].ser!);
-                        });
-                        Loading_Trans_bill();
-                      },
-                      child: Container(
-                        // width: 130,
-                        decoration: BoxDecoration(
-                          color: (Ser_BodySta1 ==
-                                  int.parse(expSZModels[index].ser!))
-                              ? Colors.green[600]
-                              : Colors.green[200],
-                          // (index == 0)
-                          //     ? (Ser_BodySta1 ==
-                          //             int.parse(expSZModels[index].ser!))
-                          //         ? Colors.brown[600]
-                          //         : Colors.brown[200]
-                          //     : (index == 1)
-                          //         ? (Ser_BodySta1 ==
-                          //                 int.parse(
-                          //                     expSZModels[index].ser!))
-                          //             ? Colors.blue[600]
-                          //             : Colors.blue[200]
-                          //         : (index == 2)
-                          //             ? (Ser_BodySta1 ==
-                          //                     int.parse(
-                          //                         expSZModels[index].ser!))
-                          //                 ? Colors.red[600]
-                          //                 : Colors.red[200]
-                          //             : (Ser_BodySta1 ==
-                          //                     int.parse(
-                          //                         expSZModels[index].ser!))
-                          //                 ? Colors.purple[600]
-                          //                 : Colors.purple[200],
-                          borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(0)),
-                          border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
-                        child: Center(
-                          child: Translate.TranslateAndSetText(
-                              '${expSZModels[index].expname}',
-                              (Ser_BodySta1 ==
-                                      int.parse(expSZModels[index].ser!))
-                                  ? Colors.white
-                                  : Colors.grey[800],
-                              TextAlign.start,
-                              FontWeight.bold,
-                              FontWeight_.Fonts_T,
-                              12,
-                              1),
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          // ช่องค้นหา
-          Container(
-            width: calculatedWidth,
-            decoration: BoxDecoration(
-              color: AppbackgroundColor.TiTile_Colors,
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0)),
-            ),
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 30, //Date_ser
-                        // width: 150,
-                        decoration: BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors,
-                          borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(8),
-                              topRight: Radius.circular(8),
-                              bottomLeft: Radius.circular(8),
-                              bottomRight: Radius.circular(8)),
-                          border: Border.all(color: Colors.grey, width: 1),
-                        ),
-                        padding: const EdgeInsets.all(2.0),
-                        child: (isLoading_main)
-                            ? const Center(
-                                child: Text(
-                                  'ดาวน์โหลดข้อมูล',
-                                  style: TextStyle(
-                                      color:
-                                          PeopleChaoScreen_Color.Colors_Text2_,
-                                      fontFamily: Font_.Fonts_T
-                                      //fontSize: 10.0
-                                      ),
-                                ),
-                              )
-                            : (transMeterModels.isEmpty)
-                                ? const Center(
-                                    child: Text(
-                                      'ไม่พบข้อมูล',
-                                      style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          fontFamily: Font_.Fonts_T
-                                          //fontSize: 10.0
-                                          ),
-                                    ),
-                                  )
-                                : TextField(
-                                    onChanged: onSearchChanged,
-                                    decoration: const InputDecoration(
-                                      // labelText:
-                                      //     (isLoading_main) ? 'ดาวน์โหลดข้อมูล...' : null,
-                                      border: OutlineInputBorder(),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color:
-                                              AppbackgroundColor.Sub_Abg_Colors,
-                                        ),
-                                      ),
-                                      prefixIcon: Icon(Icons.search),
-                                    ),
-                                  ),
-                      ),
-                    ),
-                    // Padding(
-                    //   padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                    //   child: Container(
-                    //     height: 30,
-                    //     decoration: BoxDecoration(
-                    //       color: AppbackgroundColor.Sub_Abg_Colors,
-                    //       // .withOpacity(0.5),
-                    //       borderRadius: BorderRadius.only(
-                    //           topLeft: Radius.circular(0),
-                    //           topRight: Radius.circular(6),
-                    //           bottomLeft: Radius.circular(0),
-                    //           bottomRight: Radius.circular(6)),
-                    //       // border: Border.all(
-                    //       //     color:
-                    //       //         Colors.grey,
-                    //       //     width: 1),
-                    //     ),
-                    //     width: 130,
-                    //     // height: 30,
-                    //     padding: const EdgeInsets.all(2.0),
-                    //     child: DropdownButtonHideUnderline(
-                    //       child: DropdownButton2<String>(
-                    //         isExpanded: true,
-                    //         hint: Center(
-                    //           child: Text(
-                    //             'หัวข้อ',
-                    //             style: const TextStyle(
-                    //               fontSize: 14,
-                    //               color: AccountScreen_Color.Colors_Text1_,
-                    //               fontWeight: FontWeight.bold,
-                    //               fontFamily: Font_.Fonts_T,
-                    //             ),
-                    //           ),
-                    //         ),
-
-                    //         items: ac7.asMap().entries.map((entry) {
-                    //           int index = entry.key; // Get the index
-                    //           var item = entry.value;
-                    //           return DropdownMenuItem<String>(
-                    //             value: item["ser"], // Use "ser" as the value
-                    //             enabled:
-                    //                 false, // Set to true to allow selection
-                    //             child: StatefulBuilder(
-                    //               builder: (context, menuSetState) {
-                    //                 // final isSelected = selectedItems.contains(item);
-                    //                 return InkWell(
-                    //                   onTap: () {
-                    //                     int selectedIndex = ac7.indexWhere(
-                    //                         (items) =>
-                    //                             items["ser"] == item["ser"]);
-                    //                     // print(ac1[selectedIndex]
-                    //                     //     [
-                    //                     //     "pn"]);
-                    //                     // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
-                    //                     //This rebuilds the StatefulWidget to update the button's text
-                    //                     setState(() {
-                    //                       if (item["st"]! == '1') {
-                    //                         ac7[selectedIndex]["st"] = '0';
-                    //                       } else {
-                    //                         ac7[selectedIndex]["st"] = '1';
-                    //                       }
-                    //                     });
-                    //                     AddDaTa();
-                    //                     //This rebuilds the dropdownMenu Widget to update the check mark
-                    //                     menuSetState(() {});
-                    //                   },
-                    //                   child: Container(
-                    //                     height: double.infinity,
-                    //                     padding: const EdgeInsets.symmetric(
-                    //                         horizontal: 4.0),
-                    //                     child: Row(
-                    //                       children: [
-                    //                         if (item["st"]! == '1')
-                    //                           Icon(
-                    //                             Icons.check_box_outlined,
-                    //                             color: Colors.green[400],
-                    //                           )
-                    //                         else
-                    //                           const Icon(Icons
-                    //                               .check_box_outline_blank),
-                    //                         Expanded(
-                    //                           child: Text(
-                    //                             item["pn"]!,
-                    //                             maxLines: 2,
-                    //                             style: const TextStyle(
-                    //                               fontSize: 12,
-                    //                               color: AccountScreen_Color
-                    //                                   .Colors_Text1_,
-                    //                               fontWeight: FontWeight.w600,
-                    //                               fontFamily: Font_.Fonts_T,
-                    //                             ),
-                    //                           ),
-                    //                         ),
-                    //                       ],
-                    //                     ),
-                    //                   ),
-                    //                 );
-                    //               },
-                    //             ),
-                    //           );
-                    //         }).toList(),
-                    //         //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                    //         // value: selectedItems.isEmpty ? null : selectedItems.last,
-                    //         onChanged: (value) {},
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(8, 2, 8, 2),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(23, 8, 8, 0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  for (int index = 0; index < expSZModels.length; index++)
                     Padding(
                       padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
-                      child: Container(
-                        height: 30,
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors.withOpacity(
-                              0.5),
-                          borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10)),
-                          // border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        padding: const EdgeInsets.all(2.0),
-                        child: InkWell(
-                          onTap: filterDuplicates,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  AppbackgroundColor.Sub_Abg_Colors.withOpacity(
-                                      0.5),
-                              borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(10),
-                                  bottomLeft: Radius.circular(10),
-                                  bottomRight: Radius.circular(10)),
-                              border: Border.all(color: Colors.grey, width: 1),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Translate.TranslateAndSetText(
-                                      showDuplicatesOnly
-                                          ? 'ข้อมูลทั้งหมด'
-                                          : 'กรองข้อมูลซ้ำ',
-                                      Colors.grey,
-                                      TextAlign.center,
-                                      null,
-                                      Font_.Fonts_T,
-                                      12,
-                                      1),
-                                ),
-                                Center(
-                                  child: Icon(
-                                    showDuplicatesOnly
-                                        ? Icons.list
-                                        : Icons.filter_alt_outlined,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  // IconButton(
-                                  //   icon: Icon(
-                                  //     showDuplicatesOnly
-                                  //         ? Icons.list
-                                  //         : Icons.filter_alt,
-                                  //     size: 16,
-                                  //   ),
-                                  //   onPressed: filterDuplicates,
-                                  // ),
-                                ),
-                              ],
-                            ),
+                      child: InkWell(
+                        onTap: () async {
+                          setState(() {
+                            Ser_BodySta1 = int.parse(expSZModels[index].ser!);
+                          });
+                          Loading_Trans_bill();
+                        },
+                        child: Container(
+                          // width: 130,
+                          decoration: BoxDecoration(
+                            color: (Ser_BodySta1 ==
+                                    int.parse(expSZModels[index].ser!))
+                                ? Colors.green[600]
+                                : Colors.green[200],
+                            // (index == 0)
+                            //     ? (Ser_BodySta1 ==
+                            //             int.parse(expSZModels[index].ser!))
+                            //         ? Colors.brown[600]
+                            //         : Colors.brown[200]
+                            //     : (index == 1)
+                            //         ? (Ser_BodySta1 ==
+                            //                 int.parse(
+                            //                     expSZModels[index].ser!))
+                            //             ? Colors.blue[600]
+                            //             : Colors.blue[200]
+                            //         : (index == 2)
+                            //             ? (Ser_BodySta1 ==
+                            //                     int.parse(
+                            //                         expSZModels[index].ser!))
+                            //                 ? Colors.red[600]
+                            //                 : Colors.red[200]
+                            //             : (Ser_BodySta1 ==
+                            //                     int.parse(
+                            //                         expSZModels[index].ser!))
+                            //                 ? Colors.purple[600]
+                            //                 : Colors.purple[200],
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(0),
+                                bottomRight: Radius.circular(0)),
+                            border: Border.all(color: Colors.white, width: 1),
                           ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
-                      child: Container(
-                        height: 30,
-                        width: 140,
-                        decoration: BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors.withOpacity(
-                              0.5),
-                          borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10)),
-                          // border: Border.all(color: Colors.white, width: 1),
-                        ),
-                        padding: const EdgeInsets.all(2.0),
-                        child: InkWell(
-                          onTap: filterDubious,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  AppbackgroundColor.Sub_Abg_Colors.withOpacity(
-                                      0.5),
-                              borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(10),
-                                  topRight: Radius.circular(10),
-                                  bottomLeft: Radius.circular(10),
-                                  bottomRight: Radius.circular(10)),
-                              border: Border.all(color: Colors.grey, width: 1),
-                            ),
-                            child: Row(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  child: Translate.TranslateAndSetText(
-                                      showDubiousOnly
-                                          ? 'ข้อมูลทั้งหมด'
-                                          : 'กรองข้อมูลน่าสงสัย',
-                                      Colors.grey[600],
-                                      TextAlign.center,
-                                      null,
-                                      Font_.Fonts_T,
-                                      12,
-                                      1),
-                                ),
-                                Center(
-                                  child: Icon(
-                                    showDubiousOnly
-                                        ? Icons.list
-                                        : Icons.filter_alt_outlined,
-                                    size: 16,
-                                    color: Colors.grey[600],
-                                  ),
-                                  // IconButton(
-                                  //   icon: Icon(
-                                  //     showDuplicatesOnly
-                                  //         ? Icons.list
-                                  //         : Icons.filter_alt,
-                                  //     size: 16,
-                                  //   ),
-                                  //   onPressed: filterDuplicates,
-                                  // ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
-                      child: SizedBox(
-                        width: 150,
-                        child: ElevatedButton(
-                          onPressed: Dialog_InvoiceAll,
-                          style: ButtonStyle(
-                            //  backgroundColor:
-                            // MaterialStateProperty.all<
-                            //     Color>(Colors.green),
-                            backgroundColor: MaterialStateProperty.all<Color>(
-                                Color.fromARGB(255, 37, 118, 184)),
-                          ),
+                          padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
                           child: Center(
                             child: Translate.TranslateAndSetText(
-                                '📄 Invoice',
-                                Colors.white,
+                                '${expSZModels[index].expname}',
+                                (Ser_BodySta1 ==
+                                        int.parse(expSZModels[index].ser!))
+                                    ? Colors.white
+                                    : Colors.grey[800],
                                 TextAlign.start,
-                                null,
-                                Font_.Fonts_T,
-                                14,
+                                FontWeight.bold,
+                                FontWeight_.Fonts_T,
+                                12,
                                 1),
                           ),
                         ),
                       ),
                     ),
-                    Container(child: Next_page_Miter())
-                  ],
-                ),
-                const Divider(),
-                //${MONTH_Now}//${YEAR_Now}
-                // SizedBox(
-                //   width: (Responsive.isDesktop(context))
-                //       ? MediaQuery.of(context).size.width * 0.83
-                //       : MediaQuery.of(context).size.width,
-                //   child: ScrollConfiguration(
-                //       behavior: ScrollConfiguration.of(context)
-                //           .copyWith(dragDevices: {
-                //         PointerDeviceKind.touch,
-                //         PointerDeviceKind.mouse,
-                //       }),
-                //       child: SingleChildScrollView(
-                //           scrollDirection: Axis.horizontal,
-                //           child: Row(children: [
-                //             Container(
-                //               decoration: BoxDecoration(
-                //                 color: AppbackgroundColor.Sub_Abg_Colors
-                //                     .withOpacity(0.5),
-                //                 borderRadius: BorderRadius.only(
-                //                     topLeft: Radius.circular(10),
-                //                     topRight: Radius.circular(10),
-                //                     bottomLeft: Radius.circular(10),
-                //                     bottomRight: Radius.circular(10)),
-                //                 // border: Border.all(color: Colors.white, width: 1),
-                //               ),
-                //               child: Row(
-                //                 children: [],
-                //               ),
-                //             ),
-                //           ]))),
-                // ),
-
-                // const Divider(),
-              ],
+                ],
+              ),
             ),
-          ),
-
-          // ตารางข้อมูล
-          ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse,
-            }),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
+            // ช่องค้นหา
+            ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              }),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
                   width: calculatedWidth,
-                  height: MediaQuery.of(context).size.height / 1.63,
-                  decoration: const BoxDecoration(
-                    color: AppbackgroundColor.Sub_Abg_Colors,
+                  decoration: BoxDecoration(
+                    color: AppbackgroundColor.TiTile_Colors,
                     borderRadius: BorderRadius.only(
                         topLeft: Radius.circular(10),
                         topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(10),
-                        bottomRight: Radius.circular(10)),
-                    // border: Border.all(color: Colors.grey, width: 1),
+                        bottomLeft: Radius.circular(0),
+                        bottomRight: Radius.circular(0)),
                   ),
+                  padding: const EdgeInsets.all(8.0),
                   child: Column(
                     children: [
-                      // Fixed Topic Row (Header)
-                      Container(
-                        color: AppbackgroundColor.TiTile_Colors,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 16),
-                        child: Row(children: [
-                          ...columnHeaders
-                              .skip(1)
-                              .map((column) => Expanded(
-                                    flex: (column.toString() == 'รายละเอียด')
-                                        ? 1
-                                        : 1,
-                                    child: InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          firstRound = false;
-                                          // Toggle sort order
-                                          if (sortColumn == column) {
-                                            sortAscending = !sortAscending;
-                                          } else {
-                                            sortColumn = column;
-                                            sortAscending = true;
-                                          }
-
-                                          // Sort the displayed data
-                                          displayedData.sort((a, b) {
-                                            final aValue = a[column];
-                                            final bValue = b[column];
-
-                                            // Handle null values gracefully
-                                            if (aValue == null &&
-                                                bValue == null) return 0;
-                                            if (aValue == null)
-                                              return sortAscending ? -1 : 1;
-                                            if (bValue == null)
-                                              return sortAscending ? 1 : -1;
-
-                                            // Compare values
-                                            return sortAscending
-                                                ? aValue.compareTo(bValue)
-                                                : bValue.compareTo(aValue);
-                                          });
-                                        });
-                                      },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: ([9].contains(
-                                                columnHeaders.indexWhere(
-                                                    (item) => item == column)))
-                                            ? MainAxisAlignment.center
-                                            : MainAxisAlignment.start,
-                                        children: [
-                                          if (sortColumn ==
-                                              column) // Show sorting indicator
-                                            Icon(
-                                              sortAscending
-                                                  ? Icons.arrow_drop_up
-                                                  : Icons.arrow_drop_down,
-                                              size: 20,
-                                              color: Colors.red[600],
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              height: 30, //Date_ser
+                              // width: 150,
+                              decoration: BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors,
+                                borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(8),
+                                    topRight: Radius.circular(8),
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8)),
+                                border:
+                                    Border.all(color: Colors.grey, width: 1),
+                              ),
+                              padding: const EdgeInsets.all(2.0),
+                              child: (isLoading_main)
+                                  ? const Center(
+                                      child: Text(
+                                        'ดาวน์โหลดข้อมูล',
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text2_,
+                                            fontFamily: Font_.Fonts_T
+                                            //fontSize: 10.0
                                             ),
-                                          Expanded(
-                                            child: ([
-                                              5,
-                                              6
-                                            ].contains(columnHeaders.indexWhere(
-                                                    (item) => item == column)))
-                                                ? Padding(
-                                                    padding:
-                                                        EdgeInsets.fromLTRB(
-                                                            2, 0, 0, 0),
-                                                    child: Container(
-                                                      padding:
-                                                          EdgeInsets.fromLTRB(
-                                                              4, 1, 4, 1),
-                                                      decoration: ([
-                                                        5,
-                                                        6
-                                                      ].contains(columnHeaders
-                                                              .indexWhere(
-                                                                  (item) =>
-                                                                      item ==
-                                                                      column)))
-                                                          ? BoxDecoration(
-                                                              color: [
-                                                                5
-                                                              ].contains(columnHeaders
-                                                                      .indexWhere((item) =>
-                                                                          item ==
-                                                                          column))
-                                                                  ? Colors
-                                                                      .green[
-                                                                          300]!
-                                                                      .withOpacity(
-                                                                          0.5)
-                                                                  : Colors
-                                                                      .orange[
-                                                                          300]!
-                                                                      .withOpacity(
-                                                                          0.5),
-                                                              borderRadius: BorderRadius.only(
-                                                                  topLeft: Radius
-                                                                      .circular(
-                                                                          8),
-                                                                  topRight: Radius
-                                                                      .circular(
-                                                                          8),
-                                                                  bottomLeft: Radius
-                                                                      .circular(
-                                                                          0),
-                                                                  bottomRight: Radius
-                                                                      .circular(
-                                                                          0)),
-                                                              // border: Border.all(
-                                                              //     color: Colors.grey, width: 1),
-                                                            )
-                                                          : null,
-                                                      child: Translate.TranslateAndSetText(
-                                                          column,
-                                                          AccountScreen_Color
-                                                              .Colors_Text1_,
-                                                          (column.toString() ==
-                                                                      'หน่วยที่ใช้' ||
-                                                                  column.toString() ==
-                                                                      'ราคาต่อหน่วย' ||
-                                                                  column.toString() ==
-                                                                      'รวม Vat')
-                                                              ? TextAlign.right
-                                                              : TextAlign.left,
-                                                          FontWeight.bold,
-                                                          FontWeight_.Fonts_T,
-                                                          13.8,
-                                                          1),
-                                                    ),
-                                                  )
-                                                : Translate.TranslateAndSetText(
-                                                    column,
-                                                    AccountScreen_Color
-                                                        .Colors_Text1_,
-                                                    (column.toString() ==
-                                                                'หน่วยที่ใช้' ||
-                                                            column.toString() ==
-                                                                'ราคาต่อหน่วย' ||
-                                                            column.toString() ==
-                                                                'รวม Vat')
-                                                        ? TextAlign.right
-                                                        : TextAlign.left,
-                                                    FontWeight.bold,
-                                                    FontWeight_.Fonts_T,
-                                                    13.8,
-                                                    1),
-                                          ),
-                                          if ([6].contains(
-                                              columnHeaders.indexWhere((item) =>
-                                                  item ==
-                                                  column))) // Show sorting indicator
-                                            Padding(
-                                              padding: EdgeInsets.fromLTRB(
-                                                  0, 0, 2, 0),
-                                              child: InkWell(
-                                                onDoubleTap: () {
-                                                  setState(() {
-                                                    edit_lock = (edit_lock == 0)
-                                                        ? 1
-                                                        : 0;
-                                                  });
-                                                },
-                                                child: Container(
-                                                  padding: EdgeInsets.fromLTRB(
-                                                      4, 1, 4, 1),
-                                                  decoration: BoxDecoration(
-                                                    color: (edit_lock == 1)
-                                                        ? Colors.green[100]
-                                                        : Colors.orange[100],
-                                                    borderRadius:
-                                                        BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    0),
-                                                            topRight:
-                                                                Radius.circular(
-                                                                    10),
-                                                            bottomLeft:
-                                                                Radius.circular(
-                                                                    0),
-                                                            bottomRight:
-                                                                Radius.circular(
-                                                                    0)),
-                                                    // border: Border.all(
-                                                    //     color: Colors.grey, width: 1),
-                                                  ),
-                                                  // radius: 12,
-                                                  // backgroundColor:
-                                                  //     (edit_lock == 1)
-                                                  //         ? Colors.green[100]
-                                                  //         : Colors.orange[100],
-                                                  child: Icon(
-                                                    size: 18,
-                                                    Icons.border_color,
-                                                    color: Colors.black,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
                                       ),
-                                    ),
-                                  ))
-                              .toList(),
-                          Container(
-                            width: 120,
-                            child: Translate.TranslateAndSetText(
-                                '...',
-                                AccountScreen_Color.Colors_Text1_,
-                                TextAlign.center,
-                                FontWeight.bold,
-                                FontWeight_.Fonts_T,
-                                14,
-                                1),
-                          ),
-                        ]),
-                      ),
-
-                      // Scrollable ListView.builder for Data Rows
-                      Expanded(
-                        child: (isLoading)
-                            ? SizedBox(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const CircularProgressIndicator(),
-                                    StreamBuilder(
-                                      stream: Stream.periodic(
-                                          const Duration(milliseconds: 25),
-                                          (i) => i),
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData)
-                                          return const Text('');
-                                        double elapsed = double.parse(
-                                                snapshot.data.toString()) *
-                                            0.05;
-                                        return Padding(
-                                          padding: const EdgeInsets.all(8.0),
+                                    )
+                                  : (transMeterModels.isEmpty)
+                                      ? const Center(
                                           child: Text(
-                                            'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.', // ตัวบ่งชี้กำลังโหลด
-                                            // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-                                            style: const TextStyle(
+                                            'ไม่พบข้อมูล',
+                                            style: TextStyle(
                                                 color: PeopleChaoScreen_Color
                                                     .Colors_Text2_,
                                                 fontFamily: Font_.Fonts_T
                                                 //fontSize: 10.0
                                                 ),
                                           ),
-                                        );
-                                      },
-                                    ),
-                                  ],
-                                ),
-                              )
-                            : (displayedData.isEmpty)
-                                ? Center(
-                                    child: const Text(
-                                      'ไม่พบข้อมูล',
-                                      style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          fontFamily: Font_.Fonts_T
-                                          //fontSize: 10.0
-                                          ),
-                                    ),
-                                  )
-                                : (transMeterModels.isEmpty)
-                                    ? Center(
-                                        child: const Text(
-                                          'ไม่พบข้อมูล',
-                                          style: TextStyle(
-                                              color: PeopleChaoScreen_Color
-                                                  .Colors_Text2_,
-                                              fontFamily: Font_.Fonts_T
-                                              //fontSize: 10.0
+                                        )
+                                      : TextField(
+                                          onChanged: onSearchChanged,
+                                          decoration: const InputDecoration(
+                                            // labelText:
+                                            //     (isLoading_main) ? 'ดาวน์โหลดข้อมูล...' : null,
+                                            border: OutlineInputBorder(),
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: AppbackgroundColor
+                                                    .Sub_Abg_Colors,
                                               ),
+                                            ),
+                                            prefixIcon: Icon(Icons.search),
+                                          ),
                                         ),
-                                      )
-                                    : ListView.builder(
-                                        controller: _scrollController2,
-                                        itemCount: displayedData.length,
-                                        itemBuilder:
-                                            (BuildContext context, int index) {
-                                          final row = displayedData[index];
-                                          final columnToCheck = 'รายการ';
-                                          return (hasMain(row) &&
-                                                  row[columnToCheck]
-                                                          ?.toString() !=
-                                                      '')
-                                              ? SizedBox(
-                                                  width: calculatedWidth,
-                                                  child: Column(
-                                                    children: [
-                                                      List_Material(
-                                                          index,
-                                                          columnHeaders,
-                                                          row,
-                                                          columnToCheck),
-                                                      Container(
-                                                        width: calculatedWidth,
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
+                            child: Container(
+                              height: 30,
+                              width: 120,
+                              decoration: BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors
+                                    .withOpacity(0.5),
+                                borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                                // border: Border.all(color: Colors.white, width: 1),
+                              ),
+                              padding: const EdgeInsets.all(2.0),
+                              child: InkWell(
+                                onTap: filterDuplicates,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppbackgroundColor.Sub_Abg_Colors
+                                        .withOpacity(0.5),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(10),
+                                        bottomLeft: Radius.circular(10),
+                                        bottomRight: Radius.circular(10)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Translate.TranslateAndSetText(
+                                            showDuplicatesOnly
+                                                ? 'ข้อมูลทั้งหมด'
+                                                : 'กรองข้อมูลซ้ำ',
+                                            Colors.grey,
+                                            TextAlign.center,
+                                            null,
+                                            Font_.Fonts_T,
+                                            12,
+                                            1),
+                                      ),
+                                      Center(
+                                        child: Icon(
+                                          showDuplicatesOnly
+                                              ? Icons.list
+                                              : Icons.filter_alt_outlined,
+                                          size: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                        // IconButton(
+                                        //   icon: Icon(
+                                        //     showDuplicatesOnly
+                                        //         ? Icons.list
+                                        //         : Icons.filter_alt,
+                                        //     size: 16,
+                                        //   ),
+                                        //   onPressed: filterDuplicates,
+                                        // ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 0, 0, 0),
+                            child: Container(
+                              height: 30,
+                              width: 140,
+                              decoration: BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors
+                                    .withOpacity(0.5),
+                                borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                                // border: Border.all(color: Colors.white, width: 1),
+                              ),
+                              padding: const EdgeInsets.all(2.0),
+                              child: InkWell(
+                                onTap: filterDubious,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppbackgroundColor.Sub_Abg_Colors
+                                        .withOpacity(0.5),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(10),
+                                        bottomLeft: Radius.circular(10),
+                                        bottomRight: Radius.circular(10)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Expanded(
+                                        child: Translate.TranslateAndSetText(
+                                            showDubiousOnly
+                                                ? 'ข้อมูลทั้งหมด'
+                                                : 'กรองข้อมูลน่าสงสัย',
+                                            Colors.grey[600],
+                                            TextAlign.center,
+                                            null,
+                                            Font_.Fonts_T,
+                                            12,
+                                            1),
+                                      ),
+                                      Center(
+                                        child: Icon(
+                                          showDubiousOnly
+                                              ? Icons.list
+                                              : Icons.filter_alt_outlined,
+                                          size: 16,
+                                          color: Colors.grey[600],
+                                        ),
+                                        // IconButton(
+                                        //   icon: Icon(
+                                        //     showDuplicatesOnly
+                                        //         ? Icons.list
+                                        //         : Icons.filter_alt,
+                                        //     size: 16,
+                                        //   ),
+                                        //   onPressed: filterDuplicates,
+                                        // ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+                            child: SizedBox(
+                              width: 150,
+                              child: ElevatedButton(
+                                onPressed: Dialog_InvoiceAll,
+                                style: ButtonStyle(
+                                  //  backgroundColor:
+                                  // MaterialStateProperty.all<
+                                  //     Color>(Colors.green),
+                                  backgroundColor:
+                                      MaterialStateProperty.all<Color>(
+                                          Color.fromARGB(255, 37, 118, 184)),
+                                ),
+                                child: Center(
+                                  child: Translate.TranslateAndSetText(
+                                      '📄 Invoice',
+                                      Colors.white,
+                                      TextAlign.start,
+                                      null,
+                                      Font_.Fonts_T,
+                                      14,
+                                      1),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(child: Next_page_Miter())
+                        ],
+                      ),
+                      const Divider(),
+                      //${MONTH_Now}//${YEAR_Now}
+                      // SizedBox(
+                      //   width: (Responsive.isDesktop(context))
+                      //       ? MediaQuery.of(context).size.width * 0.83
+                      //       : MediaQuery.of(context).size.width,
+                      //   child: ScrollConfiguration(
+                      //       behavior: ScrollConfiguration.of(context)
+                      //           .copyWith(dragDevices: {
+                      //         PointerDeviceKind.touch,
+                      //         PointerDeviceKind.mouse,
+                      //       }),
+                      //       child: SingleChildScrollView(
+                      //           scrollDirection: Axis.horizontal,
+                      //           child: Row(children: [
+                      //             Container(
+                      //               decoration: BoxDecoration(
+                      //                 color: AppbackgroundColor.Sub_Abg_Colors
+                      //                     .withOpacity(0.5),
+                      //                 borderRadius: BorderRadius.only(
+                      //                     topLeft: Radius.circular(10),
+                      //                     topRight: Radius.circular(10),
+                      //                     bottomLeft: Radius.circular(10),
+                      //                     bottomRight: Radius.circular(10)),
+                      //                 // border: Border.all(color: Colors.white, width: 1),
+                      //               ),
+                      //               child: Row(
+                      //                 children: [],
+                      //               ),
+                      //             ),
+                      //           ]))),
+                      // ),
+
+                      // const Divider(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+            // ตารางข้อมูล
+            ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              }),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Container(
+                    width: calculatedWidth,
+                    height: MediaQuery.of(context).size.height / 1.63,
+                    decoration: const BoxDecoration(
+                      color: AppbackgroundColor.Sub_Abg_Colors,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
+                          bottomLeft: Radius.circular(10),
+                          bottomRight: Radius.circular(10)),
+                      // border: Border.all(color: Colors.grey, width: 1),
+                    ),
+                    child: Column(
+                      children: [
+                        // Fixed Topic Row (Header)
+                        Container(
+                          color: AppbackgroundColor.TiTile_Colors,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 5, horizontal: 16),
+                          child: Row(children: [
+                            ...columnHeaders
+                                .skip(1)
+                                .map((column) => Expanded(
+                                      flex: (column.toString() == 'รายละเอียด')
+                                          ? 1
+                                          : 1,
+                                      child: InkWell(
+                                        onTap: () {
+                                          setState(() {
+                                            firstRound = false;
+                                            // Toggle sort order
+                                            if (sortColumn == column) {
+                                              sortAscending = !sortAscending;
+                                            } else {
+                                              sortColumn = column;
+                                              sortAscending = true;
+                                            }
+
+                                            // Sort the displayed data
+                                            displayedData.sort((a, b) {
+                                              final aValue = a[column];
+                                              final bValue = b[column];
+
+                                              // Handle null values gracefully
+                                              if (aValue == null &&
+                                                  bValue == null) return 0;
+                                              if (aValue == null)
+                                                return sortAscending ? -1 : 1;
+                                              if (bValue == null)
+                                                return sortAscending ? 1 : -1;
+
+                                              // Compare values
+                                              return sortAscending
+                                                  ? aValue.compareTo(bValue)
+                                                  : bValue.compareTo(aValue);
+                                            });
+                                          });
+                                        },
+                                        child: Row(
+                                          mainAxisSize: MainAxisSize.min,
+                                          mainAxisAlignment: ([
+                                            9
+                                          ].contains(columnHeaders.indexWhere(
+                                                  (item) => item == column)))
+                                              ? MainAxisAlignment.center
+                                              : MainAxisAlignment.start,
+                                          children: [
+                                            if (sortColumn ==
+                                                column) // Show sorting indicator
+                                              Icon(
+                                                sortAscending
+                                                    ? Icons.arrow_drop_up
+                                                    : Icons.arrow_drop_down,
+                                                size: 20,
+                                                color: Colors.red[600],
+                                              ),
+                                            Expanded(
+                                              child: ([5, 6].contains(
+                                                      columnHeaders.indexWhere(
+                                                          (item) =>
+                                                              item == column)))
+                                                  ? Padding(
+                                                      padding:
+                                                          EdgeInsets.fromLTRB(
+                                                              2, 0, 0, 0),
+                                                      child: Container(
                                                         padding:
-                                                            const EdgeInsets
-                                                                    .symmetric(
-                                                                vertical: 8,
-                                                                horizontal: 16),
-                                                        decoration:
-                                                            BoxDecoration(
-                                                          // color: tappedIndex_ ==
-                                                          //         index.toString()
-                                                          //     ? tappedIndex_Color
-                                                          //         .tappedIndex_Colors
-                                                          //     : (hasMain(row) &&
-                                                          //             row[columnToCheck]
-                                                          //                     ?.toString() !=
-                                                          //                 '')
-                                                          //         ? Colors.red[200]!
-                                                          //             .withOpacity(
-                                                          //                 0.6)
-                                                          //         : AppbackgroundColor
-                                                          //             .Sub_Abg_Colors,
-                                                          border: const Border(
-                                                            bottom: BorderSide(
-                                                              color: Colors
-                                                                  .black12,
-                                                              width: 1,
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        child: Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .center,
-                                                          children: [
-                                                            Icon(
-                                                              Icons
-                                                                  .warning_sharp,
-                                                              size: 15,
-                                                              color: Colors
-                                                                  .amber[800],
-                                                            ),
-                                                            Text(
-                                                              'ตรวจพบข้อมูลที่อาจซ้ำ/น่าสงสัย..!! ( ${row[columnToCheck]} )',
-                                                              maxLines: 2,
-                                                              overflow:
-                                                                  TextOverflow
-                                                                      .ellipsis,
-                                                              style: TextStyle(
-                                                                  fontSize: 12,
-                                                                  fontStyle:
-                                                                      FontStyle
-                                                                          .italic,
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      600],
-                                                                  fontFamily:
-                                                                      Font_
-                                                                          .Fonts_T
-                                                                  //fontSize: 10.0
-                                                                  ),
-                                                            ),
-                                                          ],
-                                                        ),
+                                                            EdgeInsets.fromLTRB(
+                                                                4, 1, 4, 1),
+                                                        decoration: ([
+                                                          5,
+                                                          6
+                                                        ].contains(columnHeaders
+                                                                .indexWhere(
+                                                                    (item) =>
+                                                                        item ==
+                                                                        column)))
+                                                            ? BoxDecoration(
+                                                                color: [
+                                                                  5
+                                                                ].contains(columnHeaders.indexWhere(
+                                                                        (item) =>
+                                                                            item ==
+                                                                            column))
+                                                                    ? Colors
+                                                                        .green[
+                                                                            300]!
+                                                                        .withOpacity(
+                                                                            0.5)
+                                                                    : Colors
+                                                                        .orange[
+                                                                            300]!
+                                                                        .withOpacity(
+                                                                            0.5),
+                                                                borderRadius: BorderRadius.only(
+                                                                    topLeft: Radius
+                                                                        .circular(
+                                                                            8),
+                                                                    topRight: Radius
+                                                                        .circular(
+                                                                            8),
+                                                                    bottomLeft:
+                                                                        Radius.circular(
+                                                                            0),
+                                                                    bottomRight:
+                                                                        Radius.circular(
+                                                                            0)),
+                                                                // border: Border.all(
+                                                                //     color: Colors.grey, width: 1),
+                                                              )
+                                                            : null,
+                                                        child: Translate.TranslateAndSetText(
+                                                            column,
+                                                            AccountScreen_Color
+                                                                .Colors_Text1_,
+                                                            (column.toString() == 'หน่วยที่ใช้' ||
+                                                                    column.toString() ==
+                                                                        'ราคาต่อหน่วย' ||
+                                                                    column.toString() ==
+                                                                        'รวม Vat')
+                                                                ? TextAlign
+                                                                    .right
+                                                                : TextAlign
+                                                                    .left,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            13.8,
+                                                            1),
                                                       ),
-                                                    ],
+                                                    )
+                                                  : Translate.TranslateAndSetText(
+                                                      column,
+                                                      AccountScreen_Color
+                                                          .Colors_Text1_,
+                                                      (column.toString() ==
+                                                                  'หน่วยที่ใช้' ||
+                                                              column.toString() ==
+                                                                  'ราคาต่อหน่วย' ||
+                                                              column.toString() ==
+                                                                  'รวม Vat')
+                                                          ? TextAlign.right
+                                                          : TextAlign.left,
+                                                      FontWeight.bold,
+                                                      FontWeight_.Fonts_T,
+                                                      13.8,
+                                                      1),
+                                            ),
+                                            if ([6].contains(columnHeaders
+                                                .indexWhere((item) =>
+                                                    item ==
+                                                    column))) // Show sorting indicator
+                                              Padding(
+                                                padding: EdgeInsets.fromLTRB(
+                                                    0, 0, 2, 0),
+                                                child: InkWell(
+                                                  onDoubleTap: () {
+                                                    setState(() {
+                                                      edit_lock =
+                                                          (edit_lock == 0)
+                                                              ? 1
+                                                              : 0;
+                                                    });
+                                                  },
+                                                  child: Container(
+                                                    padding:
+                                                        EdgeInsets.fromLTRB(
+                                                            4, 1, 4, 1),
+                                                    decoration: BoxDecoration(
+                                                      color: (edit_lock == 1)
+                                                          ? Colors.green[100]
+                                                          : Colors.orange[100],
+                                                      borderRadius:
+                                                          BorderRadius.only(
+                                                              topLeft: Radius
+                                                                  .circular(0),
+                                                              topRight: Radius
+                                                                  .circular(10),
+                                                              bottomLeft: Radius
+                                                                  .circular(0),
+                                                              bottomRight:
+                                                                  Radius
+                                                                      .circular(
+                                                                          0)),
+                                                      // border: Border.all(
+                                                      //     color: Colors.grey, width: 1),
+                                                    ),
+                                                    // radius: 12,
+                                                    // backgroundColor:
+                                                    //     (edit_lock == 1)
+                                                    //         ? Colors.green[100]
+                                                    //         : Colors.orange[100],
+                                                    child: Icon(
+                                                      size: 18,
+                                                      Icons.border_color,
+                                                      color: Colors.black,
+                                                    ),
                                                   ),
-                                                )
-                                              : List_Material(
-                                                  index,
-                                                  columnHeaders,
-                                                  row,
-                                                  columnToCheck);
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                            Container(
+                              width: 120,
+                              child: Translate.TranslateAndSetText(
+                                  '...',
+                                  AccountScreen_Color.Colors_Text1_,
+                                  TextAlign.center,
+                                  FontWeight.bold,
+                                  FontWeight_.Fonts_T,
+                                  14,
+                                  1),
+                            ),
+                          ]),
+                        ),
+
+                        // Scrollable ListView.builder for Data Rows
+                        Expanded(
+                          child: (isLoading)
+                              ? SizedBox(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const CircularProgressIndicator(),
+                                      StreamBuilder(
+                                        stream: Stream.periodic(
+                                            const Duration(milliseconds: 25),
+                                            (i) => i),
+                                        builder: (context, snapshot) {
+                                          if (!snapshot.hasData)
+                                            return const Text('');
+                                          double elapsed = double.parse(
+                                                  snapshot.data.toString()) *
+                                              0.05;
+                                          return Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Text(
+                                              'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.', // ตัวบ่งชี้กำลังโหลด
+                                              // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  fontFamily: Font_.Fonts_T
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          );
                                         },
                                       ),
-                      ),
-                    ],
-                  )),
-            ),
-          ),
-          Container(
-              width: (Responsive.isDesktop(context))
-                  ? MediaQuery.of(context).size.width * 0.85
-                  : MediaQuery.of(context).size.width,
-              decoration: const BoxDecoration(
-                color: AppbackgroundColor.Sub_Abg_Colors,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
+                                    ],
+                                  ),
+                                )
+                              : (displayedData.isEmpty)
+                                  ? Center(
+                                      child: const Text(
+                                        'ไม่พบข้อมูล',
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text2_,
+                                            fontFamily: Font_.Fonts_T
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    )
+                                  : (transMeterModels.isEmpty)
+                                      ? Center(
+                                          child: const Text(
+                                            'ไม่พบข้อมูล',
+                                            style: TextStyle(
+                                                color: PeopleChaoScreen_Color
+                                                    .Colors_Text2_,
+                                                fontFamily: Font_.Fonts_T
+                                                //fontSize: 10.0
+                                                ),
+                                          ),
+                                        )
+                                      : ListView.builder(
+                                          controller: _scrollController2,
+                                          itemCount: displayedData.length,
+                                          itemBuilder: (BuildContext context,
+                                              int index) {
+                                            final row = displayedData[index];
+                                            final columnToCheck = 'รายการ';
+                                            return (hasMain(row) &&
+                                                    row[columnToCheck]
+                                                            ?.toString() !=
+                                                        '')
+                                                ? SizedBox(
+                                                    width: calculatedWidth,
+                                                    child: Column(
+                                                      children: [
+                                                        List_Material(
+                                                            index,
+                                                            columnHeaders,
+                                                            row,
+                                                            columnToCheck),
+                                                        Container(
+                                                          width:
+                                                              calculatedWidth,
+                                                          padding:
+                                                              const EdgeInsets
+                                                                      .symmetric(
+                                                                  vertical: 8,
+                                                                  horizontal:
+                                                                      16),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            // color: tappedIndex_ ==
+                                                            //         index.toString()
+                                                            //     ? tappedIndex_Color
+                                                            //         .tappedIndex_Colors
+                                                            //     : (hasMain(row) &&
+                                                            //             row[columnToCheck]
+                                                            //                     ?.toString() !=
+                                                            //                 '')
+                                                            //         ? Colors.red[200]!
+                                                            //             .withOpacity(
+                                                            //                 0.6)
+                                                            //         : AppbackgroundColor
+                                                            //             .Sub_Abg_Colors,
+                                                            border:
+                                                                const Border(
+                                                              bottom:
+                                                                  BorderSide(
+                                                                color: Colors
+                                                                    .black12,
+                                                                width: 1,
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          child: Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              Icon(
+                                                                Icons
+                                                                    .warning_sharp,
+                                                                size: 15,
+                                                                color: Colors
+                                                                    .amber[800],
+                                                              ),
+                                                              Text(
+                                                                'ตรวจพบข้อมูลที่อาจซ้ำ/น่าสงสัย..!! ( ${row[columnToCheck]} )',
+                                                                maxLines: 2,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    fontStyle:
+                                                                        FontStyle
+                                                                            .italic,
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        600],
+                                                                    fontFamily:
+                                                                        Font_
+                                                                            .Fonts_T
+                                                                    //fontSize: 10.0
+                                                                    ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  )
+                                                : List_Material(
+                                                    index,
+                                                    columnHeaders,
+                                                    row,
+                                                    columnToCheck);
+                                          },
+                                        ),
+                        ),
+                      ],
+                    )),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
+            ),
+            Container(
+                width: (Responsive.isDesktop(context))
+                    ? MediaQuery.of(context).size.width * 0.85
+                    : MediaQuery.of(context).size.width,
+                decoration: const BoxDecoration(
+                  color: AppbackgroundColor.Sub_Abg_Colors,
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(0),
+                      topRight: Radius.circular(0),
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () {
+                                _scrollController2.animateTo(
+                                  0,
+                                  duration: const Duration(seconds: 1),
+                                  curve: Curves.easeOut,
+                                );
+                              },
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    // color: AppbackgroundColor
+                                    //     .TiTile_Colors,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(6),
+                                        topRight: Radius.circular(6),
+                                        bottomLeft: Radius.circular(6),
+                                        bottomRight: Radius.circular(8)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  padding: const EdgeInsets.all(3.0),
+                                  child: const Text(
+                                    'Top',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 10.0,
+                                      fontFamily: FontWeight_.Fonts_T,
+                                    ),
+                                  )),
+                            ),
+                          ),
+                          InkWell(
                             onTap: () {
-                              _scrollController2.animateTo(
-                                0,
-                                duration: const Duration(seconds: 1),
-                                curve: Curves.easeOut,
-                              );
+                              if (_scrollController2.hasClients) {
+                                final position =
+                                    _scrollController2.position.maxScrollExtent;
+                                _scrollController2.animateTo(
+                                  position,
+                                  duration: const Duration(seconds: 1),
+                                  curve: Curves.easeOut,
+                                );
+                              }
                             },
                             child: Container(
                                 decoration: BoxDecoration(
@@ -1724,13 +1675,13 @@ class _MiterScreenState extends State<MiterScreen> {
                                       topLeft: Radius.circular(6),
                                       topRight: Radius.circular(6),
                                       bottomLeft: Radius.circular(6),
-                                      bottomRight: Radius.circular(8)),
+                                      bottomRight: Radius.circular(6)),
                                   border:
                                       Border.all(color: Colors.grey, width: 1),
                                 ),
                                 padding: const EdgeInsets.all(3.0),
                                 child: const Text(
-                                  'Top',
+                                  'Down',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 10.0,
@@ -1738,20 +1689,26 @@ class _MiterScreenState extends State<MiterScreen> {
                                   ),
                                 )),
                           ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            if (_scrollController2.hasClients) {
-                              final position =
-                                  _scrollController2.position.maxScrollExtent;
-                              _scrollController2.animateTo(
-                                position,
-                                duration: const Duration(seconds: 1),
-                                curve: Curves.easeOut,
-                              );
-                            }
-                          },
-                          child: Container(
+                        ],
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: _moveUp2,
+                            child: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Icon(
+                                    Icons.arrow_upward,
+                                    color: Colors.grey,
+                                  ),
+                                )),
+                          ),
+                          Container(
                               decoration: BoxDecoration(
                                 // color: AppbackgroundColor
                                 //     .TiTile_Colors,
@@ -1765,74 +1722,35 @@ class _MiterScreenState extends State<MiterScreen> {
                               ),
                               padding: const EdgeInsets.all(3.0),
                               child: const Text(
-                                'Down',
+                                'Scroll',
                                 style: TextStyle(
                                   color: Colors.grey,
                                   fontSize: 10.0,
                                   fontFamily: FontWeight_.Fonts_T,
                                 ),
                               )),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: _moveUp2,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Icon(
-                                  Icons.arrow_upward,
-                                  color: Colors.grey,
-                                ),
-                              )),
-                        ),
-                        Container(
-                            decoration: BoxDecoration(
-                              // color: AppbackgroundColor
-                              //     .TiTile_Colors,
-                              borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(6),
-                                  topRight: Radius.circular(6),
-                                  bottomLeft: Radius.circular(6),
-                                  bottomRight: Radius.circular(6)),
-                              border: Border.all(color: Colors.grey, width: 1),
-                            ),
-                            padding: const EdgeInsets.all(3.0),
-                            child: const Text(
-                              'Scroll',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 10.0,
-                                fontFamily: FontWeight_.Fonts_T,
-                              ),
-                            )),
-                        InkWell(
-                          onTap: _moveDown2,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Icon(
-                                  Icons.arrow_downward,
-                                  color: Colors.grey,
-                                ),
-                              )),
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              )),
-          // Pagination Controls
-        ],
-      ),
-    );
+                          InkWell(
+                            onTap: _moveDown2,
+                            child: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Icon(
+                                    Icons.arrow_downward,
+                                    color: Colors.grey,
+                                  ),
+                                )),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                )),
+            // Pagination Controls
+          ],
+        ),
+      );
+    });
   }
 
   /////////////----------------------------->
@@ -2007,28 +1925,29 @@ class _MiterScreenState extends State<MiterScreen> {
 
                                         print(url);
 
-                                        var response =
-                                            await http.get(Uri.parse(url));
+                                        var response = await httpClient
+                                            .get(Uri.parse(url));
                                         var result = json.decode(response.body);
 
                                         if (result.toString() != 'null') {
                                           setState(() {
                                             FormMeter_text.clear();
                                           });
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              duration:
-                                                  Duration(milliseconds: 500),
-                                              backgroundColor: Colors.green,
-                                              content: Text('บันทึกสำเร็จ...!'),
-                                            ),
-                                          );
+                                          // ScaffoldMessenger.of(context)
+                                          //     .showSnackBar(
+                                          //   SnackBar(
+                                          //     duration:
+                                          //         Duration(milliseconds: 500),
+                                          //     backgroundColor: Colors.green,
+                                          //     content: Text('บันทึกสำเร็จ...!'),
+                                          //   ),
+                                          // );
                                           Dia_log2();
                                           Insert_log.Insert_logs(
                                             'จัดการ',
                                             'มิเตอร์น้ำไฟฟ้า>>แก้ไขเลขมิเตอร์เดือนนี้(${transMeterModels[index_x].ln}, ${transMeterModels[index_x].expname})',
                                           );
+                                          Loading_Trans_bill();
                                         }
                                       } catch (e) {
                                         print('ERROR: $e');
@@ -2098,7 +2017,7 @@ class _MiterScreenState extends State<MiterScreen> {
                                       // print(url);
                                       // try {
                                       //   var response =
-                                      //       await http.get(Uri.parse(url));
+                                      //       await httpClient.get(Uri.parse(url));
 
                                       //   var result = json.decode(response.body);
                                       //   // print(result);
@@ -3280,7 +3199,7 @@ class _MiterScreenState extends State<MiterScreen> {
     String url =
         '${MyConstant().domain}/In_tran_invoice_all.php?isAdd=true&ren=$ren&user=$user&sertype=$Ser_BodySta1&serzone=$zone_ser&serzonesub=$zone_Sub&pSer=$paymentSer1&Paydate=$End_Bill_Paydate';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -3331,7 +3250,7 @@ class _MiterScreenState extends State<MiterScreen> {
     //         ? '${MyConstant().domain}/GC_trans_mitter_sub.php?isAdd=true&ren=$ren&sertype=$Ser_BodySta1&serzone=0&serzonesub=$zone_Sub'
     //         : '${MyConstant().domain}/GC_trans_mitter_sub.php?isAdd=true&ren=$ren&sertype=$Ser_BodySta1&serzone=$zone_ser&serzonesub=$zone_Sub';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');

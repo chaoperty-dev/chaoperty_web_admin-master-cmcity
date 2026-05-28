@@ -2599,523 +2599,559 @@ class _AccessrightsState extends State<Accessrights> {
   ///-------------------------------------------------------->
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-            child: Container(
-              height: 20,
-              decoration: const BoxDecoration(
-                color: Colors.white30,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
-                // border: Border.all(color: Colors.white, width: 1),
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              Padding(
-                padding: EdgeInsets.all(8.0),
-                child: Translate.TranslateAndSetText(
-                    'ผู้ใช้งานระบบ',
-                    SettingScreen_Color.Colors_Text1_,
-                    TextAlign.left,
-                    FontWeight.bold,
-                    FontWeight_.Fonts_T,
-                    16,
-                    1),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: InkWell(
-                  onTap: () {
-                    // print('000 >>> $pkuser >>> $countarae');
-                    if (countarae! < pkuser!) {
-                      Add_userAcess();
-                      // print('1111 >>> $pkuser >>> $countarae');
-                    } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Translate.TranslateAndSetText(
-                              'จำนวนผู้ใช้งานสูงสุดแล้วหากต้องการเพิ่มผู้ใช้งานกรุณา ซื้อ Package เพิ่ม !!!',
-                              Colors.white,
-                              TextAlign.left,
-                              FontWeight.bold,
-                              FontWeight_.Fonts_T,
-                              16,
-                              1),
-                        ),
-                      );
-                      // print('2222 >>> $pkuser >>> $countarae');
-                    }
-                    // Add_userAcess();
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                      color: Colors.green,
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(10),
-                        bottomRight: Radius.circular(10),
-                      ),
-                      // border: Border.all(
-                      //     color: Colors.grey, width: 1),
-                    ),
-                    padding: const EdgeInsets.all(8.0),
-                    child: Translate.TranslateAndSetText(
-                        '+ เพิ่ม',
-                        Colors.white,
-                        TextAlign.left,
-                        FontWeight.bold,
-                        FontWeight_.Fonts_T,
-                        16,
-                        1),
-                  ),
+    return LayoutBuilder(builder: (context, cts) {
+      final screenW = cts.maxWidth;
+
+      // Mobile/Tablet: ให้ตารางเลื่อนแนวนอนถ้าจอเล็กกว่า 980 (minWidth), ถ้าใหญ่กว่าให้ถือว่าเต็มจอ
+      // Desktop: เต็มจอ ไม่ต้องเลื่อน
+      final availableWidth =
+          screenW - 16.0; // Subtract padding 8 on left and right
+      final tableMinW = availableWidth > 980.0 ? availableWidth : 980.0;
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+              child: Container(
+                height: 20,
+                decoration: const BoxDecoration(
+                  color: Colors.white30,
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(0),
+                      topRight: Radius.circular(0),
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10)),
+                  // border: Border.all(color: Colors.white, width: 1),
                 ),
               ),
-              Container(
-                width: 150,
-                child: _searchBar(),
-              )
-            ],
-          ),
-          ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse,
-            }),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              dragStartBehavior: DragStartBehavior.start,
-              child: Row(
-                children: [
-                  SizedBox(
-                    width: (!Responsive.isDesktop(context))
-                        ? 800
-                        : MediaQuery.of(context).size.width * 0.84,
-                    child: Column(
-                      children: [
-                        Container(
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: AppbackgroundColor.TiTile_Colors,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(0),
-                            ),
-                            // border: Border.all(
-                            //     color: Colors.grey, width: 1),
+            ),
+            Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Translate.TranslateAndSetText(
+                      'ผู้ใช้งานระบบ',
+                      SettingScreen_Color.Colors_Text1_,
+                      TextAlign.left,
+                      FontWeight.bold,
+                      FontWeight_.Fonts_T,
+                      16,
+                      1),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: InkWell(
+                    onTap: () {
+                      // print('000 >>> $pkuser >>> $countarae');
+                      if (countarae! < pkuser!) {
+                        Add_userAcess();
+                        // print('1111 >>> $pkuser >>> $countarae');
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Translate.TranslateAndSetText(
+                                'จำนวนผู้ใช้งานสูงสุดแล้วหากต้องการเพิ่มผู้ใช้งานกรุณา ซื้อ Package เพิ่ม !!!',
+                                Colors.white,
+                                TextAlign.left,
+                                FontWeight.bold,
+                                FontWeight_.Fonts_T,
+                                16,
+                                1),
                           ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                flex: 1,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Translate.TranslateAndSetText(
-                                      'ชื่อผู้ใช้',
-                                      SettingScreen_Color.Colors_Text1_,
-                                      TextAlign.start,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      16,
-                                      1),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Translate.TranslateAndSetText(
-                                      'อีเมล',
-                                      SettingScreen_Color.Colors_Text1_,
-                                      TextAlign.start,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      16,
-                                      1),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Translate.TranslateAndSetText(
-                                      'ตำแหน่ง',
-                                      SettingScreen_Color.Colors_Text1_,
-                                      TextAlign.start,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      16,
-                                      1),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Translate.TranslateAndSetText(
-                                      'สิทธิ์การเข้าถึง',
-                                      SettingScreen_Color.Colors_Text1_,
-                                      TextAlign.start,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      16,
-                                      1),
-                                ),
-                              ),
-                              Expanded(
-                                flex: 1,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Translate.TranslateAndSetText(
-                                      'จัดการ',
-                                      SettingScreen_Color.Colors_Text1_,
-                                      TextAlign.start,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      16,
-                                      1),
-                                ),
-                              )
-                            ],
-                          ),
+                        );
+                        // print('2222 >>> $pkuser >>> $countarae');
+                      }
+                      // Add_userAcess();
+                    },
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
+                          bottomLeft: Radius.circular(10),
+                          bottomRight: Radius.circular(10),
                         ),
-                        Container(
-                          height: MediaQuery.of(context).size.height * 0.55,
-                          decoration: const BoxDecoration(
-                            color: AppbackgroundColor.Sub_Abg_Colors,
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(0),
+                        // border: Border.all(
+                        //     color: Colors.grey, width: 1),
+                      ),
+                      padding: const EdgeInsets.all(8.0),
+                      child: Translate.TranslateAndSetText(
+                          '+ เพิ่ม',
+                          Colors.white,
+                          TextAlign.left,
+                          FontWeight.bold,
+                          FontWeight_.Fonts_T,
+                          16,
+                          1),
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 150,
+                  child: _searchBar(),
+                )
+              ],
+            ),
+            ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+                PointerDeviceKind.touch,
+                PointerDeviceKind.mouse,
+              }),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                // dragStartBehavior: DragStartBehavior.start,
+                child: Row(
+                  children: [
+                    SizedBox(
+                      width: tableMinW,
+                      child: Column(
+                        children: [
+                          Container(
+                            height: 50,
+                            decoration: BoxDecoration(
+                              color: AppbackgroundColor.TiTile_Colors,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(0),
+                                bottomRight: Radius.circular(0),
+                              ),
+                              // border: Border.all(
+                              //     color: Colors.grey, width: 1),
                             ),
-                            // border: Border.all(
-                            //     color: Colors.grey, width: 1),
-                          ),
-                          child: userModels.isEmpty
-                              ? SizedBox(
-                                  width: MediaQuery.of(context).size.width,
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const CircularProgressIndicator(),
-                                      StreamBuilder(
-                                        stream: Stream.periodic(
-                                            const Duration(milliseconds: 25),
-                                            (i) => i),
-                                        builder: (context, snapshot) {
-                                          if (!snapshot.hasData)
-                                            return const Text('');
-                                          double elapsed = double.parse(
-                                                  snapshot.data.toString()) *
-                                              0.05;
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: (elapsed > 8.00)
-                                                ? Translate.TranslateAndSetText(
-                                                    'ไม่พบข้อมูล',
-                                                    SettingScreen_Color
-                                                        .Colors_Text1_,
-                                                    TextAlign.start,
-                                                    FontWeight.bold,
-                                                    FontWeight_.Fonts_T,
-                                                    16,
-                                                    1)
-                                                : Text(
-                                                    'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
-                                                    // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-                                                    style: const TextStyle(
-                                                        color:
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontSize: 10.0
-                                                        ),
-                                                  ),
-                                          );
-                                        },
-                                      ),
-                                    ],
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'ชื่อผู้ใช้',
+                                        SettingScreen_Color.Colors_Text1_,
+                                        TextAlign.start,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        16,
+                                        1),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'อีเมล',
+                                        SettingScreen_Color.Colors_Text1_,
+                                        TextAlign.start,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        16,
+                                        1),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'ตำแหน่ง',
+                                        SettingScreen_Color.Colors_Text1_,
+                                        TextAlign.start,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        16,
+                                        1),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 2,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'สิทธิ์การเข้าถึง',
+                                        SettingScreen_Color.Colors_Text1_,
+                                        TextAlign.start,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        16,
+                                        1),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'จัดการ',
+                                        SettingScreen_Color.Colors_Text1_,
+                                        TextAlign.start,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        16,
+                                        1),
                                   ),
                                 )
-                              : ListView.builder(
-                                  controller: _scrollController1,
-                                  // itemExtent: 50,
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(), //const NeverScrollableScrollPhysics(),
-                                  shrinkWrap: true,
-                                  itemCount: userModels.length,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    List<String> value = [
-                                      for (int i = 0;
-                                          i < perMissionModels.length;
-                                          i++)
-                                        '${perMissionModels[i].perm}',
-                                    ];
-                                    String valueindex =
-                                        '${userModels[index].permission}';
-                                    List<String> splitValues =
-                                        valueindex.split(',');
-
-                                    String newValue = '';
-
-                                    for (String index in splitValues) {
-                                      if (index == '0') {
-                                        for (int i2 = 0;
-                                            i2 < value.length - 1;
-                                            i2++) {
-                                          newValue = newValue + value[i2] + ',';
-                                        }
-                                      } else {
-                                        int i = int.parse(index);
-                                        newValue =
-                                            newValue + value[i - 1] + ',';
-                                      }
-                                    }
-                                    return Material(
-                                      color: tappedIndex_ == index.toString()
-                                          ? tappedIndex_Color.tappedIndex_Colors
-                                          : AppbackgroundColor.Sub_Abg_Colors,
-                                      child: Container(
-                                        // color: tappedIndex_ == index.toString()
-                                        //     ? Colors.grey.shade300
-                                        //     : null,
-                                        child: ListTile(
-                                          onTap: () {
-                                            setState(() {
-                                              tappedIndex_ = index.toString();
-                                            });
+                              ],
+                            ),
+                          ),
+                          Container(
+                            width: tableMinW,
+                            height: MediaQuery.of(context).size.height * 0.55,
+                            decoration: const BoxDecoration(
+                              color: AppbackgroundColor.Sub_Abg_Colors,
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(0),
+                                topRight: Radius.circular(0),
+                                bottomLeft: Radius.circular(0),
+                                bottomRight: Radius.circular(0),
+                              ),
+                              // border: Border.all(
+                              //     color: Colors.grey, width: 1),
+                            ),
+                            child: userModels.isEmpty
+                                ? SizedBox(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const CircularProgressIndicator(),
+                                        StreamBuilder(
+                                          stream: Stream.periodic(
+                                              const Duration(milliseconds: 25),
+                                              (i) => i),
+                                          builder: (context, snapshot) {
+                                            if (!snapshot.hasData)
+                                              return const Text('');
+                                            double elapsed = double.parse(
+                                                    snapshot.data.toString()) *
+                                                0.05;
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: (elapsed > 8.00)
+                                                  ? Translate
+                                                      .TranslateAndSetText(
+                                                          'ไม่พบข้อมูล',
+                                                          SettingScreen_Color
+                                                              .Colors_Text1_,
+                                                          TextAlign.start,
+                                                          FontWeight.bold,
+                                                          FontWeight_.Fonts_T,
+                                                          16,
+                                                          1)
+                                                  : Text(
+                                                      'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
+                                                      // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                                      style: const TextStyle(
+                                                          color:
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    ),
+                                            );
                                           },
-                                          title: Container(
-                                            decoration: BoxDecoration(
-                                              // color: Colors.green[100]!
-                                              //     .withOpacity(0.5),
-                                              border: Border(
-                                                bottom: BorderSide(
-                                                  color: Colors.black12,
-                                                  width: 1,
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    controller: _scrollController1,
+                                    // itemExtent: 50,
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(), //const NeverScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    itemCount: userModels.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      List<String> value = [
+                                        for (int i = 0;
+                                            i < perMissionModels.length;
+                                            i++)
+                                          '${perMissionModels[i].perm}',
+                                      ];
+                                      String valueindex =
+                                          '${userModels[index].permission}';
+                                      List<String> splitValues =
+                                          valueindex.split(',');
+
+                                      String newValue = '';
+
+                                      for (String index in splitValues) {
+                                        if (index == '0') {
+                                          for (int i2 = 0;
+                                              i2 < value.length - 1;
+                                              i2++) {
+                                            newValue =
+                                                newValue + value[i2] + ',';
+                                          }
+                                        } else {
+                                          int i = int.parse(index);
+                                          newValue =
+                                              newValue + value[i - 1] + ',';
+                                        }
+                                      }
+                                      return Material(
+                                        color: tappedIndex_ == index.toString()
+                                            ? tappedIndex_Color
+                                                .tappedIndex_Colors
+                                            : AppbackgroundColor.Sub_Abg_Colors,
+                                        child: Container(
+                                          // color: tappedIndex_ == index.toString()
+                                          //     ? Colors.grey.shade300
+                                          //     : null,
+                                          child: ListTile(
+                                            onTap: () {
+                                              setState(() {
+                                                tappedIndex_ = index.toString();
+                                              });
+                                            },
+                                            title: Container(
+                                              decoration: BoxDecoration(
+                                                // color: Colors.green[100]!
+                                                //     .withOpacity(0.5),
+                                                border: Border(
+                                                  bottom: BorderSide(
+                                                    color: Colors.black12,
+                                                    width: 1,
+                                                  ),
                                                 ),
                                               ),
-                                            ),
-                                            child: Row(
-                                              children: [
-                                                (userModels[index]
-                                                            .rser
-                                                            .toString() ==
-                                                        '0')
-                                                    ? Icon(
-                                                        Icons
-                                                            .admin_panel_settings,
-                                                        color: Colors.purple,
-                                                      )
-                                                    : SizedBox(
-                                                        width: 20,
-                                                      ),
-                                                Expanded(
-                                                  flex: 1,
-                                                  child: Text(
-                                                    '${userModels[index].fname} ${userModels[index].lname}',
-                                                    textAlign: TextAlign.start,
-                                                    maxLines: 2,
-                                                    style: const TextStyle(
-                                                        color:
-                                                            SettingScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontWeight: FontWeight.bold,
-                                                        //fontSize: 10.0
+                                              child: Row(
+                                                children: [
+                                                  (userModels[index]
+                                                              .rser
+                                                              .toString() ==
+                                                          '0')
+                                                      ? Icon(
+                                                          Icons
+                                                              .admin_panel_settings,
+                                                          color: Colors.purple,
+                                                        )
+                                                      : SizedBox(
+                                                          width: 20,
                                                         ),
+                                                  Expanded(
+                                                    flex: 1,
+                                                    child: Text(
+                                                      '${userModels[index].fname} ${userModels[index].lname}',
+                                                      textAlign:
+                                                          TextAlign.start,
+                                                      maxLines: 2,
+                                                      style: const TextStyle(
+                                                          color:
+                                                              SettingScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontWeight: FontWeight.bold,
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    ),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  flex: 1,
-                                                  child: Text(
-                                                    '${userModels[index].email} ',
-                                                    maxLines: 2,
-                                                    textAlign: TextAlign.start,
-                                                    style: const TextStyle(
-                                                        color:
-                                                            SettingScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontWeight: FontWeight.bold,
-                                                        //fontSize: 10.0
-                                                        ),
+                                                  Expanded(
+                                                    flex: 1,
+                                                    child: Text(
+                                                      '${userModels[index].email} ',
+                                                      maxLines: 2,
+                                                      textAlign:
+                                                          TextAlign.start,
+                                                      style: const TextStyle(
+                                                          color:
+                                                              SettingScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontWeight: FontWeight.bold,
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    ),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  flex: 1,
-                                                  child: Text(
-                                                    '${userModels[index].position} ',
-                                                    maxLines: 2,
-                                                    textAlign: TextAlign.start,
-                                                    style: const TextStyle(
-                                                        color:
-                                                            SettingScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontWeight: FontWeight.bold,
-                                                        //fontSize: 10.0
-                                                        ),
+                                                  Expanded(
+                                                    flex: 1,
+                                                    child: Text(
+                                                      '${userModels[index].position} ',
+                                                      maxLines: 2,
+                                                      textAlign:
+                                                          TextAlign.start,
+                                                      style: const TextStyle(
+                                                          color:
+                                                              SettingScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontWeight: FontWeight.bold,
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    ),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  flex: 2,
-                                                  child: Text(
-                                                    '${newValue}',
-                                                    // '${userModels[index].permission} ',
-                                                    // (newValue.endsWith(','))
-                                                    //     ? '${newValue.substring(0, newValue.length - 1)}'
-                                                    //     : '${newValue}',
-                                                    //  'ผู้เช่า',
-                                                    maxLines: 2,
-                                                    textAlign: TextAlign.start,
-                                                    style: TextStyle(
-                                                        color:
-                                                            SettingScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontWeight: FontWeight.bold,
-                                                        //fontSize: 10.0
-                                                        ),
+                                                  Expanded(
+                                                    flex: 2,
+                                                    child: Text(
+                                                      '${newValue}',
+                                                      // '${userModels[index].permission} ',
+                                                      // (newValue.endsWith(','))
+                                                      //     ? '${newValue.substring(0, newValue.length - 1)}'
+                                                      //     : '${newValue}',
+                                                      //  'ผู้เช่า',
+                                                      maxLines: 2,
+                                                      textAlign:
+                                                          TextAlign.start,
+                                                      style: TextStyle(
+                                                          color:
+                                                              SettingScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontWeight: FontWeight.bold,
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    ),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  flex: 1,
-                                                  child: Center(
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              0.0),
-                                                      child: InkWell(
-                                                        child: Container(
-                                                            width: 100,
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: Colors.red,
-                                                              borderRadius:
-                                                                  const BorderRadius
-                                                                      .only(
-                                                                topLeft: Radius
-                                                                    .circular(
-                                                                        10),
-                                                                topRight: Radius
-                                                                    .circular(
-                                                                        10),
-                                                                bottomLeft: Radius
-                                                                    .circular(
-                                                                        10),
-                                                                bottomRight:
-                                                                    Radius
-                                                                        .circular(
-                                                                            10),
+                                                  Expanded(
+                                                    flex: 1,
+                                                    child: Center(
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(0.0),
+                                                        child: InkWell(
+                                                          child: Container(
+                                                              width: 100,
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                color:
+                                                                    Colors.red,
+                                                                borderRadius:
+                                                                    const BorderRadius
+                                                                        .only(
+                                                                  topLeft: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                  topRight: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                  bottomLeft: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                ),
+                                                                // border: Border.all(
+                                                                //     color: Colors.grey, width: 1),
                                                               ),
-                                                              // border: Border.all(
-                                                              //     color: Colors.grey, width: 1),
-                                                            ),
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(1.0),
-                                                            child: Translate
-                                                                .TranslateAndSetText(
-                                                                    'แก้ไข',
-                                                                    SettingScreen_Color
-                                                                        .Colors_Text1_,
-                                                                    TextAlign
-                                                                        .center,
-                                                                    FontWeight
-                                                                        .bold,
-                                                                    FontWeight_
-                                                                        .Fonts_T,
-                                                                    16,
-                                                                    1)),
-                                                        onTap: () {
-                                                          if (renTal_lavel >
-                                                              2) {
-                                                            Edit_userAcess(
-                                                                index);
-                                                          } else {
-                                                            ScaffoldMessenger
-                                                                    .of(context)
-                                                                .showSnackBar(
-                                                              SnackBar(
-                                                                  content: Translate.TranslateAndSetText(
-                                                                      'ระดับการใช้งานของคุณไม่สามารถแก้ไขได้ !!!',
-                                                                      Colors
-                                                                          .white,
-                                                                      TextAlign
-                                                                          .start,
-                                                                      FontWeight
-                                                                          .bold,
-                                                                      FontWeight_
-                                                                          .Fonts_T,
-                                                                      16,
-                                                                      1)),
-                                                            );
-                                                          }
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(1.0),
+                                                              child: Translate.TranslateAndSetText(
+                                                                  'แก้ไข',
+                                                                  SettingScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  TextAlign
+                                                                      .center,
+                                                                  FontWeight
+                                                                      .bold,
+                                                                  FontWeight_
+                                                                      .Fonts_T,
+                                                                  16,
+                                                                  1)),
+                                                          onTap: () {
+                                                            if (renTal_lavel >
+                                                                2) {
+                                                              Edit_userAcess(
+                                                                  index);
+                                                            } else {
+                                                              ScaffoldMessenger
+                                                                      .of(context)
+                                                                  .showSnackBar(
+                                                                SnackBar(
+                                                                    content: Translate.TranslateAndSetText(
+                                                                        'ระดับการใช้งานของคุณไม่สามารถแก้ไขได้ !!!',
+                                                                        Colors
+                                                                            .white,
+                                                                        TextAlign
+                                                                            .start,
+                                                                        FontWeight
+                                                                            .bold,
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                        16,
+                                                                        1)),
+                                                              );
+                                                            }
 
-                                                          // Edit_userAcess(index,
-                                                          //     '${newValue.substring(0, newValue.length - 1)}');
-                                                        },
+                                                            // Edit_userAcess(index,
+                                                            //     '${newValue.substring(0, newValue.length - 1)}');
+                                                          },
+                                                        ),
                                                       ),
                                                     ),
                                                   ),
-                                                ),
-                                              ],
+                                                ],
+                                              ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                      ],
+                                      );
+                                    },
+                                  ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-          Container(
-              width: (!Responsive.isDesktop(context))
-                  ? MediaQuery.of(context).size.width
-                  : MediaQuery.of(context).size.width * 0.84,
-              decoration: const BoxDecoration(
-                color: AppbackgroundColor.Sub_Abg_Colors,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
+            Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  color: AppbackgroundColor.Sub_Abg_Colors,
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(0),
+                      topRight: Radius.circular(0),
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () {},
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    // color: AppbackgroundColor
+                                    //     .TiTile_Colors,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(6),
+                                        topRight: Radius.circular(6),
+                                        bottomLeft: Radius.circular(6),
+                                        bottomRight: Radius.circular(8)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  padding: const EdgeInsets.all(3.0),
+                                  child: const Text(
+                                    'Top',
+                                    style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 10.0,
+                                        fontFamily: Font_.Fonts_T),
+                                  )),
+                            ),
+                          ),
+                          InkWell(
                             onTap: () {},
                             child: Container(
                                 decoration: BoxDecoration(
@@ -3125,23 +3161,39 @@ class _AccessrightsState extends State<Accessrights> {
                                       topLeft: Radius.circular(6),
                                       topRight: Radius.circular(6),
                                       bottomLeft: Radius.circular(6),
-                                      bottomRight: Radius.circular(8)),
+                                      bottomRight: Radius.circular(6)),
                                   border:
                                       Border.all(color: Colors.grey, width: 1),
                                 ),
                                 padding: const EdgeInsets.all(3.0),
                                 child: const Text(
-                                  'Top',
+                                  'Down',
                                   style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 10.0,
                                       fontFamily: Font_.Fonts_T),
                                 )),
                           ),
-                        ),
-                        InkWell(
-                          onTap: () {},
-                          child: Container(
+                        ],
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: Row(
+                        children: [
+                          InkWell(
+                            onTap: _moveUp1,
+                            child: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Icon(
+                                    Icons.arrow_upward,
+                                    color: Colors.grey,
+                                  ),
+                                )),
+                          ),
+                          Container(
                               decoration: BoxDecoration(
                                 // color: AppbackgroundColor
                                 //     .TiTile_Colors,
@@ -3155,70 +3207,32 @@ class _AccessrightsState extends State<Accessrights> {
                               ),
                               padding: const EdgeInsets.all(3.0),
                               child: const Text(
-                                'Down',
+                                'Scroll',
                                 style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 10.0,
                                     fontFamily: Font_.Fonts_T),
                               )),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: _moveUp1,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Icon(
-                                  Icons.arrow_upward,
-                                  color: Colors.grey,
-                                ),
-                              )),
-                        ),
-                        Container(
-                            decoration: BoxDecoration(
-                              // color: AppbackgroundColor
-                              //     .TiTile_Colors,
-                              borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(6),
-                                  topRight: Radius.circular(6),
-                                  bottomLeft: Radius.circular(6),
-                                  bottomRight: Radius.circular(6)),
-                              border: Border.all(color: Colors.grey, width: 1),
-                            ),
-                            padding: const EdgeInsets.all(3.0),
-                            child: const Text(
-                              'Scroll',
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 10.0,
-                                  fontFamily: Font_.Fonts_T),
-                            )),
-                        InkWell(
-                          onTap: _moveDown1,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Icon(
-                                  Icons.arrow_downward,
-                                  color: Colors.grey,
-                                ),
-                              )),
-                        ),
-                      ],
-                    ),
-                  )
-                ],
-              )),
-        ],
-      ),
-    );
+                          InkWell(
+                            onTap: _moveDown1,
+                            child: const Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Icon(
+                                    Icons.arrow_downward,
+                                    color: Colors.grey,
+                                  ),
+                                )),
+                          ),
+                        ],
+                      ),
+                    )
+                  ],
+                )),
+          ],
+        ),
+      );
+    });
   }
 }

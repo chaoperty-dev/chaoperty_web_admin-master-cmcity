@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetC_Quot_Select_Model.dart';
 import '../Model/GetFinnancetrans_Model.dart';
 import '../Model/GetInvoice_Model.dart';
@@ -136,7 +137,7 @@ class Man_Reducedebt_PDF {
     String url_1 =
         '${MyConstant().domain}/GC_bill_invoice_hisdis.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url_1));
+      var response = await httpClient.get(Uri.parse(url_1));
 
       var result = json.decode(response.body);
       // print(result);
@@ -172,7 +173,7 @@ class Man_Reducedebt_PDF {
     String url_usersell =
         '${MyConstant().domain}/GC_User_PDF.php?isAdd=true&serUser=$ser_user';
     try {
-      var response = await http.get(Uri.parse(url_usersell));
+      var response = await httpClient.get(Uri.parse(url_usersell));
       var result = json.decode(response.body);
 
       if (result.toString() != 'null') {
@@ -190,7 +191,7 @@ class Man_Reducedebt_PDF {
     String url_2 =
         '${MyConstant().domain}/GC_tenantlookAS.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url_2));
+      var response = await httpClient.get(Uri.parse(url_2));
 
       var result = json.decode(response.body);
       //print(result);
@@ -229,7 +230,7 @@ class Man_Reducedebt_PDF {
     String url_3 =
         '${MyConstant().domain}/GC_bill_invoice_hislist.php?isAdd=true&ren=$ren&ciddoc=$docno_inv&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url_3));
+      var response = await httpClient.get(Uri.parse(url_3));
 
       var result = json.decode(response.body);
       print(result);
@@ -258,7 +259,7 @@ class Man_Reducedebt_PDF {
     String url_4 =
         '${MyConstant().domain}/GC_bill_invoice_history.php?isAdd=true&ren=$ren&docnoin=$inv_num';
     try {
-      var response = await http.get(Uri.parse(url_4));
+      var response = await httpClient.get(Uri.parse(url_4));
 
       var result = json.decode(response.body);
       //  print(result);

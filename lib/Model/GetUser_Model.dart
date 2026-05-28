@@ -54,31 +54,31 @@ class UserModel {
   });
 
   UserModel.fromJson(Map<String, dynamic> json) {
-    ser = json['ser'];
-    fname = json['fname'];
-    lname = json['lname'];
-    tel = json['tel'];
-    email = json['email'];
-    passwd = json['passwd'];
-    position = json['position'];
-    st = json['st'];
-    user_id = json['user_id'];
-    permission = json['permission'];
-    user = json['user'];
-    rser = json['rser'];
-    utype = json['utype'];
-    verify = json['verify'];
-    otp = json['otp'];
-    modeclor = json['modeclor'];
-    connected = json['connected'];
-    data_update = json['data_update'];
-    onoff = json['onoff'];
-    showst_update = json['showst_update'];
-    system_datex = json['system_datex'];
-    dev_text = json['dev_text'];
-    type = json['type'];
-    syslog = json['syslog'];
-    pn = json['pn'];
+    ser = json['ser']?.toString();
+    fname = json['fname']?.toString();
+    lname = json['lname']?.toString();
+    tel = json['tel']?.toString();
+    email = json['email']?.toString();
+    passwd = json['passwd']?.toString();
+    position = json['position']?.toString();
+    st = json['st']?.toString();
+    user_id = json['user_id']?.toString();
+    permission = json['permission']?.toString();
+    user = json['user']?.toString();
+    rser = json['rser']?.toString();
+    utype = json['utype']?.toString();
+    verify = json['verify']?.toString();
+    otp = json['otp']?.toString();
+    modeclor = json['modeclor']?.toString();
+    connected = json['connected']?.toString();
+    data_update = json['data_update']?.toString();
+    onoff = json['onoff']?.toString();
+    showst_update = json['showst_update']?.toString();
+    system_datex = json['system_datex']?.toString();
+    dev_text = json['dev_text']?.toString();
+    type = json['type']?.toString();
+    syslog = json['syslog']?.toString();
+    pn = json['pn']?.toString();
   }
 
   Map<String, dynamic> toJson() {

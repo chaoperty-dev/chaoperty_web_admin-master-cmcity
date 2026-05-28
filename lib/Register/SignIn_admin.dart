@@ -30,6 +30,7 @@ import '../Model/GetUser_Model.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import 'admin_set_user.dart';
+
 dynamic read_GC_Pay_Now(context, ser_ren, type) async {
   String daterec_now = '-';
   String dateInv_now = '-';
@@ -74,7 +75,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
   List<LicensekeyUPModel> licensekeyUPModels = [];
   List<OtpModel> otpModels = [];
   List<UserModel> userModels = [];
-    List<UserModel> userModels_connect = [];
+  List<UserModel> userModels_connect = [];
   DateTime datenow = DateTime.now();
   String? packSelext,
       day_date = 'D',
@@ -231,7 +232,8 @@ class _SignUnAdminState extends State<SignUnAdmin> {
       }
     } catch (e) {}
   }
- Future<Null> read_GC_UserConnected_Now() async {
+
+  Future<Null> read_GC_UserConnected_Now() async {
     setState(() {
       userModels_connect.clear();
     });
@@ -375,17 +377,17 @@ class _SignUnAdminState extends State<SignUnAdmin> {
         );
 
         if (response.statusCode == 200) {
-          print('File uploaded successfully!*** : $fileName_Slip');
+          //   print('File uploaded successfully!*** : $fileName_Slip');
 
           UpImg(index);
         } else {
-          print('Image upload failed');
+          //  print('Image upload failed');
         }
       } catch (e) {
-        print('Error during image processing: $e');
+        //print('Error during image processing: $e');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      // print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -398,7 +400,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
     var response = await http.get(Uri.parse(url));
 
     var result = json.decode(response.body);
-    print(result.toString());
+    // print(result.toString());
     try {
       if (result.toString() == 'true') {
         read_GC_color();
@@ -417,7 +419,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
     var response = await http.get(Uri.parse(url));
 
     var result = json.decode(response.body);
-    print(result.toString());
+    //print(result.toString());
     try {
       if (result.toString() == 'true') {
         read_GC_color();
@@ -1059,7 +1061,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                     Row(children: [
+                      Row(children: [
                         Padding(
                           padding: const EdgeInsets.all(4.0),
                           child: InkWell(
@@ -1138,430 +1140,401 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                       Row(
                         children: [
                           (ser_tap_user == 1)
-                              ? AdminSet_User() 
-                              :
-                          Expanded(
-                            child: Column(
-                              children: [
-                                    Row(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Text(
-                                        'Location',
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          color: Colors.black,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Text(
-                                        '[ All ${renTalModels.length} ]',
-                                        maxLines: 1,
-                                        style: TextStyle(
-                                          color: Colors.green,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: Responsive.isDesktop(context)
-                                      ? MediaQuery.of(context).size.height -
-                                          (MediaQuery.of(context).size.width *
-                                              0.1)
-                                      : MediaQuery.of(context).size.height *
-                                              0.95 -
-                                          (MediaQuery.of(context).size.width *
-                                              0.2),
-                                  child: GridView.count(
-                                    crossAxisCount:
-                                        Responsive.isDesktop(context) ? 5 : 2,
+                              ? AdminSet_User()
+                              : Expanded(
+                                  child: Column(
                                     children: [
-                                      for (int i = 0;
-                                          i < renTalModels.length;
-                                          i++)
-                                        Card(
-                                          color: Colors.white,
-                                          child: InkWell(
-                                            onTap: () async {
-                                              setState(() {
-                                                _Licens = null;
-                                              });
-                                              genORsign(i);
-                                            },
-                                            child: Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Column(
-                                                children: [
-                                                  OutlinedButton(
-                                                    onPressed: () {
-                                                      int ser_tab = 0;
-                                                      showDialog<void>(
-                                                        barrierDismissible:
-                                                            false,
-                                                        context: context,
-                                                        builder: (BuildContext
-                                                            context) {
-                                                          return AlertDialog(
-                                                            backgroundColor:
-                                                                Colors
-                                                                    .grey[350],
-                                                            title:
-                                                                StreamBuilder(
-                                                                    stream: Stream.periodic(const Duration(
-                                                                        milliseconds:
-                                                                            500)),
-                                                                    builder:
-                                                                        (context,
-                                                                            snapshot) {
-                                                                      return Column(
-                                                                        children: [
-                                                                          Text((ser_tab == 0)
-                                                                              ? 'ตั้งค่าสี #App Bar (${renTalModels[i].pn})'
-                                                                              : (ser_tab == 1)
-                                                                                  ? 'ตั้งค่าสี #Side Bar (${renTalModels[i].pn})'
-                                                                                  : (ser_tab == 2)
-                                                                                      ? 'ตั้งค่าสี #Light Mode (${renTalModels[i].pn})'
-                                                                                      : 'ตั้งค่าสี #Dark Mode (${renTalModels[i].pn})'),
-                                                                          Row(
-                                                                            children: [
-                                                                              for (int index = 0; index < 4; index++)
-                                                                                Padding(
-                                                                                  padding: const EdgeInsets.all(4.0),
-                                                                                  child: ElevatedButton(
-                                                                                    child: Text((index == 0)
-                                                                                        ? 'App Bar'
-                                                                                        : (index == 1)
-                                                                                            ? ' Side Bar'
-                                                                                            : (index == 2)
-                                                                                                ? 'Light Mode'
-                                                                                                : 'Dark Mode'),
-                                                                                    style: ElevatedButton.styleFrom(backgroundColor: Colors.grey, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                                                                    onPressed: () async {
-                                                                                      setState(() {
-                                                                                        ser_tab = index;
-                                                                                      });
-
-                                                                                      (index == 0)
-                                                                                          ? (renTalModels[i].colors_ren == null || renTalModels[i].colors_ren.toString() == '')
-                                                                                              ? null
-                                                                                              : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_ren!)))
+                                      Row(
+                                        children: [
+                                          Padding(
+                                            padding: const EdgeInsets.all(4.0),
+                                            child: Text(
+                                              'Location',
+                                              maxLines: 1,
+                                              style: TextStyle(
+                                                color: Colors.black,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: FontWeight_.Fonts_T,
+                                              ),
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(4.0),
+                                            child: Text(
+                                              '[ All ${renTalModels.length} ]',
+                                              maxLines: 1,
+                                              style: TextStyle(
+                                                color: Colors.green,
+                                                // fontWeight: FontWeight.bold,
+                                                fontFamily: Font_.Fonts_T,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Container(
+                                        width:
+                                            MediaQuery.of(context).size.width,
+                                        height: Responsive.isDesktop(context)
+                                            ? MediaQuery.of(context)
+                                                    .size
+                                                    .height -
+                                                (MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.1)
+                                            : MediaQuery.of(context)
+                                                        .size
+                                                        .height *
+                                                    0.95 -
+                                                (MediaQuery.of(context)
+                                                        .size
+                                                        .width *
+                                                    0.2),
+                                        child: GridView.count(
+                                          crossAxisCount:
+                                              Responsive.isDesktop(context)
+                                                  ? 5
+                                                  : 2,
+                                          children: [
+                                            for (int i = 0;
+                                                i < renTalModels.length;
+                                                i++)
+                                              Card(
+                                                color: Colors.white,
+                                                child: InkWell(
+                                                  onTap: () async {
+                                                    setState(() {
+                                                      _Licens = null;
+                                                    });
+                                                    genORsign(i);
+                                                  },
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Column(
+                                                      children: [
+                                                        OutlinedButton(
+                                                          onPressed: () {
+                                                            int ser_tab = 0;
+                                                            showDialog<void>(
+                                                              barrierDismissible:
+                                                                  false,
+                                                              context: context,
+                                                              builder:
+                                                                  (BuildContext
+                                                                      context) {
+                                                                return AlertDialog(
+                                                                  backgroundColor:
+                                                                      Colors.grey[
+                                                                          350],
+                                                                  title: StreamBuilder(
+                                                                      stream: Stream.periodic(const Duration(milliseconds: 500)),
+                                                                      builder: (context, snapshot) {
+                                                                        return Column(
+                                                                          children: [
+                                                                            Text((ser_tab == 0)
+                                                                                ? 'ตั้งค่าสี #App Bar (${renTalModels[i].pn})'
+                                                                                : (ser_tab == 1)
+                                                                                    ? 'ตั้งค่าสี #Side Bar (${renTalModels[i].pn})'
+                                                                                    : (ser_tab == 2)
+                                                                                        ? 'ตั้งค่าสี #Light Mode (${renTalModels[i].pn})'
+                                                                                        : 'ตั้งค่าสี #Dark Mode (${renTalModels[i].pn})'),
+                                                                            Row(
+                                                                              children: [
+                                                                                for (int index = 0; index < 4; index++)
+                                                                                  Padding(
+                                                                                    padding: const EdgeInsets.all(4.0),
+                                                                                    child: ElevatedButton(
+                                                                                      child: Text((index == 0)
+                                                                                          ? 'App Bar'
                                                                                           : (index == 1)
-                                                                                              ? (renTalModels[i].colors_subren == null || renTalModels[i].colors_subren.toString() == '')
-                                                                                                  ? null
-                                                                                                  : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_subren!)))
+                                                                                              ? ' Side Bar'
                                                                                               : (index == 2)
-                                                                                                  ? (renTalModels[i].colors_light == null || renTalModels[i].colors_light.toString() == '')
-                                                                                                      ? null
-                                                                                                      : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_light!)))
-                                                                                                  : (renTalModels[i].colors_dark == null || renTalModels[i].colors_dark.toString() == '')
-                                                                                                      ? null
-                                                                                                      : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_dark!)));
-                                                                                    },
+                                                                                                  ? 'Light Mode'
+                                                                                                  : 'Dark Mode'),
+                                                                                      style: ElevatedButton.styleFrom(backgroundColor: Colors.grey, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                                                                      onPressed: () async {
+                                                                                        setState(() {
+                                                                                          ser_tab = index;
+                                                                                        });
+
+                                                                                        (index == 0)
+                                                                                            ? (renTalModels[i].colors_ren == null || renTalModels[i].colors_ren.toString() == '')
+                                                                                                ? null
+                                                                                                : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_ren!)))
+                                                                                            : (index == 1)
+                                                                                                ? (renTalModels[i].colors_subren == null || renTalModels[i].colors_subren.toString() == '')
+                                                                                                    ? null
+                                                                                                    : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_subren!)))
+                                                                                                : (index == 2)
+                                                                                                    ? (renTalModels[i].colors_light == null || renTalModels[i].colors_light.toString() == '')
+                                                                                                        ? null
+                                                                                                        : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_light!)))
+                                                                                                    : (renTalModels[i].colors_dark == null || renTalModels[i].colors_dark.toString() == '')
+                                                                                                        ? null
+                                                                                                        : setState(() => pickerColor = Color(int.parse(renTalModels[i].colors_dark!)));
+                                                                                      },
+                                                                                    ),
                                                                                   ),
+                                                                              ],
+                                                                            )
+                                                                          ],
+                                                                        );
+                                                                      }),
+                                                                  content:
+                                                                      ColorPicker(
+                                                                    pickerColor:
+                                                                        pickerColor,
+                                                                    onColorChanged:
+                                                                        changeColors,
+                                                                  ),
+                                                                  actions: <Widget>[
+                                                                    StreamBuilder(
+                                                                        stream: Stream.periodic(const Duration(
+                                                                            milliseconds:
+                                                                                500)),
+                                                                        builder:
+                                                                            (context,
+                                                                                snapshot) {
+                                                                          return Row(
+                                                                            mainAxisAlignment:
+                                                                                MainAxisAlignment.end,
+                                                                            children: [
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.all(8.0),
+                                                                                child: ElevatedButton(
+                                                                                  child: const Text('คืนค่า Default'),
+                                                                                  onPressed: () async {
+                                                                                    var hexColor = (ser_tab == 1) ? 0xFF9BC945 : 0xFF102456;
+                                                                                    var Mode_Color = (ser_tab == 2) ? 0xFFD9D9B7 : 0xff9ba2cb;
+
+                                                                                    String url = (ser_tab < 2) ? '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${hexColor}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab' : '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${Mode_Color}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab';
+
+                                                                                    try {
+                                                                                      var response = await http.get(Uri.parse(url));
+
+                                                                                      var result = json.decode(response.body);
+                                                                                      if (result.toString() == 'true') {
+                                                                                        Future.delayed(Duration(milliseconds: 500), () {
+                                                                                          setState(() {
+                                                                                            read_GC_rental();
+                                                                                            read_GC_package();
+                                                                                            read_GC_packageGen();
+                                                                                            read_GC_otp();
+                                                                                          });
+                                                                                        });
+
+                                                                                        Navigator.of(context).pop();
+                                                                                      }
+                                                                                    } catch (e) {
+                                                                                      Navigator.of(context).pop();
+                                                                                    }
+                                                                                  },
+                                                                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                                                                                 ),
-                                                                            ],
-                                                                          )
-                                                                        ],
-                                                                      );
-                                                                    }),
-                                                            content:
-                                                                ColorPicker(
-                                                              pickerColor:
-                                                                  pickerColor,
-                                                              onColorChanged:
-                                                                  changeColors,
-                                                            ),
-                                                            actions: <Widget>[
-                                                              StreamBuilder(
-                                                                  stream: Stream.periodic(
-                                                                      const Duration(
-                                                                          milliseconds:
-                                                                              500)),
-                                                                  builder: (context,
-                                                                      snapshot) {
-                                                                    return Row(
-                                                                      mainAxisAlignment:
-                                                                          MainAxisAlignment
-                                                                              .end,
-                                                                      children: [
-                                                                        Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(8.0),
-                                                                          child:
-                                                                              ElevatedButton(
-                                                                            child:
-                                                                                const Text('คืนค่า Default'),
-                                                                            onPressed:
-                                                                                () async {
-                                                                              var hexColor = (ser_tab == 1) ? 0xFF9BC945 : 0xFF102456;
-                                                                              var Mode_Color = (ser_tab == 2) ? 0xFFD9D9B7 : 0xff9ba2cb;
-
-                                                                              String url = (ser_tab < 2) ? '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${hexColor}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab' : '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${Mode_Color}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab';
-
-                                                                              try {
-                                                                                var response = await http.get(Uri.parse(url));
-
-                                                                                var result = json.decode(response.body);
-                                                                                if (result.toString() == 'true') {
-                                                                                  Future.delayed(Duration(milliseconds: 500), () {
-                                                                                    setState(() {
-                                                                                      read_GC_rental();
-                                                                                      read_GC_package();
-                                                                                      read_GC_packageGen();
-                                                                                      read_GC_otp();
-                                                                                    });
-                                                                                  });
-
-                                                                                  Navigator.of(context).pop();
-                                                                                }
-                                                                              } catch (e) {
-                                                                                Navigator.of(context).pop();
-                                                                              }
-                                                                            },
-                                                                            style: ElevatedButton.styleFrom(
-                                                                                backgroundColor: Colors.blue,
-                                                                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                                                                                textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                                                          ),
-                                                                        ),
-                                                                        Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(8.0),
-                                                                          child:
-                                                                              ElevatedButton(
-                                                                            child:
-                                                                                const Text('ยกเลิก'),
-                                                                            style: ElevatedButton.styleFrom(
-                                                                                backgroundColor: Colors.red,
-                                                                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                                                                                textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                                                            onPressed:
-                                                                                () async {
-                                                                              read_GC_rental();
-                                                                              Navigator.of(context).pop();
-                                                                            },
-                                                                          ),
-                                                                        ),
-                                                                        Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(8.0),
-                                                                          child:
-                                                                              ElevatedButton(
-                                                                            child:
-                                                                                const Text('บันทึก'),
-                                                                            style: ElevatedButton.styleFrom(
-                                                                                backgroundColor: Colors.green,
-                                                                                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-                                                                                textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                                                                            onPressed:
-                                                                                () async {
-                                                                              // setState(() => currentColor = pickerColor);
-
-                                                                              String colorString = pickerColor.toString();
-                                                                              int startIndex = colorString.indexOf('(') + 1;
-                                                                              int endIndex = colorString.indexOf(')');
-                                                                              String hexColor = colorString.substring(startIndex, endIndex);
-                                                                              // print(hexColor);
-
-                                                                              if (hexColor != '' && hexColor != null) {
-                                                                                String url = (ser_tab < 2) ? '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${hexColor}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab' : '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${hexColor}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab';
-
-                                                                                try {
-                                                                                  var response = await http.get(Uri.parse(url));
-
-                                                                                  var result = json.decode(response.body);
-                                                                                  if (result.toString() == 'true') {
-                                                                                    Future.delayed(Duration(milliseconds: 500), () {
-                                                                                      setState(() {
-                                                                                        read_GC_rental();
-                                                                                        read_GC_package();
-                                                                                        read_GC_packageGen();
-                                                                                        read_GC_otp();
-                                                                                      });
-                                                                                    });
-
+                                                                              ),
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.all(8.0),
+                                                                                child: ElevatedButton(
+                                                                                  child: const Text('ยกเลิก'),
+                                                                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                                                                  onPressed: () async {
+                                                                                    read_GC_rental();
                                                                                     Navigator.of(context).pop();
-                                                                                  }
-                                                                                } catch (e) {
-                                                                                  Navigator.of(context).pop();
-                                                                                }
-                                                                              } else {}
-                                                                            },
-                                                                          ),
-                                                                        ),
-                                                                      ],
-                                                                    );
-                                                                  }),
-                                                            ],
-                                                          );
-                                                        },
-                                                      );
-                                                    },
-                                                    child: Icon(
-                                                        Icons.color_lens,
-                                                        color: Colors.white),
-                                                    style: ElevatedButton.styleFrom(
-                                                        backgroundColor: (renTalModels[i].colors_ren ==
-                                                                    null ||
-                                                                renTalModels[i]
-                                                                        .colors_ren
-                                                                        .toString() ==
-                                                                    '')
-                                                            ? Colors.white
-                                                            : Color(int.parse(
-                                                                renTalModels[i]
-                                                                    .colors_ren
-                                                                    .toString())),
-                                                        padding:
-                                                            EdgeInsets.symmetric(
-                                                                horizontal: 10,
-                                                                vertical: 10),
-                                                        textStyle: TextStyle(
-                                                            fontSize: 14,
-                                                            fontWeight:
-                                                                FontWeight.bold)),
-                                                  ),
-                                                  Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .center,
-                                                    children: [
-                                                      Expanded(
-                                                        child: Column(
-                                                          crossAxisAlignment:
-                                                              CrossAxisAlignment
-                                                                  .center,
+                                                                                  },
+                                                                                ),
+                                                                              ),
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.all(8.0),
+                                                                                child: ElevatedButton(
+                                                                                  child: const Text('บันทึก'),
+                                                                                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: EdgeInsets.symmetric(horizontal: 20, vertical: 20), textStyle: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                                                                                  onPressed: () async {
+                                                                                    // setState(() => currentColor = pickerColor);
+
+                                                                                    String colorString = pickerColor.toString();
+                                                                                    int startIndex = colorString.indexOf('(') + 1;
+                                                                                    int endIndex = colorString.indexOf(')');
+                                                                                    String hexColor = colorString.substring(startIndex, endIndex);
+                                                                                    // print(hexColor);
+
+                                                                                    if (hexColor != '' && hexColor != null) {
+                                                                                      String url = (ser_tab < 2) ? '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${hexColor}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab' : '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${hexColor}&colors_type=1&ser_ren=${renTalModels[i].ser}&ser_tap=$ser_tab';
+
+                                                                                      try {
+                                                                                        var response = await http.get(Uri.parse(url));
+
+                                                                                        var result = json.decode(response.body);
+                                                                                        if (result.toString() == 'true') {
+                                                                                          Future.delayed(Duration(milliseconds: 500), () {
+                                                                                            setState(() {
+                                                                                              read_GC_rental();
+                                                                                              read_GC_package();
+                                                                                              read_GC_packageGen();
+                                                                                              read_GC_otp();
+                                                                                            });
+                                                                                          });
+
+                                                                                          Navigator.of(context).pop();
+                                                                                        }
+                                                                                      } catch (e) {
+                                                                                        Navigator.of(context).pop();
+                                                                                      }
+                                                                                    } else {}
+                                                                                  },
+                                                                                ),
+                                                                              ),
+                                                                            ],
+                                                                          );
+                                                                        }),
+                                                                  ],
+                                                                );
+                                                              },
+                                                            );
+                                                          },
+                                                          child: Icon(
+                                                              Icons.color_lens,
+                                                              color:
+                                                                  Colors.white),
+                                                          style: ElevatedButton.styleFrom(
+                                                              backgroundColor: (renTalModels[i].colors_ren ==
+                                                                          null ||
+                                                                      renTalModels[i]
+                                                                              .colors_ren
+                                                                              .toString() ==
+                                                                          '')
+                                                                  ? Colors.white
+                                                                  : Color(int.parse(
+                                                                      renTalModels[i]
+                                                                          .colors_ren
+                                                                          .toString())),
+                                                              padding: EdgeInsets.symmetric(
+                                                                  horizontal:
+                                                                      10,
+                                                                  vertical: 10),
+                                                              textStyle: TextStyle(
+                                                                  fontSize: 14,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold)),
+                                                        ),
+                                                        Row(
                                                           mainAxisAlignment:
                                                               MainAxisAlignment
                                                                   .center,
                                                           children: [
-                                                            AutoSizeText(
-                                                              minFontSize: 10,
-                                                              maxFontSize: 15,
-                                                              maxLines: 1,
-                                                              '${renTalModels[i].pn}',
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: const TextStyle(
-                                                                  color: PeopleChaoScreen_Color
-                                                                      .Colors_Text2_,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                            AutoSizeText(
-                                                              minFontSize: 10,
-                                                              maxFontSize: 15,
-                                                              maxLines: 2,
-                                                              '${renTalModels[i].bill_name}',
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .grey,
-                                                                  //fontWeight: FontWeight.bold,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                            AutoSizeText(
-                                                              minFontSize: 10,
-                                                              maxFontSize: 15,
-                                                              maxLines: 1,
-                                                              renTalModels[i]
-                                                                          .pkldate ==
-                                                                      '0000-00-00'
-                                                                  ? '( Free )'
-                                                                  : '( ${renTalModels[i].pkldate} )',
-                                                              textAlign:
-                                                                  TextAlign
-                                                                      .center,
-                                                              style: TextStyle(
-                                                                  color: renTalModels[i]
-                                                                              .pkldate ==
-                                                                          '0000-00-00'
-                                                                      ? Colors
-                                                                          .blue
-                                                                          .shade900
-                                                                      : Colors
-                                                                          .black,
-                                                                  //fontWeight: FontWeight.bold,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                            datenow.isAfter(DateTime.parse(renTalModels[i].pkldate ==
-                                                                                '0000-00-00'
-                                                                            ? '${renTalModels[i].data_update}'
-                                                                            : '${renTalModels[i].pkldate} 00:00:00.000')
-                                                                        .subtract(const Duration(
-                                                                            days:
-                                                                                7))) ==
-                                                                    true
-                                                                ? AutoSizeText(
+                                                            Expanded(
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .center,
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .center,
+                                                                children: [
+                                                                  AutoSizeText(
                                                                     minFontSize:
                                                                         10,
                                                                     maxFontSize:
                                                                         15,
                                                                     maxLines: 1,
-                                                                    '- ใกล้หมดอายุ -',
+                                                                    '${renTalModels[i].pn}',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    style: const TextStyle(
+                                                                        color: PeopleChaoScreen_Color
+                                                                            .Colors_Text2_,
+                                                                        fontWeight:
+                                                                            FontWeight
+                                                                                .bold,
+                                                                        fontFamily:
+                                                                            Font_.Fonts_T),
+                                                                  ),
+                                                                  AutoSizeText(
+                                                                    minFontSize:
+                                                                        10,
+                                                                    maxFontSize:
+                                                                        15,
+                                                                    maxLines: 2,
+                                                                    '${renTalModels[i].bill_name}',
                                                                     textAlign:
                                                                         TextAlign
                                                                             .center,
                                                                     style: TextStyle(
-                                                                        color: Colors.red,
+                                                                        color: Colors.grey,
                                                                         //fontWeight: FontWeight.bold,
                                                                         fontFamily: Font_.Fonts_T),
-                                                                  )
-                                                                : datenow.isAfter(DateTime.parse(renTalModels[i].pkldate == '0000-00-00'
-                                                                                ? '${renTalModels[i].data_update}'
-                                                                                : '${renTalModels[i].pkldate} 00:00:00.000')
-                                                                            .subtract(const Duration(days: 0))) ==
-                                                                        true
-                                                                    ? AutoSizeText(
-                                                                        minFontSize:
-                                                                            10,
-                                                                        maxFontSize:
-                                                                            15,
-                                                                        maxLines:
-                                                                            1,
-                                                                        '- หมดอายุ -',
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                        style: TextStyle(
-                                                                            color: Colors.red,
-                                                                            //fontWeight: FontWeight.bold,
-                                                                            fontFamily: Font_.Fonts_T),
-                                                                      )
-                                                                    : SizedBox(),
+                                                                  ),
+                                                                  AutoSizeText(
+                                                                    minFontSize:
+                                                                        10,
+                                                                    maxFontSize:
+                                                                        15,
+                                                                    maxLines: 1,
+                                                                    renTalModels[i].pkldate ==
+                                                                            '0000-00-00'
+                                                                        ? '( Free )'
+                                                                        : '( ${renTalModels[i].pkldate} )',
+                                                                    textAlign:
+                                                                        TextAlign
+                                                                            .center,
+                                                                    style: TextStyle(
+                                                                        color: renTalModels[i].pkldate == '0000-00-00' ? Colors.blue.shade900 : Colors.black,
+                                                                        //fontWeight: FontWeight.bold,
+                                                                        fontFamily: Font_.Fonts_T),
+                                                                  ),
+                                                                  datenow.isAfter(DateTime.parse(renTalModels[i].pkldate == '0000-00-00' ? '${renTalModels[i].data_update}' : '${renTalModels[i].pkldate} 00:00:00.000').subtract(const Duration(
+                                                                              days:
+                                                                                  7))) ==
+                                                                          true
+                                                                      ? AutoSizeText(
+                                                                          minFontSize:
+                                                                              10,
+                                                                          maxFontSize:
+                                                                              15,
+                                                                          maxLines:
+                                                                              1,
+                                                                          '- ใกล้หมดอายุ -',
+                                                                          textAlign:
+                                                                              TextAlign.center,
+                                                                          style: TextStyle(
+                                                                              color: Colors.red,
+                                                                              //fontWeight: FontWeight.bold,
+                                                                              fontFamily: Font_.Fonts_T),
+                                                                        )
+                                                                      : datenow.isAfter(DateTime.parse(renTalModels[i].pkldate == '0000-00-00' ? '${renTalModels[i].data_update}' : '${renTalModels[i].pkldate} 00:00:00.000').subtract(const Duration(days: 0))) ==
+                                                                              true
+                                                                          ? AutoSizeText(
+                                                                              minFontSize: 10,
+                                                                              maxFontSize: 15,
+                                                                              maxLines: 1,
+                                                                              '- หมดอายุ -',
+                                                                              textAlign: TextAlign.center,
+                                                                              style: TextStyle(
+                                                                                  color: Colors.red,
+                                                                                  //fontWeight: FontWeight.bold,
+                                                                                  fontFamily: Font_.Fonts_T),
+                                                                            )
+                                                                          : SizedBox(),
+                                                                ],
+                                                              ),
+                                                            )
                                                           ],
                                                         ),
-                                                      )
-                                                    ],
+                                                      ],
+                                                    ),
                                                   ),
-                                                ],
-                                              ),
-                                            ),
-                                          ),
-                                        )
+                                                ),
+                                              )
+                                          ],
+                                        ),
+                                      ),
                                     ],
                                   ),
                                 ),
-                              ],
-                            ),
-                          ),
                           Expanded(
                               child: Column(
                             children: [
@@ -1898,14 +1871,14 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                         var result =
                                                             json.decode(
                                                                 response.body);
-                                                        print(result);
+                                                        // print(result);
                                                         if (result.toString() ==
                                                             'true') {
                                                           setState(() {
                                                             read_GC_packageGen();
                                                           });
-                                                          print(
-                                                              '$vv  $packSelext  $packint');
+                                                          // print(
+                                                          //    '$vv  $packSelext  $packint');
                                                         }
                                                       } catch (e) {}
                                                       setState(() {
@@ -1932,7 +1905,8 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                               ),
                                             ))
                                       ],
-                                    ),    Row(
+                                    ),
+                                    Row(
                                       children: [
                                         Padding(
                                           padding: const EdgeInsets.fromLTRB(
@@ -2020,7 +1994,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                         ),
                                       ],
                                     ),
-                                     Column(
+                                    Column(
                                       children: [
                                         Container(
                                           decoration: BoxDecoration(
@@ -2168,7 +2142,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                               style: TextStyle(
                                                                 color: Colors
                                                                     .black,
-                                                          fontWeight:
+                                                                fontWeight:
                                                                     FontWeight
                                                                         .bold,
                                                                 fontFamily: Font_
@@ -2176,7 +2150,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                               ),
                                                             ),
                                                           ),
-                                                         (ser_tap == 0)
+                                                          (ser_tap == 0)
                                                               ? Expanded(
                                                                   flex: 2,
                                                                   child: StreamBuilder(
@@ -2199,22 +2173,16 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                                                   return Text(
                                                                                     '${snapshot.data.toString()}',
                                                                                     // '${userModels.length}***/$connected_Minutes/$ser_user/$email_user',
-                                                                                   style:
-                                                                        TextStyle(
-                                                                      color: Colors
-                                                                          .green,
-                                                                      // fontWeight: FontWeight.bold,
-                                                                      fontFamily:
-                                                                          Font_
-                                                                              .Fonts_T,
-                                                                    ),
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.green,
+                                                                                      // fontWeight: FontWeight.bold,
+                                                                                      fontFamily: Font_.Fonts_T,
+                                                                                    ),
                                                                                   );
                                                                                 }
                                                                               },
                                                                             ));
-                                                                      })
-                                                               
-                                                                  )
+                                                                      }))
                                                               : Expanded(
                                                                   flex: 1,
                                                                   child: Text(
@@ -2235,7 +2203,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                                   ),
                                                                 ),
                                                           (ser_tap == 0)
-                                                              ?Expanded(
+                                                              ? Expanded(
                                                                   flex:
                                                                       (ser_tap ==
                                                                               0)
@@ -2436,7 +2404,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
   }
 
   Future<String?> genORsign(int i) {
-    print('renTalModels ser ${renTalModels[i].ser}');
+    // print('renTalModels ser ${renTalModels[i].ser}');
     setState(() {
       var ser = renTalModels[i].ser;
       r_email =
@@ -3033,8 +3001,8 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                             var pack = '0';
                                             var fileName_Slip_ = '';
                                             var pri = '0';
-                                            print(
-                                                'serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
+                                            //// print(
+                                            //    'serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
                                             String url =
                                                 '${MyConstant().domain}/In_Package_put.php?isAdd=true&serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld&sta=$sta&ema=$ema&pack=$pack&Slip=$fileName_Slip_&pri=$pri';
 
@@ -3044,7 +3012,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
 
                                               var result =
                                                   json.decode(response.body);
-                                              print(result);
+                                              //  print(result);
                                               if (result.toString() == 'true') {
                                                 setState(() {
                                                   read_packageGen(ser);
@@ -3073,8 +3041,8 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                 ? renTalModels[i].datex
                                                 : renTalModels[i].pkldate;
 
-                                            print(
-                                                'Up_Package_put >>> serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
+                                            //   print(
+                                            //     'Up_Package_put >>> serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
                                             String url =
                                                 '${MyConstant().domain}/Up_Package_put.php?isAdd=true&serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld';
 
@@ -3084,7 +3052,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
 
                                               var result =
                                                   json.decode(response.body);
-                                              print(result);
+                                              // print(result);
                                               if (result.toString() == 'true') {
                                                 setState(() {
                                                   read_packageGen(ser);
@@ -3203,7 +3171,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
 
                                                   var result = json
                                                       .decode(response.body);
-                                                  print(result);
+                                                  //   print(result);
                                                   if (result.toString() ==
                                                       'true') {
                                                     MaterialPageRoute route =
@@ -3859,7 +3827,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
                                                 onCanceled: () {},
                                                 onSelected: (value) async {
                                                   ///UP_emailAdminSer
-                                                  print(value);
+                                                  //    print(value);
                                                   try {
                                                     final url =
                                                         '${MyConstant().domain}/UP_emailAdminSer.php';
@@ -3980,10 +3948,10 @@ class _SignUnAdminState extends State<SignUnAdmin> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       for (var map in result) {
         UserModel userModel = UserModel.fromJson(map);
-        print('serren>>>>$serren');
+        // print('serren>>>>$serren');
         routeToService(AdminScafScreen(route: 'หน้าหลัก'), userModel, serren);
       }
     } catch (e) {
@@ -4005,10 +3973,10 @@ class _SignUnAdminState extends State<SignUnAdmin> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       for (var map in result) {
         UserModel userModel = UserModel.fromJson(map);
-        print('serren>>>>$serren');
+        // print('serren>>>>$serren');
         routeToService(AdminScafScreen(route: 'หน้าหลัก'), userModel, serren);
       }
     } catch (e) {
@@ -4037,7 +4005,7 @@ class _SignUnAdminState extends State<SignUnAdmin> {
     preferences.setString('lavel', userModel.user_id.toString());
     preferences.setString('route', 'หน้าหลัก');
     preferences.setString('pakanPay', 0.toString());
-        preferences.setString('Auto_cancel', 'Yes');
+    preferences.setString('Auto_cancel', 'Yes');
     Insert_log.Insert_logs('ล็อคอิน', 'เข้าสู่ระบบ');
     MaterialPageRoute route = MaterialPageRoute(
       builder: (context) => myWidget,

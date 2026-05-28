@@ -1032,12 +1032,12 @@ class _LockpayScreenState extends State<LockpayScreen> {
       await request.onLoad.first;
 
       if (request.status == 200) {
-        print('File uploaded successfully!');
+        // print('File uploaded successfully!');
       } else {
-        print('File upload failed with status code: ${request.status}');
+        // print('File upload failed with status code: ${request.status}');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      // print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -1634,8 +1634,11 @@ class _LockpayScreenState extends State<LockpayScreen> {
                 Form(
                   key: _formKey,
                   child: Container(
+                    width: (Responsive.isDesktop(context))
+                        ? MediaQuery.of(context).size.width * 0.83
+                        : 1400,
                     // color: Colors.red,
-                    width: MediaQuery.of(context).size.width,
+                    // width: MediaQuery.of(context).size.width,
                     // height: 450,
                     child: Column(
                       children: [

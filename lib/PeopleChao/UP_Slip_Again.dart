@@ -6,10 +6,16 @@ import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Style/colors.dart';
 
 /////////----------------------------------------------------------->
+
+// ignore: depend_on_referenced_packages
+import 'package:image/image.dart'
+    as img; // Add this import for image manipulation
+import 'dart:typed_data';
 
 dynamic uploadFile_Slip_Again(context, docno, datex, type, slip, foder) async {
   if (datex == null ||
@@ -25,29 +31,98 @@ dynamic uploadFile_Slip_Again(context, docno, datex, type, slip, foder) async {
     );
   } else {
     var extension;
-    var file;
+    // var file;
 
     String? base64_Slip;
-    // ignore: deprecated_member_use
     final imagePicker = ImagePicker();
-    final pickedFile = await imagePicker.getImage(
-        source: ImageSource.gallery, maxHeight: 100, maxWidth: 100);
+    // Allow picking multiple images
+    final List<XFile>? pickedFiles = await imagePicker.pickMultiImage(
+      imageQuality: 80, // Optional: adjust quality
+      maxWidth: 1024, // Resize large images to avoid OOM
+    );
 
-    if (pickedFile == null) {
+    if (pickedFiles == null || pickedFiles.isEmpty) {
       // print('User canceled image selection');
       return;
     } else {
-      // 2. Read the image as bytes
-      final imageBytes = await pickedFile.readAsBytes();
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Text("กำลังประมวลผลรูปภาพ..."),
+                ],
+              ),
+            ),
+          );
+        },
+      );
 
-      // 3. Encode the image as a base64 string
-      final base64Image = base64Encode(imageBytes);
-      base64_Slip = base64Image;
+      extension = 'png'; // We will encode the merged result as PNG (or JPG)
 
-      extension = 'png';
+      if (pickedFiles.length == 1) {
+        // Single image case
+        final imageBytes = await pickedFiles[0].readAsBytes();
+        base64_Slip = base64Encode(imageBytes);
+      } else {
+        // Multiple images case: Merge them
+        try {
+          List<img.Image> images = [];
+          int totalHeight = 0;
+          int maxWidth = 0;
+
+          for (var file in pickedFiles) {
+            final bytes = await file.readAsBytes();
+            final decodedImage = img.decodeImage(bytes);
+            if (decodedImage != null) {
+              images.add(decodedImage);
+              totalHeight += decodedImage.height;
+              if (decodedImage.width > maxWidth) {
+                maxWidth = decodedImage.width;
+              }
+            }
+          }
+
+          if (images.isEmpty) {
+            Navigator.pop(context); // Close loading if no images
+            return;
+          }
+
+          // Create a merged image canvas
+          final mergedImage = img.Image(width: maxWidth, height: totalHeight);
+
+          int currentY = 0;
+          for (var image in images) {
+            // Draw each image onto the merged canvas
+            // If image width is smaller than maxWidth, we might want to center it or just draw at 0
+            // For simplicity, drawing at 0,0 relative to currentY
+            img.compositeImage(mergedImage, image, dstX: 0, dstY: currentY);
+            currentY += image.height;
+          }
+
+          // Encode the merged image to PNG
+          final mergedBytes = img.encodePng(mergedImage);
+          base64_Slip = base64Encode(mergedBytes);
+        } catch (e) {
+          Navigator.pop(context); // Close loading on error
+          print('Error merging images: $e');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error merging images: $e')),
+          );
+          return;
+        }
+      }
     }
     OKuploadFile_Slip(
-        context, extension, file, base64_Slip, docno, datex, type, slip, foder);
+        context, extension, null, base64_Slip, docno, datex, type, slip, foder);
   }
 }
 
@@ -91,7 +166,7 @@ Future<void> OKuploadFile_Slip(context, extension, file, base64_Slip, docno,
         final url =
             '${MyConstant().domain}/File_uploadSlip_Again.php?name=$fileName_Slip&Foder=$foder&extension=$extension';
 
-        final response = await http.post(
+        final response = await httpClient.post(
           Uri.parse(url),
           body: {
             'ren': '$ren',

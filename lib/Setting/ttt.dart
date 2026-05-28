@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 
-
 class Singleimage extends StatefulWidget {
   const Singleimage({
     super.key,
@@ -62,11 +61,11 @@ class _SingleimageState extends State<Singleimage> {
             t = t + 2;
           });
           if (t >= tt.length.toInt()) {
-            print('t > tt.length');
-            print(tt.length.toInt());
+            //  print('t > tt.length');
+            //  print(tt.length.toInt());
           } else {
             _animateToIndex(t);
-            print(t);
+            //  print(t);
           }
         },
       ),

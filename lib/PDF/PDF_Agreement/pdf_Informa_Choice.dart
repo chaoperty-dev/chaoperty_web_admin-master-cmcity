@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 
 import '../../ChaoArea/ChaoAreaRenew_Screen.dart';
+import '../../Man_PDF/Preview_PDF/Preview_RentalInforma.dart';
 import '../../PeopleChao/Rental_Information.dart';
 import '../../Style/ThaiBaht.dart';
 import '../../Style/loadAndCacheImage.dart';
@@ -95,13 +96,28 @@ class Pdfgen_RentalInforma2 {
       'ยอด/งวด',
       'ยอด',
     ];
+    // double total_ = 0.0;
+    // // final tableData = [
+    // for (int index = 0; index < quotxSelectModels.length; index++)
+    //   total_ = total_ +
+    //       (double.parse((quotxSelectModels[index].total == null)
+    //           ? 0.00
+    //           : quotxSelectModels[index].total!));
+
     double total_ = 0.0;
     // final tableData = [
-    for (int index = 0; index < quotxSelectModels.length; index++)
-      total_ = total_ +
-          (double.parse((quotxSelectModels[index].total == null)
-              ? 0.00
-              : quotxSelectModels[index].total!));
+    for (int index = 0; index < quotxSelectModels.length; index++) {
+      // ถ้า amt_ty ไม่ว่างและ totals มีค่า ให้ใช้ totals
+      if (quotxSelectModels[index].amt_ty != null &&
+          quotxSelectModels[index].amt_ty.toString().isNotEmpty) {
+        total_ += double.tryParse(
+                quotxSelectModels[index].totals?.toString() ?? "0.00") ??
+            0.00;
+      } else {
+        total_ += (int.tryParse(quotxSelectModels[index].term ?? "0") ?? 0) *
+            (double.tryParse(quotxSelectModels[index].total ?? "0.00") ?? 0.00);
+      }
+    }
     // total_ = total_ +
     //     (int.parse((quotxSelectModels[index].total == null)
     //             ? 0
@@ -1407,9 +1423,20 @@ class Pdfgen_RentalInforma2 {
                             child: pw.Align(
                               alignment: pw.Alignment.centerRight,
                               child: pw.Text(
-                                (quotxSelectModels[index].total == null)
-                                    ? '0.00'
-                                    : '${nFormat.format(double.parse(quotxSelectModels[index].total!))}',
+                                (quotxSelectModels[index]
+                                            .amt_ty
+                                            ?.toString()
+                                            .isNotEmpty ==
+                                        true)
+                                    ? (quotxSelectModels[index].totals != null
+                                        ? 'อัตราพิเศษ'
+                                        : 'อัตราพิเศษ')
+                                    : (quotxSelectModels[index].total == null)
+                                        ? '0.00'
+                                        : '${nFormat.format(double.parse(quotxSelectModels[index].total!))}',
+                                // (quotxSelectModels[index].total == null)
+                                //     ? '0.00'
+                                //     : '${nFormat.format(double.parse(quotxSelectModels[index].total!))}',
                                 textAlign: pw.TextAlign.left,
                                 style: pw.TextStyle(
                                   fontSize: font_Size,
@@ -1434,9 +1461,20 @@ class Pdfgen_RentalInforma2 {
                             child: pw.Align(
                               alignment: pw.Alignment.centerRight,
                               child: pw.Text(
-                                (quotxSelectModels[index].total == null)
-                                    ? '0.00'
-                                    : '${nFormat.format(int.parse(quotxSelectModels[index].term!) * double.parse(quotxSelectModels[index].total!))}',
+                                (quotxSelectModels[index]
+                                            .amt_ty
+                                            ?.toString()
+                                            .isNotEmpty ==
+                                        true)
+                                    ? (quotxSelectModels[index].totals != null
+                                        ? '${nFormat.format(double.parse(quotxSelectModels[index].totals))}'
+                                        : '0.00')
+                                    : (quotxSelectModels[index].total == null
+                                        ? '0.00'
+                                        : '${nFormat.format(int.parse(quotxSelectModels[index].term!) * double.parse(quotxSelectModels[index].total!))}'),
+                                // (quotxSelectModels[index].total == null)
+                                //     ? '0.00'
+                                //     : '${nFormat.format(int.parse(quotxSelectModels[index].term!) * double.parse(quotxSelectModels[index].total!))}',
                                 textAlign: pw.TextAlign.right,
                                 style: pw.TextStyle(
                                   fontSize: font_Size,
@@ -1464,22 +1502,13 @@ class Pdfgen_RentalInforma2 {
                         child: pw.Row(
                           children: [
                             pw.SizedBox(width: 2 * PdfPageFormat.mm),
-                            pw.Text(
-                              'ตัวอักษร ',
-                              style: pw.TextStyle(
-                                  fontSize: font_Size,
-                                  fontWeight: pw.FontWeight.bold,
-                                  font: ttf,
-                                  fontStyle: pw.FontStyle.italic,
-                                  color: PdfColors.green900),
-                            ),
                             pw.Expanded(
-                              flex: 4,
+                              flex: 7,
                               child: pw.Text(
                                 //"${nFormat2.format(double.parse(Total.toString()))}";
                                 (total_ == null)
                                     ? '-'
-                                    : '(~${convertToThaiBaht(total_)}~)',
+                                    : 'ตัวอักษร (~${convertToThaiBaht(total_)}~)',
                                 style: pw.TextStyle(
                                   fontSize: font_Size,
                                   fontWeight: pw.FontWeight.bold,
@@ -1501,10 +1530,10 @@ class Pdfgen_RentalInforma2 {
                                   pw.Row(
                                     children: [
                                       pw.Expanded(
-                                        flex: 2,
+                                        flex: 1,
                                         child: pw.Text(
                                           'ยอดรวมสุทธิ',
-                                          textAlign: pw.TextAlign.left,
+                                          textAlign: pw.TextAlign.center,
                                           style: pw.TextStyle(
                                               fontWeight: pw.FontWeight.bold,
                                               font: ttf,
@@ -1513,7 +1542,7 @@ class Pdfgen_RentalInforma2 {
                                         ),
                                       ),
                                       pw.Expanded(
-                                        flex: 2,
+                                        flex: 1,
                                         child: pw.Text(
                                           (total_ == null)
                                               ? '0.00'
@@ -1537,18 +1566,6 @@ class Pdfgen_RentalInforma2 {
                                       //       fontSize: font_Size,
                                       //       color: PdfColors.green900),
                                       // ),
-                                      pw.Expanded(
-                                        flex: 2,
-                                        child: pw.Text(
-                                          '',
-                                          textAlign: pw.TextAlign.left,
-                                          style: pw.TextStyle(
-                                              fontWeight: pw.FontWeight.bold,
-                                              font: ttf,
-                                              fontSize: font_Size,
-                                              color: PdfColors.green900),
-                                        ),
-                                      ),
                                     ],
                                   ),
                                 ],
@@ -2477,7 +2494,8 @@ class Pdfgen_RentalInforma2 {
     Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => PreviewScreenRentalInforma(doc: pdf),
+          builder: (context) => PreviewScreenRentalInforma(
+              doc: pdf, Get_Value_cid: Get_Value_cid),
         ));
   }
 }

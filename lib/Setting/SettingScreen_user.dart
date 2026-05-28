@@ -13,7 +13,7 @@ import 'package:flutter_admin_scaffold/admin_scaffold.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../Account/Account_Screen.dart';
+import '../Account/Ac_Sub/Account_Screen.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
 import '../Constant/Myconstant.dart';
 import '../Home/Home_Screen.dart';
@@ -129,7 +129,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           AreaCountModel areaCountModel = AreaCountModel.fromJson(map);
@@ -154,7 +154,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result != null) {
         for (var map in result) {
           PackageModel packageModel = PackageModel.fromJson(map);
@@ -165,7 +165,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
         }
       } else {}
     } catch (e) {}
-    print('name>>>>>  $renname');
+    //print('name>>>>>  $renname');
   }
 
   Future<Null> read_GC_rental() async {
@@ -181,7 +181,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -211,7 +211,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
         }
       } else {}
     } catch (e) {}
-    print('name>>>>>  $renname');
+    //print('name>>>>>  $renname');
   }
 
   Future<Null> checkPreferance() async {
@@ -237,7 +237,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       Map<String, dynamic> map = Map();
       map['ser'] = '0';
       map['rser'] = '0';
@@ -278,7 +278,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         if (areaModels.length != 0) {
           areaModels.clear();
@@ -382,7 +382,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
           '${MyConstant().domain}/Up_imgMap.php?isAdd=true&ren=$ren&value=$fileName&ser_user=$ren';
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
       checkPreferance();
       read_GC_rental();
       read_GC_package();
@@ -395,7 +395,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
           '${MyConstant().domain}/Up_imglogo.php?isAdd=true&ren=$ren&value=$fileName&ser_user=$ren';
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
       checkPreferance();
       read_GC_rental();
       read_GC_package();
@@ -408,7 +408,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
           '${MyConstant().domain}/Up_imgZone.php?isAdd=true&ren=$ren&value=$fileName&ser=$Ser_';
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      print(result.toString());
+      //print(result.toString());
       checkPreferance();
       read_GC_rental();
       read_GC_package();
@@ -453,7 +453,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                 '&ser=$Ser_';
     var response = await http.get(Uri.parse(url));
     var result = json.decode(response.body);
-    print(result.toString());
+    //print(result.toString());
     read_GC_rental();
     checkPreferance();
     read_GC_package();
@@ -465,12 +465,12 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
     if (deleteRequest.status == 200) {
       final response = deleteRequest.response;
       if (response == 'File deleted successfully.') {
-        print('File deleted successfully!');
+        //print('File deleted successfully!');
       } else {
-        print('Failed to delete file: $response');
+        //print('Failed to delete file: $response');
       }
     } else {
-      print('Failed to delete file!');
+      //print('Failed to delete file!');
     }
   }
 
@@ -491,12 +491,12 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
     await reader.onLoadEnd.first;
     String fileName_ = file.name;
     String extension = fileName_.split('.').last;
-    print('File name: $fileName_');
-    print('Extension: $extension');
+    //print('File name: $fileName_');
+    //print('Extension: $extension');
     setState(() {
       base64_Imgmap = base64Encode(reader.result as Uint8List);
     });
-    // print(base64_Imgmap);
+    // //print(base64_Imgmap);
     setState(() {
       extension_ = extension;
       file_ = file;
@@ -546,24 +546,24 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
           '${MyConstant().domain}/File_uploadSlip.php?name=$fileName&Foder=$foder&Pathfoder=$Path_foder');
       request.send(formData);
 
-      print(formData);
+      //print(formData);
 
       // Handle the response
       await request.onLoad.first;
 
       if (request.status == 200) {
-        print('File uploaded successfully!');
+        //print('File uploaded successfully!');
         UpImg(context, fileName, Path_, Ser_);
         // try {
         //   UpImg(context, fileName, Path_, Ser_);
         // } catch (e) {
-        //   print(e);
+        //   //print(e);
         // }
       } else {
-        print('File upload failed with status code: ${request.status}');
+        //print('File upload failed with status code: ${request.status}');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      //print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -855,7 +855,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                         ),
                                         padding: const EdgeInsets.all(8.0),
                                         child: Center(
-                                          child:  Translate.TranslateAndSetText(
+                                            child:
+                                                Translate.TranslateAndSetText(
                                                     '${Status[i]}',
                                                     (Status_ == i + 1)
                                                         ? Colors.white
@@ -865,16 +866,16 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                     FontWeight_.Fonts_T,
                                                     14,
                                                     1)
-                                          // Text(
-                                          //   '${Status[i]}',
-                                          //   style: TextStyle(
-                                          //       color: (Status_ == i + 1)
-                                          //           ? Colors.white
-                                          //           : Colors.black,
-                                          //       fontFamily:
-                                          //           FontWeight_.Fonts_T),
-                                          // ),
-                                        ),
+                                            // Text(
+                                            //   '${Status[i]}',
+                                            //   style: TextStyle(
+                                            //       color: (Status_ == i + 1)
+                                            //           ? Colors.white
+                                            //           : Colors.black,
+                                            //       fontFamily:
+                                            //           FontWeight_.Fonts_T),
+                                            // ),
+                                            ),
                                       ),
                                     )),
                             ])),
@@ -1660,7 +1661,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                           var result =
                                               json.decode(response.body);
-                                          print(result);
+                                          //print(result);
                                           if (result.toString() == 'true') {
                                             setState(() {
                                               read_GC_rental();
@@ -2292,7 +2293,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                 'zone',
                                                 '${zoneModels[index].zn}',
                                                 '${zoneModels[index].ser}');
-                                            print('${zoneModels[index].ser}');
+                                            //print('${zoneModels[index].ser}');
                                           } else {
                                             showDialog<void>(
                                               context: context,
@@ -3531,8 +3532,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                                       var result =
                                                                           json.decode(
                                                                               response.body);
-                                                                      print(
-                                                                          result);
+                                                                      //print(
+                                                                      //  result);
                                                                       if (result
                                                                               .toString() ==
                                                                           'true') {
@@ -3805,7 +3806,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                                       var result = json.decode(
                                                           response.body);
-                                                      print(result);
+                                                      //print(result);
                                                       if (result.toString() ==
                                                           'true') {
                                                         Insert_log.Insert_logs(
@@ -3822,7 +3823,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                             context, 'OK');
                                                       }
                                                     } catch (e) {
-                                                      print(e);
+                                                      //print(e);
                                                     }
                                                   }
                                                 },
@@ -3931,7 +3932,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                         ser_Zonex =
                                             zoneModels[index].ser.toString();
                                       });
-                                      print(index);
+                                      //print(index);
                                       read_GC_area();
                                     },
                                     child: Container(
@@ -3988,7 +3989,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                               var result =
                                                   json.decode(response.body);
-                                              print(result);
+                                              //print(result);
                                               if (result.toString() == 'true') {
                                                 setState(() {
                                                   read_GC_zone();
@@ -4000,7 +4001,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                 });
                                               }
                                             } catch (e) {
-                                              print(e);
+                                              //print(e);
                                             }
                                           },
                                           child: Container(
@@ -4165,7 +4166,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                               padding: const EdgeInsets.all(8.0),
                               child: InkWell(
                                 onTap: () async {
-                                  print('1111');
+                                  //print('1111');
                                   showDialog<String>(
                                     barrierDismissible: false,
                                     context: context,
@@ -4800,7 +4801,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                             var result = json
                                                                 .decode(response
                                                                     .body);
-                                                            print(result);
+                                                            //print(result);
                                                             if (result
                                                                     .toString() ==
                                                                 'true') {
@@ -4822,7 +4823,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                                   'OK');
                                                             }
                                                           } catch (e) {
-                                                            print(e);
+                                                            //print(e);
                                                           }
                                                         }
                                                       },
@@ -5184,8 +5185,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                                                         var result =
                                                                             json.decode(response.body);
-                                                                        print(
-                                                                            result);
+                                                                        //print(
+                                                                        //   result);
                                                                         if (result.toString() ==
                                                                             'true') {
                                                                           setState(
@@ -5298,8 +5299,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                                                           var result =
                                                                               json.decode(response.body);
-                                                                          print(
-                                                                              result);
+                                                                          //print(
+                                                                          //    result);
                                                                           if (result.toString() ==
                                                                               'true') {
                                                                             setState(() {
@@ -5414,8 +5415,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                                                           var result =
                                                                               json.decode(response.body);
-                                                                          print(
-                                                                              result);
+                                                                          //print(
+                                                                          //     result);
                                                                           if (result.toString() ==
                                                                               'true') {
                                                                             setState(() {
@@ -5538,8 +5539,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
 
                                                                           var result =
                                                                               json.decode(response.body);
-                                                                          print(
-                                                                              result);
+                                                                          //print(
+                                                                          //    result);
                                                                           if (result.toString() ==
                                                                               'true') {
                                                                             setState(() {
@@ -5669,8 +5670,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                                       ),
                                                                       onTap:
                                                                           () {
-                                                                        print(
-                                                                            'ลบ ${areaModels[index].ln}');
+                                                                        //print(
+                                                                        //    'ลบ ${areaModels[index].ln}');
                                                                         showDialog(
                                                                             context:
                                                                                 context,
@@ -5744,7 +5745,7 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                                                                     var response = await http.get(Uri.parse(url));
 
                                                                                                     var result = json.decode(response.body);
-                                                                                                    print(result);
+                                                                                                    //print(result);
                                                                                                     if (result.toString() == 'true') {
                                                                                                       Insert_log.Insert_logs('ตั้งค่า', 'พื้นที่>>ลบ(${areaModels[index].lncode} : ${areaModels[index].ln})');
                                                                                                       setState(() {
@@ -5941,8 +5942,8 @@ class _SettingUserScreenState extends State<SettingUserScreen> {
                                                                       ),
                                                                       onTap:
                                                                           () {
-                                                                        print(
-                                                                            'ลบ ${areaModels[index].ln}');
+                                                                        //print(
+                                                                        // 'ลบ ${areaModels[index].ln}');
                                                                       },
                                                                     ),
                                                                   ),

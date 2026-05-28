@@ -133,7 +133,7 @@ class _RownumExample extends State<RownumExample> {
   }
 
   Future<Null> read_GC_rownum() async {
-    print('resultzone >>> $name_Zone $ser_Zone');
+    //  print('resultzone >>> $name_Zone $ser_Zone');
     if (contractRownumModels.length != 0) {
       setState(() {
         contractRownumModels.clear();
@@ -173,7 +173,7 @@ class _RownumExample extends State<RownumExample> {
       children: [
         Container(
           height: 50,
-          decoration:  BoxDecoration(
+          decoration: BoxDecoration(
             color: AppbackgroundColor.TiTile_Colors,
             borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(10),
@@ -271,7 +271,7 @@ class _RownumExample extends State<RownumExample> {
                             //     .substring(0, reverse2.length - 2);
                             var zone =
                                 (reverseOrder[i].feedbackWidget as Text).data;
-                            print('zone $zone');
+                            //   print('zone $zone');
                             edit_SW(i, zone!);
                           }
                         }
@@ -377,7 +377,7 @@ class _RownumExample extends State<RownumExample> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //      print(result);
       if (result.toString() == 'true') {
         // setState(() {
         //   read_GC_rownum();

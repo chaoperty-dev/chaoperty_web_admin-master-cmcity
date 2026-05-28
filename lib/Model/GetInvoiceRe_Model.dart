@@ -74,6 +74,10 @@ class InvoiceReModel {
   String? ref4;
   String? stype;
   String? tel;
+  String? zn_code;
+  String? payser;
+  String? total_docs;
+
   InvoiceReModel({
     this.ser,
     this.daterec,
@@ -150,85 +154,90 @@ class InvoiceReModel {
     this.ref4,
     this.stype,
     this.tel,
+    this.zn_code,
+    this.payser,
+    this.total_docs,
   });
 
   InvoiceReModel.fromJson(Map<String, dynamic> json) {
-    ser = json['ser'];
-    daterec = json['daterec'];
-    date = json['date'];
-    dateacc = json['dateacc'];
-    dtype = json['dtype'];
-    mrp = json['mrp'];
-    docno = json['docno'];
-    showdate = json['showdate'];
-    billno = json['billno'];
-    custno = json['custno'];
-    supno = json['supno'];
-    refno = json['refno'];
-    descr = json['descr'];
-    billdate = json['billdate'];
-    ovalue = json['ovalue'];
-    nvalue = json['nvalue'];
-    qty = json['qty'];
-    pri = json['pri'];
-    pvat = json['pvat'];
-    vat = json['vat'];
-    nvat = json['nvat'];
-    wht = json['wht'];
-    nwht = json['nwht'];
-    camt = json['camt'];
-    wtax = json['wtax'];
-    wamt = json['wamt'];
-    dis = json['dis'];
-    disendbillper = json['disendbillper'];
-    disendbill = json['disendbill'];
-    deposit = json['deposit'];
-    cn = json['cn'];
-    amt = json['amt'];
-    remark = json['remark'];
-    note = json['note'];
-    meter = json['meter'];
-    ptser = json['ptser'];
-    ptname = json['ptname'];
-    bno = json['bno'];
-    bank = json['bank'];
-    img = json['img'];
-    btype = json['btype'];
-    scname = json['scname'];
-    cname = json['cname'];
-    ln = json['ln'];
-    zser = json['zser'];
-    expser = json['expser'];
-    expname = json['expname'];
-    amt_expname = json['amt_expname'];
-    total_dis = json['total_dis'];
-    total_bill = json['total_bill'];
-    exp_array = json['exp_array'];
-    cid = json['cid'];
-    zn = json['zn'];
-    total_vat = json['total_vat'];
-    total_wht = json['total_wht'];
-    amt_dis = json['amt_dis'];
-    payment_ser = json['payment_ser'];
-    qty_exp = json['qty_exp'];
-    pay_fine = json['pay_fine'];
-    pay_dis = json['pay_dis'];
-    paytotal_dis = json['paytotal_dis'];
-    inv = json['inv'];
-    refapi = json['refapi'];
-    name_user = json['name_user'];
-    pdate = json['pdate'];
-    doctax = json['doctax'];
-    ser_noti = json['ser_noti'];
-    shopno = json['shopno'];
-    pos = json['pos'];
-    ref1 = json['ref1'];
-    ref2 = json['ref2'];
-    ref3 = json['ref3'];
-    ref4 = json['ref4'];
-
-    stype = json['stype'];
-    tel = json['tel'];
+    ser = json['ser']?.toString();
+    daterec = json['daterec']?.toString();
+    date = json['date']?.toString();
+    dateacc = json['dateacc']?.toString();
+    dtype = json['dtype']?.toString();
+    mrp = json['mrp']?.toString();
+    docno = json['docno']?.toString();
+    showdate = json['showdate']?.toString();
+    billno = json['billno']?.toString();
+    custno = json['custno']?.toString();
+    supno = json['supno']?.toString();
+    refno = json['refno']?.toString();
+    descr = json['descr']?.toString();
+    billdate = json['billdate']?.toString();
+    ovalue = json['ovalue']?.toString();
+    nvalue = json['nvalue']?.toString();
+    qty = json['qty']?.toString();
+    pri = json['pri']?.toString();
+    pvat = json['pvat']?.toString();
+    vat = json['vat']?.toString();
+    nvat = json['nvat']?.toString();
+    wht = json['wht']?.toString();
+    nwht = json['nwht']?.toString();
+    camt = json['camt']?.toString();
+    wtax = json['wtax']?.toString();
+    wamt = json['wamt']?.toString();
+    dis = json['dis']?.toString();
+    disendbillper = json['disendbillper']?.toString();
+    disendbill = json['disendbill']?.toString();
+    deposit = json['deposit']?.toString();
+    cn = json['cn']?.toString();
+    amt = json['amt']?.toString();
+    remark = json['remark']?.toString();
+    note = json['note']?.toString();
+    meter = json['meter']?.toString();
+    ptser = json['ptser']?.toString();
+    ptname = json['ptname']?.toString();
+    bno = json['bno']?.toString();
+    bank = json['bank']?.toString();
+    img = json['img']?.toString();
+    btype = json['btype']?.toString();
+    scname = json['scname']?.toString();
+    cname = json['cname']?.toString();
+    ln = json['ln']?.toString();
+    zser = json['zser']?.toString();
+    expser = json['expser']?.toString();
+    expname = json['expname']?.toString();
+    amt_expname = json['amt_expname']?.toString();
+    total_dis = json['total_dis']?.toString();
+    total_bill = json['total_bill']?.toString();
+    exp_array = json['exp_array']?.toString();
+    cid = json['cid']?.toString();
+    zn = json['zn']?.toString();
+    total_vat = json['total_vat']?.toString();
+    total_wht = json['total_wht']?.toString();
+    amt_dis = json['amt_dis']?.toString();
+    payment_ser = json['payment_ser']?.toString();
+    qty_exp = json['qty_exp']?.toString();
+    pay_fine = json['pay_fine']?.toString();
+    pay_dis = json['pay_dis']?.toString();
+    paytotal_dis = json['paytotal_dis']?.toString();
+    inv = json['inv']?.toString();
+    refapi = json['refapi']?.toString();
+    name_user = json['name_user']?.toString();
+    pdate = json['pdate']?.toString();
+    doctax = json['doctax']?.toString();
+    ser_noti = json['ser_noti']?.toString();
+    shopno = json['shopno']?.toString();
+    pos = json['pos']?.toString();
+    ref1 = json['ref1']?.toString();
+    ref2 = json['ref2']?.toString();
+    ref3 = json['ref3']?.toString();
+    ref4 = json['ref4']?.toString();
+    stype = json['stype']?.toString();
+    tel = json['tel']?.toString();
+    zn_code = json['zn_code']?.toString();
+    payser = json['payser']?.toString();
+    total_docs = json['total_docs']?.toString();
   }
 
   Map<String, dynamic> toJson() {
@@ -310,7 +319,9 @@ class InvoiceReModel {
 
     data['stype'] = this.stype;
     data['tel'] = this.tel;
-
+    data['zn_code'] = this.zn_code;
+    data['payser'] = this.payser;
+    data['total_docs'] = this.total_docs;
     return data;
   }
 }

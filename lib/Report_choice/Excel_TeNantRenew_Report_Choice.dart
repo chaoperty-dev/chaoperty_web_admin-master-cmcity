@@ -317,6 +317,7 @@ class Excgen_TeNantRenewReport_Choice {
     sheet
         .getRangeByName('${columns[(13) + columns_now]}6')
         .setText('เงินประกัน+VAT7%');
+
     sheet
         .getRangeByName('${columns[(14) + columns_now]}6')
         .setText('วันที่ใบเสร็จเงินประกัน');

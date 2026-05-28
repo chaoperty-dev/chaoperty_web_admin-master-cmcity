@@ -1003,7 +1003,7 @@ class Excgen_InvoiceChoiceReport {
           .saveFile("ExclusiveD_รายงานวางบิล", data, "xlsx", mimeType: type);
       log(path);
     } catch (e) {
-      print(e);
+     //  print(e);
     }
 
     // final List<int> bytes = workbook.saveAsStream();

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:dio/dio.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +19,8 @@ import '../../Model/trans_re_bill_history_model.dart';
 import '../../Responsive/responsive.dart';
 import '../../Style/Translate.dart';
 import '../../Style/colors.dart';
+import '../Constant/api_cache.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetC_Quot_Select_Model.dart';
 import '../Model/GetTeNant_Model.dart';
 import '../Model/electricity_model.dart';
@@ -37,6 +40,7 @@ class PeopleChaoTenant extends StatefulWidget {
 }
 
 class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
+  static final _apiCache = ApiCache(ttl: const Duration(seconds: 60));
   var nFormat = NumberFormat("#,##0.00", "en_US");
   var nFormat2 = NumberFormat("###0.00", "en_US");
   DateTime datex = DateTime.now();
@@ -147,6 +151,15 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
     addAcListTitle();
   }
 
+// เรียกตอน dispose เพื่อยกเลิก request ค้าง
+  @override
+  void dispose() {
+    if (!_gcCancelToken.isCancelled) {
+      _gcCancelToken.cancel('Widget disposed');
+    }
+    super.dispose();
+  }
+
   @override
   void didUpdateWidget(PeopleChaoTenant oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -177,22 +190,39 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
 
   ///////////--------------------------------------------->
   Future<Null> read_GC_rental() async {
+    if (_apiCache.isValid('read_GC_rental')) {
+      final cachedData = _apiCache.get('read_GC_rental');
+      if (cachedData != null) {
+        setState(() {
+          renTalModels.clear();
+          for (var map in cachedData) {
+            RenTalModel renTalModel = RenTalModel.fromJson(map);
+            open_set_date = int.parse(renTalModel.open_set_date!) == 0
+                ? 30
+                : int.parse(renTalModel.open_set_date!);
+
+            renTalModels.add(renTalModel);
+          }
+        });
+        return;
+      }
+    }
+
     if (renTalModels.isNotEmpty) {
       renTalModels.clear();
     }
     SharedPreferences preferences = await SharedPreferences.getInstance();
     var ren = preferences.getString('renTalSer');
-    var utype = preferences.getString('utype');
-    var seruser = preferences.getString('ser');
     String url =
-        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ser=$seruser&type=$utype&ren=$ren';
+        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      //  print(result);
       if (result != null) {
+        if (result is List) _apiCache.set('read_GC_rental', result);
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
 
@@ -205,7 +235,39 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
         }
       } else {}
     } catch (e) {}
+    // print('name>>>>>  $renname');
   }
+
+  // Future<Null> read_GC_rental() async {
+  //   if (renTalModels.isNotEmpty) {
+  //     renTalModels.clear();
+  //   }
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //   var utype = preferences.getString('utype');
+  //   var seruser = preferences.getString('ser');
+  //   String url =
+  //       '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ser=$seruser&type=$utype&ren=$ren';
+
+  //   try {
+  //     var response = await httpClient.get(Uri.parse(url));
+
+  //     var result = json.decode(response.body);
+  //     // print(result);
+  //     if (result != null) {
+  //       for (var map in result) {
+  //         RenTalModel renTalModel = RenTalModel.fromJson(map);
+
+  //         var open_set_datex = int.parse(renTalModel.open_set_date!);
+  //         setState(() {
+  //           open_set_date = open_set_datex == 0 ? 30 : open_set_datex;
+
+  //           renTalModels.add(renTalModel);
+  //         });
+  //       }
+  //     } else {}
+  //   } catch (e) {}
+  // }
 
   ///////////--------------------------------------------->
   Future<Null> checkPreferance() async {
@@ -242,24 +304,29 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
     });
   }
 
-  ////////-------------------------------------------------------->(รับเงินประกัน)
-  // Future<Null> tenant_Pakan() async {
-  //   setState(() {
-  //     isLoading_main = true;
-  //     isLoading = true;
-  //     // teNantModels.clear();
-  //     data.clear();
-  //     filteredData.clear();
-  //   });
+  ////////-------------------------------------------------------->
+// แนะนำให้มี dio ตัวเดียวใช้ทั้งคลาส
+  late final Dio _dio = Dio(BaseOptions(
+    connectTimeout: const Duration(seconds: 15),
+    receiveTimeout: const Duration(seconds: 20),
+    responseType: ResponseType.json,
+  ))
+    ..interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) {
+          final auth = Security.generateAuthHeaders();
+          options.headers.addAll(auth);
+          // options.headers['Content-Type'] ??= 'application/json';
+          return handler.next(options);
+        },
+      ),
+    );
 
-  //   // setState(() {
-  //   //   teNantModels = widget.tenantModelss;
-  //   // });
-  //   await AddDaTa();
-  // }
-/////////////////////----------------------------------------->
-  Future<Null> read_GC_areaSelect() async {
-    int select = widget.Status;
+  final CancelToken _gcCancelToken = CancelToken();
+
+  Future<void> read_GC_areaSelect() async {
+    if (!mounted) return;
+
     setState(() {
       isLoading_main = true;
       isLoading = true;
@@ -267,266 +334,345 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
       data.clear();
       filteredData.clear();
     });
-    SharedPreferences preferences = await SharedPreferences.getInstance();
 
-    var ren = preferences.getString('renTalSer');
-    var zone = preferences.getString('zonePSer');
-
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $select');
-
-    if (select == 1) {
-      String url = zone == null
-          ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-          : zone == '0'
-              ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-              : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
-
-      try {
-        var response = await http.get(Uri.parse(url));
-
-        var result = json.decode(response.body);
-        // print(result);
-        if (result != null) {
-          for (var map in result) {
-            TeNantModel teNantModel = TeNantModel.fromJson(map);
-            if (teNantModel.quantity == '1') {
-              var daterx = teNantModel.ldate == null
-                  ? teNantModel.ldate_q
-                  : teNantModel.ldate;
-
-              if (daterx != null) {
-                int daysBetween(DateTime from, DateTime to) {
-                  from = DateTime(from.year, from.month, from.day);
-                  to = DateTime(to.year, to.month, to.day);
-                  return (to.difference(from).inHours / 24).round();
-                }
-
-                var birthday = DateTime.parse('$daterx 00:00:00.000')
-                    .add(const Duration(days: -30));
-                var date2 = DateTime.now();
-                var difference = daysBetween(birthday, date2);
-
-                print('difference == $difference');
-
-                var daterx_now = DateTime.now();
-
-                var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
-
-                final now = DateTime.now();
-                final earlier = daterx_ldate.subtract(const Duration(days: 0));
-                var daterx_A = now.isAfter(earlier);
-                print(now.isAfter(earlier)); // true
-                print(now.isBefore(earlier)); // true
-
-                if (daterx_A != true) {
-                  setState(() {
-                    teNantModels.add(teNantModel);
-                  });
-                }
-              }
-              // setState(() {
-              //   teNantModels.add(teNantModel);
-              // });
-            }
-            // setState(() {
-            //   teNantModels.add(teNantModel);
-            // });
-          }
-        } else {
-          setState(() {
-            if (teNantModels.isEmpty) {
-              preferences.remove('zonePSer');
-              preferences.remove('zonesPName');
-              zone_ser = null;
-              zone_name = null;
-            }
-          });
-        }
-
+    final prefs = await SharedPreferences.getInstance();
+    final ren = prefs.getString('renTalSer');
+    var zone = prefs.getString('zonePSer');
+    if (ren == null || ren.isEmpty) {
+      if (mounted)
         setState(() {
-          zone_ser = preferences.getString('zonePSer');
-          zone_name = preferences.getString('zonesPName');
+          isLoading_main = false;
+          isLoading = false;
         });
-      } catch (e) {}
-    } else if (select == 2) {
-      String url = zone == null
-          ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-          : zone == '0'
-              ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-              : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
-
-      try {
-        var response = await http.get(Uri.parse(url));
-
-        var result = json.decode(response.body);
-        // print(result);
-        if (result != null) {
-          for (var map in result) {
-            TeNantModel teNantModel = TeNantModel.fromJson(map);
-            var daterx = teNantModel.ldate == null
-                ? teNantModel.ldate_q
-                : teNantModel.ldate;
-
-            if (daterx != null) {
-              int daysBetween(DateTime from, DateTime to) {
-                from = DateTime(from.year, from.month, from.day);
-                to = DateTime(to.year, to.month, to.day);
-                return (to.difference(from).inHours / 24).round();
-              }
-
-              var birthday = DateTime.parse('$daterx 00:00:00.000')
-                  .add(const Duration(days: -30));
-              var date2 = DateTime.now();
-              var difference = daysBetween(birthday, date2);
-
-              print('difference == $difference');
-
-              var daterx_now = DateTime.now();
-
-              var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
-
-              final now = DateTime.now();
-              final earlier = daterx_ldate.subtract(const Duration(days: 0));
-              var daterx_A = now.isAfter(earlier);
-              print(now.isAfter(earlier)); // true
-              print(now.isBefore(earlier)); // true
-
-              if (daterx_A == true) {
-                setState(() {
-                  if (teNantModel.quantity == '1') {
-                    teNantModels.add(teNantModel);
-                  }
-                });
-              }
-            }
-          }
-        } else {
-          setState(() {
-            if (teNantModels.isEmpty) {
-              preferences.remove('zonePSer');
-              preferences.remove('zonesPName');
-              zone_ser = null;
-              zone_name = null;
-            }
-          });
-        }
-        setState(() {
-          zone_ser = preferences.getString('zonePSer');
-          zone_name = preferences.getString('zonesPName');
-        });
-      } catch (e) {}
-    } else if (select == 3) {
-      String url = zone == null
-          ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-          : zone == '0'
-              ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-              : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
-
-      try {
-        var response = await http.get(Uri.parse(url));
-
-        var result = json.decode(response.body);
-        print(result);
-        if (result != null) {
-          for (var map in result) {
-            TeNantModel teNantModel = TeNantModel.fromJson(map);
-            if (teNantModel.quantity == '1') {
-              if (datex.isAfter(
-                      DateTime.parse('${teNantModel.ldate} 00:00:00.000')
-                          .subtract(Duration(days: open_set_date))) ==
-                  true) {
-                var daterx = teNantModel.ldate == null
-                    ? teNantModel.ldate_q
-                    : teNantModel.ldate;
-
-                if (daterx != null) {
-                  int daysBetween(DateTime from, DateTime to) {
-                    from = DateTime(from.year, from.month, from.day);
-                    to = DateTime(to.year, to.month, to.day);
-                    return (to.difference(from).inHours / 24).round();
-                  }
-
-                  var birthday = DateTime.parse('$daterx 00:00:00.000')
-                      .add(const Duration(days: -30));
-                  var date2 = DateTime.now();
-                  var difference = daysBetween(birthday, date2);
-
-                  print('difference == $difference');
-
-                  var daterx_now = DateTime.now();
-
-                  var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
-
-                  final now = DateTime.now();
-                  final earlier =
-                      daterx_ldate.subtract(const Duration(days: 0));
-                  var daterx_A = now.isAfter(earlier);
-                  print(now.isAfter(earlier)); // true
-                  print(now.isBefore(earlier)); // true
-
-                  if (daterx_A != true) {
-                    setState(() {
-                      teNantModels.add(teNantModel);
-                    });
-                  }
-                }
-              }
-            }
-          }
-        } else {
-          setState(() {
-            if (teNantModels.isEmpty) {
-              preferences.remove('zonePSer');
-              preferences.remove('zonesPName');
-              zone_ser = null;
-              zone_name = null;
-            }
-          });
-        }
-        setState(() {
-          zone_ser = preferences.getString('zonePSer');
-          zone_name = preferences.getString('zonesPName');
-        });
-      } catch (e) {}
-    } else if (select == 4) {
-      String url = zone == null
-          ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-          : zone == '0'
-              ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-              : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
-
-      try {
-        var response = await http.get(Uri.parse(url));
-
-        var result = json.decode(response.body);
-        print(result);
-        if (result != null) {
-          for (var map in result) {
-            TeNantModel teNantModel = TeNantModel.fromJson(map);
-            if (teNantModel.quantity == '2' || teNantModel.quantity == '3') {
-              setState(() {
-                teNantModels.add(teNantModel);
-              });
-            }
-          }
-        } else {
-          setState(() {
-            if (teNantModels.isEmpty) {
-              preferences.remove('zonePSer');
-              preferences.remove('zonesPName');
-              zone_ser = null;
-              zone_name = null;
-            }
-          });
-        }
-        setState(() {
-          zone_ser = preferences.getString('zonePSer');
-          zone_name = preferences.getString('zonesPName');
-        });
-      } catch (e) {}
+      return;
     }
-    await AddDaTa();
+    if (zone == null || zone.isEmpty || zone == 'null' || zone == '0')
+      zone = '0';
+
+    final query = {
+      'isAdd': 'true',
+      'ren': ren,
+      'zone': zone,
+      'status': widget.Status.toString(),
+      if (widget.Status == 4) 'where_quot': '1',
+    };
+
+    try {
+      final res = await _dio.get(
+        '${MyConstant().domain}/GC_tenantAll_V2.php',
+        queryParameters: query,
+        cancelToken: _gcCancelToken,
+        options: Options(responseType: ResponseType.json),
+      );
+      // print(res);
+      final body = res.data is String ? json.decode(res.data) : res.data;
+      final items = body is Map ? body['data'] as List? : body as List?;
+
+      if (items != null && items.isNotEmpty) {
+        final models = items.whereType<Map<String, dynamic>>().map((e) {
+          final m = e.map((k, v) => MapEntry(k, (v is num) ? v.toString() : v));
+          return TeNantModel.fromJson(m);
+        }).toList();
+
+        if (mounted) setState(() => teNantModels.addAll(models));
+      } else {
+        // clear zone prefs ถ้าไม่มีข้อมูล
+        prefs.remove('zonePSer');
+        prefs.remove('zonesPName');
+        if (mounted)
+          setState(() {
+            zone_ser = null;
+            zone_name = null;
+          });
+      }
+
+      if (mounted)
+        setState(() {
+          zone_ser = prefs.getString('zonePSer');
+          zone_name = prefs.getString('zonesPName');
+        });
+    } catch (e, st) {
+      debugPrint('read_GC_areaSelect error: $e\n$st');
+    } finally {
+      await AddDaTa();
+      if (mounted)
+        setState(() {
+          isLoading_main = false;
+          isLoading = false;
+        });
+    }
   }
+
+/////////////////////----------------------------------------->
+  // Future<Null> read_GC_areaSelect() async {
+  //   int select = widget.Status;
+  //   setState(() {
+  //     isLoading_main = true;
+  //     isLoading = true;
+  //     teNantModels.clear();
+  //     data.clear();
+  //     filteredData.clear();
+  //   });
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+
+  //   var ren = preferences.getString('renTalSer');
+  //   var zone = preferences.getString('zonePSer');
+
+  //   // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $select');
+
+  //   if (select == 1) {
+  //     String url = zone == null
+  //         ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //         : zone == '0'
+  //             ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //             : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
+
+  //     try {
+  //       var response = await httpClient.get(Uri.parse(url));
+
+  //       var result = json.decode(response.body);
+  //       // print(result);
+  //       if (result != null) {
+  //         for (var map in result) {
+  //           TeNantModel teNantModel = TeNantModel.fromJson(map);
+  //           if (teNantModel.quantity == '1') {
+  //             var daterx = teNantModel.ldate == null
+  //                 ? teNantModel.ldate_q
+  //                 : teNantModel.ldate;
+
+  //             if (daterx != null) {
+  //               int daysBetween(DateTime from, DateTime to) {
+  //                 from = DateTime(from.year, from.month, from.day);
+  //                 to = DateTime(to.year, to.month, to.day);
+  //                 return (to.difference(from).inHours / 24).round();
+  //               }
+
+  //               var birthday = DateTime.parse('$daterx 00:00:00.000')
+  //                   .add(const Duration(days: -30));
+  //               var date2 = DateTime.now();
+  //               var difference = daysBetween(birthday, date2);
+
+  //               print('difference == $difference');
+
+  //               var daterx_now = DateTime.now();
+
+  //               var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+  //               final now = DateTime.now();
+  //               final earlier = daterx_ldate.subtract(const Duration(days: 0));
+  //               var daterx_A = now.isAfter(earlier);
+  //               print(now.isAfter(earlier)); // true
+  //               print(now.isBefore(earlier)); // true
+
+  //               if (daterx_A != true) {
+  //                 setState(() {
+  //                   teNantModels.add(teNantModel);
+  //                 });
+  //               }
+  //             }
+  //             // setState(() {
+  //             //   teNantModels.add(teNantModel);
+  //             // });
+  //           }
+  //           // setState(() {
+  //           //   teNantModels.add(teNantModel);
+  //           // });
+  //         }
+  //       } else {
+  //         setState(() {
+  //           if (teNantModels.isEmpty) {
+  //             preferences.remove('zonePSer');
+  //             preferences.remove('zonesPName');
+  //             zone_ser = null;
+  //             zone_name = null;
+  //           }
+  //         });
+  //       }
+
+  //       setState(() {
+  //         zone_ser = preferences.getString('zonePSer');
+  //         zone_name = preferences.getString('zonesPName');
+  //       });
+  //     } catch (e) {}
+  //   } else if (select == 2) {
+  //     String url = zone == null
+  //         ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //         : zone == '0'
+  //             ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //             : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
+
+  //     try {
+  //       var response = await httpClient.get(Uri.parse(url));
+
+  //       var result = json.decode(response.body);
+  //       // print(result);
+  //       if (result != null) {
+  //         for (var map in result) {
+  //           TeNantModel teNantModel = TeNantModel.fromJson(map);
+  //           var daterx = teNantModel.ldate == null
+  //               ? teNantModel.ldate_q
+  //               : teNantModel.ldate;
+
+  //           if (daterx != null) {
+  //             int daysBetween(DateTime from, DateTime to) {
+  //               from = DateTime(from.year, from.month, from.day);
+  //               to = DateTime(to.year, to.month, to.day);
+  //               return (to.difference(from).inHours / 24).round();
+  //             }
+
+  //             var birthday = DateTime.parse('$daterx 00:00:00.000')
+  //                 .add(const Duration(days: -30));
+  //             var date2 = DateTime.now();
+  //             var difference = daysBetween(birthday, date2);
+
+  //             print('difference == $difference');
+
+  //             var daterx_now = DateTime.now();
+
+  //             var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+  //             final now = DateTime.now();
+  //             final earlier = daterx_ldate.subtract(const Duration(days: 0));
+  //             var daterx_A = now.isAfter(earlier);
+  //             print(now.isAfter(earlier)); // true
+  //             print(now.isBefore(earlier)); // true
+
+  //             if (daterx_A == true) {
+  //               setState(() {
+  //                 if (teNantModel.quantity == '1') {
+  //                   teNantModels.add(teNantModel);
+  //                 }
+  //               });
+  //             }
+  //           }
+  //         }
+  //       } else {
+  //         setState(() {
+  //           if (teNantModels.isEmpty) {
+  //             preferences.remove('zonePSer');
+  //             preferences.remove('zonesPName');
+  //             zone_ser = null;
+  //             zone_name = null;
+  //           }
+  //         });
+  //       }
+  //       setState(() {
+  //         zone_ser = preferences.getString('zonePSer');
+  //         zone_name = preferences.getString('zonesPName');
+  //       });
+  //     } catch (e) {}
+  //   } else if (select == 3) {
+  //     String url = zone == null
+  //         ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //         : zone == '0'
+  //             ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
+  //             : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
+
+  //     try {
+  //       var response = await httpClient.get(Uri.parse(url));
+
+  //       var result = json.decode(response.body);
+  //       // print(result);
+  //       if (result != null) {
+  //         for (var map in result) {
+  //           TeNantModel teNantModel = TeNantModel.fromJson(map);
+  //           if (teNantModel.quantity == '1') {
+  //             if (datex.isAfter(
+  //                     DateTime.parse('${teNantModel.ldate} 00:00:00.000')
+  //                         .subtract(Duration(days: open_set_date))) ==
+  //                 true) {
+  //               var daterx = teNantModel.ldate == null
+  //                   ? teNantModel.ldate_q
+  //                   : teNantModel.ldate;
+
+  //               if (daterx != null) {
+  //                 int daysBetween(DateTime from, DateTime to) {
+  //                   from = DateTime(from.year, from.month, from.day);
+  //                   to = DateTime(to.year, to.month, to.day);
+  //                   return (to.difference(from).inHours / 24).round();
+  //                 }
+
+  //                 var birthday = DateTime.parse('$daterx 00:00:00.000')
+  //                     .add(const Duration(days: -30));
+  //                 var date2 = DateTime.now();
+  //                 var difference = daysBetween(birthday, date2);
+
+  //                 print('difference == $difference');
+
+  //                 var daterx_now = DateTime.now();
+
+  //                 var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+  //                 final now = DateTime.now();
+  //                 final earlier =
+  //                     daterx_ldate.subtract(const Duration(days: 0));
+  //                 var daterx_A = now.isAfter(earlier);
+  //                 print(now.isAfter(earlier)); // true
+  //                 print(now.isBefore(earlier)); // true
+
+  //                 if (daterx_A != true) {
+  //                   setState(() {
+  //                     teNantModels.add(teNantModel);
+  //                   });
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       } else {
+  //         setState(() {
+  //           if (teNantModels.isEmpty) {
+  //             preferences.remove('zonePSer');
+  //             preferences.remove('zonesPName');
+  //             zone_ser = null;
+  //             zone_name = null;
+  //           }
+  //         });
+  //       }
+  //       setState(() {
+  //         zone_ser = preferences.getString('zonePSer');
+  //         zone_name = preferences.getString('zonesPName');
+  //       });
+  //     } catch (e) {}
+  //   } else if (select == 4 ) {
+  //     String url = zone == null
+  //         ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone&where_quot=1'
+  //         : zone == '0'
+  //             ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone&where_quot=1'
+  //             : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone&where_quot=1';
+
+  //     try {
+  //       var response = await httpClient.get(Uri.parse(url));
+
+  //       var result = json.decode(response.body);
+  //       // print(result);
+  //       if (result != null) {
+  //         for (var map in result) {
+  //           TeNantModel teNantModel = TeNantModel.fromJson(map);
+  //           if (teNantModel.quantity == '2' || teNantModel.quantity == '3') {
+  //             setState(() {
+  //               teNantModels.add(teNantModel);
+  //             });
+  //           }
+  //         }
+  //       } else {
+  //         setState(() {
+  //           if (teNantModels.isEmpty) {
+  //             preferences.remove('zonePSer');
+  //             preferences.remove('zonesPName');
+  //             zone_ser = null;
+  //             zone_name = null;
+  //           }
+  //         });
+  //       }
+  //       setState(() {
+  //         zone_ser = preferences.getString('zonePSer');
+  //         zone_name = preferences.getString('zonesPName');
+  //       });
+  //     } catch (e) {}
+  //   }
+  //   await AddDaTa();
+  // }
 
   //-------------------------------------->
   Future<Null> AddDaTa() async {
@@ -652,7 +798,7 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
         '${MyConstant().domain}/GC_quot_conx.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -681,10 +827,10 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
         '${MyConstant().domain}/GC_electricity.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      // print(result);
       if (result != null) {
         for (var map in result) {
           ElectricityModel electricityModel = ElectricityModel.fromJson(map);
@@ -877,9 +1023,6 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
   ///////////--------------------------------------------->
   @override
   Widget build(BuildContext context) {
-    double calculatedWidth = (Responsive.isDesktop(context))
-        ? MediaQuery.of(context).size.width * 0.84
-        : 1200;
     // For the first round, use the extracted data as is, no need to sort.
     List<Map<String, dynamic>> displayedData;
 
@@ -911,56 +1054,51 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
         filteredData.isNotEmpty ? filteredData[0].keys.toList() : [];
     // final Expan = columnHeaders.skip(1).map().toList();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-      child: Column(
-        children: [
-          // ช่องค้นหา
-          Container(
-            width: calculatedWidth,
-            decoration: BoxDecoration(
-              color: AppbackgroundColor.TiTile_Colors,
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(10),
-                  topRight: Radius.circular(10),
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0)),
-            ),
-            padding: const EdgeInsets.all(8.0),
-            child: Column(
-              children: [
-                Row(
+    return LayoutBuilder(
+      builder: (context, cts) {
+        final screenW = cts.maxWidth;
+        // Mobile: ให้ตารางเลื่อนแนวนอน (minWidth สูงหน่อย)
+        // Desktop: เต็มจอ ไม่ต้องเลื่อน
+        final tableMinW = Responsive.isDesktop(context) ? screenW : 980.0;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+          child: Column(
+            children: [
+              // ช่องค้นหา
+              Container(
+                width: tableMinW,
+                decoration: BoxDecoration(
+                  color: AppbackgroundColor.TiTile_Colors,
+                  borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                      bottomLeft: Radius.circular(0),
+                      bottomRight: Radius.circular(0)),
+                ),
+                padding: const EdgeInsets.all(8.0),
+                child: Column(
                   children: [
-                    Expanded(
-                      child: Container(
-                        height: 30, //Date_ser
-                        // width: 150,
-                        decoration: BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors,
-                          borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(8),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(8),
-                              bottomRight: Radius.circular(0)),
-                          border: Border.all(color: Colors.grey, width: 1),
-                        ),
-                        padding: const EdgeInsets.all(2.0),
-                        child: (isLoading_main)
-                            ? Center(
-                                child: Text(
-                                  'ดาวน์โหลดข้อมูล',
-                                  style: TextStyle(
-                                      color:
-                                          PeopleChaoScreen_Color.Colors_Text2_,
-                                      fontFamily: Font_.Fonts_T
-                                      //fontSize: 10.0
-                                      ),
-                                ),
-                              )
-                            : (teNantModels.isEmpty)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Container(
+                            height: 30, //Date_ser
+                            // width: 150,
+                            decoration: BoxDecoration(
+                              color: AppbackgroundColor.Sub_Abg_Colors,
+                              borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(8),
+                                  topRight: Radius.circular(0),
+                                  bottomLeft: Radius.circular(8),
+                                  bottomRight: Radius.circular(0)),
+                              border: Border.all(color: Colors.grey, width: 1),
+                            ),
+                            padding: const EdgeInsets.all(2.0),
+                            child: (isLoading_main)
                                 ? Center(
                                     child: Text(
-                                      'ไม่พบข้อมูล',
+                                      'ดาวน์โหลดข้อมูล',
                                       style: TextStyle(
                                           color: PeopleChaoScreen_Color
                                               .Colors_Text2_,
@@ -969,361 +1107,458 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
                                           ),
                                     ),
                                   )
-                                : TextFormField(
-                                    initialValue: search_controller.text,
-                                    onChanged: onSearchChanged,
-                                    decoration: const InputDecoration(
-                                      // labelText:
-                                      //     (isLoading_main) ? 'ดาวน์โหลดข้อมูล...' : null,
-                                      border: OutlineInputBorder(),
-                                      enabledBorder: OutlineInputBorder(
-                                        borderSide: BorderSide(
-                                          color:
-                                              AppbackgroundColor.Sub_Abg_Colors,
+                                : (teNantModels.isEmpty)
+                                    ? Center(
+                                        child: Text(
+                                          'ไม่พบข้อมูล ${teNantModels.length}',
+                                          style: TextStyle(
+                                              color: PeopleChaoScreen_Color
+                                                  .Colors_Text2_,
+                                              fontFamily: Font_.Fonts_T
+                                              //fontSize: 10.0
+                                              ),
+                                        ),
+                                      )
+                                    : TextFormField(
+                                        initialValue: search_controller.text,
+                                        onChanged: onSearchChanged,
+                                        decoration: const InputDecoration(
+                                          // labelText:
+                                          //     (isLoading_main) ? 'ดาวน์โหลดข้อมูล...' : null,
+                                          border: OutlineInputBorder(),
+                                          enabledBorder: OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                              color: AppbackgroundColor
+                                                  .Sub_Abg_Colors,
+                                            ),
+                                          ),
+                                          prefixIcon: Icon(Icons.search),
                                         ),
                                       ),
-                                      prefixIcon: Icon(Icons.search),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
+                          child: Container(
+                            height: 30,
+                            decoration: BoxDecoration(
+                              color: AppbackgroundColor.Sub_Abg_Colors,
+                              // .withOpacity(0.5),
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(0),
+                                  topRight: Radius.circular(6),
+                                  bottomLeft: Radius.circular(0),
+                                  bottomRight: Radius.circular(6)),
+                              // border: Border.all(
+                              //     color:
+                              //         Colors.grey,
+                              //     width: 1),
+                            ),
+                            width: 130,
+                            // height: 30,
+                            padding: const EdgeInsets.all(2.0),
+                            child: DropdownButtonHideUnderline(
+                              child: DropdownButton2<String>(
+                                isExpanded: true,
+                                hint: Center(
+                                  child: Text(
+                                    'หัวข้อ',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: AccountScreen_Color.Colors_Text1_,
+                                      fontWeight: FontWeight.bold,
+                                      fontFamily: Font_.Fonts_T,
                                     ),
                                   ),
-                      ),
-                    ),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(0, 2, 0, 2),
-                      child: Container(
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: AppbackgroundColor.Sub_Abg_Colors,
-                          // .withOpacity(0.5),
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(6),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(6)),
-                          // border: Border.all(
-                          //     color:
-                          //         Colors.grey,
-                          //     width: 1),
-                        ),
-                        width: 130,
-                        // height: 30,
-                        padding: const EdgeInsets.all(2.0),
-                        child: DropdownButtonHideUnderline(
-                          child: DropdownButton2<String>(
-                            isExpanded: true,
-                            hint: Center(
-                              child: Text(
-                                'หัวข้อ',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: AccountScreen_Color.Colors_Text1_,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: Font_.Fonts_T,
                                 ),
-                              ),
-                            ),
 
-                            items: pe1.asMap().entries.map((entry) {
-                              int index = entry.key; // Get the index
-                              var item = entry.value;
-                              return DropdownMenuItem<String>(
-                                value: item["ser"], // Use "ser" as the value
-                                enabled:
-                                    false, // Set to true to allow selection
-                                child: StatefulBuilder(
-                                  builder: (context, menuSetState) {
-                                    // final isSelected = selectedItems.contains(item);
-                                    return InkWell(
-                                      onTap: () {
-                                        int selectedIndex = pe1.indexWhere(
-                                            (items) =>
-                                                items["ser"] == item["ser"]);
-                                        // print(ac1[selectedIndex]
-                                        //     [
-                                        //     "pn"]);
-                                        // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
-                                        //This rebuilds the StatefulWidget to update the button's text
-                                        setState(() {
-                                          if (item["st"]! == '1') {
-                                            pe1[selectedIndex]["st"] = '0';
-                                          } else {
-                                            pe1[selectedIndex]["st"] = '1';
-                                          }
-                                        });
-                                        AddDaTa();
-                                        //This rebuilds the dropdownMenu Widget to update the check mark
-                                        menuSetState(() {});
-                                      },
-                                      child: Container(
-                                        height: double.infinity,
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 4.0),
-                                        child: Row(
-                                          children: [
-                                            if (item["st"]! == '1')
-                                              Icon(
-                                                Icons.check_box_outlined,
-                                                color: Colors.green[400],
-                                              )
-                                            else
-                                              const Icon(Icons
-                                                  .check_box_outline_blank),
-                                            Expanded(
-                                              child: Text(
-                                                item["pn"]!,
-                                                maxLines: 2,
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: AccountScreen_Color
-                                                      .Colors_Text1_,
-                                                  fontWeight: FontWeight.w600,
-                                                  fontFamily: Font_.Fonts_T,
+                                items: pe1.asMap().entries.map((entry) {
+                                  int index = entry.key; // Get the index
+                                  var item = entry.value;
+                                  return DropdownMenuItem<String>(
+                                    value:
+                                        item["ser"], // Use "ser" as the value
+                                    enabled:
+                                        false, // Set to true to allow selection
+                                    child: StatefulBuilder(
+                                      builder: (context, menuSetState) {
+                                        // final isSelected = selectedItems.contains(item);
+                                        return InkWell(
+                                          onTap: () {
+                                            int selectedIndex = pe1.indexWhere(
+                                                (items) =>
+                                                    items["ser"] ==
+                                                    item["ser"]);
+                                            // print(ac1[selectedIndex]
+                                            //     [
+                                            //     "pn"]);
+                                            // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
+                                            //This rebuilds the StatefulWidget to update the button's text
+                                            setState(() {
+                                              if (item["st"]! == '1') {
+                                                pe1[selectedIndex]["st"] = '0';
+                                              } else {
+                                                pe1[selectedIndex]["st"] = '1';
+                                              }
+                                            });
+                                            AddDaTa();
+                                            //This rebuilds the dropdownMenu Widget to update the check mark
+                                            menuSetState(() {});
+                                          },
+                                          child: Container(
+                                            height: double.infinity,
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 4.0),
+                                            child: Row(
+                                              children: [
+                                                if (item["st"]! == '1')
+                                                  Icon(
+                                                    Icons.check_box_outlined,
+                                                    color: Colors.green[400],
+                                                  )
+                                                else
+                                                  const Icon(Icons
+                                                      .check_box_outline_blank),
+                                                Expanded(
+                                                  child: Text(
+                                                    item["pn"]!,
+                                                    maxLines: 2,
+                                                    style: const TextStyle(
+                                                      fontSize: 12,
+                                                      color: AccountScreen_Color
+                                                          .Colors_Text1_,
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                      fontFamily: Font_.Fonts_T,
+                                                    ),
+                                                  ),
                                                 ),
-                                              ),
+                                              ],
                                             ),
-                                          ],
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              );
-                            }).toList(),
-                            //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-                            // value: selectedItems.isEmpty ? null : selectedItems.last,
-                            onChanged: (value) {},
-                          ),
-                        ),
-                      ),
-                    ),
-                    Container(child: Next_page_TeNant())
-                  ],
-                ),
-                const Divider(),
-              ],
-            ),
-          ),
-
-          // ตารางข้อมูล
-          ScrollConfiguration(
-            behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
-              PointerDeviceKind.touch,
-              PointerDeviceKind.mouse,
-            }),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Container(
-                  width: calculatedWidth,
-                  height: MediaQuery.of(context).size.height / 1.63,
-                  decoration: const BoxDecoration(
-                    color: AppbackgroundColor.Sub_Abg_Colors,
-                    borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(10),
-                        bottomRight: Radius.circular(10)),
-                    // border: Border.all(color: Colors.grey, width: 1),
-                  ),
-                  child: Column(
-                    children: [
-                      // Fixed Topic Row (Header)
-                      Container(
-                        color: AppbackgroundColor.TiTile_Colors,
-                        padding: const EdgeInsets.symmetric(
-                            vertical: 5, horizontal: 16),
-                        child: Row(children: [
-                          SizedBox(
-                            width: 80,
-                          ),
-                          ...columnHeaders
-                              .skip(1)
-                              .map((column) => Expanded(
-                                    flex: (columnHeaders.any((columnx) {
-                                      return column.toString() ==
-                                              'เลขที่สัญญา/เสนอราคา' ||
-                                          column.toString() ==
-                                              'เลขที่สัญญา-เดิม';
-                                    }))
-                                        ? 2
-                                        : (Fix_data.contains(
-                                                columnHeaders.indexWhere(
-                                                    (item) => item == column)))
-                                            ? Fix_Expan1
-                                            : Fix_Expan2,
-                                    child: InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          firstRound = false;
-                                          // Toggle sort order
-                                          if (sortColumn == column) {
-                                            sortAscending = !sortAscending;
-                                          } else {
-                                            sortColumn = column;
-                                            sortAscending = true;
-                                          }
-
-                                          // Sort the displayed data
-                                          displayedData.sort((a, b) {
-                                            final aValue = a[column];
-                                            final bValue = b[column];
-
-                                            // Handle null values gracefully
-                                            if (aValue == null &&
-                                                bValue == null) return 0;
-                                            if (aValue == null)
-                                              return sortAscending ? -1 : 1;
-                                            if (bValue == null)
-                                              return sortAscending ? 1 : -1;
-
-                                            // Compare values
-                                            return sortAscending
-                                                ? aValue.compareTo(bValue)
-                                                : bValue.compareTo(aValue);
-                                          });
-                                        });
-                                      },
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        mainAxisAlignment: ([9].contains(
-                                                columnHeaders.indexWhere(
-                                                    (item) => item == column)))
-                                            ? MainAxisAlignment.center
-                                            : MainAxisAlignment.start,
-                                        children: [
-                                          if (sortColumn ==
-                                              column) // Show sorting indicator
-                                            Icon(
-                                              sortAscending
-                                                  ? Icons.arrow_drop_up
-                                                  : Icons.arrow_drop_down,
-                                              size: 20,
-                                              color: Colors.red[600],
-                                            ),
-                                          Expanded(
-                                            child:
-                                                Translate.TranslateAndSetText(
-                                                    column,
-                                                    AccountScreen_Color
-                                                        .Colors_Text1_,
-                                                    (columnHeaders
-                                                            .any((columnx) {
-                                                      return column
-                                                              .toString() ==
-                                                          'สถานะ';
-                                                    }))
-                                                        ? TextAlign.center
-                                                        : TextAlign.left,
-                                                    FontWeight.bold,
-                                                    FontWeight_.Fonts_T,
-                                                    14,
-                                                    1),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ))
-                              .toList(),
-                          SizedBox(
-                            width: 40,
-                          )
-                        ]),
-                      ),
-
-                      // Scrollable ListView.builder for Data Rows
-                      Expanded(
-                        child: (isLoading)
-                            ? SizedBox(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const CircularProgressIndicator(),
-                                    StreamBuilder(
-                                      stream: Stream.periodic(
-                                          const Duration(milliseconds: 25),
-                                          (i) => i),
-                                      builder: (context, snapshot) {
-                                        if (!snapshot.hasData)
-                                          return const Text('');
-                                        double elapsed = double.parse(
-                                                snapshot.data.toString()) *
-                                            0.05;
-                                        return Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Text(
-                                            'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.', // ตัวบ่งชี้กำลังโหลด
-                                            // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-                                            style: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                fontFamily: Font_.Fonts_T
-                                                //fontSize: 10.0
-                                                ),
                                           ),
                                         );
                                       },
                                     ),
-                                  ],
-                                ),
-                              )
-                            : (displayedData.isEmpty)
-                                ? const Center(
-                                    child: Text(
-                                      'ไม่พบข้อมูล',
-                                      style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          fontFamily: Font_.Fonts_T
-                                          //fontSize: 10.0
+                                  );
+                                }).toList(),
+                                //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
+                                // value: selectedItems.isEmpty ? null : selectedItems.last,
+                                onChanged: (value) {},
+                              ),
+                            ),
+                          ),
+                        ),
+                        Container(child: Next_page_TeNant())
+                      ],
+                    ),
+                    const Divider(),
+                  ],
+                ),
+              ),
+
+              // ตารางข้อมูล
+              ScrollConfiguration(
+                behavior:
+                    ScrollConfiguration.of(context).copyWith(dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                }),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Container(
+                      width: tableMinW,
+                      height: MediaQuery.of(context).size.height * 0.78,
+                      decoration: const BoxDecoration(
+                        color: AppbackgroundColor.Sub_Abg_Colors,
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10)),
+                        // border: Border.all(color: Colors.grey, width: 1),
+                      ),
+                      child: Column(
+                        children: [
+                          // Fixed Topic Row (Header)
+                          Container(
+                            color: AppbackgroundColor.TiTile_Colors,
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 5, horizontal: 16),
+                            child: Row(children: [
+                              SizedBox(
+                                width: 80,
+                              ),
+                              ...columnHeaders
+                                  .skip(1)
+                                  .map((column) => Expanded(
+                                        flex: (columnHeaders.any((columnx) {
+                                          return column.toString() ==
+                                                  'เลขที่สัญญา/เสนอราคา' ||
+                                              column.toString() ==
+                                                  'เลขที่สัญญา-เดิม';
+                                        }))
+                                            ? 2
+                                            : (Fix_data.contains(columnHeaders
+                                                    .indexWhere((item) =>
+                                                        item == column)))
+                                                ? Fix_Expan1
+                                                : Fix_Expan2,
+                                        child: InkWell(
+                                          onTap: () {
+                                            setState(() {
+                                              firstRound = false;
+                                              // Toggle sort order
+                                              if (sortColumn == column) {
+                                                sortAscending = !sortAscending;
+                                              } else {
+                                                sortColumn = column;
+                                                sortAscending = true;
+                                              }
+
+                                              // Sort the displayed data
+                                              displayedData.sort((a, b) {
+                                                final aValue = a[column];
+                                                final bValue = b[column];
+
+                                                // Handle null values gracefully
+                                                if (aValue == null &&
+                                                    bValue == null) return 0;
+                                                if (aValue == null)
+                                                  return sortAscending ? -1 : 1;
+                                                if (bValue == null)
+                                                  return sortAscending ? 1 : -1;
+
+                                                // Compare values
+                                                return sortAscending
+                                                    ? aValue.compareTo(bValue)
+                                                    : bValue.compareTo(aValue);
+                                              });
+                                            });
+                                          },
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisAlignment: ([
+                                              9
+                                            ].contains(columnHeaders.indexWhere(
+                                                    (item) => item == column)))
+                                                ? MainAxisAlignment.center
+                                                : MainAxisAlignment.start,
+                                            children: [
+                                              if (sortColumn ==
+                                                  column) // Show sorting indicator
+                                                Icon(
+                                                  sortAscending
+                                                      ? Icons.arrow_drop_up
+                                                      : Icons.arrow_drop_down,
+                                                  size: 20,
+                                                  color: Colors.red[600],
+                                                ),
+                                              Expanded(
+                                                child: Translate
+                                                    .TranslateAndSetText(
+                                                        column,
+                                                        AccountScreen_Color
+                                                            .Colors_Text1_,
+                                                        (columnHeaders
+                                                                .any((columnx) {
+                                                          return column
+                                                                  .toString() ==
+                                                              'สถานะ';
+                                                        }))
+                                                            ? TextAlign.center
+                                                            : TextAlign.left,
+                                                        FontWeight.bold,
+                                                        FontWeight_.Fonts_T,
+                                                        14,
+                                                        1),
+                                              ),
+                                            ],
                                           ),
+                                        ),
+                                      ))
+                                  .toList(),
+                              SizedBox(
+                                width: 40,
+                              )
+                            ]),
+                          ),
+
+                          // Scrollable ListView.builder for Data Rows
+                          Expanded(
+                            child: (isLoading)
+                                ? SizedBox(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const CircularProgressIndicator(),
+                                        StreamBuilder(
+                                          stream: Stream.periodic(
+                                              const Duration(milliseconds: 25),
+                                              (i) => i),
+                                          builder: (context, snapshot) {
+                                            if (!snapshot.hasData)
+                                              return const Text('');
+                                            double elapsed = double.parse(
+                                                    snapshot.data.toString()) *
+                                                0.05;
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Text(
+                                                'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.', // ตัวบ่งชี้กำลังโหลด
+                                                // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    fontFamily: Font_.Fonts_T
+                                                    //fontSize: 10.0
+                                                    ),
+                                              ),
+                                            );
+                                          },
+                                        ),
+                                      ],
                                     ),
                                   )
-                                : ListView.builder(
-                                    controller: _scrollController1,
-                                    itemCount: displayedData.length,
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      final row = displayedData[index];
-                                      final columnToCheck = 'รหัสพื้นที่';
-                                      int index_x = int.parse(
-                                          '${displayedData[index]['index']}');
-                                      return List_Material(index, columnHeaders,
-                                          row, columnToCheck);
-                                    },
-                                  ),
-                      ),
-                    ],
-                  )),
-            ),
-          ),
-          Container(
-              width: (Responsive.isDesktop(context))
-                  ? MediaQuery.of(context).size.width * 0.84
-                  : MediaQuery.of(context).size.width,
-              decoration: const BoxDecoration(
-                color: AppbackgroundColor.Sub_Abg_Colors,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
+                                : (displayedData.isEmpty)
+                                    ? const Center(
+                                        child: Text(
+                                          'ไม่พบข้อมูล',
+                                          style: TextStyle(
+                                              color: PeopleChaoScreen_Color
+                                                  .Colors_Text2_,
+                                              fontFamily: Font_.Fonts_T
+                                              //fontSize: 10.0
+                                              ),
+                                        ),
+                                      )
+                                    : ListView.builder(
+                                        controller: _scrollController1,
+                                        itemCount: displayedData.length,
+                                        itemBuilder:
+                                            (BuildContext context, int index) {
+                                          final row = displayedData[index];
+                                          final columnToCheck = 'รหัสพื้นที่';
+                                          int index_x = int.parse(
+                                              '${displayedData[index]['index']}');
+                                          return List_Material(
+                                              index,
+                                              columnHeaders,
+                                              row,
+                                              columnToCheck);
+                                        },
+                                      ),
+                          ),
+                        ],
+                      )),
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: () {
-                              _scrollController1.animateTo(
-                                0,
-                                duration: const Duration(seconds: 1),
-                                curve: Curves.easeOut,
-                              );
-                            },
-                            child: Container(
+              Container(
+                  width: tableMinW,
+                  decoration: const BoxDecoration(
+                    color: AppbackgroundColor.Sub_Abg_Colors,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(0),
+                        topRight: Radius.circular(0),
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: InkWell(
+                                onTap: () {
+                                  _scrollController1.animateTo(
+                                    0,
+                                    duration: const Duration(seconds: 1),
+                                    curve: Curves.easeOut,
+                                  );
+                                },
+                                child: Container(
+                                    decoration: BoxDecoration(
+                                      // color: AppbackgroundColor
+                                      //     .TiTile_Colors,
+                                      borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(6),
+                                          topRight: Radius.circular(6),
+                                          bottomLeft: Radius.circular(6),
+                                          bottomRight: Radius.circular(8)),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1),
+                                    ),
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: const Text(
+                                      'Top',
+                                      style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 10.0,
+                                        fontFamily: FontWeight_.Fonts_T,
+                                      ),
+                                    )),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                if (_scrollController1.hasClients) {
+                                  final position = _scrollController1
+                                      .position.maxScrollExtent;
+                                  _scrollController1.animateTo(
+                                    position,
+                                    duration: const Duration(seconds: 1),
+                                    curve: Curves.easeOut,
+                                  );
+                                }
+                              },
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    // color: AppbackgroundColor
+                                    //     .TiTile_Colors,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(6),
+                                        topRight: Radius.circular(6),
+                                        bottomLeft: Radius.circular(6),
+                                        bottomRight: Radius.circular(6)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  padding: const EdgeInsets.all(3.0),
+                                  child: const Text(
+                                    'Down',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 10.0,
+                                      fontFamily: FontWeight_.Fonts_T,
+                                    ),
+                                  )),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: _moveDown1,
+                              child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Icon(
+                                      Icons.arrow_upward,
+                                      color: Colors.grey,
+                                    ),
+                                  )),
+                            ),
+                            Container(
                                 decoration: BoxDecoration(
                                   // color: AppbackgroundColor
                                   //     .TiTile_Colors,
@@ -1331,115 +1566,42 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
                                       topLeft: Radius.circular(6),
                                       topRight: Radius.circular(6),
                                       bottomLeft: Radius.circular(6),
-                                      bottomRight: Radius.circular(8)),
+                                      bottomRight: Radius.circular(6)),
                                   border:
                                       Border.all(color: Colors.grey, width: 1),
                                 ),
                                 padding: const EdgeInsets.all(3.0),
                                 child: const Text(
-                                  'Top',
+                                  'Scroll',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 10.0,
                                     fontFamily: FontWeight_.Fonts_T,
                                   ),
                                 )),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            if (_scrollController1.hasClients) {
-                              final position =
-                                  _scrollController1.position.maxScrollExtent;
-                              _scrollController1.animateTo(
-                                position,
-                                duration: const Duration(seconds: 1),
-                                curve: Curves.easeOut,
-                              );
-                            }
-                          },
-                          child: Container(
-                              decoration: BoxDecoration(
-                                // color: AppbackgroundColor
-                                //     .TiTile_Colors,
-                                borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(6),
-                                    topRight: Radius.circular(6),
-                                    bottomLeft: Radius.circular(6),
-                                    bottomRight: Radius.circular(6)),
-                                border:
-                                    Border.all(color: Colors.grey, width: 1),
-                              ),
-                              padding: const EdgeInsets.all(3.0),
-                              child: const Text(
-                                'Down',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 10.0,
-                                  fontFamily: FontWeight_.Fonts_T,
-                                ),
-                              )),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: _moveDown1,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Icon(
-                                  Icons.arrow_upward,
-                                  color: Colors.grey,
-                                ),
-                              )),
-                        ),
-                        Container(
-                            decoration: BoxDecoration(
-                              // color: AppbackgroundColor
-                              //     .TiTile_Colors,
-                              borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(6),
-                                  topRight: Radius.circular(6),
-                                  bottomLeft: Radius.circular(6),
-                                  bottomRight: Radius.circular(6)),
-                              border: Border.all(color: Colors.grey, width: 1),
+                            InkWell(
+                              onTap: _moveDown1,
+                              child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Icon(
+                                      Icons.arrow_downward,
+                                      color: Colors.grey,
+                                    ),
+                                  )),
                             ),
-                            padding: const EdgeInsets.all(3.0),
-                            child: const Text(
-                              'Scroll',
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 10.0,
-                                fontFamily: FontWeight_.Fonts_T,
-                              ),
-                            )),
-                        InkWell(
-                          onTap: _moveDown1,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Icon(
-                                  Icons.arrow_downward,
-                                  color: Colors.grey,
-                                ),
-                              )),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                ],
-              )),
+                      )
+                    ],
+                  )),
 
-          // Pagination Controls
-        ],
-      ),
+              // Pagination Controls
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -1643,119 +1805,129 @@ class _PeopleChaoTenantState extends State<PeopleChaoTenant> {
                                           ))
                                         ],
                                       ))),
-                              teNantModels[int.parse('${row['index']}')].cid ==
-                                      teNantModels[int.parse('${row['index']}')]
-                                          .fid
-                                  ? SizedBox()
-                                  : InkWell(
-                                      onTap: () {
-                                        if (renTal_lavel <= 2) {
-                                          Navigator.pop(context);
-                                          infomation();
-                                        } else {
-                                          int index_x =
-                                              int.parse('${row['index']}');
-                                          var ser_teNant =
-                                              teNantModels[index_x].quantity;
-                                          var ser_ciddoc =
-                                              teNantModels[index_x].docno ==
-                                                      null
-                                                  ? teNantModels[index_x].fid
-                                                  : teNantModels[index_x].docno;
-                                          var Value_stasus_x = teNantModels[index_x]
-                                                      .quantity ==
-                                                  '1'
-                                              ? datex.isAfter(DateTime.parse(
-                                                              '${teNantModels[index_x].ldate} 00:00:00.000')
-                                                          .subtract(
-                                                              const Duration(
-                                                                  days: 0))) ==
-                                                      true
-                                                  ? 'หมดสัญญา'
-                                                  : datex.isAfter(DateTime.parse(
-                                                                  '${teNantModels[index_x].ldate} 00:00:00.000')
-                                                              .subtract(
-                                                                  Duration(days: open_set_date))) ==
-                                                          true
-                                                      ? 'ใกล้หมดสัญญา'
-                                                      : 'เช่าอยู่'
-                                              : teNantModels[index_x].quantity == '2'
-                                                  ? 'เสนอราคา'
-                                                  : teNantModels[index_x].quantity == '3'
-                                                      ? 'เสนอราคา(มัดจำ)'
-                                                      : 'ว่าง';
-                                          setState(() {
-                                            Value_NameShop_index =
-                                                '$ser_teNant';
-                                            Value_cid = '$ser_ciddoc';
-                                          });
+                              // teNantModels[int.parse('${row['index']}')].cid ==
+                              //         teNantModels[int.parse('${row['index']}')]
+                              //             .fid
+                              //     ? SizedBox()
+                              //     : (teNantModels[int.parse('${row['index']}')]
+                              //                 .st
+                              //                 .toString() ==
+                              //             'ยกเลิกสัญญา')
+                              //         ? SizedBox()
+                              //         : InkWell(
+                              //             onTap: () {
+                              //               if (renTal_lavel <= 2) {
+                              //                 Navigator.pop(context);
+                              //                 infomation();
+                              //               } else {
+                              //                 int index_x =
+                              //                     int.parse('${row['index']}');
+                              //                 var ser_teNant =
+                              //                     teNantModels[index_x]
+                              //                         .quantity;
+                              //                 var ser_ciddoc =
+                              //                     teNantModels[index_x].docno ==
+                              //                             null
+                              //                         ? teNantModels[index_x]
+                              //                             .fid
+                              //                         : teNantModels[index_x]
+                              //                             .docno;
+                              //                 var Value_stasus_x = teNantModels[
+                              //                                 index_x]
+                              //                             .quantity ==
+                              //                         '1'
+                              //                     ? datex.isAfter(DateTime.parse(
+                              //                                     '${teNantModels[index_x].ldate} 00:00:00.000')
+                              //                                 .subtract(const Duration(
+                              //                                     days: 0))) ==
+                              //                             true
+                              //                         ? 'หมดสัญญา'
+                              //                         : datex.isAfter(DateTime.parse(
+                              //                                         '${teNantModels[index_x].ldate} 00:00:00.000')
+                              //                                     .subtract(Duration(days: open_set_date))) ==
+                              //                                 true
+                              //                             ? 'ใกล้หมดสัญญา'
+                              //                             : 'เช่าอยู่'
+                              //                     : teNantModels[index_x].quantity == '2'
+                              //                         ? 'เสนอราคา'
+                              //                         : teNantModels[index_x].quantity == '3'
+                              //                             ? 'เสนอราคา(มัดจำ)'
+                              //                             : 'ว่าง';
+                              //                 setState(() {
+                              //                   Value_NameShop_index =
+                              //                       '$ser_teNant';
+                              //                   Value_cid = '$ser_ciddoc';
+                              //                 });
 
-                                          setState(() {
-                                            ReturnBodyPeople =
-                                                'PeopleChaoScreen2';
-                                          });
+                              //                 setState(() {
+                              //                   ReturnBodyPeople =
+                              //                       'PeopleChaoScreen2';
+                              //                 });
 
-                                          Navigator.pop(context);
-                                          updateMessage1(
-                                              'PeopleChaoScreen2',
-                                              '$ser_teNant',
-                                              '$ser_ciddoc',
-                                              '$Value_stasus_x');
-                                        }
-                                        // Navigator.push(
-                                        //     context,
-                                        //     MaterialPageRoute(
-                                        //         builder: (context) =>
-                                        //             const PeopleChaoScreen2()));
-                                      },
-                                      child: Container(
-                                          padding: const EdgeInsets.all(10),
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          child: Row(
-                                            children: [
-                                              Translate.TranslateAndSetText(
-                                                  teNantModels[int.parse(
-                                                                  '${row['index']}')]
-                                                              .docno ==
-                                                          null
-                                                      ? teNantModels[int.parse(
-                                                                      '${row['index']}')]
-                                                                  .cid ==
-                                                              null
-                                                          ? ''
-                                                          : 'สัญญาเดิม : '
-                                                      : '',
-                                                  PeopleChaoScreen_Color
-                                                      .Colors_Text1_,
-                                                  TextAlign.left,
-                                                  null,
-                                                  Font_.Fonts_T,
-                                                  14,
-                                                  1),
-                                              Text(
-                                                teNantModels[int.parse(
-                                                                '${row['index']}')]
-                                                            .docno ==
-                                                        null
-                                                    ? teNantModels[int.parse(
-                                                                    '${row['index']}')]
-                                                                .cid ==
-                                                            null
-                                                        ? ''
-                                                        : '${teNantModels[int.parse('${row['index']}')].fid}'
-                                                    : '${teNantModels[int.parse('${row['index']}')].docno}',
-                                                overflow: TextOverflow.ellipsis,
-                                                textAlign: TextAlign.left,
-                                                style: const TextStyle(
-                                                    color:
-                                                        PeopleChaoScreen_Color
-                                                            .Colors_Text2_,
-                                                    //fontWeight: FontWeight.bold,
-                                                    fontFamily: Font_.Fonts_T),
-                                              ),
-                                            ],
-                                          ))),
+                              //                 Navigator.pop(context);
+                              //                 updateMessage1(
+                              //                     'PeopleChaoScreen2',
+                              //                     '$ser_teNant',
+                              //                     '$ser_ciddoc',
+                              //                     '$Value_stasus_x');
+                              //               }
+                              //               // Navigator.push(
+                              //               //     context,
+                              //               //     MaterialPageRoute(
+                              //               //         builder: (context) =>
+                              //               //             const PeopleChaoScreen2()));
+                              //             },
+                              //             child: Container(
+                              //                 padding: const EdgeInsets.all(10),
+                              //                 width: MediaQuery.of(context)
+                              //                     .size
+                              //                     .width,
+                              //                 child: Row(
+                              //                   children: [
+                              //                     Translate.TranslateAndSetText(
+                              //                         teNantModels[int.parse(
+                              //                                         '${row['index']}')]
+                              //                                     .docno ==
+                              //                                 null
+                              //                             ? teNantModels[int.parse(
+                              //                                             '${row['index']}')]
+                              //                                         .cid ==
+                              //                                     null
+                              //                                 ? ''
+                              //                                 : 'สัญญาเดิม : '
+                              //                             : '',
+                              //                         PeopleChaoScreen_Color
+                              //                             .Colors_Text1_,
+                              //                         TextAlign.left,
+                              //                         null,
+                              //                         Font_.Fonts_T,
+                              //                         14,
+                              //                         1),
+                              //                     Text(
+                              //                       teNantModels[int.parse(
+                              //                                       '${row['index']}')]
+                              //                                   .docno ==
+                              //                               null
+                              //                           ? teNantModels[int.parse(
+                              //                                           '${row['index']}')]
+                              //                                       .cid ==
+                              //                                   null
+                              //                               ? ''
+                              //                               : '${teNantModels[int.parse('${row['index']}')].fid}'
+                              //                           : '${teNantModels[int.parse('${row['index']}')].docno}',
+                              //                       overflow:
+                              //                           TextOverflow.ellipsis,
+                              //                       textAlign: TextAlign.left,
+                              //                       style: const TextStyle(
+                              //                           color:
+                              //                               PeopleChaoScreen_Color
+                              //                                   .Colors_Text2_,
+                              //                           //fontWeight: FontWeight.bold,
+                              //                           fontFamily:
+                              //                               Font_.Fonts_T),
+                              //                     ),
+                              //                   ],
+                              //                 ))),
                             ],
                           ),
                         ),

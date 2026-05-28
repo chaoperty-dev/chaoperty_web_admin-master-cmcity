@@ -1,4 +1,4 @@
-// ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member, prefer_const_constructors, unnecessary_import, implementation_imports, prefer_const_constructors_in_immutables, non_constant_identifier_names, avoid_init_to_null, prefer_void_to_null, unnecessary_brace_in_string_interps, avoid_print, empty_catches, sized_box_for_whitespace, use_build_context_synchronously, file_names, prefer_const_literals_to_create_immutables, prefer_const_declarations, unnecessary_string_interpolations, prefer_collection_literals, sort_child_properties_last, avoid_unnecessary_containers, prefer_is_empty, prefer_final_fields, camel_case_types, avoid_web_libraries_in_flutter, prefer_typing_uninitialized_variables, no_leading_underscores_for_local_identifiers, deprecated_member_use
+// ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member, prefer_const_constructors, unnecessary_import, implementation_imports, prefer_const_constructors_in_immutables, non_constant_identifier_names, avoid_init_to_null, prefer_void_to_null, unnecessary_brace_in_string_interps, avoid_//print, empty_catches, sized_box_for_whitespace, use_build_context_synchronously, file_names, prefer_const_literals_to_create_immutables, prefer_const_declarations, unnecessary_string_interpolations, prefer_collection_literals, sort_child_properties_last, avoid_unnecessary_containers, prefer_is_empty, prefer_final_fields, camel_case_types, avoid_web_libraries_in_flutter, prefer_typing_uninitialized_variables, no_leading_underscores_for_local_identifiers, deprecated_member_use
 import 'dart:convert';
 
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -45,7 +45,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       // Map<String, dynamic> map = Map();
       // map['ser'] = '0';
       // map['rser'] = '0';
@@ -423,7 +423,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                         var result =
                                                             json.decode(
                                                                 response.body);
-                                                        print(result);
+                                                        //print(result);
                                                         if (result.toString() ==
                                                             'true') {
                                                           Insert_log.Insert_logs(
@@ -578,7 +578,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                         var result =
                                                             json.decode(
                                                                 response.body);
-                                                        print(result);
+                                                        //print(result);
                                                         if (result.toString() ==
                                                             'true') {
                                                           // setState(() {
@@ -601,7 +601,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                         var result =
                                                             json.decode(
                                                                 response.body);
-                                                        print(result);
+                                                        //print(result);
                                                         if (result.toString() ==
                                                             'true') {
                                                           setState(() {
@@ -669,7 +669,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                   //     var result = json
                                                   //         .decode(response
                                                   //             .body);
-                                                  //     print(result);
+                                                  //     //print(result);
                                                   //     if (result
                                                   //             .toString() ==
                                                   //         'true') {
@@ -825,7 +825,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  print(result);
+                                                                  //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -1015,7 +1015,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  print(result);
+                                                                  //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -1205,7 +1205,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  print(result);
+                                                                  //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -1395,7 +1395,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  print(result);
+                                                                  //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -1640,7 +1640,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                                     json.decode(
                                                                         response
                                                                             .body);
-                                                                print(result);
+                                                                //print(result);
                                                                 if (result
                                                                         .toString() ==
                                                                     'true') {
@@ -1667,7 +1667,7 @@ class _AdvanceSettingState extends State<AdvanceSetting> {
                                                                     json.decode(
                                                                         response
                                                                             .body);
-                                                                print(result);
+                                                                //print(result);
                                                                 if (result
                                                                         .toString() ==
                                                                     'true') {

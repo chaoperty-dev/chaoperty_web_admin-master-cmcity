@@ -17,10 +17,11 @@ import 'package:panara_dialogs/panara_dialogs.dart';
 import 'package:scrollview_observer/scrollview_observer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../Account/Account_Screen.dart';
+import '../Account/Ac_Sub/Account_Screen.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetArea_Model.dart';
 import '../Model/GetContractx_Model.dart';
@@ -152,7 +153,7 @@ class _ManageScreenState extends State<ManageScreen> {
 
     String url = '${MyConstant().domain}/GC_payMent.php?isAdd=true&ren=$ren';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -217,7 +218,7 @@ class _ManageScreenState extends State<ManageScreen> {
   //       '${MyConstant().domain}/GC_electricity.php?isAdd=true&ren=$ren';
 
   //   try {
-  //     var response = await http.get(Uri.parse(url));
+  //     var response = await httpClient.get(Uri.parse(url));
 
   //     var result = json.decode(response.body);
   //     print(result);
@@ -264,7 +265,7 @@ class _ManageScreenState extends State<ManageScreen> {
     String url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       Map<String, dynamic> map = Map();
@@ -303,7 +304,7 @@ class _ManageScreenState extends State<ManageScreen> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
     renTal_name = preferences.getString('renTalName');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -417,7 +418,7 @@ class _ManageScreenState extends State<ManageScreen> {
         '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -447,7 +448,7 @@ class _ManageScreenState extends State<ManageScreen> {
     String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -518,7 +519,7 @@ class _ManageScreenState extends State<ManageScreen> {
     //         ? '${MyConstant().domain}/GC_trans_mitter_sub.php?isAdd=true&ren=$ren&sertype=$Ser_BodySta1&serzone=0&serzonesub=$zone_Sub'
     //         : '${MyConstant().domain}/GC_trans_mitter_sub.php?isAdd=true&ren=$ren&sertype=$Ser_BodySta1&serzone=$zone_ser&serzonesub=$zone_Sub';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -563,7 +564,7 @@ class _ManageScreenState extends State<ManageScreen> {
   //       ? '${MyConstant().domain}/GC_trans_mitter.php?isAdd=true&ren=$ren'
   //       : '${MyConstant().domain}/GC_expser.php?isAdd=true&ren=$ren&expser=$expser';
   //   try {
-  //     var response = await http.get(Uri.parse(url));
+  //     var response = await httpClient.get(Uri.parse(url));
 
   //     var result = json.decode(response.body);
   //     // print('result $ciddoc');
@@ -593,7 +594,7 @@ class _ManageScreenState extends State<ManageScreen> {
 
     String url = '${MyConstant().domain}/GC_exp_sz.php?isAdd=true&ren=$ren';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -655,7 +656,7 @@ class _ManageScreenState extends State<ManageScreen> {
             ? '${MyConstant().domain}/GC_maintenance_sub.php?isAdd=true&ren=$ren&serzone=$zone_Sub'
             : '${MyConstant().domain}/GC_maintenance.php?isAdd=true&ren=$ren&serzone=$zone_ser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -695,7 +696,7 @@ class _ManageScreenState extends State<ManageScreen> {
             ? '${MyConstant().domain}/GC_maintenance_sub.php?isAdd=true&ren=$ren&serzone=$zone_Sub'
             : '${MyConstant().domain}/GC_maintenance_mst.php?isAdd=true&ren=$ren&expser=$expser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -825,7 +826,7 @@ class _ManageScreenState extends State<ManageScreen> {
   //   String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
 
   //   try {
-  //     var response = await http.get(Uri.parse(url));
+  //     var response = await httpClienthttp.get(Uri.parse(url));
 
   //     var result = json.decode(response.body);
   //     print(result);
@@ -940,7 +941,7 @@ class _ManageScreenState extends State<ManageScreen> {
         final url =
             '${MyConstant().domain}/File_uploadMeter.php?name=$fileName_Slip&Foder=$foder&extension=$extension_';
 
-        final response = await http.post(
+        final response = await httpClient.post(
           Uri.parse(url),
           body: {
             'image': base64_Slip,
@@ -975,7 +976,7 @@ class _ManageScreenState extends State<ManageScreen> {
         '${MyConstant().domain}/UPC_Invoice_img.php?isAdd=true&ren=$ren&fileName=$fileName_Slip&transer=$ser';
     // print('$docno_ /// $ren /// $user /// $fileName_Slip ');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
 
@@ -1006,7 +1007,7 @@ class _ManageScreenState extends State<ManageScreen> {
         '${MyConstant().domain}/UP_meter_api.php?isAdd=true&ren=$ren&zser=$zone_ser&datemiter=$datemiter';
     print(url);
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
 
@@ -1183,149 +1184,149 @@ class _ManageScreenState extends State<ManageScreen> {
   ////------------------------------------------------->
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: AppbackgroundColor.Abg_Colors,
-      height: MediaQuery.of(context).size.height,
-      width: MediaQuery.of(context).size.width,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
-                    child: Align(
-                      alignment: Alignment.topLeft,
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 2, 0),
-                        child: Container(
-                          width: 100,
-                          decoration: BoxDecoration(
-                            color: AppbackgroundColor.TiTile_Box,
-                            borderRadius: const BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(10),
-                              bottomRight: Radius.circular(10),
-                            ),
-                            border: Border.all(color: Colors.white, width: 2),
-                          ),
-                          padding: const EdgeInsets.all(5.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Translate.TranslateAndSetText(
-                                  'จัดการ',
-                                  SettingScreen_Color.Colors_Text1_,
-                                  TextAlign.center,
-                                  FontWeight.bold,
-                                  FontWeight_.Fonts_T,
-                                  14,
-                                  2),
-                              AutoSizeText(
-                                ' > >',
-                                overflow: TextOverflow.ellipsis,
-                                minFontSize: 8,
-                                maxFontSize: 20,
-                                style: TextStyle(
-                                  color: Colors.green,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: FontWeight_.Fonts_T,
-                                ),
+    return LayoutBuilder(builder: (context, cts) {
+      final screenW = cts.maxWidth;
+      final tableMinW = Responsive.isDesktop(context) ? screenW : 980.0;
+
+      return Container(
+        color: AppbackgroundColor.Abg_Colors,
+        height: MediaQuery.of(context).size.height,
+        width: tableMinW,
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
+                      child: Align(
+                        alignment: Alignment.topLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 8, 2, 0),
+                          child: Container(
+                            width: 100,
+                            decoration: BoxDecoration(
+                              color: AppbackgroundColor.TiTile_Box,
+                              borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10),
                               ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: viewpage(context, '$Ser_nowpage'),
-                ),
-              ],
-            ),
-            // Row(
-            //   mainAxisAlignment: MainAxisAlignment.end,
-            //   children: [
-            //     Align(
-            //       alignment: Alignment.topLeft,
-            //       child: viewpage(context, '$Ser_nowpage'),
-            //     ),
-            //   ],
-            // ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                decoration: const BoxDecoration(
-                  color: AppbackgroundColor.TiTile_Box,
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10)),
-                  // border: Border.all(color: Colors.white, width: 1),
-                ),
-                // padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    subzoneModels.length == 1
-                        ? SizedBox()
-                        : MediaQuery.of(context).size.shortestSide <
-                                MediaQuery.of(context).size.width * 1
-                            ? Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Translate.TranslateAndSetText(
-                                    'โซน:',
+                              border: Border.all(color: Colors.white, width: 2),
+                            ),
+                            padding: const EdgeInsets.all(5.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Translate.TranslateAndSetText(
+                                    'จัดการ',
                                     SettingScreen_Color.Colors_Text1_,
                                     TextAlign.center,
                                     FontWeight.bold,
                                     FontWeight_.Fonts_T,
                                     14,
                                     2),
-                              )
-                            : const SizedBox(),
-                    subzoneModels.length == 1
-                        ? SizedBox()
-                        : Expanded(
-                            flex: MediaQuery.of(context).size.shortestSide <
-                                    MediaQuery.of(context).size.width * 1
-                                ? 2
-                                : 3,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: AppbackgroundColor.Sub_Abg_Colors,
-                                  borderRadius: const BorderRadius.only(
+                                AutoSizeText(
+                                  ' > >',
+                                  overflow: TextOverflow.ellipsis,
+                                  minFontSize: 8,
+                                  maxFontSize: 20,
+                                  style: TextStyle(
+                                    color: Colors.green,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: FontWeight_.Fonts_T,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: viewpage(context, '$Ser_nowpage'),
+                  ),
+                ],
+              ),
+              // Row(
+              //   mainAxisAlignment: MainAxisAlignment.end,
+              //   children: [
+              //     Align(
+              //       alignment: Alignment.topLeft,
+              //       child: viewpage(context, '$Ser_nowpage'),
+              //     ),
+              //   ],
+              // ),
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  decoration: const BoxDecoration(
+                    color: AppbackgroundColor.TiTile_Box,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(10),
+                      topRight: Radius.circular(10),
+                      bottomLeft: Radius.circular(10),
+                      bottomRight: Radius.circular(10),
+                    ),
+                  ),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      final bool isMobile = constraints.maxWidth < 900;
+
+                      if (isMobile) {
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (subzoneModels.length != 1) ...[
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Translate.TranslateAndSetText(
+                                  'โซน:',
+                                  SettingScreen_Color.Colors_Text1_,
+                                  TextAlign.left,
+                                  FontWeight.bold,
+                                  FontWeight_.Fonts_T,
+                                  14,
+                                  2,
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppbackgroundColor.Sub_Abg_Colors,
+                                    borderRadius: const BorderRadius.only(
                                       topLeft: Radius.circular(10),
                                       topRight: Radius.circular(10),
                                       bottomLeft: Radius.circular(10),
-                                      bottomRight: Radius.circular(10)),
-                                  border:
-                                      Border.all(color: Colors.grey, width: 1),
-                                ),
-                                width: 200,
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton2<String>(
+                                      bottomRight: Radius.circular(10),
+                                    ),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  width: double.infinity,
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton2<String>(
                                       isExpanded: true,
                                       searchController:
                                           Dropdown_Controller_zone_Sub,
                                       searchInnerWidget: Container(
-                                        // width: 200,
                                         height: 50,
                                         decoration: BoxDecoration(
                                           color:
                                               Colors.red[100]!.withOpacity(0.5),
                                           borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(8),
-                                              topRight: Radius.circular(8),
-                                              bottomLeft: Radius.circular(8),
-                                              bottomRight: Radius.circular(8)),
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                            bottomLeft: Radius.circular(8),
+                                            bottomRight: Radius.circular(8),
+                                          ),
                                           border: Border.all(
                                               color: Colors.grey, width: 1),
                                         ),
@@ -1342,7 +1343,6 @@ class _ManageScreenState extends State<ManageScreen> {
                                               vertical: 8,
                                             ),
                                             hintText: 'Search...',
-                                            // fillColor: Colors.red[300],
                                             hintStyle:
                                                 const TextStyle(fontSize: 12),
                                             border: OutlineInputBorder(
@@ -1360,66 +1360,67 @@ class _ManageScreenState extends State<ManageScreen> {
                                               null,
                                               Font_.Fonts_T,
                                               14,
-                                              1)
+                                              1,
+                                            )
                                           : Text(
-                                              zone_Subname == null
-                                                  ? 'ทั้งหมด'
-                                                  : '$zone_Subname',
+                                              '$zone_Subname',
                                               maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
                                               style: const TextStyle(
-                                                  fontSize: 14,
-                                                  color: PeopleChaoScreen_Color
-                                                      .Colors_Text2_,
-                                                  fontFamily: Font_.Fonts_T),
+                                                fontSize: 14,
+                                                color: PeopleChaoScreen_Color
+                                                    .Colors_Text2_,
+                                                fontFamily: Font_.Fonts_T,
+                                              ),
                                             ),
                                       icon: const Icon(
                                         Icons.arrow_drop_down,
                                         color: TextHome_Color.TextHome_Colors,
                                       ),
                                       style: const TextStyle(
-                                          color: Colors.green,
-                                          fontFamily: Font_.Fonts_T),
+                                        color: Colors.green,
+                                        fontFamily: Font_.Fonts_T,
+                                      ),
                                       iconSize: 30,
                                       buttonHeight: 35,
                                       dropdownDecoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       items: subzoneModels
-                                          .map((item) =>
-                                              DropdownMenuItem<String>(
-                                                value: '${item.ser},${item.zn}',
-                                                child: Column(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    Text(
-                                                      item.zn!,
-                                                      maxLines: 2,
-                                                      style: const TextStyle(
-                                                          fontSize: 14,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
+                                          .map(
+                                            (item) => DropdownMenuItem<String>(
+                                              value: '${item.ser},${item.zn}',
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    item.zn!,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontFamily: Font_.Fonts_T,
                                                     ),
-                                                    Divider(
-                                                      color: Colors.grey[300],
-                                                      height: 4.0,
-                                                    ),
-                                                  ],
-                                                ),
-                                              ))
+                                                  ),
+                                                  Divider(
+                                                    color: Colors.grey[300],
+                                                    height: 4.0,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )
                                           .toList(),
-
-                                      // value: selectedValue,
                                       onChanged: (value) async {
                                         var zones = value!.indexOf(',');
                                         var zoneSer = value.substring(0, zones);
                                         var zonesName =
                                             value.substring(zones + 1);
-                                        // print(
-                                        //     'mmmmm ${zoneSer.toString()} $zonesName');
 
                                         SharedPreferences preferences =
                                             await SharedPreferences
@@ -1435,14 +1436,14 @@ class _ManageScreenState extends State<ManageScreen> {
                                             preferences.getString('route');
                                         MaterialPageRoute materialPageRoute =
                                             MaterialPageRoute(
-                                                builder:
-                                                    (BuildContext context) =>
-                                                        AdminScafScreen(
-                                                            route: _route));
+                                          builder: (BuildContext context) =>
+                                              AdminScafScreen(route: _route),
+                                        );
                                         Navigator.pushAndRemoveUntil(
-                                            context,
-                                            materialPageRoute,
-                                            (route) => false);
+                                          context,
+                                          materialPageRoute,
+                                          (route) => false,
+                                        );
                                       },
                                       searchMatchFn: (item, searchValue) {
                                         return item.value
@@ -1453,129 +1454,487 @@ class _ManageScreenState extends State<ManageScreen> {
                                         if (!isOpen) {
                                           Dropdown_Controller_zone_Sub.clear();
                                         }
-                                      }),
+                                      },
+                                    ),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ),
-                    if (Ser_GetMiter_Choice != 1)
-                      MediaQuery.of(context).size.shortestSide <
-                              MediaQuery.of(context).size.width * 1
-                          ? Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Translate.TranslateAndSetText(
+                            ],
+                            if (Ser_GetMiter_Choice != 1) ...[
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Translate.TranslateAndSetText(
                                   'โซนพื้นที่เช่า:',
                                   SettingScreen_Color.Colors_Text1_,
-                                  TextAlign.center,
+                                  TextAlign.left,
                                   FontWeight.bold,
                                   FontWeight_.Fonts_T,
                                   14,
-                                  2),
-                            )
-                          : const SizedBox(),
-                    (Ser_GetMiter_Choice == 1)
-                        ? Expanded(flex: 4, child: SizedBox())
-                        : Expanded(
-                            flex: MediaQuery.of(context).size.shortestSide <
-                                    MediaQuery.of(context).size.width * 1
-                                ? 2
-                                : 3,
-                            child: Padding(
+                                  2,
+                                ),
+                              ),
+                              Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: Container(
                                   decoration: BoxDecoration(
                                     color: AppbackgroundColor.Sub_Abg_Colors,
                                     borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(10),
-                                        topRight: Radius.circular(10),
-                                        bottomLeft: Radius.circular(10),
-                                        bottomRight: Radius.circular(10)),
+                                      topLeft: Radius.circular(10),
+                                      topRight: Radius.circular(10),
+                                      bottomLeft: Radius.circular(10),
+                                      bottomRight: Radius.circular(10),
+                                    ),
                                     border: Border.all(
                                         color: Colors.grey, width: 1),
                                   ),
-                                  width: 150,
+                                  width: double.infinity,
                                   child: DropdownButtonHideUnderline(
                                     child: DropdownButton2<String>(
-                                        isExpanded: true,
-                                        searchController: Dropdown_Controller,
-                                        searchInnerWidget: Container(
-                                          // width: 200,
-                                          height: 50,
-                                          decoration: BoxDecoration(
-                                            color: Colors.red[100]!
-                                                .withOpacity(0.5),
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                    topLeft: Radius.circular(8),
-                                                    topRight:
-                                                        Radius.circular(8),
-                                                    bottomLeft:
-                                                        Radius.circular(8),
-                                                    bottomRight:
-                                                        Radius.circular(8)),
-                                            border: Border.all(
-                                                color: Colors.grey, width: 1),
+                                      isExpanded: true,
+                                      searchController: Dropdown_Controller,
+                                      searchInnerWidget: Container(
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              Colors.red[100]!.withOpacity(0.5),
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                            bottomLeft: Radius.circular(8),
+                                            bottomRight: Radius.circular(8),
                                           ),
-                                          child: TextFormField(
-                                            expands: true,
-                                            maxLines: null,
-                                            controller: Dropdown_Controller,
-                                            decoration: InputDecoration(
-                                              isDense: true,
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 10,
-                                                vertical: 8,
-                                              ),
-                                              hintText: 'Search...',
-                                              // fillColor: Colors.red[300],
-                                              hintStyle:
-                                                  const TextStyle(fontSize: 12),
-                                              border: OutlineInputBorder(
-                                                borderRadius:
-                                                    BorderRadius.circular(8),
-                                              ),
+                                          border: Border.all(
+                                              color: Colors.grey, width: 1),
+                                        ),
+                                        child: TextFormField(
+                                          expands: true,
+                                          maxLines: null,
+                                          controller: Dropdown_Controller,
+                                          decoration: InputDecoration(
+                                            isDense: true,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 8,
+                                            ),
+                                            hintText: 'Search...',
+                                            hintStyle:
+                                                const TextStyle(fontSize: 12),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
                                             ),
                                           ),
                                         ),
-                                        hint: (zone_name == null)
-                                            ? Translate.TranslateAndSetText(
-                                                'ทั้งหมด',
-                                                PeopleChaoScreen_Color
-                                                    .Colors_Text1_,
-                                                TextAlign.center,
-                                                null,
-                                                Font_.Fonts_T,
-                                                16,
-                                                1)
-                                            : Text(
-                                                zone_name == null
-                                                    ? 'ทั้งหมด'
-                                                    : '$zone_name',
-                                                maxLines: 1,
-                                                style: const TextStyle(
+                                      ),
+                                      hint: (zone_name == null)
+                                          ? Translate.TranslateAndSetText(
+                                              'ทั้งหมด',
+                                              PeopleChaoScreen_Color
+                                                  .Colors_Text1_,
+                                              TextAlign.center,
+                                              null,
+                                              Font_.Fonts_T,
+                                              16,
+                                              1,
+                                            )
+                                          : Text(
+                                              '$zone_name',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: PeopleChaoScreen_Color
+                                                    .Colors_Text2_,
+                                                fontFamily: Font_.Fonts_T,
+                                              ),
+                                            ),
+                                      icon: const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: TextHome_Color.TextHome_Colors,
+                                      ),
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontFamily: Font_.Fonts_T,
+                                      ),
+                                      iconSize: 30,
+                                      buttonHeight: 35,
+                                      dropdownDecoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      items: zoneModels
+                                          .map(
+                                            (item) => DropdownMenuItem<String>(
+                                              value: '${item.ser},${item.zn}',
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    item.zn!,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontFamily: Font_.Fonts_T,
+                                                    ),
+                                                  ),
+                                                  Divider(
+                                                    color: Colors.grey[300],
+                                                    height: 4.0,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (value) async {
+                                        var zones = value!.indexOf(',');
+                                        var zoneSer = value.substring(0, zones);
+                                        var zonesName =
+                                            value.substring(zones + 1);
+
+                                        SharedPreferences preferences =
+                                            await SharedPreferences
+                                                .getInstance();
+                                        preferences.setString(
+                                            'zonePSer', zoneSer.toString());
+                                        preferences.setString(
+                                            'zonesPName', zonesName.toString());
+                                        checkPreferance();
+                                        red_Trans_bill();
+                                        red_Trans_c_maintenance();
+                                      },
+                                      searchMatchFn: (item, searchValue) {
+                                        return item.value
+                                            .toString()
+                                            .contains(searchValue);
+                                      },
+                                      onMenuStateChange: (isOpen) {
+                                        if (!isOpen) {
+                                          Dropdown_Controller.clear();
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        );
+                      }
+
+                      return Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          if (subzoneModels.length != 1) ...[
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Translate.TranslateAndSetText(
+                                'โซน:',
+                                SettingScreen_Color.Colors_Text1_,
+                                TextAlign.center,
+                                FontWeight.bold,
+                                FontWeight_.Fonts_T,
+                                14,
+                                2,
+                              ),
+                            ),
+                            Expanded(
+                              flex: MediaQuery.of(context).size.shortestSide <
+                                      MediaQuery.of(context).size.width * 1
+                                  ? 2
+                                  : 3,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: AppbackgroundColor.Sub_Abg_Colors,
+                                    borderRadius: const BorderRadius.only(
+                                      topLeft: Radius.circular(10),
+                                      topRight: Radius.circular(10),
+                                      bottomLeft: Radius.circular(10),
+                                      bottomRight: Radius.circular(10),
+                                    ),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  width: 200,
+                                  child: DropdownButtonHideUnderline(
+                                    child: DropdownButton2<String>(
+                                      isExpanded: true,
+                                      searchController:
+                                          Dropdown_Controller_zone_Sub,
+                                      searchInnerWidget: Container(
+                                        height: 50,
+                                        decoration: BoxDecoration(
+                                          color:
+                                              Colors.red[100]!.withOpacity(0.5),
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                            bottomLeft: Radius.circular(8),
+                                            bottomRight: Radius.circular(8),
+                                          ),
+                                          border: Border.all(
+                                              color: Colors.grey, width: 1),
+                                        ),
+                                        child: TextFormField(
+                                          expands: true,
+                                          maxLines: null,
+                                          controller:
+                                              Dropdown_Controller_zone_Sub,
+                                          decoration: InputDecoration(
+                                            isDense: true,
+                                            contentPadding:
+                                                const EdgeInsets.symmetric(
+                                              horizontal: 10,
+                                              vertical: 8,
+                                            ),
+                                            hintText: 'Search...',
+                                            hintStyle:
+                                                const TextStyle(fontSize: 12),
+                                            border: OutlineInputBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      hint: (zone_Subname == null)
+                                          ? Translate.TranslateAndSetText(
+                                              'ทั้งหมด',
+                                              SettingScreen_Color.Colors_Text1_,
+                                              TextAlign.center,
+                                              null,
+                                              Font_.Fonts_T,
+                                              14,
+                                              1,
+                                            )
+                                          : Text(
+                                              '$zone_Subname',
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                fontSize: 14,
+                                                color: PeopleChaoScreen_Color
+                                                    .Colors_Text2_,
+                                                fontFamily: Font_.Fonts_T,
+                                              ),
+                                            ),
+                                      icon: const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: TextHome_Color.TextHome_Colors,
+                                      ),
+                                      style: const TextStyle(
+                                        color: Colors.green,
+                                        fontFamily: Font_.Fonts_T,
+                                      ),
+                                      iconSize: 30,
+                                      buttonHeight: 35,
+                                      dropdownDecoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      items: subzoneModels
+                                          .map(
+                                            (item) => DropdownMenuItem<String>(
+                                              value: '${item.ser},${item.zn}',
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    item.zn!,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: const TextStyle(
+                                                      fontSize: 14,
+                                                      fontFamily: Font_.Fonts_T,
+                                                    ),
+                                                  ),
+                                                  Divider(
+                                                    color: Colors.grey[300],
+                                                    height: 4.0,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          )
+                                          .toList(),
+                                      onChanged: (value) async {
+                                        var zones = value!.indexOf(',');
+                                        var zoneSer = value.substring(0, zones);
+                                        var zonesName =
+                                            value.substring(zones + 1);
+
+                                        SharedPreferences preferences =
+                                            await SharedPreferences
+                                                .getInstance();
+                                        preferences.setString(
+                                            'zoneSubSer', zoneSer.toString());
+                                        preferences.setString('zonesSubName',
+                                            zonesName.toString());
+                                        preferences.remove("zonePSer");
+                                        preferences.remove("zonesPName");
+
+                                        String? _route =
+                                            preferences.getString('route');
+                                        MaterialPageRoute materialPageRoute =
+                                            MaterialPageRoute(
+                                          builder: (BuildContext context) =>
+                                              AdminScafScreen(route: _route),
+                                        );
+                                        Navigator.pushAndRemoveUntil(
+                                          context,
+                                          materialPageRoute,
+                                          (route) => false,
+                                        );
+                                      },
+                                      searchMatchFn: (item, searchValue) {
+                                        return item.value
+                                            .toString()
+                                            .contains(searchValue);
+                                      },
+                                      onMenuStateChange: (isOpen) {
+                                        if (!isOpen) {
+                                          Dropdown_Controller_zone_Sub.clear();
+                                        }
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                          if (Ser_GetMiter_Choice != 1)
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Translate.TranslateAndSetText(
+                                'โซนพื้นที่เช่า:',
+                                SettingScreen_Color.Colors_Text1_,
+                                TextAlign.center,
+                                FontWeight.bold,
+                                FontWeight_.Fonts_T,
+                                14,
+                                2,
+                              ),
+                            ),
+                          (Ser_GetMiter_Choice == 1)
+                              ? const Expanded(flex: 4, child: SizedBox())
+                              : Expanded(
+                                  flex: MediaQuery.of(context)
+                                              .size
+                                              .shortestSide <
+                                          MediaQuery.of(context).size.width * 1
+                                      ? 2
+                                      : 3,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppbackgroundColor.Sub_Abg_Colors,
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(10),
+                                          topRight: Radius.circular(10),
+                                          bottomLeft: Radius.circular(10),
+                                          bottomRight: Radius.circular(10),
+                                        ),
+                                        border: Border.all(
+                                            color: Colors.grey, width: 1),
+                                      ),
+                                      width: 150,
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton2<String>(
+                                          isExpanded: true,
+                                          searchController: Dropdown_Controller,
+                                          searchInnerWidget: Container(
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                              color: Colors.red[100]!
+                                                  .withOpacity(0.5),
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                topLeft: Radius.circular(8),
+                                                topRight: Radius.circular(8),
+                                                bottomLeft: Radius.circular(8),
+                                                bottomRight: Radius.circular(8),
+                                              ),
+                                              border: Border.all(
+                                                  color: Colors.grey, width: 1),
+                                            ),
+                                            child: TextFormField(
+                                              expands: true,
+                                              maxLines: null,
+                                              controller: Dropdown_Controller,
+                                              decoration: InputDecoration(
+                                                isDense: true,
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                  horizontal: 10,
+                                                  vertical: 8,
+                                                ),
+                                                hintText: 'Search...',
+                                                hintStyle: const TextStyle(
+                                                    fontSize: 12),
+                                                border: OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          hint: (zone_name == null)
+                                              ? Translate.TranslateAndSetText(
+                                                  'ทั้งหมด',
+                                                  PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  TextAlign.center,
+                                                  null,
+                                                  Font_.Fonts_T,
+                                                  16,
+                                                  1,
+                                                )
+                                              : Text(
+                                                  '$zone_name',
+                                                  maxLines: 1,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
                                                     fontSize: 14,
                                                     color:
                                                         PeopleChaoScreen_Color
                                                             .Colors_Text2_,
-                                                    fontFamily: Font_.Fonts_T),
-                                              ),
-                                        icon: const Icon(
-                                          Icons.arrow_drop_down,
-                                          color: TextHome_Color.TextHome_Colors,
-                                        ),
-                                        style: const TextStyle(
+                                                    fontFamily: Font_.Fonts_T,
+                                                  ),
+                                                ),
+                                          icon: const Icon(
+                                            Icons.arrow_drop_down,
+                                            color:
+                                                TextHome_Color.TextHome_Colors,
+                                          ),
+                                          style: const TextStyle(
                                             color: Colors.green,
-                                            fontFamily: Font_.Fonts_T),
-                                        iconSize: 30,
-                                        buttonHeight: 35,
-                                        dropdownDecoration: BoxDecoration(
-                                          borderRadius:
-                                              BorderRadius.circular(10),
-                                        ),
-                                        items: zoneModels
-                                            .map((item) =>
-                                                DropdownMenuItem<String>(
+                                            fontFamily: Font_.Fonts_T,
+                                          ),
+                                          iconSize: 30,
+                                          buttonHeight: 35,
+                                          dropdownDecoration: BoxDecoration(
+                                            borderRadius:
+                                                BorderRadius.circular(10),
+                                          ),
+                                          items: zoneModels
+                                              .map(
+                                                (item) =>
+                                                    DropdownMenuItem<String>(
                                                   value:
                                                       '${item.ser},${item.zn}',
                                                   child: Column(
@@ -1589,10 +1948,13 @@ class _ManageScreenState extends State<ManageScreen> {
                                                       Text(
                                                         item.zn!,
                                                         maxLines: 2,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
                                                         style: const TextStyle(
-                                                            fontSize: 14,
-                                                            fontFamily:
-                                                                Font_.Fonts_T),
+                                                          fontSize: 14,
+                                                          fontFamily:
+                                                              Font_.Fonts_T,
+                                                        ),
                                                       ),
                                                       Divider(
                                                         color: Colors.grey[300],
@@ -1600,367 +1962,728 @@ class _ManageScreenState extends State<ManageScreen> {
                                                       ),
                                                     ],
                                                   ),
-                                                ))
-                                            .toList(),
-
-                                        // value: selectedValue,
-
-                                        onChanged: (value) async {
-                                          var zones = value!.indexOf(',');
-                                          var zoneSer =
-                                              value.substring(0, zones);
-                                          var zonesName =
-                                              value.substring(zones + 1);
-                                          // print(
-                                          //     'mmmmm ${zoneSer.toString()} $zonesName');
-
-                                          SharedPreferences preferences =
-                                              await SharedPreferences
-                                                  .getInstance();
-                                          preferences.setString(
-                                              'zonePSer', zoneSer.toString());
-                                          preferences.setString('zonesPName',
-                                              zonesName.toString());
-                                          checkPreferance();
-                                          red_Trans_bill();
-                                          red_Trans_c_maintenance();
-                                        },
-                                        searchMatchFn: (item, searchValue) {
-                                          return item.value
-                                              .toString()
-                                              .contains(searchValue);
-                                        },
-                                        onMenuStateChange: (isOpen) {
-                                          if (!isOpen) {
-                                            Dropdown_Controller.clear();
-                                          }
-                                        }),
-                                  ),
-                                )),
-                          ),
-                    // if (Ser_GetMiter_Choice != 1)
-                    //   if (Status_ == 1)
-                    //     Expanded(
-                    //       flex: 1,
-                    //       child: Padding(
-                    //         padding: EdgeInsets.all(8.0),
-                    //         child: Translate.TranslateAndSetText(
-                    //             'ค้นหา:',
-                    //             SettingScreen_Color.Colors_Text1_,
-                    //             TextAlign.center,
-                    //             FontWeight.bold,
-                    //             FontWeight_.Fonts_T,
-                    //             14,
-                    //             2),
-                    //       ),
-                    //     ),
-                    // if (Ser_GetMiter_Choice != 1)
-                    //   if (Status_ == 1)
-                    //     Expanded(
-                    //       flex: MediaQuery.of(context).size.shortestSide <
-                    //               MediaQuery.of(context).size.width * 1
-                    //           ? 8
-                    //           : 6,
-                    //       child: Padding(
-                    //         padding: const EdgeInsets.all(8.0),
-                    //         child: Container(
-                    //           decoration: BoxDecoration(
-                    //             color: AppbackgroundColor.Sub_Abg_Colors,
-                    //             borderRadius: const BorderRadius.only(
-                    //                 topLeft: Radius.circular(10),
-                    //                 topRight: Radius.circular(10),
-                    //                 bottomLeft: Radius.circular(10),
-                    //                 bottomRight: Radius.circular(10)),
-                    //             border:
-                    //                 Border.all(color: Colors.grey, width: 1),
-                    //           ),
-                    //           width: 120,
-                    //           height: 40,
-                    //           child: _searchBar(),
-                    //         ),
-                    //       ),
-                    //     ),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                decoration: const BoxDecoration(
-                  color: Colors.white60,
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(10),
-                      topRight: Radius.circular(10),
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10)),
-                  // border: Border.all(color: Colors.grey, width: 1),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        (Ser_GetMiter_Choice == 1)
-                            ? Expanded(flex: 8, child: SizedBox())
-                            : Expanded(
-                                flex: 8,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: ScrollConfiguration(
-                                    behavior: ScrollConfiguration.of(context)
-                                        .copyWith(dragDevices: {
-                                      PointerDeviceKind.touch,
-                                      PointerDeviceKind.mouse,
-                                    }),
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.start,
-                                        children: [
-                                          // Translate.TranslateAndSetText(
-                                          //     'สถานะ : ',
-                                          //     SettingScreen_Color.Colors_Text1_,
-                                          //     TextAlign.center,
-                                          //     FontWeight.bold,
-                                          //     FontWeight_.Fonts_T,
-                                          //     14,
-                                          //     2),
-                                          //  Text(
-                                          //   'สถานะ : ',
-                                          //   style: TextStyle(
-                                          //     color: ManageScreen_Color.Colors_Text1_,
-                                          //     fontWeight: FontWeight.bold,
-                                          //     fontFamily: FontWeight_.Fonts_T,
-                                          //   ),
-                                          // ),
-                                          for (int i = 0; i < 3; i++)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.fromLTRB(
-                                                      4, 4, 4, 4),
-                                              child: ElevatedButton(
-                                                onPressed: () async {
-                                                  setState(() {
-                                                    Status_ = 0;
-                                                    Status_ = i + 1;
-                                                    tappedIndex_ = -1;
-                                                    typezonesName = null;
-                                                    typevalue = null;
-                                                    // red_Trans_c_maintenance_exp(0);
-                                                    // red_Trans_bill_exp(0);
-                                                  });
-                                                  // print(Status_);
-                                                  // red_Trans_bill_exp(0);
-                                                  red_Trans_c_maintenance_exp(
-                                                      0);
-                                                  checkPreferance();
-                                                  red_Trans_bill();
-                                                  red_Trans_c_maintenance();
-                                                },
-                                                style: ButtonStyle(
-                                                  backgroundColor:
-                                                      MaterialStateProperty
-                                                          .all<Color>((i == 0)
-                                                              ? Colors.green
-                                                              : (i == 1)
-                                                                  ? Colors
-                                                                      .deepPurple
-                                                                      .shade400
-                                                                  : Colors
-                                                                      .orange),
                                                 ),
-                                                // backgroundColor: (i == 1)
-                                                //     ? Colors.red
-                                                //     : Colors.red),
-                                                child: Center(
-                                                  child: Translate
-                                                      .TranslateAndSetText(
-                                                          Status[i],
-                                                          (Status_ == i + 1)
-                                                              ? Colors.white
-                                                              : Colors.black,
-                                                          TextAlign.center,
-                                                          FontWeight.bold,
-                                                          FontWeight_.Fonts_T,
-                                                          14,
-                                                          2),
-                                                ),
-                                              ),
-                                            ),
-                                        ],
+                                              )
+                                              .toList(),
+                                          onChanged: (value) async {
+                                            var zones = value!.indexOf(',');
+                                            var zoneSer =
+                                                value.substring(0, zones);
+                                            var zonesName =
+                                                value.substring(zones + 1);
+
+                                            SharedPreferences preferences =
+                                                await SharedPreferences
+                                                    .getInstance();
+                                            preferences.setString(
+                                                'zonePSer', zoneSer.toString());
+                                            preferences.setString('zonesPName',
+                                                zonesName.toString());
+                                            checkPreferance();
+                                            red_Trans_bill();
+                                            red_Trans_c_maintenance();
+                                          },
+                                          searchMatchFn: (item, searchValue) {
+                                            return item.value
+                                                .toString()
+                                                .contains(searchValue);
+                                          },
+                                          onMenuStateChange: (isOpen) {
+                                            if (!isOpen) {
+                                              Dropdown_Controller.clear();
+                                            }
+                                          },
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
-                              ),
-                        // if (api_key == 'Y' && Status_ == 1)
-                        //   Expanded(
-                        //     flex: 2,
-                        //     child: Padding(
-                        //       padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
-                        //       child: ElevatedButton(
-                        //         onPressed: () async {
-                        //           setState(() {
-                        //             Ser_GetMiter_Choice =
-                        //                 (Ser_GetMiter_Choice == 1) ? 0 : 1;
-                        //           });
-                        //         },
-                        //         style: ButtonStyle(
-                        //           backgroundColor:
-                        //               MaterialStateProperty.all<Color>(
-                        //                   (Ser_GetMiter_Choice == 1)
-                        //                       ? Colors.black
-                        //                       : Colors.purple),
-                        //         ),
-                        //         // backgroundColor: (i == 1)
-                        //         //     ? Colors.red
-                        //         //     : Colors.red),
-                        //         child: Padding(
-                        //           padding: const EdgeInsets.all(4.0),
-                        //           child: Center(
-                        //             child: Text(
-                        //               (Ser_GetMiter_Choice == 1)
-                        //                   ? '< ย้อนกลับ'
-                        //                   : "ดึงรายการ ค่าน้ำ-ค่าไฟ",
-                        //               style: TextStyle(
-                        //                 color: Colors.white,
-                        //                 fontFamily: Font_.Fonts_T,
-                        //                 fontWeight: FontWeight.bold,
-                        //               ),
-                        //             ),
-                        //           ),
-                        //         ),
-                        //       ),
-                        //     ),
-                        //   ),
-                      ],
-                    ),
-                    // if (Ser_GetMiter_Choice != 1)
-                    //   if (Status_ != 3)
-                    //     Container(
-                    //       width: MediaQuery.of(context).size.width,
-                    //       child: Row(
-                    //         children: [
-                    //           Expanded(
-                    //               flex: 1,
-                    //               child: ScrollConfiguration(
-                    //                 behavior: ScrollConfiguration.of(context)
-                    //                     .copyWith(dragDevices: {
-                    //                   PointerDeviceKind.touch,
-                    //                   PointerDeviceKind.mouse,
-                    //                 }),
-                    //                 child: SingleChildScrollView(
-                    //                   scrollDirection: Axis.horizontal,
-                    //                   child: Row(
-                    //                     mainAxisAlignment:
-                    //                         MainAxisAlignment.spaceBetween,
-                    //                     children: [
-                    //                       if (Status_ == 1)
-                    //                         Container(
-                    //                           child: Row(
-                    //                             children: [
-                    //                               for (int index = 0;
-                    //                                   index <
-                    //                                       expSZModels.length;
-                    //                                   index++)
-                    //                                 Padding(
-                    //                                   padding:
-                    //                                       const EdgeInsets.all(
-                    //                                           8.0),
-                    //                                   child: InkWell(
-                    //                                     child: Container(
-                    //                                       // width: 100,
-                    //                                       decoration:
-                    //                                           BoxDecoration(
-                    //                                         color: (index == 0)
-                    //                                             ? Colors
-                    //                                                 .brown[400]
-                    //                                             : (index == 1)
-                    //                                                 ? Colors.red
-                    //                                                 : (index ==
-                    //                                                         2)
-                    //                                                     ? Colors
-                    //                                                         .blue
-                    //                                                     : Colors
-                    //                                                         .purple[400],
-                    //                                         borderRadius:
-                    //                                             const BorderRadius
-                    //                                                 .only(
-                    //                                           topLeft: Radius
-                    //                                               .circular(10),
-                    //                                           topRight: Radius
-                    //                                               .circular(10),
-                    //                                           bottomLeft: Radius
-                    //                                               .circular(10),
-                    //                                           bottomRight:
-                    //                                               Radius
-                    //                                                   .circular(
-                    //                                                       10),
-                    //                                         ),
-                    //                                       ),
-                    //                                       padding: EdgeInsets
-                    //                                           .fromLTRB(
-                    //                                               8, 4, 8, 4),
-                    //                                       child: Center(
-                    //                                         child: Text(
-                    //                                           '${expSZModels[index].expname}',
-                    //                                           style: TextStyle(
-                    //                                             // fontSize: 15,
-                    //                                             color: (Ser_BodySta1 ==
-                    //                                                     int.parse(expSZModels[index]
-                    //                                                         .ser!))
-                    //                                                 ? Colors
-                    //                                                     .white
-                    //                                                 : Colors.grey[
-                    //                                                     800],
-                    //                                             fontWeight:
-                    //                                                 FontWeight
-                    //                                                     .bold,
-                    //                                             fontFamily:
-                    //                                                 FontWeight_
-                    //                                                     .Fonts_T,
-                    //                                           ),
-                    //                                         ),
-                    //                                       ),
-                    //                                     ),
-                    //                                     onTap: () {
-                    //                                       setState(() {
-                    //                                         Ser_BodySta1 =
-                    //                                             int.parse(
-                    //                                                 expSZModels[
-                    //                                                         index]
-                    //                                                     .ser!);
-                    //                                       });
-                    //                                       red_Trans_bill();
-                    //                                     },
-                    //                                   ),
-                    //                                 ),
-                    //                             ],
-                    //                           ),
-                    //                         ),
-                    //                     ],
-                    //                   ),
-                    //                 ),
-                    //               ))
-                    //         ],
-                    //       ),
-                    //     ),
-                  ],
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
-            ),
-            // (!Responsive.isDesktop(context))
-            //     ? BodyHome_mobile()
-            //     :
-            (Ser_GetMiter_Choice == 1) ? GetMiter_Choice() : BodyHome_Web()
-          ],
+              // Padding(
+              //   padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+              //   child: Container(
+              //     width: MediaQuery.of(context).size.width,
+              //     decoration: const BoxDecoration(
+              //       color: AppbackgroundColor.TiTile_Box,
+              //       borderRadius: BorderRadius.only(
+              //           topLeft: Radius.circular(10),
+              //           topRight: Radius.circular(10),
+              //           bottomLeft: Radius.circular(10),
+              //           bottomRight: Radius.circular(10)),
+              //       // border: Border.all(color: Colors.white, width: 1),
+              //     ),
+              //     // padding: const EdgeInsets.all(8.0),
+              //     child: Row(
+              //       mainAxisAlignment: MainAxisAlignment.start,
+              //       children: [
+              //         subzoneModels.length == 1
+              //             ? SizedBox()
+              //             : MediaQuery.of(context).size.shortestSide <
+              //                     MediaQuery.of(context).size.width * 1
+              //                 ? Padding(
+              //                     padding: EdgeInsets.all(8.0),
+              //                     child: Translate.TranslateAndSetText(
+              //                         'โซน:',
+              //                         SettingScreen_Color.Colors_Text1_,
+              //                         TextAlign.center,
+              //                         FontWeight.bold,
+              //                         FontWeight_.Fonts_T,
+              //                         14,
+              //                         2),
+              //                   )
+              //                 : const SizedBox(),
+              //         subzoneModels.length == 1
+              //             ? SizedBox()
+              //             : Expanded(
+              //                 flex: MediaQuery.of(context).size.shortestSide <
+              //                         MediaQuery.of(context).size.width * 1
+              //                     ? 2
+              //                     : 3,
+              //                 child: Padding(
+              //                   padding: const EdgeInsets.all(8.0),
+              //                   child: Container(
+              //                     decoration: BoxDecoration(
+              //                       color: AppbackgroundColor.Sub_Abg_Colors,
+              //                       borderRadius: const BorderRadius.only(
+              //                           topLeft: Radius.circular(10),
+              //                           topRight: Radius.circular(10),
+              //                           bottomLeft: Radius.circular(10),
+              //                           bottomRight: Radius.circular(10)),
+              //                       border: Border.all(
+              //                           color: Colors.grey, width: 1),
+              //                     ),
+              //                     width: 200,
+              //                     child: DropdownButtonHideUnderline(
+              //                       child: DropdownButton2<String>(
+              //                           isExpanded: true,
+              //                           searchController:
+              //                               Dropdown_Controller_zone_Sub,
+              //                           searchInnerWidget: Container(
+              //                             // width: 200,
+              //                             height: 50,
+              //                             decoration: BoxDecoration(
+              //                               color: Colors.red[100]!
+              //                                   .withOpacity(0.5),
+              //                               borderRadius:
+              //                                   const BorderRadius.only(
+              //                                       topLeft: Radius.circular(8),
+              //                                       topRight:
+              //                                           Radius.circular(8),
+              //                                       bottomLeft:
+              //                                           Radius.circular(8),
+              //                                       bottomRight:
+              //                                           Radius.circular(8)),
+              //                               border: Border.all(
+              //                                   color: Colors.grey, width: 1),
+              //                             ),
+              //                             child: TextFormField(
+              //                               expands: true,
+              //                               maxLines: null,
+              //                               controller:
+              //                                   Dropdown_Controller_zone_Sub,
+              //                               decoration: InputDecoration(
+              //                                 isDense: true,
+              //                                 contentPadding:
+              //                                     const EdgeInsets.symmetric(
+              //                                   horizontal: 10,
+              //                                   vertical: 8,
+              //                                 ),
+              //                                 hintText: 'Search...',
+              //                                 // fillColor: Colors.red[300],
+              //                                 hintStyle:
+              //                                     const TextStyle(fontSize: 12),
+              //                                 border: OutlineInputBorder(
+              //                                   borderRadius:
+              //                                       BorderRadius.circular(8),
+              //                                 ),
+              //                               ),
+              //                             ),
+              //                           ),
+              //                           hint: (zone_Subname == null)
+              //                               ? Translate.TranslateAndSetText(
+              //                                   'ทั้งหมด',
+              //                                   SettingScreen_Color
+              //                                       .Colors_Text1_,
+              //                                   TextAlign.center,
+              //                                   null,
+              //                                   Font_.Fonts_T,
+              //                                   14,
+              //                                   1)
+              //                               : Text(
+              //                                   zone_Subname == null
+              //                                       ? 'ทั้งหมด'
+              //                                       : '$zone_Subname',
+              //                                   maxLines: 1,
+              //                                   style: const TextStyle(
+              //                                       fontSize: 14,
+              //                                       color:
+              //                                           PeopleChaoScreen_Color
+              //                                               .Colors_Text2_,
+              //                                       fontFamily: Font_.Fonts_T),
+              //                                 ),
+              //                           icon: const Icon(
+              //                             Icons.arrow_drop_down,
+              //                             color: TextHome_Color.TextHome_Colors,
+              //                           ),
+              //                           style: const TextStyle(
+              //                               color: Colors.green,
+              //                               fontFamily: Font_.Fonts_T),
+              //                           iconSize: 30,
+              //                           buttonHeight: 35,
+              //                           dropdownDecoration: BoxDecoration(
+              //                             borderRadius:
+              //                                 BorderRadius.circular(10),
+              //                           ),
+              //                           items: subzoneModels
+              //                               .map((item) =>
+              //                                   DropdownMenuItem<String>(
+              //                                     value:
+              //                                         '${item.ser},${item.zn}',
+              //                                     child: Column(
+              //                                       crossAxisAlignment:
+              //                                           CrossAxisAlignment
+              //                                               .start,
+              //                                       mainAxisAlignment:
+              //                                           MainAxisAlignment
+              //                                               .spaceBetween,
+              //                                       children: [
+              //                                         Text(
+              //                                           item.zn!,
+              //                                           maxLines: 2,
+              //                                           style: const TextStyle(
+              //                                               fontSize: 14,
+              //                                               fontFamily:
+              //                                                   Font_.Fonts_T),
+              //                                         ),
+              //                                         Divider(
+              //                                           color: Colors.grey[300],
+              //                                           height: 4.0,
+              //                                         ),
+              //                                       ],
+              //                                     ),
+              //                                   ))
+              //                               .toList(),
+
+              //                           // value: selectedValue,
+              //                           onChanged: (value) async {
+              //                             var zones = value!.indexOf(',');
+              //                             var zoneSer =
+              //                                 value.substring(0, zones);
+              //                             var zonesName =
+              //                                 value.substring(zones + 1);
+              //                             // print(
+              //                             //     'mmmmm ${zoneSer.toString()} $zonesName');
+
+              //                             SharedPreferences preferences =
+              //                                 await SharedPreferences
+              //                                     .getInstance();
+              //                             preferences.setString(
+              //                                 'zoneSubSer', zoneSer.toString());
+              //                             preferences.setString('zonesSubName',
+              //                                 zonesName.toString());
+              //                             preferences.remove("zonePSer");
+              //                             preferences.remove("zonesPName");
+
+              //                             String? _route =
+              //                                 preferences.getString('route');
+              //                             MaterialPageRoute materialPageRoute =
+              //                                 MaterialPageRoute(
+              //                                     builder:
+              //                                         (BuildContext context) =>
+              //                                             AdminScafScreen(
+              //                                                 route: _route));
+              //                             Navigator.pushAndRemoveUntil(
+              //                                 context,
+              //                                 materialPageRoute,
+              //                                 (route) => false);
+              //                           },
+              //                           searchMatchFn: (item, searchValue) {
+              //                             return item.value
+              //                                 .toString()
+              //                                 .contains(searchValue);
+              //                           },
+              //                           onMenuStateChange: (isOpen) {
+              //                             if (!isOpen) {
+              //                               Dropdown_Controller_zone_Sub
+              //                                   .clear();
+              //                             }
+              //                           }),
+              //                     ),
+              //                   ),
+              //                 ),
+              //               ),
+              //         if (Ser_GetMiter_Choice != 1)
+              //           MediaQuery.of(context).size.shortestSide <
+              //                   MediaQuery.of(context).size.width * 1
+              //               ? Padding(
+              //                   padding: EdgeInsets.all(8.0),
+              //                   child: Translate.TranslateAndSetText(
+              //                       'โซนพื้นที่เช่า:',
+              //                       SettingScreen_Color.Colors_Text1_,
+              //                       TextAlign.center,
+              //                       FontWeight.bold,
+              //                       FontWeight_.Fonts_T,
+              //                       14,
+              //                       2),
+              //                 )
+              //               : const SizedBox(),
+              //         (Ser_GetMiter_Choice == 1)
+              //             ? Expanded(flex: 4, child: SizedBox())
+              //             : Expanded(
+              //                 flex: MediaQuery.of(context).size.shortestSide <
+              //                         MediaQuery.of(context).size.width * 1
+              //                     ? 2
+              //                     : 3,
+              //                 child: Padding(
+              //                     padding: const EdgeInsets.all(8.0),
+              //                     child: Container(
+              //                       decoration: BoxDecoration(
+              //                         color: AppbackgroundColor.Sub_Abg_Colors,
+              //                         borderRadius: const BorderRadius.only(
+              //                             topLeft: Radius.circular(10),
+              //                             topRight: Radius.circular(10),
+              //                             bottomLeft: Radius.circular(10),
+              //                             bottomRight: Radius.circular(10)),
+              //                         border: Border.all(
+              //                             color: Colors.grey, width: 1),
+              //                       ),
+              //                       width: 150,
+              //                       child: DropdownButtonHideUnderline(
+              //                         child: DropdownButton2<String>(
+              //                             isExpanded: true,
+              //                             searchController: Dropdown_Controller,
+              //                             searchInnerWidget: Container(
+              //                               // width: 200,
+              //                               height: 50,
+              //                               decoration: BoxDecoration(
+              //                                 color: Colors.red[100]!
+              //                                     .withOpacity(0.5),
+              //                                 borderRadius:
+              //                                     const BorderRadius.only(
+              //                                         topLeft:
+              //                                             Radius.circular(8),
+              //                                         topRight:
+              //                                             Radius.circular(8),
+              //                                         bottomLeft:
+              //                                             Radius.circular(8),
+              //                                         bottomRight:
+              //                                             Radius.circular(8)),
+              //                                 border: Border.all(
+              //                                     color: Colors.grey, width: 1),
+              //                               ),
+              //                               child: TextFormField(
+              //                                 expands: true,
+              //                                 maxLines: null,
+              //                                 controller: Dropdown_Controller,
+              //                                 decoration: InputDecoration(
+              //                                   isDense: true,
+              //                                   contentPadding:
+              //                                       const EdgeInsets.symmetric(
+              //                                     horizontal: 10,
+              //                                     vertical: 8,
+              //                                   ),
+              //                                   hintText: 'Search...',
+              //                                   // fillColor: Colors.red[300],
+              //                                   hintStyle: const TextStyle(
+              //                                       fontSize: 12),
+              //                                   border: OutlineInputBorder(
+              //                                     borderRadius:
+              //                                         BorderRadius.circular(8),
+              //                                   ),
+              //                                 ),
+              //                               ),
+              //                             ),
+              //                             hint: (zone_name == null)
+              //                                 ? Translate.TranslateAndSetText(
+              //                                     'ทั้งหมด',
+              //                                     PeopleChaoScreen_Color
+              //                                         .Colors_Text1_,
+              //                                     TextAlign.center,
+              //                                     null,
+              //                                     Font_.Fonts_T,
+              //                                     16,
+              //                                     1)
+              //                                 : Text(
+              //                                     zone_name == null
+              //                                         ? 'ทั้งหมด'
+              //                                         : '$zone_name',
+              //                                     maxLines: 1,
+              //                                     style: const TextStyle(
+              //                                         fontSize: 14,
+              //                                         color:
+              //                                             PeopleChaoScreen_Color
+              //                                                 .Colors_Text2_,
+              //                                         fontFamily:
+              //                                             Font_.Fonts_T),
+              //                                   ),
+              //                             icon: const Icon(
+              //                               Icons.arrow_drop_down,
+              //                               color:
+              //                                   TextHome_Color.TextHome_Colors,
+              //                             ),
+              //                             style: const TextStyle(
+              //                                 color: Colors.green,
+              //                                 fontFamily: Font_.Fonts_T),
+              //                             iconSize: 30,
+              //                             buttonHeight: 35,
+              //                             dropdownDecoration: BoxDecoration(
+              //                               borderRadius:
+              //                                   BorderRadius.circular(10),
+              //                             ),
+              //                             items: zoneModels
+              //                                 .map((item) =>
+              //                                     DropdownMenuItem<String>(
+              //                                       value:
+              //                                           '${item.ser},${item.zn}',
+              //                                       child: Column(
+              //                                         crossAxisAlignment:
+              //                                             CrossAxisAlignment
+              //                                                 .start,
+              //                                         mainAxisAlignment:
+              //                                             MainAxisAlignment
+              //                                                 .spaceBetween,
+              //                                         children: [
+              //                                           Text(
+              //                                             item.zn!,
+              //                                             maxLines: 2,
+              //                                             style: const TextStyle(
+              //                                                 fontSize: 14,
+              //                                                 fontFamily: Font_
+              //                                                     .Fonts_T),
+              //                                           ),
+              //                                           Divider(
+              //                                             color:
+              //                                                 Colors.grey[300],
+              //                                             height: 4.0,
+              //                                           ),
+              //                                         ],
+              //                                       ),
+              //                                     ))
+              //                                 .toList(),
+
+              //                             // value: selectedValue,
+
+              //                             onChanged: (value) async {
+              //                               var zones = value!.indexOf(',');
+              //                               var zoneSer =
+              //                                   value.substring(0, zones);
+              //                               var zonesName =
+              //                                   value.substring(zones + 1);
+              //                               // print(
+              //                               //     'mmmmm ${zoneSer.toString()} $zonesName');
+
+              //                               SharedPreferences preferences =
+              //                                   await SharedPreferences
+              //                                       .getInstance();
+              //                               preferences.setString(
+              //                                   'zonePSer', zoneSer.toString());
+              //                               preferences.setString('zonesPName',
+              //                                   zonesName.toString());
+              //                               checkPreferance();
+              //                               red_Trans_bill();
+              //                               red_Trans_c_maintenance();
+              //                             },
+              //                             searchMatchFn: (item, searchValue) {
+              //                               return item.value
+              //                                   .toString()
+              //                                   .contains(searchValue);
+              //                             },
+              //                             onMenuStateChange: (isOpen) {
+              //                               if (!isOpen) {
+              //                                 Dropdown_Controller.clear();
+              //                               }
+              //                             }),
+              //                       ),
+              //                     )),
+              //               ),
+
+              //       ],
+              //     ),
+              //   ),
+              // ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+                child: Container(
+                  width: tableMinW,
+                  decoration: const BoxDecoration(
+                    color: Colors.white60,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10)),
+                    // border: Border.all(color: Colors.grey, width: 1),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          (Ser_GetMiter_Choice == 1)
+                              ? Expanded(flex: 8, child: SizedBox())
+                              : Expanded(
+                                  flex: 8,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: ScrollConfiguration(
+                                      behavior: ScrollConfiguration.of(context)
+                                          .copyWith(dragDevices: {
+                                        PointerDeviceKind.touch,
+                                        PointerDeviceKind.mouse,
+                                      }),
+                                      child: SingleChildScrollView(
+                                        scrollDirection: Axis.horizontal,
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            // Translate.TranslateAndSetText(
+                                            //     'สถานะ : ',
+                                            //     SettingScreen_Color.Colors_Text1_,
+                                            //     TextAlign.center,
+                                            //     FontWeight.bold,
+                                            //     FontWeight_.Fonts_T,
+                                            //     14,
+                                            //     2),
+                                            //  Text(
+                                            //   'สถานะ : ',
+                                            //   style: TextStyle(
+                                            //     color: ManageScreen_Color.Colors_Text1_,
+                                            //     fontWeight: FontWeight.bold,
+                                            //     fontFamily: FontWeight_.Fonts_T,
+                                            //   ),
+                                            // ),
+                                            for (int i = 0; i < 3; i++)
+                                              Padding(
+                                                padding:
+                                                    const EdgeInsets.fromLTRB(
+                                                        4, 4, 4, 4),
+                                                child: ElevatedButton(
+                                                  onPressed: () async {
+                                                    setState(() {
+                                                      Status_ = 0;
+                                                      Status_ = i + 1;
+                                                      tappedIndex_ = -1;
+                                                      typezonesName = null;
+                                                      typevalue = null;
+                                                      // red_Trans_c_maintenance_exp(0);
+                                                      // red_Trans_bill_exp(0);
+                                                    });
+                                                    // print(Status_);
+                                                    // red_Trans_bill_exp(0);
+                                                    red_Trans_c_maintenance_exp(
+                                                        0);
+                                                    checkPreferance();
+                                                    red_Trans_bill();
+                                                    red_Trans_c_maintenance();
+                                                  },
+                                                  style: ButtonStyle(
+                                                    backgroundColor:
+                                                        MaterialStateProperty
+                                                            .all<Color>((i == 0)
+                                                                ? Colors.green
+                                                                : (i == 1)
+                                                                    ? Colors
+                                                                        .deepPurple
+                                                                        .shade400
+                                                                    : Colors
+                                                                        .orange),
+                                                  ),
+                                                  // backgroundColor: (i == 1)
+                                                  //     ? Colors.red
+                                                  //     : Colors.red),
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            Status[i],
+                                                            (Status_ == i + 1)
+                                                                ? Colors.white
+                                                                : Colors.black,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            14,
+                                                            2),
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                          // if (api_key == 'Y' && Status_ == 1)
+                          //   Expanded(
+                          //     flex: 2,
+                          //     child: Padding(
+                          //       padding: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+                          //       child: ElevatedButton(
+                          //         onPressed: () async {
+                          //           setState(() {
+                          //             Ser_GetMiter_Choice =
+                          //                 (Ser_GetMiter_Choice == 1) ? 0 : 1;
+                          //           });
+                          //         },
+                          //         style: ButtonStyle(
+                          //           backgroundColor:
+                          //               MaterialStateProperty.all<Color>(
+                          //                   (Ser_GetMiter_Choice == 1)
+                          //                       ? Colors.black
+                          //                       : Colors.purple),
+                          //         ),
+                          //         // backgroundColor: (i == 1)
+                          //         //     ? Colors.red
+                          //         //     : Colors.red),
+                          //         child: Padding(
+                          //           padding: const EdgeInsets.all(4.0),
+                          //           child: Center(
+                          //             child: Text(
+                          //               (Ser_GetMiter_Choice == 1)
+                          //                   ? '< ย้อนกลับ'
+                          //                   : "ดึงรายการ ค่าน้ำ-ค่าไฟ",
+                          //               style: TextStyle(
+                          //                 color: Colors.white,
+                          //                 fontFamily: Font_.Fonts_T,
+                          //                 fontWeight: FontWeight.bold,
+                          //               ),
+                          //             ),
+                          //           ),
+                          //         ),
+                          //       ),
+                          //     ),
+                          //   ),
+                        ],
+                      ),
+                      // if (Ser_GetMiter_Choice != 1)
+                      //   if (Status_ != 3)
+                      //     Container(
+                      //       width: MediaQuery.of(context).size.width,
+                      //       child: Row(
+                      //         children: [
+                      //           Expanded(
+                      //               flex: 1,
+                      //               child: ScrollConfiguration(
+                      //                 behavior: ScrollConfiguration.of(context)
+                      //                     .copyWith(dragDevices: {
+                      //                   PointerDeviceKind.touch,
+                      //                   PointerDeviceKind.mouse,
+                      //                 }),
+                      //                 child: SingleChildScrollView(
+                      //                   scrollDirection: Axis.horizontal,
+                      //                   child: Row(
+                      //                     mainAxisAlignment:
+                      //                         MainAxisAlignment.spaceBetween,
+                      //                     children: [
+                      //                       if (Status_ == 1)
+                      //                         Container(
+                      //                           child: Row(
+                      //                             children: [
+                      //                               for (int index = 0;
+                      //                                   index <
+                      //                                       expSZModels.length;
+                      //                                   index++)
+                      //                                 Padding(
+                      //                                   padding:
+                      //                                       const EdgeInsets.all(
+                      //                                           8.0),
+                      //                                   child: InkWell(
+                      //                                     child: Container(
+                      //                                       // width: 100,
+                      //                                       decoration:
+                      //                                           BoxDecoration(
+                      //                                         color: (index == 0)
+                      //                                             ? Colors
+                      //                                                 .brown[400]
+                      //                                             : (index == 1)
+                      //                                                 ? Colors.red
+                      //                                                 : (index ==
+                      //                                                         2)
+                      //                                                     ? Colors
+                      //                                                         .blue
+                      //                                                     : Colors
+                      //                                                         .purple[400],
+                      //                                         borderRadius:
+                      //                                             const BorderRadius
+                      //                                                 .only(
+                      //                                           topLeft: Radius
+                      //                                               .circular(10),
+                      //                                           topRight: Radius
+                      //                                               .circular(10),
+                      //                                           bottomLeft: Radius
+                      //                                               .circular(10),
+                      //                                           bottomRight:
+                      //                                               Radius
+                      //                                                   .circular(
+                      //                                                       10),
+                      //                                         ),
+                      //                                       ),
+                      //                                       padding: EdgeInsets
+                      //                                           .fromLTRB(
+                      //                                               8, 4, 8, 4),
+                      //                                       child: Center(
+                      //                                         child: Text(
+                      //                                           '${expSZModels[index].expname}',
+                      //                                           style: TextStyle(
+                      //                                             // fontSize: 15,
+                      //                                             color: (Ser_BodySta1 ==
+                      //                                                     int.parse(expSZModels[index]
+                      //                                                         .ser!))
+                      //                                                 ? Colors
+                      //                                                     .white
+                      //                                                 : Colors.grey[
+                      //                                                     800],
+                      //                                             fontWeight:
+                      //                                                 FontWeight
+                      //                                                     .bold,
+                      //                                             fontFamily:
+                      //                                                 FontWeight_
+                      //                                                     .Fonts_T,
+                      //                                           ),
+                      //                                         ),
+                      //                                       ),
+                      //                                     ),
+                      //                                     onTap: () {
+                      //                                       setState(() {
+                      //                                         Ser_BodySta1 =
+                      //                                             int.parse(
+                      //                                                 expSZModels[
+                      //                                                         index]
+                      //                                                     .ser!);
+                      //                                       });
+                      //                                       red_Trans_bill();
+                      //                                     },
+                      //                                   ),
+                      //                                 ),
+                      //                             ],
+                      //                           ),
+                      //                         ),
+                      //                     ],
+                      //                   ),
+                      //                 ),
+                      //               ))
+                      //         ],
+                      //       ),
+                      //     ),
+                    ],
+                  ),
+                ),
+              ),
+              // (!Responsive.isDesktop(context))
+              //     ? BodyHome_mobile()
+              //     :
+              (Ser_GetMiter_Choice == 1) ? GetMiter_Choice() : BodyHome_Web()
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Future<Null> select_Date_Inv(BuildContext context) async {
@@ -2023,7 +2746,7 @@ class _ManageScreenState extends State<ManageScreen> {
     String url =
         '${MyConstant().domain}/In_tran_invoice_all.php?isAdd=true&ren=$ren&user=$user&sertype=$Ser_BodySta1&serzone=$zone_ser&serzonesub=$zone_Sub&pSer=$paymentSer1&Paydate=$End_Bill_Paydate';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -4576,7 +5299,7 @@ class _ManageScreenState extends State<ManageScreen> {
                                                             //                                 String url = '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser';
 
                                                             //                                 try {
-                                                            //                                   var response = await http.get(Uri.parse(url));
+                                                            //                                   var response = await httpClient.get(Uri.parse(url));
 
                                                             //                                   var result = json.decode(response.body);
                                                             //                                   print(result);
@@ -5929,7 +6652,7 @@ class _ManageScreenState extends State<ManageScreen> {
                                                                                       var ren = preferences.getString('renTalSer');
                                                                                       String url = '${MyConstant().domain}/UpC_Sta_maintenance.php?isAdd=true&ren=$ren&Ser=$Ser_&because=$because_&datex=$Value_selectDate';
                                                                                       try {
-                                                                                        var response = await http.get(Uri.parse(url));
+                                                                                        var response = await httpClient.get(Uri.parse(url));
                                                                                         var result = json.decode(response.body);
                                                                                         // print('-------->>>> $result');
                                                                                         if (result.toString() == 'true') {
@@ -6922,8 +7645,8 @@ class _ManageScreenState extends State<ManageScreen> {
                                       '${MyConstant().domain}/In_c_maintenance.php?isAdd=true&ren=$ren&ser_user=$ser_user&aser=$aser&d_start=$d_start';
 
                                   try {
-                                    var response =
-                                        await http.post(Uri.parse(url), body: {
+                                    var response = await httpClient
+                                        .post(Uri.parse(url), body: {
                                       'aser': aser.toString(),
                                       'd_start': d_start.toString(),
                                       'note_aser': note_aser.toString(),
@@ -7056,7 +7779,7 @@ class _ManageScreenState extends State<ManageScreen> {
         '${MyConstant().domain}/GC_electricity_history.php?isAdd=true&ren=$ren&qser_in=$qser_in';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -8184,7 +8907,7 @@ class _ManageScreenState extends State<ManageScreen> {
         '${MyConstant().domain}/GC_electricity.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);

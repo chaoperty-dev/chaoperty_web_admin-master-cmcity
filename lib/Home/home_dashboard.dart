@@ -78,7 +78,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       for (var map in result) {
         ZoneModel zoneModel = ZoneModel.fromJson(map);
         setState(() {
@@ -112,14 +112,14 @@ class _HomeDashboardState extends State<HomeDashboard> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           UserModel userModel = UserModel.fromJson(map);
           setState(() {
             userModels.add(userModel);
           });
-          // print('object>>> ${DateTime.parse('${userModel.connected}')}');
+          // //print('object>>> ${DateTime.parse('${userModel.connected}')}');
           // if (DateFormat('yyyy-MM-dd').format(now).toString() ==
           //     DateFormat('yyyy-MM-dd')
           //         .format(DateTime.parse('${userModel.connected}'))
@@ -134,12 +134,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
   Future<Null> read_GC_area(data_ser) async {
     String url =
         '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$data_ser';
-    print('xxxxxurl>>>>>>  $url');
+    //print('xxxxxurl>>>>>>  $url');
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           AreaModel areaModel = AreaModel.fromJson(map);
@@ -147,7 +147,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
             areaModels.add(areaModel);
           });
 
-          print('object>>> ${DateTime.parse('${areaModel.ldate} 00:00:00')}');
+          //print('object>>> ${DateTime.parse('${areaModel.ldate} 00:00:00')}');
           // if (areaModel.quantity != '1') {
           //   var qin = areaModel.ln_q;
           //   var qinser = areaModel.ser;
@@ -158,7 +158,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
           //     var response = await http.get(Uri.parse(url));
 
           //     var result = json.decode(response.body);
-          //     // print(result);
+          //     // //print(result);
           //     if (result != null) {
           //       for (var map in result) {
           //         AreaQuotModel areaQuotModel = AreaQuotModel.fromJson(map);
@@ -177,12 +177,12 @@ class _HomeDashboardState extends State<HomeDashboard> {
   Future<Null> read_GC_area_dash(data_ser) async {
     String url2 =
         '${MyConstant().domain}/GC_dash_arae.php?isAdd=true&ren=$data_ser';
-    print('xxxxxurl2>>>>>>  $url2');
+    //print('xxxxxurl2>>>>>>  $url2');
     try {
       var response2 = await http.get(Uri.parse(url2));
 
       var result2 = json.decode(response2.body);
-      // print(result);
+      // //print(result);
       if (result2 != null) {
         for (var map2 in result2) {
           AreadashModel areadashModel = AreadashModel.fromJson(map2);
@@ -193,7 +193,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       }
     } catch (e) {}
 
-    print('areadashModels >>>> ${areadashModels.length}');
+    //print('areadashModels >>>> ${areadashModels.length}');
   }
 
   Future<Null> read_GC_rental() async {
@@ -225,7 +225,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
 
     String url =
         '${MyConstant().domain}/GC_rental.php?isAdd=true&ser=$seruser&type=$utype&ren=$renTal';
-    print('GC_rental>>>>>>>  $url');
+    //print('GC_rental>>>>>>>  $url');
 
     try {
       var response = await http.get(Uri.parse(url));
@@ -247,7 +247,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
         RenTalModel renTalModel = RenTalModel.fromJson(map);
 
         var data_ser = renTalModel.ser;
-        print('data_ser>>>  $data_ser');
+        //print('data_ser>>>  $data_ser');
         setState(() {
           renTalModels.add(renTalModel);
         });
@@ -259,10 +259,10 @@ class _HomeDashboardState extends State<HomeDashboard> {
         read_GC_zone(data_ser);
       }
     } catch (e) {}
-    print(
-        'result>>>  ${renTalModels.isEmpty}${userModels.isEmpty} ${areaQuotModels.isEmpty} --- ${areaModels.isEmpty} ');
-    print(
-        'result ${dashboardTransModels.isEmpty}${dashboardfinancModels.isEmpty} ${dashboardTransModels.isEmpty} --- ${dashboardfinancModels.isEmpty}');
+    //print(
+       //  'result>>>  ${renTalModels.isEmpty}${userModels.isEmpty} ${areaQuotModels.isEmpty} --- ${areaModels.isEmpty} ');
+    //print(
+       //  'result ${dashboardTransModels.isEmpty}${dashboardfinancModels.isEmpty} ${dashboardTransModels.isEmpty} --- ${dashboardfinancModels.isEmpty}');
   }
 
   Future<Null> red_Sum_billTrans(data_ser) async {
@@ -272,7 +272,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           DashboardTransModel dashboardTransModel =
@@ -286,15 +286,15 @@ class _HomeDashboardState extends State<HomeDashboard> {
   }
 
   Future<Null> red_Sum_billFinnect(data_ser) async {
-    print(
-        'SDatex_total1_SDatex_total1_SDatex_total1_ $SDatex_total1_ $LDatex_total1_');
+    //print(
+      //   'SDatex_total1_SDatex_total1_SDatex_total1_ $SDatex_total1_ $LDatex_total1_');
     String url =
         '${MyConstant().domain}/GC_dash_fin.php?isAdd=true&ren=$data_ser&sdate=$SDatex_total1_&ldate=$LDatex_total1_';
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           DashboardfinancModel dashboardfinancModel =
@@ -624,7 +624,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
                                   DateTime.parse('$SDatex_total1_ 00:00:00');
                               int lastday =
                                   DateTime(now.year, now.month + 1, 0).day;
-                              print(lastday);
+                              //print(lastday);
                             },
                             icon: Icon(
                               Icons.location_pin,
@@ -1228,8 +1228,8 @@ class _HomeDashboardState extends State<HomeDashboard> {
                             onPressed: () async {
                               var renTalSer = renTalModels[index].ser;
                               var renTalName = renTalModels[index].pn;
-                              print(
-                                  'mmmmm ${renTalSer.toString()} $renTalName');
+                              //print(
+                                 //  'mmmmm ${renTalSer.toString()} $renTalName');
 
                               SharedPreferences preferences =
                                   await SharedPreferences.getInstance();
@@ -5976,7 +5976,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     picked.then((result) {
       if (picked != null) {
         var formatter = DateFormat('yyyy-MM-dd');
-        // print("${formatter.format(result!)}");
+        // //print("${formatter.format(result!)}");
         setState(() {
           SDatex_total1_ = formatter.format(result!);
         });
@@ -6019,7 +6019,7 @@ class _HomeDashboardState extends State<HomeDashboard> {
     picked.then((result) {
       if (picked != null) {
         var formatter = DateFormat('yyyy-MM-dd');
-        // print("${formatter.format(result!)}");
+        // //print("${formatter.format(result!)}");
         setState(() {
           LDatex_total1_ = formatter.format(result!);
         });

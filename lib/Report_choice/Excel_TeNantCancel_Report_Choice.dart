@@ -590,6 +590,7 @@ class Excgen_TeNantCancelReport_Choice {
           (teNantModels_Cancel[index].pakan_pvat == null)
               ? 0.00
               : double.parse('${teNantModels_Cancel[index].pakan_pvat}'));
+
       sheet.getRangeByName('V${index + 7}').setNumber(
           (teNantModels_Cancel[index].land_pvat == null)
               ? 0.00

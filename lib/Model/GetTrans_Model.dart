@@ -113,6 +113,29 @@ class TransModel {
   String? xcost;
   String? ocost;
 
+  String? pvat_original;
+  String? vat_original;
+  String? wht_original;
+  String? amt_original;
+  String? pvat_percen;
+
+  String? is_mon;
+  String? is_tue;
+  String? is_wed;
+  String? is_thu;
+  String? is_fri;
+  String? is_sat;
+  String? is_sun;
+  String? price_type;
+  String? etype;
+  String? fine_max;
+  String? allow_installments;
+  String? dis_list;
+  String? ct_amt;
+  String? zn_code;
+  String? amt_ty;
+  String? ele_ty;
+
   TransModel({
     this.ser,
     this.datex,
@@ -224,6 +247,27 @@ class TransModel {
     this.vat_dislit,
     this.xcost,
     this.ocost,
+    this.pvat_original,
+    this.vat_original,
+    this.wht_original,
+    this.amt_original,
+    this.pvat_percen,
+    this.is_mon,
+    this.is_tue,
+    this.is_wed,
+    this.is_thu,
+    this.is_fri,
+    this.is_sat,
+    this.is_sun,
+    this.price_type,
+    this.etype,
+    this.fine_max,
+    this.allow_installments,
+    this.dis_list,
+    this.ct_amt,
+    this.zn_code,
+    this.amt_ty,
+    this.ele_ty,
   });
 
   TransModel.fromJson(Map<String, dynamic> json) {
@@ -338,6 +382,29 @@ class TransModel {
     vat_dislit = json['vat_dislit'];
     xcost = json['xcost'];
     ocost = json['ocost'];
+
+    pvat_original = json['pvat_original'];
+    vat_original = json['vat_original'];
+    wht_original = json['wht_original'];
+    amt_original = json['amt_original'];
+    pvat_percen = json['pvat_percen'];
+
+    is_mon = json['is_mon'];
+    is_tue = json['is_tue'];
+    is_wed = json['is_wed'];
+    is_thu = json['is_thu'];
+    is_fri = json['is_fri'];
+    is_sat = json['is_sat'];
+    is_sun = json['is_sun'];
+    price_type = json['price_type'];
+    etype = json['etype'];
+    fine_max = json['fine_max'];
+    allow_installments = json['allow_installments'];
+    dis_list = json['dis_list'];
+    ct_amt = json['ct_amt'];
+    zn_code = json['zn_code'];
+    amt_ty = json['amt_ty'];
+    ele_ty = json['ele_ty'];
   }
 
   Map<String, dynamic> toJson() {
@@ -453,6 +520,29 @@ class TransModel {
     data['vat_dislit'] = this.vat_dislit;
     data['xcost'] = this.xcost;
     data['ocost'] = this.ocost;
+
+    data['pvat_original'] = this.pvat_original;
+    data['vat_original'] = this.vat_original;
+    data['wht_original'] = this.wht_original;
+    data['amt_original'] = this.amt_original;
+    data['pvat_percen'] = this.pvat_percen;
+
+    data['is_mon'] = this.is_mon;
+    data['is_tue'] = this.is_tue;
+    data['is_wed'] = this.is_wed;
+    data['is_thu'] = this.is_thu;
+    data['is_fri'] = this.is_fri;
+    data['is_sat'] = this.is_sat;
+    data['is_sun'] = this.is_sun;
+    data['price_type'] = this.price_type;
+    data['etype'] = this.etype;
+    data['fine_max'] = this.fine_max;
+    data['allow_installments'] = this.allow_installments;
+    data['dis_list'] = this.dis_list;
+    data['ct_amt'] = this.ct_amt;
+    data['zn_code'] = this.zn_code;
+    data['amt_ty'] = this.amt_ty;
+    data['ele_ty'] = this.ele_ty;
     return data;
   }
 }

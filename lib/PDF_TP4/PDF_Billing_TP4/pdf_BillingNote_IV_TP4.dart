@@ -12,6 +12,8 @@ import 'package:printing/printing.dart';
 import '../../CRC_16_Prompay/generate_qrcode.dart';
 import '../../ChaoArea/ChaoAreaRenew_Screen.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/PreviewPdfgen_Bills_INV.dart';
+import '../../Model/GetInvoice_history_Model.dart';
 import '../../PeopleChao/Bills_.dart';
 import '../../Style/File_s.dart';
 import '../../Style/ThaiBaht.dart';
@@ -22,7 +24,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
   static void exportPDF_BillingNoteInvlice_TP4(
 
       ///(ser_BillingNote 1 = วางบิล  /// 2 = ประวัติวางบิล )
-
+      List<InvoiceHistoryModel> _InvoiceHistoryModels,
       foder,
       Cust_no,
       cid_,
@@ -65,87 +67,179 @@ class Pdfgen_BillingNoteInvlice_TP4 {
       End_Bill_Paydate,
       TitleType_Default_Receipt_Name,
       fonts_pdf,
-      Con_remark) async {
-    int YearQRthai = await int.parse(DateFormat('yyyy')
-            .format(DateTime.parse(End_Bill_Paydate))
-            .toString()) +
+      Con_remark,
+      customer_name) async {
+    ///---------------------> พ.ศ. สำหรับ QR Code (Thai Year for QR)
+    int YearQRthai = int.parse(
+          DateFormat('yyyy').format(DateTime.parse(End_Bill_Paydate)),
+        ) +
         543;
+
+    ///---------------------> เริ่มต้นเอกสาร PDF (Create PDF document)
     final pdf = pw.Document();
-    // final fontData = await rootBundle.load("ThaiFonts/Sarabun-Medium.ttf");
-    // var dataint = fontData.buffer
-    //     .asUint8List(fontData.offsetInBytes, fontData.lengthInBytes);
-    // final PdfFont font = PdfFont.of(pdf, data: dataint);
-    // final PdfFont font = PdfFont.of(pdf, data: dataint);
+
+    ///---------------------> โหลดฟอนต์ (Load custom font)
     final font = await rootBundle.load("${fonts_pdf}");
+    final ttf = pw.Font.ttf(font);
+
+    ///---------------------> ตั้งค่าทั่วไป (Style & Formatter)
     var Colors_pd = PdfColors.black;
     var nFormat = NumberFormat("#,##0.00", "en_US");
-    var nFormat2 = NumberFormat("###0.00", "en_US");
-    var nFormat3 = NumberFormat("###-##-##0", "en_US");
-    // double percen =
-    //     (double.parse('$DisC') / double.parse(' $Sum_SubTotal')) * 100.00;
-    final ttf = pw.Font.ttf(font);
     double font_Size = 10.0;
-    //////---------------------------------------------> (วางบิล)
-    DateTime date = DateTime.now();
-    var formatter = new DateFormat.MMMMd('th_TH');
-    String thaiDate = formatter.format(date);
-    //////--------------------------------------------->(ประวัติวางบิล)
 
-    // var formatter = new DateFormat.MMMMd('th_TH');
-    // String thaiDate = formatter.format(date);
+    ///---------------------> วันที่ปัจจุบัน (Current Date for Billing)
+    DateTime date = DateTime.now();
+    var formatter = DateFormat.MMMMd('th_TH');
+
+    ///---------------------> วันที่ธุรกรรม (Transaction Date)
     final thaiDate2 = DateTime.parse(date_Transaction);
-    final formatter2 = DateFormat('d MMMM', 'th_TH');
     final formattedDate2 = formatter.format(thaiDate2);
-    //////--------------->พ.ศ.
+
+    ///---------------------> พ.ศ. จากวันที่ธุรกรรม (Thai Year from Transaction Date)
     DateTime dateTime2 = DateTime.parse(date_Transaction);
     int newYear2 = dateTime2.year + 543;
-    //////--------------------------------------------->
-    String total_QR = '${nFormat.format(double.parse('${Total}'))}';
-    String newTotal_QR = total_QR.replaceAll(RegExp(r'[^0-9]'), '');
+
+    ///---------------------> โหลดภาพ QR (Load QR Image List)
     List netImage_QR = [];
-    List netImage = [];
+
+    ///---------------------> โหลดโลโก้และปรับขนาด (Resize Logo)
     Uint8List? resizedLogo = await getResizedLogo();
-    // for (int i = 0; i < newValuePDFimg.length; i++) {
-    //   netImage.add(await networkImage('${newValuePDFimg[i]}'));
-    // }
-    if (img1 == null || img1.toString() == '') {
-      netImage_QR.add(await networkImage(
-          '${MyConstant().domain}/Awaitdownload/imagenot.png'));
-      // netImage_QR.add(iconImage);
+
+    ///---------------------> Load QR image (โหลดรูป QR หรือรูปแทน)
+    if (img1 == null || img1.toString().isEmpty) {
+      netImage_QR.add(
+        await networkImage(
+          '${MyConstant().domain}/Awaitdownload/imagenot.png',
+        ),
+      );
     } else {
-      netImage_QR.add(await networkImage(
-          '${MyConstant().domain}/files/$foder/payment/${img1}'));
+      netImage_QR.add(
+        await networkImage(
+          '${MyConstant().domain}/files/$foder/payment/$img1',
+        ),
+      );
     }
-    final tableHeaders = [
-      'ลำดับ',
-      'รายการ',
-      'กำหนดชำระ',
-      'จำนวน',
-      'หน่วย',
-      'ราคาต่อหน่วย',
-      'ราคารวม',
-      // 'Total',
+
+    ///---------------------> Table header columns (หัวคอลัมน์ของตาราง)
+    final headerColumns = [
+      // {
+      //   'label': 'ลำดับ',
+      //   'flex': 0,
+      //   'align': pw.Alignment.centerLeft,
+      //   'width': 25.0
+      // },
+      // {'label': 'กำหนดชำระ', 'flex': 2, 'align': pw.Alignment.centerLeft},
+      // {'label': 'รายการ', 'flex': 4, 'align': pw.Alignment.centerLeft},
+      // {'label': 'จำนวน', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'หน่วย', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // // {'label': 'VAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // // {'label': 'WHT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // // {'label': 'ก่อนVAT', 'flex': 2, 'align': pw.Alignment.centerRight},
+      // {'label': 'ราคา', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'ส่วนลด', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'ยอดสุทธิ', 'flex': 2, 'align': pw.Alignment.centerRight},
+      {
+        'label': 'ลำดับ',
+        'flex': 0,
+        'align': pw.Alignment.center,
+        'width': 25.0
+      },
+      {'label': 'กำหนดชำระ', 'flex': 1, 'align': pw.Alignment.centerLeft},
+      {'label': 'รายการ', 'flex': 4, 'align': pw.Alignment.centerLeft},
+      {'label': 'จำนวน', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'หน่วย', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'ก่อนVAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'VAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'WHT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'VAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'WHT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'ก่อนVAT', 'flex': 2, 'align': pw.Alignment.centerRight},
+
+      {'label': 'ส่วนลด', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'ยอดสุทธิ', 'flex': 2, 'align': pw.Alignment.centerRight},
     ];
 
-    // final tableData = [
-    //   for (int index = 0; index < _TransModels.length; index++)
-    //     [
-    //       '${index + 1}',
-    //       '${_TransModels[index].name}',
-    //       '${DateFormat('dd/MM/yyyy').format(DateTime.parse('${_TransModels[index].date} 00:00:00'))}',
-    //       "${nFormat.format(double.parse('${_TransModels[index].tqty}'))}",
-    //       // '${_TransModels[index].tqty}',
-    //       '${_TransModels[index].unit_con}',
-    //       _TransModels[index].qty_con == '0.00'
-    //           ? "${nFormat.format(double.parse('${_TransModels[index].amt_con}'))}"
-    //           // '${_TransModels[index].amt_con}'
-    //           : "${nFormat.format(double.parse('${_TransModels[index].qty_con}'))}",
-    //       //  '${_TransModels[index].qty_con}',
-    //       "${nFormat.format(double.parse('${_TransModels[index].pvat}'))}",
-    //       // '${_TransModels[index].pvat}',
-    //     ],
-    // ];
+    ///////------------------------------->
 
+    double getTotalByField(
+      List<InvoiceHistoryModel> invoices,
+      String? Function(InvoiceHistoryModel item) getter,
+    ) {
+      return invoices.fold(0.0, (sum, item) {
+        final value = double.tryParse(getter(item) ?? '0.00') ?? 0.00;
+        return sum + value;
+      });
+    }
+
+    ///////----------------->
+
+    final totalAmt = getTotalByField(_InvoiceHistoryModels, (item) => item.amt);
+    final totalPvat =
+        getTotalByField(_InvoiceHistoryModels, (item) => item.pvat);
+    final totalVat = getTotalByField(_InvoiceHistoryModels, (item) => item.vat);
+    final totalWht = getTotalByField(_InvoiceHistoryModels, (item) => item.wht);
+
+    final totalDis = _InvoiceHistoryModels.isNotEmpty
+        ? double.tryParse(_InvoiceHistoryModels.first.disendbill ?? '0.00') ??
+            0.00
+        : 0.00;
+
+    final totalprice =
+        getTotalByField(_InvoiceHistoryModels, (item) => item.total);
+
+    final totalBill = totalprice - totalDis;
+
+    String totalBill_QR =
+        totalBill.toString().replaceAll(RegExp(r'[^0-9]'), '');
+
+    ///////------------------------------->
+
+    String getFormattedText(String? data) {
+      final value =
+          (data == null) ? 0.00 : double.tryParse(data ?? '0.00') ?? 0.00;
+      return nFormat.format(value);
+    }
+
+    bool isPositive(String? value) {
+      return (double.tryParse(value ?? '0.00') ?? 0.00) > 0;
+    }
+
+    pw.Widget buildCell({
+      required String text,
+      int flex = 1,
+      double padding = 2.0,
+      pw.Alignment alignment = pw.Alignment.centerRight,
+      pw.TextAlign textAlign = pw.TextAlign.right,
+    }) {
+      return pw.Expanded(
+        flex: flex,
+        child: pw.Container(
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.white,
+            border: pw.Border(
+              left: pw.BorderSide(color: PdfColors.grey600),
+              right: pw.BorderSide(color: PdfColors.grey600),
+            ),
+          ),
+          padding: pw.EdgeInsets.all(padding),
+          child: pw.Align(
+            alignment: alignment,
+            child: pw.Text(
+              text,
+              maxLines: 2,
+              textAlign: textAlign,
+              style: pw.TextStyle(
+                fontSize: font_Size,
+                font: ttf,
+                color: PdfColors.grey800,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    ///////------------------------------->
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.copyWith(
@@ -183,54 +277,6 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                           ),
                         ),
                 ),
-                // (netImage.isEmpty)
-                //     ? pw.Container(
-                //         height: 72,
-                //         width: 70,
-                //         decoration: const pw.BoxDecoration(
-                //           color: PdfColors.grey200,
-                //           border: pw.Border(
-                //             right: pw.BorderSide(color: PdfColors.grey300),
-                //             left: pw.BorderSide(color: PdfColors.grey300),
-                //             top: pw.BorderSide(color: PdfColors.grey300),
-                //             bottom: pw.BorderSide(color: PdfColors.grey300),
-                //           ),
-                //         ),
-                //         child: pw.Center(
-                //           child: pw.Text(
-                //             '$bill_name ',
-                //             maxLines: 1,
-                //             style: pw.TextStyle(
-                //               fontSize: 10,
-                //               font: ttf,
-                //               color: Colors_pd,
-                //             ),
-                //           ),
-                //         ))
-
-                //     // pw.Image(
-                //     //     pw.MemoryImage(iconImage),
-                //     //     height: 72,
-                //     //     width: 70,
-                //     //   )
-                //     : pw.Container(
-                //         height: 72,
-                //         width: 70,
-                //         decoration: const pw.BoxDecoration(
-                //           color: PdfColors.grey200,
-                //           border: pw.Border(
-                //             right: pw.BorderSide(color: PdfColors.grey300),
-                //             left: pw.BorderSide(color: PdfColors.grey300),
-                //             top: pw.BorderSide(color: PdfColors.grey300),
-                //             bottom: pw.BorderSide(color: PdfColors.grey300),
-                //           ),
-                //         ),
-                //         child: pw.Image(
-                //           (netImage[0]),
-                //           height: 72,
-                //           width: 70,
-                //         ),
-                //       ),
                 pw.SizedBox(width: 1 * PdfPageFormat.mm),
                 pw.Container(
                   width: 200,
@@ -371,12 +417,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                         ),
                       ),
                       pw.Text(
-                        '${(sname_.toString() == '' || sname_ == null || sname_.toString() == 'null') ? '-' : sname_} (${(cname_.toString() == '' || cname_ == null || cname_.toString() == 'null') ? '-' : cname_})',
-                        // (sname_.toString() == '' ||
-                        //         sname_ == null ||
-                        //         sname_.toString() == 'null')
-                        //     ? ' '
-                        //     : '${sname_}',
+                        '$customer_name',
                         textAlign: pw.TextAlign.justify,
                         style: pw.TextStyle(
                           fontSize: font_Size,
@@ -530,360 +571,94 @@ class Pdfgen_BillingNoteInvlice_TP4 {
             pw.SizedBox(height: 2 * PdfPageFormat.mm),
             //////////////---------------------------------->
             pw.Container(
-              decoration: const pw.BoxDecoration(
-                // color: PdfColors.green100,
-                border: pw.Border(
-                  top: pw.BorderSide(color: PdfColors.grey600),
-                  bottom: pw.BorderSide(color: PdfColors.grey600),
-                ),
-              ),
-              child: pw.Row(
-                children: [
-                  pw.Container(
-                    decoration: const pw.BoxDecoration(
-                      // color: PdfColors.green100,
-                      border: pw.Border(
-                        left: pw.BorderSide(color: PdfColors.grey600),
-                      ),
-                    ),
-                    width: 25,
-                    height: 20,
-                    padding: const pw.EdgeInsets.all(2.0),
-                    child: pw.Align(
-                      alignment: pw.Alignment.centerLeft,
-                      child: pw.Text(
-                        'ลำดับ',
-                        maxLines: 1,
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                            fontSize: font_Size,
-                            fontWeight: pw.FontWeight.bold,
-                            font: ttf,
-                            color: PdfColors.black),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          'กำหนดชำระ',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // pw.Expanded(
-                  //   flex: 2,
-                  //   child: pw.Container(
-                  //     decoration: const pw.BoxDecoration(
-                  //       // color: PdfColors.green100,
-                  //       border: pw.Border(
-                  //         right: pw.BorderSide(color: PdfColors.grey600),
-                  //         top: pw.BorderSide(color: PdfColors.grey600),
-                  //         bottom: pw.BorderSide(color: PdfColors.grey600),
-                  //       ),
-                  //     ),
-                  //     height: 30,
-                  //     child: pw.Column(
-                  //       mainAxisAlignment: pw.MainAxisAlignment.center,
-                  //       crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  //       children: [
-                  //         pw.Text(
-                  //           'รหัสสินค้า',
-                  //           maxLines: 1,
-                  //           textAlign: pw.TextAlign.left,
-                  //           style: pw.TextStyle(
-                  //               fontSize: font_Size,
-                  //               font: ttf,
-                  //               color: PdfColors.black),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   ),
-                  // ),
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          'รายการ',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'จำนวน',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'หน่วย',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'VAT',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'WHT',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'ก่อนVAT',
-                          textAlign: pw.TextAlign.right,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'ส่วนลด',
-                          textAlign: pw.TextAlign.right,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                          right: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'ยอดสุทธิ',
-                          textAlign: pw.TextAlign.right,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            for (int index = 0; index < tableData003.length; index++)
-              pw.Container(
                 decoration: const pw.BoxDecoration(
                   // color: PdfColors.green100,
                   border: pw.Border(
-                    // top: pw.BorderSide(color: PdfColors.grey600),
+                    top: pw.BorderSide(color: PdfColors.grey600),
                     bottom: pw.BorderSide(color: PdfColors.grey600),
                   ),
                 ),
                 child: pw.Row(
-                  children: [
-                    pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        color: PdfColors.white,
+                  children: headerColumns.map((col) {
+                    final label = col['label'] as String;
+                    final flex = col['flex'] as int;
+                    final align = col['align'] as pw.Alignment;
+                    final width = col['width'] as double?;
+
+                    final container = pw.Container(
+                      decoration: pw.BoxDecoration(
                         border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
+                          left: (label == 'ยอดสุทธิ')
+                              ? pw.BorderSide.none
+                              : const pw.BorderSide(color: PdfColors.grey600),
+                          right: const pw.BorderSide(color: PdfColors.grey600),
                         ),
                       ),
-                      width: 25,
+                      height: 20,
                       padding: const pw.EdgeInsets.all(2.0),
                       child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
+                        alignment: align,
                         child: pw.Text(
-                          '${index + 1}',
-                          maxLines: 2,
-                          textAlign: pw.TextAlign.left,
+                          label,
+                          maxLines: 1,
+                          textAlign: (align == pw.Alignment.centerRight)
+                              ? pw.TextAlign.right
+                              : pw.TextAlign.left,
                           style: pw.TextStyle(
-                              fontSize: font_Size,
-                              font: ttf,
-                              color: PdfColors.grey800),
+                            fontSize: font_Size,
+                            fontWeight: pw.FontWeight.bold,
+                            font: ttf,
+                            color: PdfColors.black,
+                          ),
                         ),
                       ),
-                    ),
-                    pw.Expanded(
-                      flex: 2,
-                      child: pw.Container(
+                    );
+
+                    if (width != null && flex == 0) {
+                      return pw.Container(
+                        width: width,
+                        height: 20,
                         decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
+                          border: pw.Border(
                             left: pw.BorderSide(color: PdfColors.grey600),
                           ),
                         ),
                         padding: const pw.EdgeInsets.all(2.0),
+                        child: container.child,
+                      );
+                    }
+
+                    return pw.Expanded(flex: flex, child: container);
+                  }).toList(),
+                )),
+
+            pw.Column(
+              children: List.generate(_InvoiceHistoryModels.length, (index) {
+                final invoices = _InvoiceHistoryModels[index];
+
+                return pw.Container(
+                  decoration: const pw.BoxDecoration(
+                    // color: PdfColors.green100,
+                    border: pw.Border(
+                      // top: pw.BorderSide(color: PdfColors.grey600),
+                      bottom: pw.BorderSide(color: PdfColors.grey600),
+                    ),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.Container(
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.white,
+                          border: pw.Border(
+                            left: pw.BorderSide(color: PdfColors.grey600),
+                          ),
+                        ),
+                        width: 25,
+                        padding: const pw.EdgeInsets.all(2.0),
                         child: pw.Align(
-                          alignment: pw.Alignment.centerLeft,
+                          alignment: pw.Alignment.center,
                           child: pw.Text(
-                            (tableData003[index][1] == null ||
-                                    tableData003[index][1].toString() == '')
-                                ? '${tableData003[index][1]}'
-                                : '${DateFormat('dd-MM').format(DateTime.parse(tableData003[index][1].toString()))}-${DateTime.parse(tableData003[index][1].toString()).year + 543}',
-                            // '${DateFormat('dd-MM-yyyy').format(DateTime.parse(
-                            //   '${tableData003[index][1]}',
-                            // ))}',
-                            // '${tableData00[index][1]}',
+                            '${index + 1}',
                             maxLines: 2,
                             textAlign: pw.TextAlign.center,
                             style: pw.TextStyle(
@@ -893,510 +668,85 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                           ),
                         ),
                       ),
-                    ),
-                    // pw.Expanded(
-                    //   flex: 2,
-                    //   child: pw.Container(
-                    //     padding: const pw.EdgeInsets.all(2.0),
-                    //     child: pw.Align(
-                    //       alignment: pw.Alignment.topLeft,
-                    //       child: pw.Text(
-                    //         '${tableData003[index][11]}',
-                    //         maxLines: 2,
-                    //         textAlign: pw.TextAlign.left,
-                    //         style: pw.TextStyle(
-                    //             fontSize: font_Size,
-                    //             font: ttf,
-                    //             color: PdfColors.grey800),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
-                    pw.Expanded(
-                      flex: 4,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerLeft,
-                          child: pw.Text(
-                            (tableData003[index][0].toString() == '6')
-                                ? '${tableData003[index][2]} [ หน่วยที่ใช้ไป ${tableData003[index][8]}-${tableData003[index][9]} ]'
-                                : '${tableData003[index][2]} ${DateFormat('MMM', 'th').format(DateTime.parse(tableData003[index][1]))} ${DateTime.parse('${tableData003[index][1]}').year + 543}',
-                            // '${tableData003[index][2]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.left,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
+                      buildCell(
+                        text: (invoices.date == null ||
+                                invoices.date.toString() == '')
+                            ? '-'
+                            : '${DateFormat('dd-MM').format(DateTime.parse(invoices.date.toString()))}-${DateTime.parse(invoices.date.toString()).year + 543}',
+                        flex: 1,
+                        alignment: pw.Alignment.centerLeft,
+                        textAlign: pw.TextAlign.center,
                       ),
-                    ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            '${tableData003[index][12]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
+                      buildCell(
+                        text: (invoices.unitser.toString() == '6')
+                            ? '${invoices.descr} [ หน่วยที่ใช้ไป ${invoices.ovalue}-${invoices.nvalue} ]' //descr
+                            : '${invoices.descr} ${DateFormat('MMM', 'th').format(DateTime.parse(invoices.date!))} ${DateTime.parse('${invoices.date}').year + 543}',
+                        flex: 4,
+                        alignment: pw.Alignment.centerLeft,
+                        textAlign: pw.TextAlign.left,
                       ),
-                    ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            (tableData003[index][14].toString() != '0' &&
-                                    tableData003[index][14] != null)
-                                ? 'อัตราพิเศษ'
-                                :
-                                //  '${tableData003[index][13]}',
-                                (tableData003[index][7].toString() == '0.00')
-                                    ? '${tableData003[index][5]}'
-                                    : '${tableData003[index][7]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
+                      buildCell(
+                        text: getFormattedText(invoices.qty),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
                       ),
-                    ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            (tableData003[index][18].toString() == '0.00' ||
-                                    tableData003[index][18].toString() == '0')
-                                ? '${tableData003[index][3]}'
-                                : '${tableData003[index][21]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
+                      buildCell(
+                        text: (invoices.ele_ty.toString() != '0' &&
+                                invoices.ele_ty != null)
+                            ? 'อัตราพิเศษ'
+                            : (invoices.dtype.toString() == 'KU')
+                                ? getFormattedText('${invoices.pri}')
+                                : '-',
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
                       ),
-                    ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            '${tableData003[index][4]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
-                      ),
-                    ),
-                    pw.Expanded(
-                      flex: 2,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            '${tableData003[index][15]}',
-                            // '${tableData003[index][5]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
-                      ),
-                    ),
-                    pw.Expanded(
-                      flex: 1,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            (tableData003[index][18].toString() == '0.00' ||
-                                    tableData003[index][18].toString() == '0')
-                                ? '0.00'
-                                : '${tableData003[index][18]}',
-                            // '0.00',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
-                      ),
-                    ),
-                    pw.Expanded(
-                      flex: 2,
-                      child: pw.Container(
-                        decoration: const pw.BoxDecoration(
-                          color: PdfColors.white,
-                          border: const pw.Border(
-                            left: pw.BorderSide(color: PdfColors.grey600),
-                            right: pw.BorderSide(color: PdfColors.grey600),
-                          ),
-                        ),
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Text(
-                            (tableData003[index][18].toString() == '0.00' ||
-                                    tableData003[index][18].toString() == '0')
-                                ? '${tableData003[index][6]}'
-                                : '${tableData003[index][22]}',
-                            // '${tableData003[index][6]}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.right,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                      // buildCell(
+                      //   text: (invoices.dis_list.toString() == '0.00')
+                      //       ? getFormattedText(invoices.pri)
+                      //       : getFormattedText(invoices.pvat_original),
+                      //   flex: 1,
+                      //   alignment: pw.Alignment.centerRight,
+                      //   textAlign: pw.TextAlign.right,
+                      // ),
 
-            // pw.Row(
-            //   children: [
-            //     pw.Container(
-            //       width: 30,
-            //       // height: 25,
-            //       decoration: const pw.BoxDecoration(
-            //         color: PdfColors.white,
-            //         border: pw.Border(
-            //           left: pw.BorderSide(color: PdfColors.grey600),
-            //           bottom: pw.BorderSide(color: PdfColors.grey600),
-            //         ),
-            //       ),
-            //       padding: const pw.EdgeInsets.all(2.0),
-            //       child: pw.Center(
-            //         child: pw.Text(
-            //           '${index + 1}',
-            //           maxLines: 2,
-            //           textAlign: pw.TextAlign.left,
-            //           style: pw.TextStyle(
-            //               fontSize: font_Size,
-            //               font: ttf,
-            //               color: PdfColors.grey800),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.center,
-            //           child: pw.Text(
-            //             (tableData003[index][1] == null ||
-            //                     tableData003[index][1].toString() == '')
-            //                 ? '${tableData003[index][1]}'
-            //                 : '${DateFormat('dd-MM').format(DateTime.parse(tableData003[index][1].toString()))}-${DateTime.parse(tableData003[index][1].toString()).year + 543}',
-            //             // '${tableData003[index][1]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.center,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 4,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerLeft,
-            //           child: pw.Text(
-            //             '${tableData003[index][2]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '${tableData003[index][12]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '${tableData003[index][13]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '${tableData003[index][3]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '${tableData003[index][4]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '${tableData003[index][5]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 1,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '0.00',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //     pw.Expanded(
-            //       flex: 2,
-            //       child: pw.Container(
-            //         // height: 25,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.white,
-            //           border: const pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //             right: pw.BorderSide(color: PdfColors.grey600),
-            //             bottom: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerRight,
-            //           child: pw.Text(
-            //             '${tableData003[index][6]}',
-            //             maxLines: 2,
-            //             textAlign: pw.TextAlign.right,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 font: ttf,
-            //                 color: PdfColors.grey800),
-            //           ),
-            //         ),
-            //       ),
-            //     ),
-            //   ],
-            // ),
+                      buildCell(
+                        text: getFormattedText('${invoices.pvat}'),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText(invoices.vat),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText(invoices.wht),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${invoices.dis_list}'),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${invoices.total}'),
+                        flex: 2,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+
             // pw.Divider(color: PdfColors.grey),
             pw.Container(
               padding: const pw.EdgeInsets.fromLTRB(0, 4, 0, 0),
@@ -1435,7 +785,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(SubTotal.toString()))}',
+                              '${nFormat.format(totalPvat)}',
                               // '${sum_pvat}',
                               // '$SubTotal',
                               style: pw.TextStyle(
@@ -1459,7 +809,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(Vat.toString()))}',
+                              '${nFormat.format(totalVat)}',
                               // '${sum_vat}',
                               // '$Vat',
                               style: pw.TextStyle(
@@ -1483,7 +833,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(Deduct.toString()))}',
+                              '${nFormat.format(totalWht)}',
                               // '${sum_wht}',
                               // '$Deduct',
                               style: pw.TextStyle(
@@ -1507,7 +857,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(Sum_SubTotal.toString()))}',
+                              '${nFormat.format(totalBill)}',
                               // '$Sum_SubTotal',
                               style: pw.TextStyle(
                                   fontSize: font_Size,
@@ -1530,7 +880,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(DisC.toString()))}',
+                              '${nFormat.format(totalDis)}',
                               // '${sum_disamt}',
                               // '$DisC',
                               style: pw.TextStyle(
@@ -1555,7 +905,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(Total.toString()))}',
+                              '${nFormat.format(totalBill)}',
                               style: pw.TextStyle(
                                   fontSize: font_Size,
                                   fontWeight: pw.FontWeight.bold,
@@ -1598,7 +948,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                         flex: 4,
                         child: pw.Text(
                           //"${nFormat2.format(double.parse(Total.toString()))}";
-                          '(~${convertToThaiBaht(double.parse(Total.toString()))}~)',
+                          '(~${convertToThaiBaht(totalBill)}~)',
                           style: pw.TextStyle(
                             fontSize: font_Size,
                             fontWeight: pw.FontWeight.bold,
@@ -1632,7 +982,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                                   ),
                                 ),
                                 pw.Text(
-                                  '${nFormat.format(double.parse(Total.toString()))}',
+                                  '${nFormat.format(totalBill)}',
                                   // '${Total}',
                                   style: pw.TextStyle(
                                       fontWeight: pw.FontWeight.bold,
@@ -1850,7 +1200,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                                   pw.Container(
                                     child: pw.BarcodeWidget(
                                         data:
-                                            '|$selectedValue_bank_bno\r${cFinn.replaceAll('-', '')}\r${DateFormat('ddMM').format(DateTime.parse(End_Bill_Paydate))}$YearQRthai\r${newTotal_QR}',
+                                            '|$selectedValue_bank_bno\r${cFinn.replaceAll('-', '')}\r${DateFormat('ddMM').format(DateTime.parse(End_Bill_Paydate))}$YearQRthai\r${totalBill_QR}',
                                         barcode: pw.Barcode.qrCode(),
                                         width: 55,
                                         height: 55),
@@ -1860,10 +1210,7 @@ class Pdfgen_BillingNoteInvlice_TP4 {
                                       data: generateQRCode(
                                           promptPayID:
                                               "$selectedValue_bank_bno",
-                                          amount: double.parse(
-                                              (Total == null || Total == '')
-                                                  ? '0'
-                                                  : '$Total')),
+                                          amount: double.parse('$totalBill')),
                                       barcode: pw.Barcode.qrCode(),
                                       width: 55,
                                       height: 55),
@@ -1931,418 +1278,6 @@ class Pdfgen_BillingNoteInvlice_TP4 {
             ],
           );
         },
-        // footer: (context) {
-        //   return pw.Column(
-        //     mainAxisSize: pw.MainAxisSize.min,
-        //     children: [
-        //       pw.Container(
-        //           decoration: pw.BoxDecoration(
-        //             border: pw.Border.all(color: PdfColors.grey, width: 1),
-        //           ),
-        //           child: pw.Column(
-        //             mainAxisAlignment: pw.MainAxisAlignment.center,
-        //             crossAxisAlignment: pw.CrossAxisAlignment.start,
-        //             children: [
-        //               pw.SizedBox(height: 2 * PdfPageFormat.mm),
-        //               pw.Row(
-        //                 children: [
-        //                   if (paymentName1.toString().trim() != 'เงินสด')
-        //                     pw.Expanded(
-        //                         flex: 2,
-        //                         child:
-        //                             (paymentName1.toString().trim() ==
-        //                                         'เงินโอน' ||
-        //                                     paymentName1.toString().trim() ==
-        //                                         'เงินโอน' ||
-        //                                     paymentName1.toString().trim() ==
-        //                                         'Online Payment' ||
-        //                                     paymentName1.toString().trim() ==
-        //                                         'Online Payment' ||
-        //                                     paymentName1.toString().trim() ==
-        //                                         'Online Standard QR' ||
-        //                                     paymentName2.toString().trim() ==
-        //                                         'เงินโอน' ||
-        //                                     paymentName2.toString().trim() ==
-        //                                         'เงินโอน' ||
-        //                                     paymentName2.toString().trim() ==
-        //                                         'Online Payment' ||
-        //                                     paymentName2.toString().trim() ==
-        //                                         'Online Payment' ||
-        //                                     paymentName2.toString().trim() ==
-        //                                         'Online Standard QR')
-        //                                 ? pw.Container(
-        //                                     // decoration: pw.BoxDecoration(
-        //                                     //   border: pw.Border.all(
-        //                                     //       color: PdfColors.grey, width: 1),
-        //                                     // ),
-        //                                     child: pw.Column(
-        //                                     mainAxisAlignment:
-        //                                         pw.MainAxisAlignment.center,
-        //                                     crossAxisAlignment:
-        //                                         pw.CrossAxisAlignment.start,
-        //                                     children: [
-        //                                       pw.Row(
-        //                                           mainAxisAlignment: pw
-        //                                               .MainAxisAlignment.center,
-        //                                           children: [
-        //                                             pw.Expanded(
-        //                                               flex: 2,
-        //                                               child: pw.Container(
-        //                                                 padding: const pw
-        //                                                         .EdgeInsets.all(
-        //                                                     4.0),
-        //                                                 child: pw.Column(
-        //                                                   children: [
-        //                                                     // pw.Container(
-        //                                                     //     // height: 60,
-        //                                                     //     // width: 200,
-        //                                                     //     child: pw.Image(
-        //                                                     //   pw.MemoryImage(uint8Listthaiqr),
-        //                                                     //   height: 72,
-        //                                                     //   width: 65,
-        //                                                     // )),
-        //                                                     pw.Container(
-        //                                                       child: pw.BarcodeWidget(
-        //                                                           data: (paymentName1.toString().trim() == 'Online Standard QR' ||
-        //                                                                   paymentName2.toString().trim() ==
-        //                                                                       'Online Standard QR')
-        //                                                               ? '|$selectedValue_bank_bno\r$cFinn\r${DateFormat('dd-MM-yyyy').format(DateTime.parse(date_Transaction))}\r${newTotal_QR}\r'
-        //                                                               : generateQRCode(
-        //                                                                   promptPayID:
-        //                                                                       "$selectedValue_bank_bno",
-        //                                                                   amount: double.parse((Total == null || Total == '')
-        //                                                                       ? '0'
-        //                                                                       : '$Total')),
-        //                                                           barcode: pw
-        //                                                                   .Barcode
-        //                                                               .qrCode(),
-        //                                                           width: 55,
-        //                                                           height: 55),
-        //                                                     ),
-        //                                                     pw.Text(
-        //                                                       'บัญชี : $selectedValue_bank_bno',
-        //                                                       style:
-        //                                                           pw.TextStyle(
-        //                                                         font: ttf,
-        //                                                         fontSize:
-        //                                                             font_Size,
-        //                                                         fontWeight: pw
-        //                                                             .FontWeight
-        //                                                             .bold,
-        //                                                       ),
-        //                                                     ),
-        //                                                     if (paymentName1
-        //                                                                 .toString()
-        //                                                                 .trim() ==
-        //                                                             'Online Standard QR' ||
-        //                                                         paymentName2
-        //                                                                 .toString()
-        //                                                                 .trim() ==
-        //                                                             'Online Standard QR')
-        //                                                       pw.Text(
-        //                                                         '(Ref1 : $cFinn , Ref2 : ${DateFormat('dd-MM-yyyy').format(DateTime.parse(date_Transaction))})',
-        //                                                         style: pw
-        //                                                             .TextStyle(
-        //                                                           font: ttf,
-        //                                                           fontSize:
-        //                                                               font_Size,
-        //                                                           fontWeight: pw
-        //                                                               .FontWeight
-        //                                                               .bold,
-        //                                                         ),
-        //                                                       ),
-        //                                                     pw.Text(
-        //                                                       'สำหรับชำระด้วย Mobile Banking',
-        //                                                       style:
-        //                                                           pw.TextStyle(
-        //                                                         font: ttf,
-        //                                                         fontSize:
-        //                                                             font_Size,
-        //                                                         fontWeight: pw
-        //                                                             .FontWeight
-        //                                                             .bold,
-        //                                                       ),
-        //                                                     ),
-        //                                                   ],
-        //                                                 ),
-        //                                               ),
-        //                                             ),
-        //                                           ]),
-        //                                     ],
-        //                                   ))
-        //                                 : pw.Text('')),
-        //                   pw.Expanded(
-        //                       flex: 2,
-        //                       child: pw.Column(
-        //                         crossAxisAlignment:
-        //                             pw.CrossAxisAlignment.center,
-        //                         children: [
-        //                           pw.Row(
-        //                             mainAxisAlignment:
-        //                                 pw.MainAxisAlignment.spaceAround,
-        //                             children: [
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   'ลงชื่อ',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     fontWeight: pw.FontWeight.bold,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     'ผู้รับเงิน',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontSize: 8.0,
-        //                               //       fontWeight: pw.FontWeight.bold,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   'ลงชื่อ',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     fontWeight: pw.FontWeight.bold,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     'ผู้อนุมัติ',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontSize: 8.0,
-        //                               //       fontWeight: pw.FontWeight.bold,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                             ],
-        //                           ),
-        //                           pw.SizedBox(height: 2 * PdfPageFormat.mm),
-        //                           pw.Row(
-        //                             mainAxisAlignment:
-        //                                 pw.MainAxisAlignment.spaceAround,
-        //                             children: [
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   '..........................................',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   '..........................................',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontWeight: pw.FontWeight.bold,
-        //                                     fontSize: font_Size,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     '..........................................',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontWeight: pw.FontWeight.bold,
-        //                               //       fontSize: 8.0,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     '..........................................',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontWeight: pw.FontWeight.bold,
-        //                               //       fontSize: 8.0,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                             ],
-        //                           ),
-        //                           pw.SizedBox(height: 2 * PdfPageFormat.mm),
-        //                           pw.Row(
-        //                             mainAxisAlignment:
-        //                                 pw.MainAxisAlignment.spaceAround,
-        //                             children: [
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   '(................................)',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   '(................................)',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     '(................................)',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontSize: 8.0,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     '(................................)',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontSize: 8.0,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                             ],
-        //                           ),
-        //                           pw.SizedBox(height: 2 * PdfPageFormat.mm),
-        //                           pw.Row(
-        //                             mainAxisAlignment:
-        //                                 pw.MainAxisAlignment.spaceAround,
-        //                             children: [
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   'วันที่........../........../..........',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               pw.Expanded(
-        //                                 flex: 1,
-        //                                 child: pw.Text(
-        //                                   'วันที่........../........../..........',
-        //                                   textAlign: pw.TextAlign.center,
-        //                                   style: pw.TextStyle(
-        //                                     fontSize: font_Size,
-        //                                     font: ttf,
-        //                                     color: Colors_pd,
-        //                                   ),
-        //                                 ),
-        //                               ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     'วันที่........../........../..........',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontSize: 8.0,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                               // pw.Expanded(
-        //                               //   flex: 1,
-        //                               //   child: pw.Text(
-        //                               //     'วันที่........../........../..........',
-        //                               //     textAlign: pw.TextAlign.center,
-        //                               //     style: pw.TextStyle(
-        //                               //       fontSize: 8.0,
-        //                               //       font: ttf,
-        //                               //       color: Colors_pd,
-        //                               //     ),
-        //                               //   ),
-        //                               // ),
-        //                             ],
-        //                           ),
-        //                         ],
-        //                       ))
-        //                 ],
-        //               ),
-        //               pw.SizedBox(height: 1 * PdfPageFormat.mm),
-        //               pw.Row(
-        //                 mainAxisAlignment: pw.MainAxisAlignment.center,
-        //                 children: [
-        //                   pw.Text(
-        //                     ' หมายเหตุ ' + ' .' * 140,
-        //                     textAlign: pw.TextAlign.left,
-        //                     maxLines: 1,
-        //                     style: pw.TextStyle(
-        //                       fontSize: font_Size,
-        //                       font: ttf,
-        //                       color: Colors_pd,
-        //                     ),
-        //                   ),
-        //                 ],
-        //               ),
-        //               pw.SizedBox(height: 2 * PdfPageFormat.mm),
-        //             ],
-        //           )),
-        //       pw.SizedBox(height: 1 * PdfPageFormat.mm),
-        //       pw.Align(
-        //         alignment: pw.Alignment.bottomRight,
-        //         child: pw.Text(
-        //           'หน้า ${context.pageNumber} / ${context.pagesCount} ',
-        //           textAlign: pw.TextAlign.left,
-        //           style: pw.TextStyle(
-        //             fontSize: 10.0,
-        //             font: ttf,
-        //             color: Colors_pd,
-        //             // fontWeight: pw.FontWeight.bold
-        //           ),
-        //         ),
-        //       )
-        //     ],
-        //   );
-        // },
       ),
     );
     // final bytes = await pdf.save();

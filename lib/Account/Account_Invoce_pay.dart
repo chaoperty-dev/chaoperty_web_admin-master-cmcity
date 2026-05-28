@@ -799,15 +799,15 @@ class _AccountInvoicePayState extends State<AccountInvoicePay> {
         );
 
         if (response.statusCode == 200) {
-          print('Image uploaded successfully');
+          // print('Image uploaded successfully');
         } else {
-          print('Image upload failed');
+          // print('Image upload failed');
         }
       } catch (e) {
-        print('Error during image processing: $e');
+        // print('Error during image processing: $e');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      // print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -825,7 +825,7 @@ class _AccountInvoicePayState extends State<AccountInvoicePay> {
               child: Container(
                 width: (Responsive.isDesktop(context))
                     ? MediaQuery.of(context).size.width * 0.85
-                    : 1200,
+                    : 1400,
                 child: Column(
                   children: [
                     Container(

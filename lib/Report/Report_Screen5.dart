@@ -1304,7 +1304,7 @@ class _ReportScreen5State extends State<ReportScreen5> {
         setState(() {
           TransReBillModels_ = _TransReBillModels;
         });
-        print('result ${_TransReBillModels.length}');
+        // print('result ${_TransReBillModels.length}');
       }
     } catch (e) {}
 
@@ -1723,7 +1723,7 @@ class _ReportScreen5State extends State<ReportScreen5> {
       setState(() {});
     });
 
-    print(Value_selectDate_Historybills);
+   //  print(Value_selectDate_Historybills);
   }
 
   void selectionChanged_month1(DateRangePickerSelectionChangedArgs args) {
@@ -1736,7 +1736,7 @@ class _ReportScreen5State extends State<ReportScreen5> {
         Mon_People_Cancel = DateFormat('MM').format(selectedDate);
         YE_People_Cancel = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Mon_People_Cancel}, Year: ${YE_People_Cancel}');
+    //   print('Selected month: ${Mon_People_Cancel}, Year: ${YE_People_Cancel}');
     }
   }
 
@@ -1753,7 +1753,7 @@ class _ReportScreen5State extends State<ReportScreen5> {
         // Mon_Cannotice_Mon = DateFormat('MM').format(selectedDate);
         // YE_Cannotice_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Befor_Mon_Invoice}, Year: ${Befor_YE_Invoice}');
+      // print('Selected month: ${Befor_Mon_Invoice}, Year: ${Befor_YE_Invoice}');
     }
   }
 
@@ -4820,8 +4820,8 @@ class _ReportScreen5State extends State<ReportScreen5> {
                                             int selectedIndex =
                                                 expModels.indexWhere((items) =>
                                                     items.ser == item.ser);
-                                            print(expModels[selectedIndex]
-                                                .expname);
+                                            // print(expModels[selectedIndex]
+                                            //     .expname);
                                             // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                             //This rebuilds the StatefulWidget to update the button's text
                                             setState(() {

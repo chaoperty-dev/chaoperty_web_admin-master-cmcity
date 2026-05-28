@@ -7,6 +7,7 @@ import 'package:panara_dialogs/panara_dialogs.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../Model/GetSubZone_Model.dart';
@@ -109,7 +110,7 @@ class _GetMiter_ChoiceState extends State<GetMiter_Choice> {
     //         : '${MyConstant().domain}/GC_trans_mitter_sub.php?isAdd=true&ren=$ren&sertype=$Ser_BodySta1&serzone=$zone_ser&serzonesub=$zone_Sub';
     print('result $url');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('result $ciddoc');
@@ -142,7 +143,7 @@ class _GetMiter_ChoiceState extends State<GetMiter_Choice> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
     renTal_name = preferences.getString('renTalName');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -213,7 +214,7 @@ class _GetMiter_ChoiceState extends State<GetMiter_Choice> {
         '${MyConstant().domain}/GC_zone_Getmiter.php?isAdd=true&ren=$ren';
     print(url);
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -282,7 +283,7 @@ class _GetMiter_ChoiceState extends State<GetMiter_Choice> {
     String url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       Map<String, dynamic> map = Map();
@@ -568,7 +569,7 @@ class _GetMiter_ChoiceState extends State<GetMiter_Choice> {
           '${MyConstant().domain}/UP_meter_api.php?isAdd=true&ren=$ren&zser=$SerZone&datemiter=$datemiter';
       // print(url);
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
 

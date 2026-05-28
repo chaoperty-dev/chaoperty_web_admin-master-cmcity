@@ -9,7 +9,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:group_radio_button/group_radio_button.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 
@@ -46,6 +46,10 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
   final Status5Form_NoArea_ren = TextEditingController();
   String _verticalGroupValue = '';
   int Value_AreaSer_ = 0;
+  bool _isProcessing = false;
+  bool _shouldStop = false;
+  int _processedCount = 0;
+  int _totalCount = 0;
   @override
   void initState() {
     super.initState();
@@ -64,6 +68,84 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
   _moveDown1() {
     _scrollController1.animateTo(_scrollController1.offset + 250,
         curve: Curves.linear, duration: const Duration(milliseconds: 500));
+  }
+
+  /// Helper function to format date from Excel to yyyy-MM-dd (MySQL DATE format)
+  String _formatDateFromExcel(String dateStr) {
+    if (dateStr.isEmpty || dateStr == '-') {
+      return '-';
+    }
+    try {
+      // Try to parse as DateTime (handles ISO format like 1974-12-03T00:17:56.000)
+      final dateTime = DateTime.tryParse(dateStr);
+      if (dateTime != null) {
+        return DateFormat('yyyy-MM-dd').format(dateTime);
+      }
+      // Try dd/MM/yyyy or dd/M/yyyy (e.g. 14/7/1972)
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          final dt = DateTime(year, month, day);
+          return DateFormat('yyyy-MM-dd').format(dt);
+        }
+      }
+      // Try dd-MM-yyyy (e.g. 03-12-1974)
+      final parts2 = dateStr.split('-');
+      if (parts2.length == 3) {
+        final day = int.tryParse(parts2[0]);
+        final month = int.tryParse(parts2[1]);
+        final year = int.tryParse(parts2[2]);
+        if (day != null && month != null && year != null) {
+          final dt = DateTime(year, month, day);
+          return DateFormat('yyyy-MM-dd').format(dt);
+        }
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
+  }
+
+  /// Helper function to format date for display (converts yyyy-MM-dd to dd-MM-yyyy)
+  String _formatDateForDisplay(String? dateStr) {
+    if (dateStr == null || dateStr.isEmpty || dateStr == '-') {
+      return '-';
+    }
+    try {
+      // Try to parse as DateTime (ISO format)
+      final dateTime = DateTime.tryParse(dateStr);
+      if (dateTime != null) {
+        return DateFormat('dd-MM-yyyy').format(dateTime);
+      }
+      // Try dd/MM/yyyy or dd/M/yyyy
+      final parts = dateStr.split('/');
+      if (parts.length == 3) {
+        final day = int.tryParse(parts[0]);
+        final month = int.tryParse(parts[1]);
+        final year = int.tryParse(parts[2]);
+        if (day != null && month != null && year != null) {
+          final dt = DateTime(year, month, day);
+          return DateFormat('dd-MM-yyyy').format(dt);
+        }
+      }
+      // Try dd-MM-yyyy
+      final parts2 = dateStr.split('-');
+      if (parts2.length == 3) {
+        final day = int.tryParse(parts2[0]);
+        final month = int.tryParse(parts2[1]);
+        final year = int.tryParse(parts2[2]);
+        if (day != null && month != null && year != null) {
+          final dt = DateTime(year, month, day);
+          return DateFormat('dd-MM-yyyy').format(dt);
+        }
+      }
+      return dateStr;
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   ///----------------->
@@ -191,7 +273,7 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       if (result != null) {
         for (var map in result) {
           TypeModel typeModel = TypeModel.fromJson(map);
@@ -309,7 +391,7 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
 
   Future<void> downloadAndSaveFile() async {
     final url =
-        '${MyConstant().domain}/Awaitdownload/FormMan_ADDCusto.xlsx';
+        '${MyConstant().domain}/Awaitdownload/Formไฟล์ตัวอย่างในการเพิ่มข้อมูลลูกค้า.xlsx';
     final response = await http.get(Uri.parse(url));
 
     if (response.statusCode == 200) {
@@ -352,7 +434,7 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
 
       if (result != null) {
         final file = result.files.single;
-        print('Selected file: ${file.name}');
+        //print('Selected file: ${file.name}');
 
         // Access the file bytes
         final Uint8List bytes = file.bytes!;
@@ -364,7 +446,7 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
           for (var row in excel.tables[table]!.rows) {
             if (index == 0) {
               index++;
-              print(index);
+              //  print(index);
             } else {
               var type = '${row[0]!.value}';
               var nameshop = '${row[1]!.value}';
@@ -375,6 +457,10 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
               var tel = '${row[6]!.value}';
               var email = '${row[7]!.value}';
               var tax = '${row[8]!.value}';
+              var religion = '${row[9]?.value ?? ""}';
+              var national = '${row[10]?.value ?? ""}';
+              var birthRaw = '${row[11]?.value ?? ""}';
+              var birth = _formatDateFromExcel(birthRaw);
 
               Map<String, dynamic> map = Map();
 
@@ -424,6 +510,9 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
               map['user_name'] = '';
               map['passw'] = '';
               map['sname'] = '';
+              map['religion'] = '${religion.toString().trim()}';
+              map['national'] = '${national.toString().trim()}';
+              map['birth'] = '${birth.toString().trim()}';
 
               try {
                 CustomerModel customerModel = CustomerModel.fromJson(map);
@@ -433,21 +522,21 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
                 });
                 // print('table ---------------- >${sname}');
               } catch (e) {}
-              print(map);
+              // print(map);
             }
           }
         }
       } else {
         // User canceled the file selection.
-        print('File selection canceled.');
+        //   print('File selection canceled.');
       }
     } catch (e) {
-      print('Error selecting or reading the file: $e');
+      //print('Error selecting or reading the file: $e');
     }
   }
 
   Future<void> updated_Customer(scname, stype, typeser, type, cname, attn,
-      addr_1, tel, tax, email, indexToEdit) async {
+      addr_1, tel, tax, email, religion, national, birth, indexToEdit) async {
     Map<String, dynamic> map = Map();
 
     map['ser'] = '';
@@ -495,6 +584,9 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
     map['user_name'] = '';
     map['passw'] = '';
     map['sname'] = '';
+    map['religion'] = '$religion';
+    map['national'] = '$national';
+    map['birth'] = '$birth';
 
     try {
       // Create a CustomerModel instance from the provided map
@@ -506,9 +598,9 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
       });
 
       // Print the updated customer model
-      print(' ${map}');
+      //  print(' ${map}');
     } catch (e) {
-      print('Error: $e');
+      //  print('Error: $e');
     }
   }
 
@@ -529,2222 +621,2519 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
   // }
 
   String tappedIndex_ = '';
+  bool _isDesktop(double width) => width >= 1200;
+  bool _isTablet(double width) => width >= 700 && width < 1200;
 ////////----------------------------------------------->
   Widget build(BuildContext context) {
-    return Expanded(
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: AutoSizeText(
-                    minFontSize: 10,
-                    maxFontSize: 20,
-                    'เพิ่มข้อมูลทะเบียนลูกค้าแบบ ( Excel )',
-                    style: TextStyle(
-                      color: PeopleChaoScreen_Color.Colors_Text1_,
-                      // fontWeight: FontWeight.bold,
-                      fontFamily: FontWeight_.Fonts_T,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
-                    onTap: () {
-                      downloadAndSaveFile();
-                    },
-                    child: Container(
-                      width: 200,
-                      decoration: const BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                      ),
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: AutoSizeText(
-                          minFontSize: 10,
-                          maxFontSize: 16,
-                          'ตัวอย่าง/รูปแบบไฟล์',
-                          style: TextStyle(
-                            color: Colors.white,
-                            // fontWeight: FontWeight.bold,
-                            // fontFamily: FontWeight_.Fonts_T,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
-                    onTap: () {
-                      selectFileAndReadExcel();
-                    },
-                    child: Container(
-                      width: 150,
-                      decoration: const BoxDecoration(
-                        color: Colors.blue,
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                      ),
-                      padding: const EdgeInsets.all(8.0),
-                      child: Center(
-                        child: AutoSizeText(
-                          minFontSize: 10,
-                          maxFontSize: 16,
-                          'เลือกไฟล์/นำเข้าไฟล์',
-                          style: TextStyle(
-                            color: Colors.white,
-                            // fontWeight: FontWeight.bold,
-                            // fontFamily: FontWeight_.Fonts_T,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AutoSizeText(
-                  minFontSize: 6,
-                  maxFontSize: 12,
-                  '**คำเตือน ( ในExcel จะต้องกรอกทุกช่อง หากไม่มีข้อมูลช่องไหน กรุณาระบุว่า ไม่มี, -, หรือ N/A และหากมีชื่ออยู่ในระบบแล้วระบบจะไม่ทำการเพิ่ม )',
+    final width = MediaQuery.of(context).size.width;
+    final contentMaxWidth = _isDesktop(width) ? 1320.0 : 1000.0;
+    return SingleChildScrollView(
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Padding(
+                padding: EdgeInsets.all(8.0),
+                child: AutoSizeText(
+                  minFontSize: 10,
+                  maxFontSize: 20,
+                  'เพิ่มข้อมูลทะเบียนลูกค้าแบบ ( Excel )',
                   style: TextStyle(
-                    color: Colors.red,
+                    color: PeopleChaoScreen_Color.Colors_Text1_,
                     // fontWeight: FontWeight.bold,
-                    // fontFamily: FontWeight_.Fonts_T,
+                    fontFamily: FontWeight_.Fonts_T,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ],
-            ),
-            ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
-                PointerDeviceKind.touch,
-                PointerDeviceKind.mouse,
-              }),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    Container(
-                      color: AppbackgroundColor.Sub_Abg_Colors,
-                      height: MediaQuery.of(context).size.height * 0.48,
-                      width: (Responsive.isDesktop(context))
-                          ? MediaQuery.of(context).size.width * 0.9
-                          : 1000,
-                      child: Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration:  BoxDecoration(
-                                color: AppbackgroundColor.TiTile_Colors,
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10),
-                                    bottomLeft: Radius.circular(0),
-                                    bottomRight: Radius.circular(0)),
-                              ),
-                              width: (Responsive.isDesktop(context))
-                                  ? MediaQuery.of(context).size.width * 0.9
-                                  : 1000,
-                              child: Row(
-                                children: [
-                                  // SizedBox(
-                                  //   width: 80,
-                                  //   child: AutoSizeText(
-                                  //     minFontSize: 10,
-                                  //     maxFontSize: 15,
-                                  //     '...',
-                                  //     textAlign: TextAlign.center,
-                                  //     style: TextStyle(
-                                  //         color: CustomerScreen_Color
-                                  //             .Colors_Text1_,
-                                  //         fontWeight: FontWeight.bold,
-                                  //         fontFamily: FontWeight_.Fonts_T
-                                  //         //fontSize: 10.0
-                                  //         //fontSize: 10.0Test_UP_img_Custo
-                                  //         ),
-                                  //   ),
-                                  // ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: InkWell(
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: (Select_Cus_index.length ==
-                                                      customerModels.length &&
-                                                  Select_Cus_index.length != 0)
-                                              ? Colors.red
-                                              : Colors.blueGrey[300],
-                                          borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(8),
-                                              topRight: Radius.circular(8),
-                                              bottomLeft: Radius.circular(8),
-                                              bottomRight: Radius.circular(8)),
-                                        ),
-                                        padding: const EdgeInsets.all(4),
-                                        child: AutoSizeText(
-                                          minFontSize: 8,
-                                          maxFontSize: 14,
-                                          (Select_Cus_index.length ==
-                                                      customerModels.length &&
-                                                  Select_Cus_index.length != 0)
-                                              ? 'ยกเลิกเลือกทั้งหมด'
-                                              : 'เลือกทั้งหมด',
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: FontWeight_.Fonts_T
-                                              //fontSize: 10.0
-                                              //fontSize: 10.0Test_UP_img_Custo
-                                              ),
-                                        ),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    downloadAndSaveFile();
+                  },
+                  child: Container(
+                    width: 200,
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
+                          bottomLeft: Radius.circular(10),
+                          bottomRight: Radius.circular(10)),
+                    ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Center(
+                      child: AutoSizeText(
+                        minFontSize: 10,
+                        maxFontSize: 16,
+                        'ตัวอย่าง/รูปแบบไฟล์',
+                        style: TextStyle(
+                          color: Colors.white,
+                          // fontWeight: FontWeight.bold,
+                          // fontFamily: FontWeight_.Fonts_T,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: GestureDetector(
+                  onTap: () {
+                    selectFileAndReadExcel();
+                  },
+                  child: Container(
+                    width: 150,
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(10),
+                          topRight: Radius.circular(10),
+                          bottomLeft: Radius.circular(10),
+                          bottomRight: Radius.circular(10)),
+                    ),
+                    padding: const EdgeInsets.all(8.0),
+                    child: Center(
+                      child: AutoSizeText(
+                        minFontSize: 10,
+                        maxFontSize: 16,
+                        'เลือกไฟล์/นำเข้าไฟล์',
+                        style: TextStyle(
+                          color: Colors.white,
+                          // fontWeight: FontWeight.bold,
+                          // fontFamily: FontWeight_.Fonts_T,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AutoSizeText(
+                minFontSize: 6,
+                maxFontSize: 12,
+                '**คำเตือน ( ในExcel จะต้องกรอกทุกช่อง หากไม่มีข้อมูลช่องไหน กรุณาระบุว่า ไม่มี, -, หรือ N/A และหากมีชื่ออยู่ในระบบแล้วระบบจะไม่ทำการเพิ่ม )',
+                style: TextStyle(
+                  color: Colors.red,
+                  // fontWeight: FontWeight.bold,
+                  // fontFamily: FontWeight_.Fonts_T,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          ScrollConfiguration(
+            behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+              PointerDeviceKind.touch,
+              PointerDeviceKind.mouse,
+            }),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Container(
+                    color: AppbackgroundColor.Sub_Abg_Colors,
+                    height: MediaQuery.of(context).size.height * 0.48,
+                    width: (Responsive.isDesktop(context))
+                        ? MediaQuery.of(context).size.width * 0.9
+                        : 1000,
+                    child: Column(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: AppbackgroundColor.TiTile_Colors,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(0),
+                                  bottomRight: Radius.circular(0)),
+                            ),
+                            width: (Responsive.isDesktop(context))
+                                ? MediaQuery.of(context).size.width * 0.9
+                                : 1000,
+                            child: Row(
+                              children: [
+                                // SizedBox(
+                                //   width: 80,
+                                //   child: AutoSizeText(
+                                //     minFontSize: 10,
+                                //     maxFontSize: 15,
+                                //     '...',
+                                //     textAlign: TextAlign.center,
+                                //     style: TextStyle(
+                                //         color: CustomerScreen_Color
+                                //             .Colors_Text1_,
+                                //         fontWeight: FontWeight.bold,
+                                //         fontFamily: FontWeight_.Fonts_T
+                                //         //fontSize: 10.0
+                                //         //fontSize: 10.0Test_UP_img_Custo
+                                //         ),
+                                //   ),
+                                // ),
+                                Expanded(
+                                  flex: 1,
+                                  child: GestureDetector(
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        color: (Select_Cus_index.length ==
+                                                    customerModels.length &&
+                                                Select_Cus_index.length != 0)
+                                            ? Colors.red
+                                            : Colors.blueGrey[300],
+                                        borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                            bottomLeft: Radius.circular(8),
+                                            bottomRight: Radius.circular(8)),
                                       ),
-                                      onTap: (Select_Cus_index.length ==
-                                                  customerModels.length &&
-                                              Select_Cus_index.length != 0)
-                                          ? () {
-                                              setState(() {
-                                                Select_Cus_index.clear();
-                                              });
-                                            }
-                                          : () {
-                                              for (int index = 0;
-                                                  index < customerModels.length;
-                                                  index++) {
-                                                if (Select_Cus_index.contains(
-                                                        index) !=
-                                                    true) {
-                                                  setState(() {
-                                                    Select_Cus_index.add(index);
-                                                  });
-                                                }
+                                      padding: const EdgeInsets.all(4),
+                                      child: AutoSizeText(
+                                        minFontSize: 8,
+                                        maxFontSize: 14,
+                                        (Select_Cus_index.length ==
+                                                    customerModels.length &&
+                                                Select_Cus_index.length != 0)
+                                            ? 'ยกเลิกเลือกทั้งหมด'
+                                            : 'เลือกทั้งหมด',
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0Test_UP_img_Custo
+                                            ),
+                                      ),
+                                    ),
+                                    onTap: (Select_Cus_index.length ==
+                                                customerModels.length &&
+                                            Select_Cus_index.length != 0)
+                                        ? () {
+                                            setState(() {
+                                              Select_Cus_index.clear();
+                                            });
+                                          }
+                                        : () {
+                                            for (int index = 0;
+                                                index < customerModels.length;
+                                                index++) {
+                                              if (Select_Cus_index.contains(
+                                                      index) !=
+                                                  true) {
+                                                setState(() {
+                                                  Select_Cus_index.add(index);
+                                                });
                                               }
-                                            },
-                                    ),
+                                            }
+                                          },
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ประเภท',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ประเภท',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ชื่อร้านค้า',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ชื่อร้านค้า',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ประเภทร้านค้า',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ประเภทร้านค้า',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ชื่อผู้เช่า/บริษัท',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ชื่อผู้เช่า/บริษัท',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ชื่อผู้ติดต่อ',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ชื่อผู้ติดต่อ',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ที่อยู่',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ที่อยู่',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'เบอร์โทร',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'เบอร์โทร',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'อีเมล',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'อีเมล',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      'ID/TAX ID',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ID/TAX ID',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                  Expanded(
-                                    flex: 1,
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 15,
-                                      '....',
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: CustomerScreen_Color
-                                              .Colors_Text1_,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: FontWeight_.Fonts_T
-                                          //fontSize: 10.0
-                                          //fontSize: 10.0Test_UP_img_Custo
-                                          ),
-                                    ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'ศาสนา',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
                                   ),
-                                ],
-                              ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'สัญชาติ',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    'วันเกิด',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 1,
+                                  child: AutoSizeText(
+                                    minFontSize: 10,
+                                    maxFontSize: 15,
+                                    '....',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color:
+                                            CustomerScreen_Color.Colors_Text1_,
+                                        fontWeight: FontWeight.bold,
+                                        fontFamily: FontWeight_.Fonts_T
+                                        //fontSize: 10.0
+                                        //fontSize: 10.0Test_UP_img_Custo
+                                        ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                  child: ListView.builder(
-                                      controller: _scrollController1,
-                                      physics:
-                                          const AlwaysScrollableScrollPhysics(),
-                                      shrinkWrap: true,
-                                      itemCount: customerModels.length,
-                                      itemBuilder:
-                                          (BuildContext context, int index) {
-                                        return Material(
-                                            color:
-                                                tappedIndex_ == index.toString()
-                                                    ? tappedIndex_Color
-                                                        .tappedIndex_Colors
-                                                    : AppbackgroundColor
-                                                        .Sub_Abg_Colors,
-                                            child: Container(
-                                                // color: tappedIndex_ ==
-                                                //         index.toString()
-                                                //     ? tappedIndex_Color
-                                                //         .tappedIndex_Colors
-                                                //         .withOpacity(0.5)
-                                                //     : null,
-                                                padding:
-                                                    const EdgeInsets.all(5),
-                                                child: ListTile(
-                                                    onTap: () async {
-                                                      setState(() {
-                                                        tappedIndex_ =
-                                                            index.toString();
-                                                      });
-                                                    },
-                                                    title: Row(children: [
-                                                      SizedBox(
-                                                          width: 80,
-                                                          child: (Select_Cus_index
-                                                                      .contains(
-                                                                          index) ==
-                                                                  true)
-                                                              ? IconButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    setState(
-                                                                        () {
-                                                                      Select_Cus_index
-                                                                          .remove(
-                                                                              index);
-                                                                    });
-                                                                  },
-                                                                  icon: Icon(
-                                                                    Icons
-                                                                        .check_box,
-                                                                    color: Colors
-                                                                        .red,
-                                                                  ))
-                                                              : IconButton(
-                                                                  onPressed:
-                                                                      () {
-                                                                    setState(
-                                                                        () {
-                                                                      Select_Cus_index
-                                                                          .add(
-                                                                              index);
-                                                                    });
-                                                                  },
-                                                                  icon: Icon(Icons
-                                                                      .check_box_outline_blank))),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Row(
-                                                          children: [
-                                                            Expanded(
-                                                              child:
-                                                                  AutoSizeText(
-                                                                minFontSize: 10,
-                                                                maxFontSize: 12,
-                                                                '${customerModels[index].type}',
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                style: const TextStyle(
-                                                                    color: CustomerScreen_Color.Colors_Text2_,
-                                                                    // fontWeight: FontWeight.bold,
-                                                                    fontFamily: Font_.Fonts_T),
-                                                              ),
-                                                            ),
-                                                            IconButton(
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Container(
+                                child: ListView.builder(
+                                    controller: _scrollController1,
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    itemCount: customerModels.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      return Material(
+                                          color:
+                                              tappedIndex_ == index.toString()
+                                                  ? tappedIndex_Color
+                                                      .tappedIndex_Colors
+                                                  : AppbackgroundColor
+                                                      .Sub_Abg_Colors,
+                                          child: Container(
+                                              // color: tappedIndex_ ==
+                                              //         index.toString()
+                                              //     ? tappedIndex_Color
+                                              //         .tappedIndex_Colors
+                                              //         .withOpacity(0.5)
+                                              //     : null,
+                                              padding: const EdgeInsets.all(5),
+                                              child: ListTile(
+                                                  onTap: () async {
+                                                    setState(() {
+                                                      tappedIndex_ =
+                                                          index.toString();
+                                                    });
+                                                  },
+                                                  title: Row(children: [
+                                                    SizedBox(
+                                                        width: 80,
+                                                        child: (Select_Cus_index
+                                                                    .contains(
+                                                                        index) ==
+                                                                true)
+                                                            ? IconButton(
                                                                 onPressed: () {
-                                                                  showDialog<
-                                                                      String>(
-                                                                    context:
-                                                                        context,
-                                                                    builder: (BuildContext
-                                                                            context) =>
-                                                                        AlertDialog(
-                                                                      shape: const RoundedRectangleBorder(
-                                                                          borderRadius:
-                                                                              BorderRadius.all(Radius.circular(20.0))),
-                                                                      // title: const Center(
-                                                                      //     child: Text(
-                                                                      //   'เพิ่มข้อมูล',
-                                                                      //   style: TextStyle(
-                                                                      //       color:
-                                                                      //           AdminScafScreen_Color.Colors_Text1_,
-                                                                      //       fontWeight: FontWeight.bold,
-                                                                      //       fontFamily: FontWeight_.Fonts_T),
-                                                                      // )),
-                                                                      content:
-                                                                          SingleChildScrollView(
-                                                                        child:
-                                                                            ListBody(
-                                                                          children: <Widget>[
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.all(8.0),
-                                                                              child: Container(
-                                                                                  decoration: BoxDecoration(
-                                                                                    color: Colors.white.withOpacity(0.3),
-                                                                                    borderRadius: const BorderRadius.only(
-                                                                                      topLeft: Radius.circular(15),
-                                                                                      topRight: Radius.circular(15),
-                                                                                      bottomLeft: Radius.circular(15),
-                                                                                      bottomRight: Radius.circular(15),
-                                                                                    ),
-                                                                                    border: Border.all(color: Colors.grey, width: 1),
-                                                                                  ),
-                                                                                  padding: const EdgeInsets.all(8.0),
-                                                                                  child: StreamBuilder(
-                                                                                      stream: Stream.periodic(const Duration(seconds: 0)),
-                                                                                      builder: (context, snapshot) {
-                                                                                        return RadioGroup<TypeModel>.builder(
-                                                                                          direction: Axis.horizontal,
-                                                                                          groupValue: typeModels.elementAt(int.parse(customerModels[index].typeser!)),
-                                                                                          horizontalAlignment: MainAxisAlignment.spaceAround,
-                                                                                          onChanged: (value) async {
-                                                                                            setState(() {
-                                                                                              Value_AreaSer_ = int.parse(value!.ser!) - 1;
-                                                                                              _verticalGroupValue = value.type!;
-                                                                                            });
-                                                                                            print(Value_AreaSer_);
-                                                                                            print(
-                                                                                              'typeModels: ${typeModels.elementAt(Value_AreaSer_).type}',
-                                                                                            );
-                                                                                            updated_Customer(customerModels[index].scname, customerModels[index].stype, Value_AreaSer_, _verticalGroupValue, customerModels[index].cname, customerModels[index].attn, customerModels[index].addr1, customerModels[index].tel, customerModels[index].tax, customerModels[index].email, index);
-                                                                                          },
-                                                                                          items: typeModels,
-                                                                                          textStyle: const TextStyle(
-                                                                                            fontSize: 15,
-                                                                                            color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                          ),
-                                                                                          itemBuilder: (typeXModels) => RadioButtonBuilder(
-                                                                                            typeXModels.type!,
-                                                                                          ),
-                                                                                        );
-                                                                                      })),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      actions: <Widget>[
-                                                                        Column(
-                                                                          children: [
-                                                                            const SizedBox(
-                                                                              height: 5.0,
-                                                                            ),
-                                                                            const Divider(
-                                                                              color: Colors.grey,
-                                                                              height: 4.0,
-                                                                            ),
-                                                                            const SizedBox(
-                                                                              height: 5.0,
-                                                                            ),
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.all(8.0),
-                                                                              child: Row(
-                                                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                                                children: [
-                                                                                  Padding(
-                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                    child: Row(
-                                                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                                                      children: [
-                                                                                        Container(
-                                                                                          width: 100,
-                                                                                          decoration: const BoxDecoration(
-                                                                                            color: Colors.redAccent,
-                                                                                            borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                                          ),
-                                                                                          padding: const EdgeInsets.all(8.0),
-                                                                                          child: TextButton(
-                                                                                            onPressed: () => Navigator.pop(context, 'OK'),
-                                                                                            child: const Text(
-                                                                                              'ปิด',
-                                                                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ],
-                                                                                    ),
-                                                                                  ),
-                                                                                ],
-                                                                              ),
-                                                                            ),
-                                                                          ],
-                                                                        ),
-                                                                      ],
-                                                                    ),
-                                                                  );
+                                                                  setState(() {
+                                                                    Select_Cus_index
+                                                                        .remove(
+                                                                            index);
+                                                                  });
                                                                 },
                                                                 icon: Icon(
-                                                                    Icons.edit))
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .scname,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                            // inputFormatters: [
-                                                            //   FilteringTextInputFormatter
-                                                            //       .deny(RegExp(
-                                                            //           r'\s')),
-                                                            //   // FilteringTextInputFormatter
-                                                            //   //     .deny(RegExp(
-                                                            //   //         r'^0')),
-                                                            //   FilteringTextInputFormatter
-                                                            //       .allow(RegExp(
-                                                            //           r'[0-9 .]')),
-                                                            // ],
-                                                          ),
-                                                        ),
-
-                                                        //  AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].scname}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T
-                                                        // ),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .stype,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                          ),
-                                                        ),
-
-                                                        // AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].stype}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .cname,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                          ),
-                                                        ),
-
-                                                        // AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].cname}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .attn,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                          ),
-                                                        ),
-
-                                                        //  AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].attn}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .addr1,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                          ),
-                                                        ),
-
-                                                        //  AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].addr1}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .tel,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                            inputFormatters: [
-                                                              FilteringTextInputFormatter
-                                                                  .deny(RegExp(
-                                                                      r'\s')),
-                                                              // FilteringTextInputFormatter
-                                                              //     .deny(RegExp(
-                                                              //         r'^0')),
-                                                              FilteringTextInputFormatter
-                                                                  .allow(RegExp(
-                                                                      r'[0-9 .]')),
-                                                            ],
-                                                          ),
-                                                        ),
-
-                                                        //  AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].tel}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .email,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tax,
-                                                                  value,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                          ),
-                                                        ),
-
-                                                        // AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].email}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(4.0),
-                                                          child: TextFormField(
-                                                            style: TextStyle(
-                                                                fontFamily: Font_
-                                                                    .Fonts_T,
-                                                                fontSize: 12),
-                                                            textAlign:
-                                                                TextAlign.end,
-                                                            // controller:
-                                                            //     Add_Number_area_,
-                                                            validator: (value) {
-                                                              if (value ==
-                                                                      null ||
-                                                                  value
-                                                                      .isEmpty) {
-                                                                return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                              }
-                                                              // if (int.parse(value.toString()) < 13) {
-                                                              //   return '< 13';
-                                                              // }
-                                                              return null;
-                                                            },
-                                                            initialValue:
-                                                                customerModels[
-                                                                        index]
-                                                                    .tax,
-                                                            onFieldSubmitted:
-                                                                (value) async {
-                                                              updated_Customer(
-                                                                  customerModels[
-                                                                          index]
-                                                                      .scname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .stype,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .typeser,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .type,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .cname,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .attn,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .addr1,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .tel,
-                                                                  value,
-                                                                  customerModels[
-                                                                          index]
-                                                                      .email,
-                                                                  index);
-                                                            },
-                                                            // maxLength: 4,
-                                                            cursorColor:
-                                                                Colors.green,
-                                                            decoration:
-                                                                InputDecoration(
-                                                                    fillColor: Colors
-                                                                        .white
-                                                                        .withOpacity(
-                                                                            0.3),
-                                                                    filled:
-                                                                        true,
-                                                                    // prefixIcon:
-                                                                    //     const Icon(Icons.person_pin, color: Colors.black),
-                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                    focusedBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .black,
-                                                                      ),
-                                                                    ),
-                                                                    enabledBorder:
-                                                                        const OutlineInputBorder(
-                                                                      borderRadius:
-                                                                          BorderRadius
-                                                                              .only(
-                                                                        topRight:
-                                                                            Radius.circular(15),
-                                                                        topLeft:
-                                                                            Radius.circular(15),
-                                                                        bottomRight:
-                                                                            Radius.circular(15),
-                                                                        bottomLeft:
-                                                                            Radius.circular(15),
-                                                                      ),
-                                                                      borderSide:
-                                                                          BorderSide(
-                                                                        width:
-                                                                            1,
-                                                                        color: Colors
-                                                                            .grey,
-                                                                      ),
-                                                                    ),
-                                                                    // labelText:
-                                                                    //     'เลขเรื่มต้น 1-xxx',
-                                                                    labelStyle:
-                                                                        const TextStyle(
-                                                                      fontSize:
-                                                                          12,
-                                                                      color: Colors
-                                                                          .black54,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T,
-                                                                    )),
-                                                          ),
-                                                        ),
-
-                                                        // AutoSizeText(
-                                                        //   minFontSize: 10,
-                                                        //   maxFontSize: 18,
-                                                        //   '${customerModels[index].tax}',
-                                                        //   textAlign:
-                                                        //       TextAlign.center,
-                                                        //   style:
-                                                        //       const TextStyle(
-                                                        //           color: CustomerScreen_Color
-                                                        //               .Colors_Text2_,
-                                                        //           // fontWeight: FontWeight.bold,
-                                                        //           fontFamily: Font_
-                                                        //               .Fonts_T),
-                                                        // ),
-                                                      ),
-                                                      Expanded(
-                                                        flex: 1,
-                                                        child: InkWell(
-                                                          child: Container(
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              color: (ADD_Cus_finished
-                                                                          .contains(
-                                                                              index) ==
-                                                                      true)
-                                                                  ? Colors.grey
-                                                                  : Colors
-                                                                      .green,
-                                                              borderRadius: const BorderRadius
-                                                                      .only(
-                                                                  topLeft:
-                                                                      Radius.circular(
-                                                                          15),
-                                                                  topRight: Radius
-                                                                      .circular(
-                                                                          15),
-                                                                  bottomLeft: Radius
-                                                                      .circular(
-                                                                          15),
-                                                                  bottomRight: Radius
-                                                                      .circular(
-                                                                          15)),
-                                                            ),
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Center(
-                                                              child:
-                                                                  AutoSizeText(
-                                                                minFontSize: 10,
-                                                                maxFontSize: 18,
-                                                                'เพิ่ม',
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                style: const TextStyle(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold,
-                                                                    fontFamily:
-                                                                        Font_
-                                                                            .Fonts_T),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          onTap: (ADD_Cus_finished
-                                                                      .contains(
-                                                                          index) ==
-                                                                  true)
-                                                              ? null
-                                                              : () async {
+                                                                  Icons
+                                                                      .check_box,
+                                                                  color: Colors
+                                                                      .red,
+                                                                ))
+                                                            : IconButton(
+                                                                onPressed: () {
                                                                   setState(() {
-                                                                    tappedIndex_ =
-                                                                        index
-                                                                            .toString();
+                                                                    Select_Cus_index
+                                                                        .add(
+                                                                            index);
                                                                   });
-                                                                  var scname_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .scname!;
-                                                                  var stype_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .stype!;
-
-                                                                  var type_ = customerModels[
-                                                                          index]
-                                                                      .type
-                                                                      .toString()
-                                                                      .trim();
-
-                                                                  var cname_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .cname!;
-
-                                                                  var attn_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .attn!;
-
-                                                                  var addr1_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .addr1!;
-
-                                                                  var tel_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .tel!;
-
-                                                                  var tax_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .tax!;
-                                                                  var email_ =
-                                                                      customerModels[
-                                                                              index]
-                                                                          .email!;
-
-                                                                  showDialog<
-                                                                      String>(
-                                                                    context:
-                                                                        context,
-                                                                    builder: (BuildContext
-                                                                            context) =>
-                                                                        StreamBuilder(
-                                                                            stream:
-                                                                                Stream.periodic(const Duration(seconds: 0)),
-                                                                            builder: (context, snapshot) {
-                                                                              return AlertDialog(
-                                                                                shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20.0))),
-                                                                                title: const Center(
-                                                                                    child: Text(
-                                                                                  'เพิ่มข้อมูล',
-                                                                                  style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
-                                                                                )),
-                                                                                content: SingleChildScrollView(
-                                                                                  child: ListBody(
-                                                                                    children: <Widget>[
-                                                                                      Text(
-                                                                                        'ลำดับ : ${index + 1}',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ประเภท : $type_  }',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ชื่อร้านค้า : $scname_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ประเภทร้านค้า : $stype_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ชื่อผู้เช่า/บริษัท : $cname_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ชื่อผู้ติดต่อ : $attn_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ที่อยู่ : $addr1_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'เบอร์โทร : $tel_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'อีเมล : $email_',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                      Text(
-                                                                                        'ID/TAX ID : $tax_ ',
-                                                                                        style: const TextStyle(
-                                                                                            color: CustomerScreen_Color.Colors_Text2_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
+                                                                },
+                                                                icon: Icon(Icons
+                                                                    .check_box_outline_blank))),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Row(
+                                                        children: [
+                                                          Expanded(
+                                                            child: AutoSizeText(
+                                                              minFontSize: 10,
+                                                              maxFontSize: 12,
+                                                              '${customerModels[index].type}',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              style:
+                                                                  const TextStyle(
+                                                                      color: CustomerScreen_Color
+                                                                          .Colors_Text2_,
+                                                                      // fontWeight: FontWeight.bold,
+                                                                      fontFamily:
+                                                                          Font_
+                                                                              .Fonts_T),
+                                                            ),
+                                                          ),
+                                                          IconButton(
+                                                              onPressed: () {
+                                                                showDialog<
+                                                                    String>(
+                                                                  context:
+                                                                      context,
+                                                                  builder: (BuildContext
+                                                                          context) =>
+                                                                      AlertDialog(
+                                                                    shape: const RoundedRectangleBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius.all(Radius.circular(20.0))),
+                                                                    // title: const Center(
+                                                                    //     child: Text(
+                                                                    //   'เพิ่มข้อมูล',
+                                                                    //   style: TextStyle(
+                                                                    //       color:
+                                                                    //           AdminScafScreen_Color.Colors_Text1_,
+                                                                    //       fontWeight: FontWeight.bold,
+                                                                    //       fontFamily: FontWeight_.Fonts_T),
+                                                                    // )),
+                                                                    content:
+                                                                        SingleChildScrollView(
+                                                                      child:
+                                                                          ListBody(
+                                                                        children: <Widget>[
+                                                                          Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(8.0),
+                                                                            child: Container(
+                                                                                decoration: BoxDecoration(
+                                                                                  color: Colors.white.withOpacity(0.3),
+                                                                                  borderRadius: const BorderRadius.only(
+                                                                                    topLeft: Radius.circular(15),
+                                                                                    topRight: Radius.circular(15),
+                                                                                    bottomLeft: Radius.circular(15),
+                                                                                    bottomRight: Radius.circular(15),
+                                                                                  ),
+                                                                                  border: Border.all(color: Colors.grey, width: 1),
+                                                                                ),
+                                                                                padding: const EdgeInsets.all(8.0),
+                                                                                child: StreamBuilder(
+                                                                                    stream: Stream.periodic(const Duration(seconds: 0)),
+                                                                                    builder: (context, snapshot) {
+                                                                                      return Wrap(
+                                                                                        spacing: 12,
+                                                                                        runSpacing: 8,
+                                                                                        alignment: WrapAlignment.spaceAround,
+                                                                                        children: typeModels.map((typeXModels) {
+                                                                                          return GestureDetector(
+                                                                                            onTap: () {
+                                                                                              setState(() {
+                                                                                                Value_AreaSer_ = int.parse(typeXModels.ser!) - 1;
+                                                                                                _verticalGroupValue = typeXModels.type!;
+                                                                                              });
+                                                                                              updated_Customer(customerModels[index].scname, customerModels[index].stype, Value_AreaSer_, _verticalGroupValue, customerModels[index].cname, customerModels[index].attn, customerModels[index].addr1, customerModels[index].tel, customerModels[index].tax, customerModels[index].email, customerModels[index].religion ?? '-', customerModels[index].national ?? '-', customerModels[index].birth ?? '-', index);
+                                                                                            },
+                                                                                            child: Row(
+                                                                                              mainAxisSize: MainAxisSize.min,
+                                                                                              children: [
+                                                                                                Radio<TypeModel>(
+                                                                                                  value: typeXModels,
+                                                                                                  groupValue: typeModels.elementAt(int.parse(customerModels[index].typeser!)),
+                                                                                                  onChanged: (value) {
+                                                                                                    if (value == null) return;
+                                                                                                    setState(() {
+                                                                                                      Value_AreaSer_ = int.parse(value.ser!) - 1;
+                                                                                                      _verticalGroupValue = value.type!;
+                                                                                                    });
+                                                                                                    updated_Customer(customerModels[index].scname, customerModels[index].stype, Value_AreaSer_, _verticalGroupValue, customerModels[index].cname, customerModels[index].attn, customerModels[index].addr1, customerModels[index].tel, customerModels[index].tax, customerModels[index].email, customerModels[index].religion ?? '-', customerModels[index].national ?? '-', customerModels[index].birth ?? '-', index);
+                                                                                                  },
+                                                                                                  activeColor: const Color(0xFF102456),
+                                                                                                ),
+                                                                                                Text(
+                                                                                                  typeXModels.type!,
+                                                                                                  style: const TextStyle(
+                                                                                                    fontSize: 15,
+                                                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+                                                                                          );
+                                                                                        }).toList(),
+                                                                                      );
+                                                                                    })),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ),
+                                                                    actions: <Widget>[
+                                                                      Column(
+                                                                        children: [
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                5.0,
+                                                                          ),
+                                                                          const Divider(
+                                                                            color:
+                                                                                Colors.grey,
+                                                                            height:
+                                                                                4.0,
+                                                                          ),
+                                                                          const SizedBox(
+                                                                            height:
+                                                                                5.0,
+                                                                          ),
+                                                                          Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(8.0),
+                                                                            child:
+                                                                                Row(
+                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                              children: [
+                                                                                Padding(
+                                                                                  padding: const EdgeInsets.all(8.0),
+                                                                                  child: Row(
+                                                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                                                    children: [
+                                                                                      Container(
+                                                                                        width: 100,
+                                                                                        decoration: const BoxDecoration(
+                                                                                          color: Colors.redAccent,
+                                                                                          borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                        ),
+                                                                                        padding: const EdgeInsets.all(8.0),
+                                                                                        child: TextButton(
+                                                                                          onPressed: () => Navigator.pop(context, 'OK'),
+                                                                                          child: const Text(
+                                                                                            'ปิด',
+                                                                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                          ),
+                                                                                        ),
                                                                                       ),
                                                                                     ],
                                                                                   ),
                                                                                 ),
-                                                                                actions: <Widget>[
-                                                                                  Column(
-                                                                                    children: [
-                                                                                      const SizedBox(
-                                                                                        height: 5.0,
-                                                                                      ),
-                                                                                      const Divider(
-                                                                                        color: Colors.grey,
-                                                                                        height: 4.0,
-                                                                                      ),
-                                                                                      const SizedBox(
-                                                                                        height: 5.0,
-                                                                                      ),
-                                                                                      Padding(
-                                                                                        padding: const EdgeInsets.all(8.0),
-                                                                                        child: Row(
-                                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                                          children: [
-                                                                                            Padding(
-                                                                                              padding: const EdgeInsets.all(8.0),
-                                                                                              child: Container(
-                                                                                                width: 100,
-                                                                                                decoration: const BoxDecoration(
-                                                                                                  color: Colors.green,
-                                                                                                  borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                                                ),
-                                                                                                padding: const EdgeInsets.all(8.0),
-                                                                                                child: TextButton(
-                                                                                                  onPressed: () async {
-                                                                                                    SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                                                    var ren = preferences.getString('renTalSer');
-                                                                                                    var user = preferences.getString('ser');
-                                                                                                    String url = '${MyConstant().domain}/InC_CustoAdd_Bureau.php?isAdd=true&ren=$ren';
-                                                                                                    try {
-                                                                                                      var response = await http.post(Uri.parse(url), body: {
-                                                                                                        'ciddoc': '',
-                                                                                                        'qutser': '',
-                                                                                                        'user': '',
-                                                                                                        'sumdis': '',
-                                                                                                        'sumdisp': '',
-                                                                                                        'dateY': '',
-                                                                                                        'dateY1': '',
-                                                                                                        'time': '',
-                                                                                                        'payment1': '',
-                                                                                                        'payment2': '',
-                                                                                                        'pSer1': '',
-                                                                                                        'pSer2': '',
-                                                                                                        'sum_whta': '',
-                                                                                                        'bill': '',
-                                                                                                        'fileNameSlip': '',
-                                                                                                        'areaSer': (type_ == 'ส่วนตัว/บุคคลธรรมดา') ? '1' : '2',
-                                                                                                        'typeModels': '${type_}',
-                                                                                                        'typeshop': stype_,
-                                                                                                        'nameshop': scname_,
-                                                                                                        'bussshop': cname_,
-                                                                                                        'bussscontact': attn_,
-                                                                                                        'address': addr1_,
-                                                                                                        'tel': tel_,
-                                                                                                        'tax': tax_,
-                                                                                                        'email': email_,
-                                                                                                        'Serbool': '',
-                                                                                                        'area_rent_sum': '',
-                                                                                                        'comment': '',
-                                                                                                        'zser': ''.trim().toString(),
-                                                                                                      }).then((value) => {
-                                                                                                            setState(() {
-                                                                                                              ADD_Cus_finished.add(index);
-                                                                                                              Navigator.pop(context, 'OK');
-                                                                                                            })
-                                                                                                          });
-                                                                                                    } catch (e) {
-                                                                                                      Navigator.pop(context, 'OK');
-                                                                                                    }
-                                                                                                  },
-                                                                                                  child: const Text(
-                                                                                                    'ยืนยัน',
-                                                                                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ),
-                                                                                            ),
-                                                                                            Padding(
-                                                                                              padding: const EdgeInsets.all(8.0),
-                                                                                              child: Row(
-                                                                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                                                                children: [
-                                                                                                  Container(
-                                                                                                    width: 100,
-                                                                                                    decoration: const BoxDecoration(
-                                                                                                      color: Colors.redAccent,
-                                                                                                      borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                                                    ),
-                                                                                                    padding: const EdgeInsets.all(8.0),
-                                                                                                    child: TextButton(
-                                                                                                      onPressed: () => Navigator.pop(context, 'OK'),
-                                                                                                      child: const Text(
-                                                                                                        'ยกเลิก',
-                                                                                                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ],
-                                                                                              ),
-                                                                                            ),
-                                                                                          ],
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ],
-                                                                              );
-                                                                            }),
-                                                                  );
-
-                                                                  print(
-                                                                      '${scname_},  ${email_}');
-                                                                },
+                                                                              ],
+                                                                            ),
+                                                                          ),
+                                                                        ],
+                                                                      ),
+                                                                    ],
+                                                                  ),
+                                                                );
+                                                              },
+                                                              icon: Icon(
+                                                                  Icons.edit))
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .scname,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                          // inputFormatters: [
+                                                          //   FilteringTextInputFormatter
+                                                          //       .deny(RegExp(
+                                                          //           r'\s')),
+                                                          //   // FilteringTextInputFormatter
+                                                          //   //     .deny(RegExp(
+                                                          //   //         r'^0')),
+                                                          //   FilteringTextInputFormatter
+                                                          //       .allow(RegExp(
+                                                          //           r'[0-9 .]')),
+                                                          // ],
                                                         ),
                                                       ),
-                                                    ]))));
-                                      })),
-                            ),
+
+                                                      //  AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].scname}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T
+                                                      // ),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .stype,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                        ),
+                                                      ),
+
+                                                      // AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].stype}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .cname,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                        ),
+                                                      ),
+
+                                                      // AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].cname}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .attn,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                        ),
+                                                      ),
+
+                                                      //  AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].attn}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .addr1,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                        ),
+                                                      ),
+
+                                                      //  AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].addr1}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .tel,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                          inputFormatters: [
+                                                            FilteringTextInputFormatter
+                                                                .deny(RegExp(
+                                                                    r'\s')),
+                                                            // FilteringTextInputFormatter
+                                                            //     .deny(RegExp(
+                                                            //         r'^0')),
+                                                            FilteringTextInputFormatter
+                                                                .allow(RegExp(
+                                                                    r'[0-9 .]')),
+                                                          ],
+                                                        ),
+                                                      ),
+
+                                                      //  AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].tel}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .email,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tax,
+                                                                value,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                        ),
+                                                      ),
+
+                                                      // AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].email}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(4.0),
+                                                        child: TextFormField(
+                                                          style: TextStyle(
+                                                              fontFamily:
+                                                                  Font_.Fonts_T,
+                                                              fontSize: 12),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          // controller:
+                                                          //     Add_Number_area_,
+                                                          validator: (value) {
+                                                            if (value == null ||
+                                                                value.isEmpty) {
+                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                            }
+                                                            // if (int.parse(value.toString()) < 13) {
+                                                            //   return '< 13';
+                                                            // }
+                                                            return null;
+                                                          },
+                                                          initialValue:
+                                                              customerModels[
+                                                                      index]
+                                                                  .tax,
+                                                          onFieldSubmitted:
+                                                              (value) async {
+                                                            updated_Customer(
+                                                                customerModels[
+                                                                        index]
+                                                                    .scname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .stype,
+                                                                customerModels[
+                                                                        index]
+                                                                    .typeser,
+                                                                customerModels[
+                                                                        index]
+                                                                    .type,
+                                                                customerModels[
+                                                                        index]
+                                                                    .cname,
+                                                                customerModels[
+                                                                        index]
+                                                                    .attn,
+                                                                customerModels[
+                                                                        index]
+                                                                    .addr1,
+                                                                customerModels[
+                                                                        index]
+                                                                    .tel,
+                                                                value,
+                                                                customerModels[
+                                                                        index]
+                                                                    .email,
+                                                                customerModels[
+                                                                            index]
+                                                                        .religion ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .national ??
+                                                                    '-',
+                                                                customerModels[
+                                                                            index]
+                                                                        .birth ??
+                                                                    '-',
+                                                                index);
+                                                          },
+                                                          // maxLength: 4,
+                                                          cursorColor:
+                                                              Colors.green,
+                                                          decoration:
+                                                              InputDecoration(
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person_pin, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              15),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              15),
+                                                                    ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText:
+                                                                  //     'เลขเรื่มต้น 1-xxx',
+                                                                  labelStyle:
+                                                                      const TextStyle(
+                                                                    fontSize:
+                                                                        12,
+                                                                    color: Colors
+                                                                        .black54,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                  )),
+                                                        ),
+                                                      ),
+
+                                                      // AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 18,
+                                                      //   '${customerModels[index].tax}',
+                                                      //   textAlign:
+                                                      //       TextAlign.center,
+                                                      //   style:
+                                                      //       const TextStyle(
+                                                      //           color: CustomerScreen_Color
+                                                      //               .Colors_Text2_,
+                                                      //           // fontWeight: FontWeight.bold,
+                                                      //           fontFamily: Font_
+                                                      //               .Fonts_T),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 18,
+                                                        '${customerModels[index].religion ?? '-'}',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                            color: CustomerScreen_Color
+                                                                .Colors_Text2_,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 18,
+                                                        '${customerModels[index].national ?? '-'}',
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                            color: CustomerScreen_Color
+                                                                .Colors_Text2_,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 18,
+                                                        _formatDateForDisplay(
+                                                            customerModels[
+                                                                    index]
+                                                                .birth),
+                                                        textAlign:
+                                                            TextAlign.center,
+                                                        style: const TextStyle(
+                                                            color: CustomerScreen_Color
+                                                                .Colors_Text2_,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: GestureDetector(
+                                                        child: Container(
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: (ADD_Cus_finished
+                                                                        .contains(
+                                                                            index) ==
+                                                                    true)
+                                                                ? Colors.grey
+                                                                : Colors.green,
+                                                            borderRadius: const BorderRadius
+                                                                    .only(
+                                                                topLeft: Radius
+                                                                    .circular(
+                                                                        15),
+                                                                topRight: Radius
+                                                                    .circular(
+                                                                        15),
+                                                                bottomLeft: Radius
+                                                                    .circular(
+                                                                        15),
+                                                                bottomRight: Radius
+                                                                    .circular(
+                                                                        15)),
+                                                          ),
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .all(8.0),
+                                                          child: Center(
+                                                            child: AutoSizeText(
+                                                              minFontSize: 10,
+                                                              maxFontSize: 18,
+                                                              'เพิ่ม',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .center,
+                                                              style: const TextStyle(
+                                                                  color: Colors
+                                                                      .white,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        onTap: (ADD_Cus_finished
+                                                                    .contains(
+                                                                        index) ==
+                                                                true)
+                                                            ? null
+                                                            : () async {
+                                                                setState(() {
+                                                                  tappedIndex_ =
+                                                                      index
+                                                                          .toString();
+                                                                });
+                                                                var scname_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .scname!;
+                                                                var stype_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .stype!;
+
+                                                                var type_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .type
+                                                                        .toString()
+                                                                        .trim();
+
+                                                                var cname_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .cname!;
+
+                                                                var attn_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .attn!;
+
+                                                                var addr1_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .addr1!;
+
+                                                                var tel_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .tel!;
+
+                                                                var tax_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .tax!;
+                                                                var email_ =
+                                                                    customerModels[
+                                                                            index]
+                                                                        .email!;
+                                                                var religion_ =
+                                                                    customerModels[index]
+                                                                            .religion ??
+                                                                        '-';
+                                                                var national_ =
+                                                                    customerModels[index]
+                                                                            .national ??
+                                                                        '-';
+                                                                var birth_ =
+                                                                    customerModels[index]
+                                                                            .birth ??
+                                                                        '-';
+
+                                                                showDialog<
+                                                                    String>(
+                                                                  context:
+                                                                      context,
+                                                                  builder: (BuildContext
+                                                                          context) =>
+                                                                      StreamBuilder(
+                                                                          stream: Stream.periodic(const Duration(
+                                                                              seconds:
+                                                                                  0)),
+                                                                          builder:
+                                                                              (context, snapshot) {
+                                                                            return AlertDialog(
+                                                                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20.0))),
+                                                                              title: const Center(
+                                                                                  child: Text(
+                                                                                'เพิ่มข้อมูล',
+                                                                                style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                              )),
+                                                                              content: SingleChildScrollView(
+                                                                                child: ListBody(
+                                                                                  children: <Widget>[
+                                                                                    Text(
+                                                                                      'ลำดับ : ${index + 1}',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ประเภท : $type_  }',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ชื่อร้านค้า : $scname_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ประเภทร้านค้า : $stype_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ชื่อผู้เช่า/บริษัท : $cname_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ชื่อผู้ติดต่อ : $attn_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ที่อยู่ : $addr1_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'เบอร์โทร : $tel_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'อีเมล : $email_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ID/TAX ID : $tax_ ',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'ศาสนา : $religion_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'สัญชาติ : $national_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                    Text(
+                                                                                      'วันเกิด : $birth_',
+                                                                                      style: const TextStyle(
+                                                                                          color: CustomerScreen_Color.Colors_Text2_,
+                                                                                          // fontWeight: FontWeight.bold,
+                                                                                          fontFamily: Font_.Fonts_T),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ),
+                                                                              actions: <Widget>[
+                                                                                Column(
+                                                                                  children: [
+                                                                                    const SizedBox(
+                                                                                      height: 5.0,
+                                                                                    ),
+                                                                                    const Divider(
+                                                                                      color: Colors.grey,
+                                                                                      height: 4.0,
+                                                                                    ),
+                                                                                    const SizedBox(
+                                                                                      height: 5.0,
+                                                                                    ),
+                                                                                    Padding(
+                                                                                      padding: const EdgeInsets.all(8.0),
+                                                                                      child: Row(
+                                                                                        mainAxisAlignment: MainAxisAlignment.center,
+                                                                                        children: [
+                                                                                          Padding(
+                                                                                            padding: const EdgeInsets.all(8.0),
+                                                                                            child: Container(
+                                                                                              width: 100,
+                                                                                              decoration: const BoxDecoration(
+                                                                                                color: Colors.green,
+                                                                                                borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                              ),
+                                                                                              padding: const EdgeInsets.all(8.0),
+                                                                                              child: TextButton(
+                                                                                                onPressed: () async {
+                                                                                                  SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                                  var ren = preferences.getString('renTalSer');
+                                                                                                  var user = preferences.getString('ser');
+                                                                                                  String url = '${MyConstant().domain}/InC_CustoAdd_Bureau.php?isAdd=true&ren=$ren';
+                                                                                                  try {
+                                                                                                    var response = await http.post(Uri.parse(url), body: {
+                                                                                                      'ciddoc': '',
+                                                                                                      'qutser': '',
+                                                                                                      'user': '',
+                                                                                                      'sumdis': '',
+                                                                                                      'sumdisp': '',
+                                                                                                      'dateY': '',
+                                                                                                      'dateY1': '',
+                                                                                                      'time': '',
+                                                                                                      'payment1': '',
+                                                                                                      'payment2': '',
+                                                                                                      'pSer1': '',
+                                                                                                      'pSer2': '',
+                                                                                                      'sum_whta': '',
+                                                                                                      'bill': '',
+                                                                                                      'fileNameSlip': '',
+                                                                                                      'areaSer': (type_ == 'ส่วนตัว/บุคคลธรรมดา') ? '1' : '2',
+                                                                                                      'typeModels': '${type_}',
+                                                                                                      'typeshop': stype_,
+                                                                                                      'nameshop': scname_,
+                                                                                                      'bussshop': cname_,
+                                                                                                      'bussscontact': attn_,
+                                                                                                      'address': addr1_,
+                                                                                                      'tel': tel_.replaceAll(RegExp(r'[^0-9]'), ''),
+                                                                                                      'tax': tax_.replaceAll(RegExp(r'[^0-9]'), ''),
+                                                                                                      'email': email_,
+                                                                                                      'Serbool': '',
+                                                                                                      'area_rent_sum': '',
+                                                                                                      'comment': '',
+                                                                                                      'zser': ''.trim().toString(),
+                                                                                                      'religion': religion_,
+                                                                                                      'national': national_,
+                                                                                                      'birth': birth_,
+                                                                                                    }).then((value) => {
+                                                                                                          setState(() {
+                                                                                                            ADD_Cus_finished.add(index);
+                                                                                                            Navigator.pop(context, 'OK');
+                                                                                                          })
+                                                                                                        });
+                                                                                                  } catch (e) {
+                                                                                                    Navigator.pop(context, 'OK');
+                                                                                                  }
+                                                                                                },
+                                                                                                child: const Text(
+                                                                                                  'ยืนยัน',
+                                                                                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                                ),
+                                                                                              ),
+                                                                                            ),
+                                                                                          ),
+                                                                                          Padding(
+                                                                                            padding: const EdgeInsets.all(8.0),
+                                                                                            child: Row(
+                                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                                              children: [
+                                                                                                Container(
+                                                                                                  width: 100,
+                                                                                                  decoration: const BoxDecoration(
+                                                                                                    color: Colors.redAccent,
+                                                                                                    borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                                  ),
+                                                                                                  padding: const EdgeInsets.all(8.0),
+                                                                                                  child: TextButton(
+                                                                                                    onPressed: () => Navigator.pop(context, 'OK'),
+                                                                                                    child: const Text(
+                                                                                                      'ยกเลิก',
+                                                                                                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ],
+                                                                                            ),
+                                                                                          ),
+                                                                                        ],
+                                                                                      ),
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ],
+                                                                            );
+                                                                          }),
+                                                                );
+
+                                                                //print(
+                                                                //    '${scname_},  ${email_}');
+                                                              },
+                                                      ),
+                                                    ),
+                                                  ]))));
+                                    })),
                           ),
-                        ],
-                      ),
-
-                      //  Padding(
-                      //     padding: const EdgeInsets.all(8.0),
-                      //     child: Container(
-                      //         decoration: const BoxDecoration(
-                      //           color: AppbackgroundColor.Sub_Abg_Colors,
-                      //           borderRadius: BorderRadius.only(
-                      //               topLeft: Radius.circular(10),
-                      //               topRight: Radius.circular(10),
-                      //               bottomLeft: Radius.circular(10),
-                      //               bottomRight: Radius.circular(10)),
-                      //         ),
-                      //         child: ScrollConfiguration(
-                      //           behavior: ScrollConfiguration.of(context)
-                      //               .copyWith(dragDevices: {
-                      //             PointerDeviceKind.touch,
-                      //             PointerDeviceKind.mouse,
-                      //           }),
-                      //           child: SingleChildScrollView(
-                      //               scrollDirection: Axis.horizontal,
-                      //               child: Row(children: [
-
-                      //               ])),
-                      //         )))
+                        ),
+                      ],
                     ),
-                  ],
-                ),
+
+                    //  Padding(
+                    //     padding: const EdgeInsets.all(8.0),
+                    //     child: Container(
+                    //         decoration: const BoxDecoration(
+                    //           color: AppbackgroundColor.Sub_Abg_Colors,
+                    //           borderRadius: BorderRadius.only(
+                    //               topLeft: Radius.circular(10),
+                    //               topRight: Radius.circular(10),
+                    //               bottomLeft: Radius.circular(10),
+                    //               bottomRight: Radius.circular(10)),
+                    //         ),
+                    //         child: ScrollConfiguration(
+                    //           behavior: ScrollConfiguration.of(context)
+                    //               .copyWith(dragDevices: {
+                    //             PointerDeviceKind.touch,
+                    //             PointerDeviceKind.mouse,
+                    //           }),
+                    //           child: SingleChildScrollView(
+                    //               scrollDirection: Axis.horizontal,
+                    //               child: Row(children: [
+
+                    //               ])),
+                    //         )))
+                  ),
+                ],
               ),
             ),
-            Container(
-                child: Row(
-              children: [
-                const Expanded(
-                  flex: 2,
-                  child: AutoSizeText(
-                    minFontSize: 10,
-                    maxFontSize: 18,
-                    '',
-                    textAlign: TextAlign.center,
+          ),
+          Container(
+              child: Row(
+            children: [
+              const Expanded(
+                flex: 2,
+                child: AutoSizeText(
+                  minFontSize: 10,
+                  maxFontSize: 18,
+                  '',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: CustomerScreen_Color.Colors_Text1_,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: FontWeight_.Fonts_T
+                      //fontSize: 10.0
+                      //fontSize: 10.0
+                      ),
+                ),
+              ),
+              Expanded(
+                flex: 1,
+                child: Container(
+                  child: const AutoSizeText(
+                    minFontSize: 8,
+                    maxFontSize: 12,
+                    '**กด Enter ทุกครั้งที่มีการเปลี่ยนแปลงข้อมูล',
+                    textAlign: TextAlign.end,
                     style: TextStyle(
-                        color: CustomerScreen_Color.Colors_Text1_,
+                        color: Colors.red,
                         fontWeight: FontWeight.bold,
                         fontFamily: FontWeight_.Fonts_T
                         //fontSize: 10.0
@@ -2752,86 +3141,35 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
                         ),
                   ),
                 ),
-                Expanded(
-                  flex: 1,
-                  child: Container(
-                    child: const AutoSizeText(
-                      minFontSize: 8,
-                      maxFontSize: 12,
-                      '**กด Enter ทุกครั้งที่มีการเปลี่ยนแปลงข้อมูล',
-                      textAlign: TextAlign.end,
-                      style: TextStyle(
-                          color: Colors.red,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: FontWeight_.Fonts_T
-                          //fontSize: 10.0
-                          //fontSize: 10.0
-                          ),
-                    ),
-                  ),
-                ),
-              ],
-            )),
-            Container(
-                width: MediaQuery.of(context).size.width,
-                decoration: const BoxDecoration(
-                  color: AppbackgroundColor.Sub_Abg_Colors,
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(0),
-                      topRight: Radius.circular(0),
-                      bottomLeft: Radius.circular(10),
-                      bottomRight: Radius.circular(10)),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Row(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: InkWell(
-                              onTap: () {
-                                _scrollController1.animateTo(
-                                  0,
-                                  duration: const Duration(seconds: 1),
-                                  curve: Curves.easeOut,
-                                );
-                              },
-                              child: Container(
-                                  decoration: BoxDecoration(
-                                    // color: AppbackgroundColor
-                                    //     .TiTile_Colors,
-                                    borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(6),
-                                        topRight: Radius.circular(6),
-                                        bottomLeft: Radius.circular(6),
-                                        bottomRight: Radius.circular(8)),
-                                    border: Border.all(
-                                        color: Colors.grey, width: 1),
-                                  ),
-                                  padding: const EdgeInsets.all(3.0),
-                                  child: const Text(
-                                    'Top',
-                                    style: TextStyle(
-                                        color: Colors.grey,
-                                        fontSize: 10.0,
-                                        fontFamily: FontWeight_.Fonts_T),
-                                  )),
-                            ),
-                          ),
-                          InkWell(
+              ),
+            ],
+          )),
+          Container(
+              width: MediaQuery.of(context).size.width,
+              decoration: const BoxDecoration(
+                color: AppbackgroundColor.Sub_Abg_Colors,
+                borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(0),
+                    topRight: Radius.circular(0),
+                    bottomLeft: Radius.circular(10),
+                    bottomRight: Radius.circular(10)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: GestureDetector(
                             onTap: () {
-                              if (_scrollController1.hasClients) {
-                                final position =
-                                    _scrollController1.position.maxScrollExtent;
-                                _scrollController1.animateTo(
-                                  position,
-                                  duration: const Duration(seconds: 1),
-                                  curve: Curves.easeOut,
-                                );
-                              }
+                              _scrollController1.animateTo(
+                                0,
+                                duration: const Duration(seconds: 1),
+                                curve: Curves.easeOut,
+                              );
                             },
                             child: Container(
                                 decoration: BoxDecoration(
@@ -2841,39 +3179,33 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
                                       topLeft: Radius.circular(6),
                                       topRight: Radius.circular(6),
                                       bottomLeft: Radius.circular(6),
-                                      bottomRight: Radius.circular(6)),
+                                      bottomRight: Radius.circular(8)),
                                   border:
                                       Border.all(color: Colors.grey, width: 1),
                                 ),
                                 padding: const EdgeInsets.all(3.0),
                                 child: const Text(
-                                  'Down',
+                                  'Top',
                                   style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 10.0,
                                       fontFamily: FontWeight_.Fonts_T),
                                 )),
                           ),
-                        ],
-                      ),
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: Row(
-                        children: [
-                          InkWell(
-                            onTap: _moveUp1,
-                            child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Icon(
-                                    Icons.arrow_upward,
-                                    color: Colors.grey,
-                                  ),
-                                )),
-                          ),
-                          Container(
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            if (_scrollController1.hasClients) {
+                              final position =
+                                  _scrollController1.position.maxScrollExtent;
+                              _scrollController1.animateTo(
+                                position,
+                                duration: const Duration(seconds: 1),
+                                curve: Curves.easeOut,
+                              );
+                            }
+                          },
+                          child: Container(
                               decoration: BoxDecoration(
                                 // color: AppbackgroundColor
                                 //     .TiTile_Colors,
@@ -2887,542 +3219,477 @@ class _Add_Custo_EXC_ScreenState extends State<Add_Custo_EXC_Screen> {
                               ),
                               padding: const EdgeInsets.all(3.0),
                               child: const Text(
-                                'Scroll',
+                                'Down',
                                 style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 10.0,
                                     fontFamily: FontWeight_.Fonts_T),
                               )),
-                          InkWell(
-                            onTap: _moveDown1,
-                            child: const Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Icon(
-                                    Icons.arrow_downward,
-                                    color: Colors.grey,
-                                  ),
-                                )),
-                          ),
-                        ],
-                      ),
-                    )
-                  ],
-                )),
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.green[200],
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(8),
-                  topRight: Radius.circular(8),
-                  bottomLeft: Radius.circular(8),
-                  bottomRight: Radius.circular(8),
-                ),
-                border: Border.all(color: Colors.white, width: 2),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: AutoSizeText(
-                      minFontSize: 8,
-                      maxFontSize: 14,
-                      'รายการที่เลือกทั้งหมด : ${Select_Cus_index.length}',
-                      style: TextStyle(
-                        color: Colors.grey[800],
-                        // fontWeight: FontWeight.bold,
-                        fontFamily: FontWeight_.Fonts_T,
-                        fontWeight: FontWeight.bold,
-                      ),
+                        ),
+                      ],
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: InkWell(
-                      onTap: (Select_Cus_index.length == 0)
-                          ? null
-                          : () async {
-                              int serr_showDialog = 0;
-                              showDialog<String>(
-                                  context: context,
-                                  barrierDismissible: true,
-                                  builder: (BuildContext context) =>
-                                      StreamBuilder(
-                                          stream: Stream.periodic(
-                                              const Duration(seconds: 0)),
-                                          builder: (context, snapshot) {
-                                            return AlertDialog(
-                                              shape:
-                                                  const RoundedRectangleBorder(
-                                                      borderRadius:
-                                                          BorderRadius.all(
-                                                              Radius.circular(
-                                                                  20.0))),
-                                              title: Center(
-                                                child: (serr_showDialog == 1)
-                                                    ? Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(4.0),
-                                                        child:
-                                                            const CircularProgressIndicator())
-                                                    : Text(
-                                                        'ยืนยันการเพิ่มใช่หรือไม่',
-                                                        textAlign:
-                                                            TextAlign.center,
-                                                        style: TextStyle(
-                                                            color: Colors.black,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontFamily:
-                                                                FontWeight_
-                                                                    .Fonts_T),
-                                                      ),
-                                              ),
-                                              actions: <Widget>[
-                                                Column(
-                                                  children: [
-                                                    const SizedBox(
-                                                      height: 5.0,
-                                                    ),
-                                                    const Divider(
-                                                      color: Colors.grey,
-                                                      height: 4.0,
-                                                    ),
-                                                    const SizedBox(
-                                                      height: 5.0,
-                                                    ),
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .center,
-                                                        children: [
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Container(
-                                                              width: 100,
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: (serr_showDialog ==
-                                                                        1)
-                                                                    ? Colors.grey[
-                                                                        400]
-                                                                    : Colors
-                                                                        .green,
-                                                                borderRadius: BorderRadius.only(
-                                                                    topLeft: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    topRight: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    bottomLeft:
-                                                                        Radius.circular(
-                                                                            10),
-                                                                    bottomRight:
-                                                                        Radius.circular(
-                                                                            10)),
-                                                              ),
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: TextButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  setState(() {
-                                                                    serr_showDialog =
-                                                                        1;
-                                                                  });
-                                                                  SharedPreferences
-                                                                      preferences =
-                                                                      await SharedPreferences
-                                                                          .getInstance();
-                                                                  var ren = preferences
-                                                                      .getString(
-                                                                          'renTalSer');
-                                                                  var user = preferences
-                                                                      .getString(
-                                                                          'ser');
-                                                                  String url =
-                                                                      '${MyConstant().domain}/InC_CustoAdd_Bureau.php?isAdd=true&ren=$ren';
-                                                                  for (int index =
-                                                                          0;
-                                                                      index <
-                                                                          Select_Cus_index
-                                                                              .length;
-                                                                      index++) {
-                                                                    var scname_ =
-                                                                        customerModels[index]
-                                                                            .scname!;
-                                                                    var stype_ =
-                                                                        customerModels[index]
-                                                                            .stype!;
-
-                                                                    var type_ = customerModels[
-                                                                            index]
-                                                                        .type
-                                                                        .toString()
-                                                                        .trim();
-
-                                                                    var cname_ =
-                                                                        customerModels[index]
-                                                                            .cname!;
-
-                                                                    var attn_ =
-                                                                        customerModels[index]
-                                                                            .attn!;
-
-                                                                    var addr1_ =
-                                                                        customerModels[index]
-                                                                            .addr1!;
-
-                                                                    var tel_ =
-                                                                        customerModels[index]
-                                                                            .tel!;
-
-                                                                    var tax_ =
-                                                                        customerModels[index]
-                                                                            .tax!;
-                                                                    var email_ =
-                                                                        customerModels[index]
-                                                                            .email!;
-                                                                    try {
-                                                                      var response = await http.post(
-                                                                          Uri.parse(
-                                                                              url),
-                                                                          body: {
-                                                                            'ciddoc':
-                                                                                '',
-                                                                            'qutser':
-                                                                                '',
-                                                                            'user':
-                                                                                '',
-                                                                            'sumdis':
-                                                                                '',
-                                                                            'sumdisp':
-                                                                                '',
-                                                                            'dateY':
-                                                                                '',
-                                                                            'dateY1':
-                                                                                '',
-                                                                            'time':
-                                                                                '',
-                                                                            'payment1':
-                                                                                '',
-                                                                            'payment2':
-                                                                                '',
-                                                                            'pSer1':
-                                                                                '',
-                                                                            'pSer2':
-                                                                                '',
-                                                                            'sum_whta':
-                                                                                '',
-                                                                            'bill':
-                                                                                '',
-                                                                            'fileNameSlip':
-                                                                                '',
-                                                                            'areaSer': (type_ == 'ส่วนตัว/บุคคลธรรมดา')
-                                                                                ? '1'
-                                                                                : '2',
-                                                                            'typeModels':
-                                                                                '${type_}',
-                                                                            'typeshop':
-                                                                                stype_,
-                                                                            'nameshop':
-                                                                                scname_,
-                                                                            'bussshop':
-                                                                                cname_,
-                                                                            'bussscontact':
-                                                                                attn_,
-                                                                            'address':
-                                                                                addr1_,
-                                                                            'tel':
-                                                                                tel_,
-                                                                            'tax':
-                                                                                tax_,
-                                                                            'email':
-                                                                                email_,
-                                                                            'Serbool':
-                                                                                '',
-                                                                            'area_rent_sum':
-                                                                                '',
-                                                                            'comment':
-                                                                                '',
-                                                                            'zser':
-                                                                                ''.trim().toString(),
-                                                                          }).then(
-                                                                          (value) =>
-                                                                              {
-                                                                                setState(() {
-                                                                                  ADD_Cus_finished.add(index);
-                                                                                  // Navigator.pop(context, 'OK');
-                                                                                })
-                                                                              });
-                                                                    } catch (e) {
-                                                                      // Navigator.pop(context, 'OK');
-                                                                    }
-                                                                    if (index +
-                                                                            1 ==
-                                                                        Select_Cus_index
-                                                                            .length) {
-                                                                      ScaffoldMessenger.of(
-                                                                              context)
-                                                                          .showSnackBar(
-                                                                        SnackBar(
-                                                                            backgroundColor:
-                                                                                Colors.green,
-                                                                            content: Text('ทำรายการเสร็จสิ้น ...!!', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T))),
-                                                                      );
-                                                                      setState(
-                                                                          () {
-                                                                        serr_showDialog =
-                                                                            0;
-                                                                        Select_Cus_index
-                                                                            .clear();
-                                                                        Select_Cus_index
-                                                                            .clear();
-                                                                        customerModels
-                                                                            .clear();
-                                                                      });
-                                                                      Navigator.pop(
-                                                                          context,
-                                                                          'OK');
-                                                                    }
-                                                                  }
-                                                                },
-                                                                child:
-                                                                    const Text(
-                                                                  'ยืนยัน',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(8.0),
-                                                            child: Container(
-                                                              width: 100,
-                                                              decoration:
-                                                                  const BoxDecoration(
-                                                                color:
-                                                                    Colors.red,
-                                                                borderRadius: BorderRadius.only(
-                                                                    topLeft: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    topRight: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    bottomLeft:
-                                                                        Radius.circular(
-                                                                            10),
-                                                                    bottomRight:
-                                                                        Radius.circular(
-                                                                            10)),
-                                                              ),
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: TextButton(
-                                                                onPressed:
-                                                                    () async {
-                                                                  Navigator.pop(
-                                                                      context,
-                                                                      'OK');
-                                                                },
-                                                                child:
-                                                                    const Text(
-                                                                  'ปิด',
-                                                                  style: TextStyle(
-                                                                      color: Colors
-                                                                          .white,
-                                                                      fontWeight:
-                                                                          FontWeight
-                                                                              .bold,
-                                                                      fontFamily:
-                                                                          FontWeight_
-                                                                              .Fonts_T),
-                                                                ),
-                                                              ),
-                                                            ),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ),
-                                                  ],
-                                                )
-                                              ],
-                                            );
-                                          }));
-                            },
-                      child: Container(
-                        width: 120,
-                        decoration: BoxDecoration(
-                          color: (Select_Cus_index.length == 0)
-                              ? Colors.blue[100]
-                              : Colors.blue,
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(8),
-                            topRight: Radius.circular(8),
-                            bottomLeft: Radius.circular(8),
-                            bottomRight: Radius.circular(8),
-                          ),
-                          // border:
-                          //     Border.all(color: Colors.white, width: 2),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _moveUp1,
+                          child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Icon(
+                                  Icons.arrow_upward,
+                                  color: Colors.grey,
+                                ),
+                              )),
                         ),
-                        padding: const EdgeInsets.all(8.0),
-                        child: Center(
-                          child: AutoSizeText(
-                            minFontSize: 8,
-                            maxFontSize: 14,
-                            'ยืนยันการเพิ่ม',
-                            style: TextStyle(
-                              color: Colors.black,
-                              // fontWeight: FontWeight.bold,
-                              fontFamily: FontWeight_.Fonts_T,
-                              fontWeight: FontWeight.bold,
+                        Container(
+                            decoration: BoxDecoration(
+                              // color: AppbackgroundColor
+                              //     .TiTile_Colors,
+                              borderRadius: const BorderRadius.only(
+                                  topLeft: Radius.circular(6),
+                                  topRight: Radius.circular(6),
+                                  bottomLeft: Radius.circular(6),
+                                  bottomRight: Radius.circular(6)),
+                              border: Border.all(color: Colors.grey, width: 1),
                             ),
+                            padding: const EdgeInsets.all(3.0),
+                            child: const Text(
+                              'Scroll',
+                              style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 10.0,
+                                  fontFamily: FontWeight_.Fonts_T),
+                            )),
+                        GestureDetector(
+                          onTap: _moveDown1,
+                          child: const Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Align(
+                                alignment: Alignment.centerRight,
+                                child: Icon(
+                                  Icons.arrow_downward,
+                                  color: Colors.grey,
+                                ),
+                              )),
+                        ),
+                      ],
+                    ),
+                  )
+                ],
+              )),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.green[200],
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(8),
+                topRight: Radius.circular(8),
+                bottomLeft: Radius.circular(8),
+                bottomRight: Radius.circular(8),
+              ),
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: AutoSizeText(
+                    minFontSize: 8,
+                    maxFontSize: 14,
+                    'รายการที่เลือกทั้งหมด : ${Select_Cus_index.length}',
+                    style: TextStyle(
+                      color: Colors.grey[800],
+                      // fontWeight: FontWeight.bold,
+                      fontFamily: FontWeight_.Fonts_T,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: GestureDetector(
+                    onTap: (Select_Cus_index.length == 0)
+                        ? null
+                        : () async {
+                            setState(() {
+                              _isProcessing = true;
+                              _shouldStop = false;
+                              _processedCount = 0;
+                              _totalCount = Select_Cus_index.length;
+                            });
+                            showDialog<String>(
+                                context: context,
+                                barrierDismissible: false,
+                                builder: (BuildContext context) =>
+                                    StreamBuilder(
+                                        stream: Stream.periodic(
+                                            const Duration(milliseconds: 100)),
+                                        builder: (context, snapshot) {
+                                          return AlertDialog(
+                                            shape: const RoundedRectangleBorder(
+                                                borderRadius: BorderRadius.all(
+                                                    Radius.circular(20.0))),
+                                            title: Center(
+                                              child: Text(
+                                                'กำลังเพิ่มข้อมูล',
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    color: Colors.black,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T),
+                                              ),
+                                            ),
+                                            content: Column(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                const SizedBox(height: 10),
+                                                const CircularProgressIndicator(),
+                                                const SizedBox(height: 20),
+                                                Text(
+                                                  '$_processedCount / $_totalCount',
+                                                  style: TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 10),
+                                                Text(
+                                                  _totalCount == 0
+                                                      ? '0%'
+                                                      : '${((_processedCount / _totalCount) * 100).toStringAsFixed(0)}%',
+                                                  style: TextStyle(
+                                                    fontSize: 24,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: Colors.blue,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            actions: <Widget>[
+                                              Center(
+                                                child: Container(
+                                                  width: 120,
+                                                  decoration: BoxDecoration(
+                                                    color: Colors.red,
+                                                    borderRadius:
+                                                        BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                    10),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    10)),
+                                                  ),
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: TextButton(
+                                                    onPressed: () {
+                                                      setState(() {
+                                                        _shouldStop = true;
+                                                      });
+                                                    },
+                                                    child: const Text(
+                                                      'หยุด',
+                                                      style: TextStyle(
+                                                          color: Colors.white,
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontFamily:
+                                                              FontWeight_
+                                                                  .Fonts_T),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          );
+                                        }));
+
+                            SharedPreferences preferences =
+                                await SharedPreferences.getInstance();
+                            var ren = preferences.getString('renTalSer');
+                            String url =
+                                '${MyConstant().domain}/InC_CustoAdd_Bureau.php?isAdd=true&ren=$ren';
+
+                            for (int index = 0;
+                                index < Select_Cus_index.length;
+                                index++) {
+                              if (_shouldStop) {
+                                break;
+                              }
+
+                              var scname_ = customerModels[index].scname!;
+                              var stype_ = customerModels[index].stype!;
+                              var type_ =
+                                  customerModels[index].type.toString().trim();
+                              var cname_ = customerModels[index].cname!;
+                              var attn_ = customerModels[index].attn!;
+                              var addr1_ = customerModels[index].addr1!;
+                              var tel_ = customerModels[index].tel!;
+                              var tax_ = customerModels[index].tax!;
+                              var email_ = customerModels[index].email!;
+                              var religion_ =
+                                  customerModels[index].religion ?? '-';
+                              var national_ =
+                                  customerModels[index].national ?? '-';
+                              var birth_ = customerModels[index].birth ?? '-';
+
+                              try {
+                                var response =
+                                    await http.post(Uri.parse(url), body: {
+                                  'ciddoc': '',
+                                  'qutser': '',
+                                  'user': '',
+                                  'sumdis': '',
+                                  'sumdisp': '',
+                                  'dateY': '',
+                                  'dateY1': '',
+                                  'time': '',
+                                  'payment1': '',
+                                  'payment2': '',
+                                  'pSer1': '',
+                                  'pSer2': '',
+                                  'sum_whta': '',
+                                  'bill': '',
+                                  'fileNameSlip': '',
+                                  'areaSer': (type_ == 'ส่วนตัว/บุคคลธรรมดา')
+                                      ? '1'
+                                      : '2',
+                                  'typeModels': '${type_}',
+                                  'typeshop': stype_,
+                                  'nameshop': scname_,
+                                  'bussshop': cname_,
+                                  'bussscontact': attn_,
+                                  'address': addr1_,
+                                  'tel': tel_.replaceAll(RegExp(r'[^0-9]'), ''),
+                                  'tax': tax_.replaceAll(RegExp(r'[^0-9]'), ''),
+                                  'email': email_,
+                                  'religion': religion_,
+                                  'national': national_,
+                                  'birth': birth_,
+                                  'Serbool': '',
+                                  'area_rent_sum': '',
+                                  'comment': '',
+                                  'zser': ''.trim().toString(),
+                                });
+                                if (response.statusCode == 200) {
+                                  try {
+                                    var result = jsonDecode(response.body);
+                                    if (result is List && result.isNotEmpty) {
+                                      if (result[0]['insert_status'] ==
+                                          'already_exists') {
+                                        // ข้ามรายการที่มีทะเบียนแล้ว
+                                      } else {
+                                        setState(() {
+                                          ADD_Cus_finished.add(index);
+                                        });
+                                      }
+                                    } else {
+                                      setState(() {
+                                        ADD_Cus_finished.add(index);
+                                      });
+                                    }
+                                  } catch (e) {
+                                    // jsonDecode error, ถือว่าสำเร็จ
+                                    setState(() {
+                                      ADD_Cus_finished.add(index);
+                                    });
+                                  }
+                                }
+                              } catch (e) {
+                                // HTTP error, ข้ามไปอันต่อไป
+                              }
+
+                              // นับทุกรายการที่ประมวลผล ไม่ว่าจะสำเร็จหรือข้าม
+                              setState(() {
+                                _processedCount++;
+                              });
+                            }
+
+                            Navigator.pop(context, 'OK');
+                            setState(() {
+                              _isProcessing = false;
+                              Select_Cus_index.clear();
+                              customerModels.clear();
+                            });
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                  backgroundColor: Colors.green,
+                                  content: Text(
+                                      _shouldStop
+                                          ? 'หยุดการทำงาน'
+                                          : 'ทำรายการเสร็จสิ้น ...!!',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: FontWeight_.Fonts_T))),
+                            );
+                          },
+                    child: Container(
+                      width: 120,
+                      decoration: BoxDecoration(
+                        color: (Select_Cus_index.length == 0)
+                            ? Colors.blue[100]
+                            : Colors.blue,
+                        borderRadius: const BorderRadius.only(
+                          topLeft: Radius.circular(8),
+                          topRight: Radius.circular(8),
+                          bottomLeft: Radius.circular(8),
+                          bottomRight: Radius.circular(8),
+                        ),
+                        // border:
+                        //     Border.all(color: Colors.white, width: 2),
+                      ),
+                      padding: const EdgeInsets.all(8.0),
+                      child: Center(
+                        child: AutoSizeText(
+                          minFontSize: 8,
+                          maxFontSize: 14,
+                          'ยืนยันการเพิ่ม',
+                          style: TextStyle(
+                            color: Colors.black,
+                            // fontWeight: FontWeight.bold,
+                            fontFamily: FontWeight_.Fonts_T,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: Container(
-            //     width: MediaQuery.of(context).size.width,
-            //     height: 200,
-            //     // color: Colors.blue,
-            //     child: Row(
-            //       children: [
-            //         Expanded(
-            //           flex: 1,
-            //           child: Container(
-            //             // color: Colors.red,
-            //             child: Column(
-            //               children: [],
-            //             ),
-            //           ),
-            //         ),
-            //         Expanded(
-            //           flex: 2,
-            //           child: Container(
-            //             color: AppbackgroundColor.Abg_Colors.withOpacity(0.5),
-            //             // decoration: BoxDecoration(
-            //             //   color: Colors.green[200],
-            //             //   borderRadius: const BorderRadius.only(
-            //             //     topLeft: Radius.circular(8),
-            //             //     topRight: Radius.circular(8),
-            //             //     bottomLeft: Radius.circular(0),
-            //             //     bottomRight: Radius.circular(0),
-            //             //   ),
-            //             //   // border:
-            //             //   //     Border.all(color: Colors.white, width: 2),
-            //             // ),
-            //             child: Column(
-            //               crossAxisAlignment: CrossAxisAlignment.center,
-            //               mainAxisAlignment: MainAxisAlignment.center,
-            //               children: [
-            //                 Container(
-            //                   height: 40,
-            //                   decoration: BoxDecoration(
-            //                     color: Colors.green[200],
-            //                     borderRadius: const BorderRadius.only(
-            //                       topLeft: Radius.circular(8),
-            //                       topRight: Radius.circular(8),
-            //                       bottomLeft: Radius.circular(0),
-            //                       bottomRight: Radius.circular(0),
-            //                     ),
-            //                   ),
-            //                 ),
-            //                 Expanded(
-            //                     child: Container(
-            //                   child: Column(
-            //                     crossAxisAlignment: CrossAxisAlignment.center,
-            //                     mainAxisAlignment: MainAxisAlignment.center,
-            //                     children: [
-            //                       Padding(
-            //                         padding: const EdgeInsets.all(8.0),
-            //                         child: Text(
-            //                           'เพิ่มรายการที่เลือกทั้งหมด',
-            //                           textAlign: TextAlign.center,
-            //                           style: TextStyle(
-            //                               color: CustomerScreen_Color
-            //                                   .Colors_Text2_,
-            //                               fontWeight: FontWeight.bold,
-            //                               fontFamily: FontWeight_.Fonts_T
-            //                               //fontSize: 10.0
-            //                               ),
-            //                         ),
-            //                       ),
-            //                       Padding(
-            //                         padding: const EdgeInsets.all(8.0),
-            //                         child: InkWell(
-            //                           onTap: () {},
-            //                           child: Container(
-            //                             width: 150,
-            //                             decoration: BoxDecoration(
-            //                               color: Colors.blue,
-            //                               borderRadius: const BorderRadius.only(
-            //                                 topLeft: Radius.circular(8),
-            //                                 topRight: Radius.circular(8),
-            //                                 bottomLeft: Radius.circular(8),
-            //                                 bottomRight: Radius.circular(8),
-            //                               ),
-            //                               // border:
-            //                               //     Border.all(color: Colors.white, width: 2),
-            //                             ),
-            //                             padding: const EdgeInsets.all(8.0),
-            //                             child: Center(
-            //                               child: AutoSizeText(
-            //                                 minFontSize: 8,
-            //                                 maxFontSize: 14,
-            //                                 'ยืนยันการเพิ่ม',
-            //                                 style: TextStyle(
-            //                                   color: Colors.black,
-            //                                   // fontWeight: FontWeight.bold,
-            //                                   fontFamily: FontWeight_.Fonts_T,
-            //                                   fontWeight: FontWeight.bold,
-            //                                 ),
-            //                               ),
-            //                             ),
-            //                           ),
-            //                         ),
-            //                       ),
-            //                     ],
-            //                   ),
-            //                 ))
-            //               ],
-            //             ),
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-            // ),
-          ],
-        ),
+          ),
+          // Padding(
+          //   padding: const EdgeInsets.all(8.0),
+          //   child: Container(
+          //     width: MediaQuery.of(context).size.width,
+          //     height: 200,
+          //     // color: Colors.blue,
+          //     child: Row(
+          //       children: [
+          //         Expanded(
+          //           flex: 1,
+          //           child: Container(
+          //             // color: Colors.red,
+          //             child: Column(
+          //               children: [],
+          //             ),
+          //           ),
+          //         ),
+          //         Expanded(
+          //           flex: 2,
+          //           child: Container(
+          //             color: AppbackgroundColor.Abg_Colors.withOpacity(0.5),
+          //             // decoration: BoxDecoration(
+          //             //   color: Colors.green[200],
+          //             //   borderRadius: const BorderRadius.only(
+          //             //     topLeft: Radius.circular(8),
+          //             //     topRight: Radius.circular(8),
+          //             //     bottomLeft: Radius.circular(0),
+          //             //     bottomRight: Radius.circular(0),
+          //             //   ),
+          //             //   // border:
+          //             //   //     Border.all(color: Colors.white, width: 2),
+          //             // ),
+          //             child: Column(
+          //               crossAxisAlignment: CrossAxisAlignment.center,
+          //               mainAxisAlignment: MainAxisAlignment.center,
+          //               children: [
+          //                 Container(
+          //                   height: 40,
+          //                   decoration: BoxDecoration(
+          //                     color: Colors.green[200],
+          //                     borderRadius: const BorderRadius.only(
+          //                       topLeft: Radius.circular(8),
+          //                       topRight: Radius.circular(8),
+          //                       bottomLeft: Radius.circular(0),
+          //                       bottomRight: Radius.circular(0),
+          //                     ),
+          //                   ),
+          //                 ),
+          //                 Expanded(
+          //                     child: Container(
+          //                   child: Column(
+          //                     crossAxisAlignment: CrossAxisAlignment.center,
+          //                     mainAxisAlignment: MainAxisAlignment.center,
+          //                     children: [
+          //                       Padding(
+          //                         padding: const EdgeInsets.all(8.0),
+          //                         child: Text(
+          //                           'เพิ่มรายการที่เลือกทั้งหมด',
+          //                           textAlign: TextAlign.center,
+          //                           style: TextStyle(
+          //                               color: CustomerScreen_Color
+          //                                   .Colors_Text2_,
+          //                               fontWeight: FontWeight.bold,
+          //                               fontFamily: FontWeight_.Fonts_T
+          //                               //fontSize: 10.0
+          //                               ),
+          //                         ),
+          //                       ),
+          //                       Padding(
+          //                         padding: const EdgeInsets.all(8.0),
+          //                         child: InkWell(
+          //                           onTap: () {},
+          //                           child: Container(
+          //                             width: 150,
+          //                             decoration: BoxDecoration(
+          //                               color: Colors.blue,
+          //                               borderRadius: const BorderRadius.only(
+          //                                 topLeft: Radius.circular(8),
+          //                                 topRight: Radius.circular(8),
+          //                                 bottomLeft: Radius.circular(8),
+          //                                 bottomRight: Radius.circular(8),
+          //                               ),
+          //                               // border:
+          //                               //     Border.all(color: Colors.white, width: 2),
+          //                             ),
+          //                             padding: const EdgeInsets.all(8.0),
+          //                             child: Center(
+          //                               child: AutoSizeText(
+          //                                 minFontSize: 8,
+          //                                 maxFontSize: 14,
+          //                                 'ยืนยันการเพิ่ม',
+          //                                 style: TextStyle(
+          //                                   color: Colors.black,
+          //                                   // fontWeight: FontWeight.bold,
+          //                                   fontFamily: FontWeight_.Fonts_T,
+          //                                   fontWeight: FontWeight.bold,
+          //                                 ),
+          //                               ),
+          //                             ),
+          //                           ),
+          //                         ),
+          //                       ),
+          //                     ],
+          //                   ),
+          //                 ))
+          //               ],
+          //             ),
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          // ),
+        ],
       ),
     );
   }

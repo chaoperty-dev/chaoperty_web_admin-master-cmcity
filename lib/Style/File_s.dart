@@ -136,14 +136,14 @@ Future<void> uploadFile(Uint8List data, name_1) async {
 
   // Check the response
   if (request.status == 200) {
-    // print('File **************!');
-    // print('$name_1 successfully! $Select_UP_Success');
+    // //print('File **************!');
+    // //print('$name_1 successfully! $Select_UP_Success');
     // await Future.delayed(const Duration(milliseconds: 300));
     // if (Select_UP_Success == 'OK') {
     //   download_foder('$ren$user', '$ren$user');
     // }
   } else {
-    // print('File upload failed with status code: ${request.status}');
+    // //print('File upload failed with status code: ${request.status}');
   }
 }
 
@@ -191,7 +191,7 @@ Future<void> download_foder(String folderName, String name) async {
       // Revoke the object URL after download to free up resources
       html.Url.revokeObjectUrl(url);
     } catch (e) {
-      print('Error downloading folder: $e');
+      //print('Error downloading folder: $e');
     }
   }
 }
@@ -212,9 +212,9 @@ Future<void> Deleted_foder(context) async {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result.toString() != 'null') {
-        print('Deleted_foder');
+        //print('Deleted_foder');
         // await Future.delayed(const Duration(seconds: 1));
         // Navigator.pop(context, 'OK');
       }
@@ -256,6 +256,6 @@ Future<void> Deleted_foder(context) async {
 //     // Revoke the object URL after download to free up resources
 //     html.Url.revokeObjectUrl(url);
 //   } catch (e) {
-//     print('Error downloading folder: $e');
+//     //print('Error downloading folder: $e');
 //   }
 // }

@@ -31,6 +31,9 @@ class ClientModel {
   dynamic user_name;
   dynamic passw;
   dynamic data_update;
+  dynamic age;
+  dynamic national;
+  dynamic religion;
 
   /// ✅ ใช้ Map เพื่อความปลอดภัยในการเข้าถึง field
   Map<String, dynamic>? json;
@@ -66,6 +69,9 @@ class ClientModel {
     this.user_name,
     this.passw,
     this.data_update,
+    this.age,
+    this.national,
+    this.religion,
     this.json,
   });
 
@@ -114,6 +120,9 @@ class ClientModel {
       user_name: map['user_name'],
       passw: map['passw'],
       data_update: map['data_update'],
+      age: map['age'],
+      national: map['national'],
+      religion: map['religion'],
       json: parsedJson,
     );
   }
@@ -150,6 +159,10 @@ class ClientModel {
     data['user_name'] = user_name;
     data['passw'] = passw;
     data['data_update'] = data_update;
+    data['age'] = age;
+    data['national'] = national;
+    data['religion'] = religion;
+
     data['json'] = json;
     return data;
   }
@@ -225,6 +238,7 @@ class AttachmentsModel {
   dynamic fileType;
   dynamic clientDocumentId;
   dynamic active;
+  dynamic status;
   dynamic status_label;
   ClientDocument? clientDocument;
   dynamic reviewAt;
@@ -240,6 +254,7 @@ class AttachmentsModel {
       this.fileType,
       this.clientDocumentId,
       this.active,
+      this.status,
       this.status_label,
       this.clientDocument,
       this.reviewAt,
@@ -255,6 +270,7 @@ class AttachmentsModel {
     fileType = json['file_type'];
     clientDocumentId = json['client_document_id'];
     active = json['active'];
+    status = json['status'];
     status_label = json['status_label'];
     clientDocument = json['client_document'] != null
         ? new ClientDocument.fromJson(json['client_document'])
@@ -274,6 +290,7 @@ class AttachmentsModel {
     data['file_type'] = this.fileType;
     data['client_document_id'] = this.clientDocumentId;
     data['active'] = this.active;
+    data['status'] = this.status;
     data['status_label'] = this.status_label;
     if (this.clientDocument != null) {
       data['client_document'] = this.clientDocument!.toJson();
@@ -340,6 +357,7 @@ class DetailsModel {
   String? desiredStartDate;
   int? subzoneser;
   int? zser;
+  String? subzone;
   String? zn;
   int? aser;
   String? ln;
@@ -347,7 +365,7 @@ class DetailsModel {
   String? ldate;
   int? sertype;
   String? type;
-  int? qty;
+  String? qty;
   String? comment;
   String? createdAt;
   String? updatedAt;
@@ -361,6 +379,7 @@ class DetailsModel {
       this.desiredStartDate,
       this.subzoneser,
       this.zser,
+      this.subzone,
       this.zn,
       this.aser,
       this.ln,
@@ -382,6 +401,7 @@ class DetailsModel {
     desiredStartDate = json['desired_start_date'];
     subzoneser = json['subzoneser'];
     zser = json['zser'];
+    subzone = json['subzone'];
     zn = json['zn'];
     aser = json['aser'];
     ln = json['ln'];
@@ -405,6 +425,7 @@ class DetailsModel {
     data['desired_start_date'] = this.desiredStartDate;
     data['subzoneser'] = this.subzoneser;
     data['zser'] = this.zser;
+    data['subzone'] = this.subzone;
     data['zn'] = this.zn;
     data['aser'] = this.aser;
     data['ln'] = this.ln;

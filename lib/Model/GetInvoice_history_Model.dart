@@ -1,5 +1,6 @@
 class InvoiceHistoryModel {
   String? ser;
+  String? st;
   String? daterec;
   String? date;
   String? dateacc;
@@ -38,6 +39,7 @@ class InvoiceHistoryModel {
   String? total_t;
   String? wht_t;
   String? cid;
+  String? unit;
   String? unitser;
   String? zn;
   String? zser;
@@ -49,8 +51,25 @@ class InvoiceHistoryModel {
   String? paper_run;
   String? vat_dis;
 
+  String? net_amount_pvat;
+  String? net_non_pvat;
+
+  String? total;
+  String? dis_list;
+  String? pvat_original;
+  String? vat_original;
+  String? wht_original;
+  String? amount_original;
+  String? expname;
+  String? expser;
+  String? exptser;
+  String? vser;
+  String? vtype;
+  String? etype;
+
   InvoiceHistoryModel({
     this.ser,
+    this.st,
     this.daterec,
     this.date,
     this.dateacc,
@@ -89,6 +108,7 @@ class InvoiceHistoryModel {
     this.total_t,
     this.wht_t,
     this.cid,
+    this.unit,
     this.unitser,
     this.zn,
     this.zser,
@@ -99,10 +119,25 @@ class InvoiceHistoryModel {
     this.paper,
     this.paper_run,
     this.vat_dis,
+    this.net_amount_pvat,
+    this.net_non_pvat,
+    this.total,
+    this.dis_list,
+    this.pvat_original,
+    this.vat_original,
+    this.wht_original,
+    this.amount_original,
+    this.expname,
+    this.expser,
+    this.exptser,
+    this.vser,
+    this.vtype,
+    this.etype,
   });
 
   InvoiceHistoryModel.fromJson(Map<String, dynamic> json) {
     ser = json['ser'];
+    st = json['st'];
     daterec = json['daterec'];
     date = json['date'];
     dateacc = json['dateacc'];
@@ -141,6 +176,7 @@ class InvoiceHistoryModel {
     total_t = json['total_t'];
     wht_t = json['wht_t'];
     cid = json['cid'];
+    unit = json['unit'];
     unitser = json['unitser'];
     zn = json['zn'];
     zser = json['zser'];
@@ -151,11 +187,28 @@ class InvoiceHistoryModel {
     paper = json['paper'];
     paper_run = json['paper_run'];
     vat_dis = json['vat_dis'];
+
+    net_amount_pvat = json['net_amount_pvat'];
+    net_non_pvat = json['net_non_pvat'];
+
+    total = json['total'];
+    dis_list = json['dis_list'];
+    pvat_original = json['pvat_original'];
+    vat_original = json['vat_original'];
+    wht_original = json['wht_original'];
+    amount_original = json['amount_original'];
+    expname = json['expname'];
+    expser = json['expser'];
+    exptser = json['exptser'];
+    vser = json['vser'];
+    vtype = json['vtype'];
+    etype = json['etype'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['ser'] = this.ser;
+    data['st'] = this.st;
     data['daterec'] = this.daterec;
     data['date'] = this.date;
     data['dateacc'] = this.dateacc;
@@ -194,6 +247,7 @@ class InvoiceHistoryModel {
     data['total_t'] = this.total_t;
     data['wht_t'] = this.wht_t;
     data['cid'] = this.cid;
+    data['unit'] = this.unit;
     data['unitser'] = this.unitser;
     data['zn'] = this.zn;
     data['zser'] = this.zser;
@@ -204,6 +258,22 @@ class InvoiceHistoryModel {
     data['paper'] = this.paper;
     data['paper_run'] = this.paper_run;
     data['vat_dis'] = this.vat_dis;
+
+    data['net_amount_pvat'] = this.net_amount_pvat;
+    data['net_non_pvat'] = this.net_non_pvat;
+
+    data['total'] = this.total;
+    data['dis_list'] = this.dis_list;
+    data['pvat_original'] = this.pvat_original;
+    data['vat_original'] = this.vat_original;
+    data['wht_original'] = this.wht_original;
+    data['amount_original'] = this.amount_original;
+    data['expname'] = this.expname;
+    data['expser'] = this.expser;
+    data['exptser'] = this.exptser;
+    data['vser'] = this.vser;
+    data['vtype'] = this.vtype;
+    data['etype'] = this.etype;
 
     return data;
   }

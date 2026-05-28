@@ -494,7 +494,7 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
         });
       } else {}
     } catch (e) {
-      print('Error during image processing: $e');
+      // print('Error during image processing: $e');
     }
 
     // try {
@@ -598,8 +598,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
             '-${lastDayOfMonth.day.toString()}';
         day_lday = lastDayOfMonth.day.toString();
       });
-      print(sdate_1);
-      print(ldate_1);
+      // print(sdate_1);
+      // print(ldate_1);
     }
   }
 
@@ -628,8 +628,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
             lastDayOfMonth.day.toString() +
             '(เดือน: ${monthsInThai[int.parse(month.toString()) - 1]} ปี: $year)';
       });
-      print(sdate_2);
-      print(ldate_2);
+      // print(sdate_2);
+      // print(ldate_2);
     }
   }
 
@@ -714,7 +714,7 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
         YE_billpay_Mon = DateFormat('yyyy').format(selectedDate);
         lastDay();
       });
-      print('ผSelected month: ${Mon_billpay_Mon}, Year: ${YE_billpay_Mon}');
+      //   print('ผSelected month: ${Mon_billpay_Mon}, Year: ${YE_billpay_Mon}');
     }
   }
 
@@ -728,8 +728,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
         Mon_PeopleTeNant_Mon = DateFormat('MM').format(selectedDate);
         YE_PeopleTeNant_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_PeopleTeNant_Mon}, Year: ${YE_PeopleTeNant_Mon}');
+      // print(
+      //     'Selected month: ${Mon_PeopleTeNant_Mon}, Year: ${YE_PeopleTeNant_Mon}');
     }
   }
 
@@ -743,8 +743,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
         Mon_PeopleTeNantNew_Mon = DateFormat('MM').format(selectedDate);
         YE_PeopleTeNantNew_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'เดือนที่ทำสัญญา Selected month: ${Mon_PeopleTeNantNew_Mon}, Year: ${YE_PeopleTeNantNew_Mon}');
+      // print(
+      //     'เดือนที่ทำสัญญา Selected month: ${Mon_PeopleTeNantNew_Mon}, Year: ${YE_PeopleTeNantNew_Mon}');
     }
   }
 
@@ -758,8 +758,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
         Mon_PeopleTeNantNewsub_Mon = DateFormat('MM').format(selectedDate);
         YE_PeopleTeNantNewsub_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'เดือนที่รับชำระ Selected month: ${Mon_PeopleTeNantNewsub_Mon}, Year: ${YE_PeopleTeNantNewsub_Mon}');
+      // print(
+      //     'เดือนที่รับชำระ Selected month: ${Mon_PeopleTeNantNewsub_Mon}, Year: ${YE_PeopleTeNantNewsub_Mon}');
     }
   }
 
@@ -4122,8 +4122,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
                                               int selectedIndex = expModels
                                                   .indexWhere((items) =>
                                                       items.ser == item.ser);
-                                              print(expModels[selectedIndex]
-                                                  .expname);
+                                              // print(expModels[selectedIndex]
+                                              //     .expname);
                                               // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                               //This rebuilds the StatefulWidget to update the button's text
                                               setState(() {
@@ -5655,8 +5655,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
                                               int selectedIndex = expModels
                                                   .indexWhere((items) =>
                                                       items.ser == item.ser);
-                                              print(expModels[selectedIndex]
-                                                  .expname);
+                                              // print(expModels[selectedIndex]
+                                              //     .expname);
                                               // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                               //This rebuilds the StatefulWidget to update the button's text
                                               setState(() {
@@ -8709,8 +8709,8 @@ class _Report_Choice_ScreenCState extends State<Report_Choice_ScreenC> {
                                             int selectedIndex =
                                                 expModels.indexWhere((items) =>
                                                     items.ser == item.ser);
-                                            print(expModels[selectedIndex]
-                                                .expname);
+                                            // print(expModels[selectedIndex]
+                                            //     .expname);
                                             // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                             //This rebuilds the StatefulWidget to update the button's text
                                             setState(() {

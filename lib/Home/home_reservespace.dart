@@ -294,7 +294,7 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
           //     '${formatter.format(DateTime.parse(result.toString()))}';
         }
       }
-      // Print only the date part
+      // //print only the date part
       currentDate = currentDate.add(Duration(days: 1)); // Move to the next day
     }
     setState(() {
@@ -454,14 +454,14 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
     int formattedMilliseconds2 = randomDuration2.inMilliseconds % 1000;
     Dia_log(formattedMilliseconds);
     Future.delayed(Duration(milliseconds: formattedMilliseconds), () async {
-      // print(
+      // //print(
       //     ' random1 : ${formattedMilliseconds}');
 
       Future.delayed(Duration(milliseconds: formattedMilliseconds2), () async {
         try {
           String url =
               '${MyConstant().domain}/GC_UsercheckLock_Market.php?isAdd=true&ren=$ren';
-          //print('  _Stap = 3 $url');
+          ////print('  _Stap = 3 $url');
           var response = await http.post(
             Uri.parse(url),
             body: {
@@ -825,7 +825,7 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
 
     String url =
         '${MyConstant().domain}/GC_areaAll_booking.php?isAdd=true&ren=$ren&zone=$zonex&datelok=$SDatex_total1_&Ldate_x=$LDatex_total1_&type=$type_b';
-    print(url);
+   //  print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -1166,8 +1166,8 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
                             //   conbook = -1;
                             //   // read_GC_contractBook(0);
                             // });
-                            print(
-                                'contractBookModels split ${move_Area.length} >>>  ${contractBookModels[0].ln!.split(',').length}');
+                           //  print(
+                             //    'contractBookModels split ${move_Area.length} >>>  ${contractBookModels[0].ln!.split(',').length}');
                             if (move_Area.length >=
                                 contractBookModels[0].ln!.split(',').length) {
                               /////---------------->
@@ -1734,8 +1734,8 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
       else
         Date_list_selectedmove.add(u.date_book);
     });
-    print('${Date_list_selectedmove.map((e) => e)}');
-    print('${Date_list_selectedmove.length}');
+    // print('${Date_list_selectedmove.map((e) => e)}');
+    // print('${Date_list_selectedmove.length}');
   }
 
   // bool isAllowedDate(DateTime date) {
@@ -2118,7 +2118,7 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      // print(result);
       // Map<String, dynamic> map = Map();
       // map['ser'] = '0';
       // map['rser'] = '0';
@@ -13541,7 +13541,7 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
           var response = await http.get(Uri.parse(url));
 
           var result = json.decode(response.body);
-          print('in2 ${result.toString()}');
+          // print('in2 ${result.toString()}');
         } catch (e) {}
       }
 
@@ -13788,7 +13788,7 @@ class _HomeReserveSpaceState extends State<HomeReserveSpace> {
           var response = await http.get(Uri.parse(url));
 
           var result = json.decode(response.body);
-          print('in2 ${result.toString()}');
+         //  print('in2 ${result.toString()}');
         } catch (e) {}
       }
 

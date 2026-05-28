@@ -1,38 +1,47 @@
-// ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member
+// ignore_for_file: unnecessary_null_comparison
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/src/widgets/framework.dart';
-import 'package:flutter/src/widgets/placeholder.dart';
-import 'package:group_radio_button/group_radio_button.dart';
+// import 'package:group_radio_button/group_radio_button.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import '../Constant/Myconstant.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetCustomer_Model.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../Model/GetTrans_Model.dart';
 import '../Model/GetType_Model.dart';
-import '../Responsive/responsive.dart';
 import '../Style/colors.dart';
 import 'Add_Custo_Exc_Screen.dart';
 
 class Add_Custo_Screen extends StatefulWidget {
-  final updateMessage;
-  const Add_Custo_Screen({super.key, this.updateMessage});
+  final dynamic updateMessage;
+  final dynamic addForForm;
+  final FutureOr<void> Function(String)? onSaveSuccess;
+
+  const Add_Custo_Screen({
+    super.key,
+    this.updateMessage,
+    this.addForForm,
+    this.onSaveSuccess,
+  });
 
   @override
   State<Add_Custo_Screen> createState() => _Add_Custo_ScreenState();
 }
 
 class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
-  List<TypeModel> typeModels = [];
-  List<TransModel> _TransModels = [];
+  final List<TypeModel> typeModels = [];
+  List<TransModel> transModels = [];
   final _formKey = GlobalKey<FormState>();
+
   final Status4Form_nameshop = TextEditingController();
   final Status4Form_typeshop = TextEditingController();
   final Status4Form_bussshop = TextEditingController();
@@ -43,15 +52,10 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
   final Status4Form_tax = TextEditingController();
   final Status5Form_NoArea_ = TextEditingController();
   final Status5Form_NoArea_ren = TextEditingController();
+  final Status4Form_birth = TextEditingController();
+  final Status4Form_religion = TextEditingController();
+  final Status4Form_national = TextEditingController();
 
-  String? _Form_nameshop,
-      _Form_typeshop,
-      _Form_bussshop,
-      _Form_bussscontact,
-      _Form_address,
-      _Form_tel,
-      _Form_email,
-      _Form_tax;
   String? renTal_user,
       renTal_name,
       zone_ser,
@@ -71,166 +75,153 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
       tel_user,
       img_,
       img_logo;
+
   String _verticalGroupValue = '';
   int Value_AreaSer_ = 0;
+  String? fileName_Slip;
+  String? base64_Image;
+  String? cust_no_;
+  int ser_tap = 0;
+  bool _saving = false;
+
+  bool get _isPersonalType {
+    final selectedType = typeModels.isEmpty
+        ? _verticalGroupValue.trim()
+        : typeModels[Value_AreaSer_.clamp(0, typeModels.length - 1)]
+            .type
+            .toString()
+            .trim();
+    const keys = ['ส่วนตัว/บุคคลธรรมดา', 'บุคคลธรรมดา', 'ส่วนตัว', 'personal'];
+    return keys.contains(selectedType) ||
+        _verticalGroupValue.trim() == 'ส่วนตัว/บุคคลธรรมดา';
+  }
+
   @override
   void initState() {
     super.initState();
-    checkPreferance();
     checkPreferance();
     read_GC_type();
     read_GC_rental();
   }
 
-  Future<Null> checkPreferance() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
+  @override
+  void dispose() {
+    Status4Form_nameshop.dispose();
+    Status4Form_typeshop.dispose();
+    Status4Form_bussshop.dispose();
+    Status4Form_bussscontact.dispose();
+    Status4Form_address.dispose();
+    Status4Form_tel.dispose();
+    Status4Form_email.dispose();
+    Status4Form_tax.dispose();
+    Status5Form_NoArea_.dispose();
+    Status5Form_NoArea_ren.dispose();
+    Status4Form_birth.dispose();
+    Status4Form_religion.dispose();
+    Status4Form_national.dispose();
+    super.dispose();
+  }
+
+  Future<void> checkPreferance() async {
+    final preferences = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       renTal_user = preferences.getString('renTalSer');
       renTal_name = preferences.getString('renTalName');
       fname_ = preferences.getString('fname');
+      Status4Form_religion.text = 'พุทธ';
+      Status4Form_national.text = 'ไทย';
     });
   }
 
-  Future<Null> read_GC_rental() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    var utype = preferences.getString('utype');
-    var seruser = preferences.getString('ser');
-    String url =
+  Future<void> read_GC_rental() async {
+    final preferences = await SharedPreferences.getInstance();
+    final utype = preferences.getString('utype');
+    final seruser = preferences.getString('ser');
+    final url =
         '${MyConstant().domain}/GC_rental.php?isAdd=true&ser=$seruser&type=$utype';
 
     try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      // print(result);
+      final response = await http.get(Uri.parse(url));
+      final result = json.decode(response.body);
       if (result != null) {
-        for (var map in result) {
-          RenTalModel renTalModel = RenTalModel.fromJson(map);
-          var rtnamex = renTalModel.rtname;
-          var typexs = renTalModel.type;
-          var typexx = renTalModel.typex;
-          var name = renTalModel.pn!.trim();
-          var pkqtyx = int.parse(renTalModel.pkqty!);
-          var pkuserx = int.parse(renTalModel.pkuser!);
-          var pkx = renTalModel.pk!.trim();
-          var foderx = renTalModel.dbn;
-          var img = renTalModel.img;
-          var imglogo = renTalModel.imglogo;
+        for (final map in result) {
+          final renTalModel = RenTalModel.fromJson(map);
+          if (!mounted) return;
           setState(() {
-            foder = foderx;
-
-            img_ = img;
-            img_logo = imglogo;
+            foder = renTalModel.dbn;
+            img_ = renTalModel.img;
+            img_logo = renTalModel.imglogo;
           });
         }
-      } else {}
-    } catch (e) {}
+      }
+    } catch (_) {}
   }
 
-  Future<Null> read_GC_type() async {
-    if (typeModels.isNotEmpty) {
-      typeModels.clear();
-    }
-
-    String url = '${MyConstant().domain}/GC_type.php?isAdd=true';
+  Future<void> read_GC_type() async {
+    typeModels.clear();
+    final url = '${MyConstant().domain}/GC_type.php?isAdd=true';
 
     try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      print(result);
+      final response = await http.get(Uri.parse(url));
+      final result = json.decode(response.body);
       if (result != null) {
-        for (var map in result) {
-          TypeModel typeModel = TypeModel.fromJson(map);
-          setState(() {
-            typeModels.add(typeModel);
-          });
+        for (final map in result) {
+          typeModels.add(TypeModel.fromJson(map));
         }
-        // setState(() {
-        //   for (var i = 0; i < typeModels.length; i++) {
-        //     _verticalGroupValue = typeModels[i].type!;
-        //   }
-        // });
-      } else {}
-    } catch (e) {}
+        if (typeModels.isNotEmpty) {
+          _verticalGroupValue = typeModels.first.type ?? '';
+          Value_AreaSer_ = 0;
+        }
+        if (mounted) setState(() {});
+      }
+    } catch (_) {}
   }
 
-  Future<Null> Save_FormText() async {
-    // Value_AreaSer_ = int.parse(value!.ser!) - 1;
-    // _verticalGroupValue = value.type!;
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    String? ren = preferences.getString('renTalSer');
-    String? ser_user = preferences.getString('ser');
+  Future<void> Save_FormText() async {
+    final preferences = await SharedPreferences.getInstance();
+    final ren = preferences.getString('renTalSer');
+    final serUser = preferences.getString('ser');
 
-    String? nameshop = Status4Form_nameshop.text.toString();
-    String? typeshop = Status4Form_typeshop.text.toString();
-    String? bussshop = Status4Form_bussshop.text.toString();
-    String? bussscontact =
-        (_verticalGroupValue.toString().trim() == 'ส่วนตัว/บุคคลธรรมดา')
-            ? Status4Form_bussshop.text.toString()
-            : Status4Form_bussscontact.text.toString();
-    String? address = Status4Form_address.text.toString();
-    String? tel = Status4Form_tel.text.toString();
-    String? email = Status4Form_email.text.toString();
-    String? tax = Status4Form_tax.text.toString();
+    final nameshop = Status4Form_nameshop.text;
+    final typeshop = Status4Form_typeshop.text;
+    final bussshop = Status4Form_bussshop.text;
+    final bussscontact = _isPersonalType
+        ? Status4Form_bussshop.text
+        : Status4Form_bussscontact.text;
+    final address = Status4Form_address.text;
+    final tel = Status4Form_tel.text;
+    final email = Status4Form_email.text;
+    final tax = Status4Form_tax.text;
 
-    // print(_verticalGroupValue);
-
-    // print(nameshop);
-    // print(typeshop);
-    // print(bussshop);
-    // print(bussscontact);
-    // print(address);
-    // print(tel);
-    // print(email);
-    // print(tax);
-
-    String url =
-        '${MyConstant().domain}/Inc_customer_Bureau.php?isAdd=true&ren=$ren&nameshop=$nameshop&typeshop=$typeshop&bussshop=$bussshop&bussscontact=$bussscontact&address=$address&tel=$tel&email=$email&tax=$tax&type=$_verticalGroupValue&user=$ser_user';
+    final url =
+        '${MyConstant().domain}/Inc_customer_Bureau.php?isAdd=true&ren=$ren&nameshop=$nameshop&typeshop=$typeshop&bussshop=$bussshop&bussscontact=$bussscontact&address=$address&tel=$tel&email=$email&tax=$tax&type=$_verticalGroupValue&user=$serUser';
 
     try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      print(result);
+      final response = await http.get(Uri.parse(url));
+      final result = json.decode(response.body);
       if (result.toString() == 'true') {
         Insert_log.Insert_logs('ทะเบียน', 'เพิ่มข้อมูลลูกค้า>>($nameshop)');
-        setState(() {
-          // select_coutumer();
-        });
-      } else {}
-    } catch (e) {}
+      }
+    } catch (_) {}
   }
-
-//////////////////////////////--------------------------------------->
-  String? fileName_Slip;
-  String? base64_Image;
-  String? cust_no_;
 
   Future<void> convert_base64(ImageSource source) async {
     final imagePicker = ImagePicker();
-    final pickedFile = await imagePicker.getImage(source: source);
-    if (pickedFile == null) {
-      print('User canceled image selection');
-      return;
-    } // 2. Read the image as bytes
+    final pickedFile = await imagePicker.pickImage(source: source);
+    if (pickedFile == null) return;
     final imageBytes = await pickedFile.readAsBytes();
-
-    // 3. Encode the image as a base64 string
     final base64Image = base64Encode(imageBytes);
+    if (!mounted) return;
     setState(() {
       base64_Image = base64Image;
     });
-    // uploadImage();
   }
 
   Future<void> uploadImage() async {
-    int timestamp = DateTime.now().millisecondsSinceEpoch;
-    setState(() {
-      fileName_Slip = 'pic_${cust_no_}_$timestamp.jpg';
-    });
-    // 4. Make an HTTP POST request to your server
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    fileName_Slip = 'pic_${cust_no_}_$timestamp.jpg';
+
     try {
       final url =
           '${MyConstant().domain}/File_photo.php?name=$fileName_Slip&Foder=$foder';
@@ -240,1669 +231,860 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
         body: {
           'image': base64_Image,
           'Foder': foder,
-          'name': fileName_Slip
-        }, // Send the image as a form field named 'image'
+          'name': fileName_Slip,
+        },
       );
 
       if (response.statusCode == 200) {
-        print('Image uploaded successfully');
-
-        await Future.delayed(Duration(milliseconds: 100));
-        up_photo_string();
-      } else {
-        print('Image upload failed');
+        await Future.delayed(const Duration(milliseconds: 100));
+        await up_photo_string();
       }
-    } catch (e) {
-      print('Error during image processing: $e');
-    }
+    } catch (_) {}
   }
 
-  Future<Null> up_photo_string() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    String? ren = preferences.getString('renTalSer');
-    String? ser_user = preferences.getString('ser');
-    String custno_ = cust_no_.toString();
+  Future<void> up_photo_string() async {
+    final preferences = await SharedPreferences.getInstance();
+    final ren = preferences.getString('renTalSer');
+    final custno_ = cust_no_.toString();
 
-    await Future.delayed(Duration(milliseconds: 500));
+    await Future.delayed(const Duration(milliseconds: 500));
 
-    String url =
+    final url =
         '${MyConstant().domain}/Test_UP_img_Custo.php?isAdd=true&ren=$ren&custno=$custno_&img=$fileName_Slip';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      await http.get(Uri.parse(url));
+    } catch (_) {}
 
-      var result = json.decode(response.body);
-      print(result);
-      if (result.toString() == 'true') {
-        print('true :-$custno_--> ${fileName_Slip}');
-      }
-    } catch (e) {
-      // print(e);
-    }
-    await Future.delayed(Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-          backgroundColor: Colors.green,
-          content: Text(' ทำรายการสำเร็จ... !',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: Font_.Fonts_T))),
+        backgroundColor: Colors.green,
+        content: Text(
+          ' ทำรายการสำเร็จ... !',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontFamily: Font_.Fonts_T,
+          ),
+        ),
+      ),
     );
 
-    widget.updateMessage(0);
+    widget.updateMessage?.call(0);
   }
 
-  int ser_tap = 0;
-//////////////////////------------------------------------------------------->
+  Future<String?> _selectDate(BuildContext context,
+      {String? currentDate}) async {
+    DateTime initialDate;
+    if (currentDate != null && currentDate.trim().isNotEmpty) {
+      initialDate = DateTime.tryParse(currentDate.trim()) ?? DateTime.now();
+    } else {
+      initialDate = DateTime.now();
+    }
+
+    if (initialDate.isBefore(DateTime(1900))) {
+      initialDate = DateTime(1900);
+    }
+
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      locale: const Locale('th', 'TH'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: const ColorScheme.light(
+              primary: Color(0xFF102456),
+              onPrimary: Colors.white,
+              onSurface: Colors.black,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked != null) {
+      return DateFormat('yyyy-MM-dd').format(picked);
+    }
+    return null;
+  }
+
+  Future<void> _submitForm() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (typeModels.isEmpty) {
+      Dialog_error(context, 'ไม่พบประเภทลูกค้า');
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final ren = prefs.getString('renTalSer');
+      final user = prefs.getString('ser');
+
+      if (ren == null || ren.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ไม่พบค่าเช่า (renTalSer)')),
+        );
+        return;
+      }
+
+      final typeText =
+          typeModels[Value_AreaSer_.clamp(0, typeModels.length - 1)]
+              .type
+              .toString()
+              .trim();
+      final isPersonal = _isPersonalType;
+      final bussscontact = isPersonal
+          ? Status4Form_bussshop.text.trim()
+          : Status4Form_bussscontact.text.trim();
+
+      final endpoint = '${MyConstant().domain}/InC_CustoAdd_Bureau.php';
+      final uri = Uri.parse(endpoint).replace(queryParameters: {
+        'isAdd': 'true',
+        'ren': ren,
+      });
+
+      final body = <String, String>{
+        'ciddoc': '',
+        'qutser': '',
+        'user': user ?? '',
+        'sumdis': '',
+        'sumdisp': '',
+        'dateY': '',
+        'dateY1': '',
+        'time': '',
+        'payment1': '',
+        'payment2': '',
+        'pSer1': '',
+        'pSer2': '',
+        'sum_whta': '',
+        'bill': '',
+        'fileNameSlip': '',
+        'areaSer': isPersonal ? '1' : '2',
+        'typeModels': typeText,
+        'typeshop': Status4Form_typeshop.text.trim(),
+        'nameshop': Status4Form_nameshop.text.trim(),
+        'bussshop': Status4Form_bussshop.text.trim(),
+        'bussscontact': bussscontact,
+        'address': Status4Form_address.text.trim(),
+        'tel': Status4Form_tel.text.trim(),
+        'tax': Status4Form_tax.text.trim(),
+        'email': Status4Form_email.text.trim(),
+        'Serbool': '',
+        'area_rent_sum': '',
+        'comment': '',
+        'zser': '',
+        'birth': Status4Form_birth.text.trim(),
+        'national': Status4Form_national.text.trim(),
+        'religion': Status4Form_religion.text.trim(),
+      };
+
+      final resp =
+          await http.post(uri, body: body).timeout(const Duration(seconds: 20));
+
+      if (resp.statusCode != 200) {
+        if (!mounted) return;
+        Dialog_error(
+            context, 'บันทึกลูกค้าไม่สำเร็จ [HTTP ${resp.statusCode}]');
+        return;
+      }
+
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(resp.body);
+      } catch (_) {
+        final b = resp.body.trim();
+        if (b.startsWith('"') && b.endsWith('"')) {
+          decoded = jsonDecode(jsonDecode(b));
+        } else {
+          rethrow;
+        }
+      }
+
+      List<dynamic> list = const [];
+      if (decoded == null) {
+        list = const [];
+      } else if (decoded is List) {
+        list = decoded;
+      } else if (decoded is Map && decoded['data'] is List) {
+        list = decoded['data'] as List;
+      } else if (decoded is Map) {
+        list = [decoded];
+      }
+
+      String? newCustNo;
+      for (final item in list) {
+        if (item is Map<String, dynamic>) {
+          newCustNo ??= CustomerModel.fromJson(item).custno;
+        } else if (item is Map) {
+          newCustNo ??=
+              CustomerModel.fromJson(Map<String, dynamic>.from(item)).custno;
+        }
+        if (newCustNo == null && item is Map && item['custno'] is String) {
+          newCustNo = item['custno'] as String;
+        }
+      }
+
+      if (newCustNo == null && decoded is Map && decoded['custno'] is String) {
+        newCustNo = decoded['custno'] as String;
+      }
+
+      final savedName = Status4Form_nameshop.text.trim();
+
+      if (!mounted) return;
+      setState(() {
+        cust_no_ = newCustNo ?? cust_no_;
+        Status4Form_nameshop.clear();
+        Status4Form_typeshop.clear();
+        Status4Form_bussshop.clear();
+        Status4Form_bussscontact.clear();
+        Status4Form_address.clear();
+        Status4Form_tel.clear();
+        Status4Form_email.clear();
+        Status4Form_tax.clear();
+        Status4Form_birth.clear();
+        Status4Form_religion.text = 'พุทธ';
+        Status4Form_national.text = 'ไทย';
+      });
+
+      if (base64_Image != null) {
+        await uploadImage();
+      }
+
+      if (!mounted) return;
+      Dialog_success(context, 'บันทึกลูกค้าสำเร็จ');
+      if (widget.onSaveSuccess != null) {
+        await widget.onSaveSuccess!(savedName);
+      }
+    } catch (e) {
+      debugPrint('Save Error: $e');
+      if (!mounted) return;
+      Dialog_error(context, 'เกิดข้อผิดพลาด');
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  bool _isDesktop(double width) => width >= 1200;
+  bool _isTablet(double width) => width >= 700 && width < 1200;
+
+  InputDecoration _inputDecoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      filled: true,
+      fillColor: Colors.white,
+      isDense: true,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Color(0xFF102456), width: 1.2),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(color: Colors.red),
+      ),
+      labelStyle: const TextStyle(
+        color: PeopleChaoScreen_Color.Colors_Text2_,
+        fontFamily: Font_.Fonts_T,
+      ),
+    );
+  }
+
+  Widget _buildSectionCard({
+    required String title,
+    required Widget child,
+    IconData? icon,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, color: const Color(0xFF102456), size: 18),
+                const SizedBox(width: 6),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: PeopleChaoScreen_Color.Colors_Text1_,
+                    fontFamily: FontWeight_.Fonts_T,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          child,
+          const Divider(height: 10, thickness: 0.5),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    String? hint,
+    TextInputType? keyboardType,
+    List<TextInputFormatter>? inputFormatters,
+    int? maxLength,
+    String? Function(String?)? validator,
+    void Function(String)? onChanged,
+    bool enabled = true,
+  }) {
+    return TextFormField(
+      controller: controller,
+      enabled: enabled,
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      maxLength: maxLength,
+      onChanged: onChanged,
+      cursorColor: Colors.green,
+      validator: validator,
+      style: const TextStyle(fontFamily: Font_.Fonts_T),
+      decoration: _inputDecoration(label, hint: hint),
+    );
+  }
+
+  Widget _buildDateField() {
+    return GestureDetector(
+      onTap: () async {
+        final value =
+            await _selectDate(context, currentDate: Status4Form_birth.text);
+        if (value != null) {
+          setState(() {
+            Status4Form_birth.text = value;
+          });
+        }
+      },
+      child: InputDecorator(
+        decoration: _inputDecoration('วันเกิด'),
+        child: Row(
+          children: [
+            const Icon(Icons.calendar_month,
+                color: Color(0xFF102456), size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                Status4Form_birth.text.isNotEmpty
+                    ? DateFormat('dd-MM-yyyy')
+                        .format(DateTime.parse(Status4Form_birth.text))
+                    : 'ระบุวันเกิด',
+                style: TextStyle(
+                  color: Status4Form_birth.text.isNotEmpty
+                      ? Colors.blue
+                      : Colors.grey.shade700,
+                  fontFamily: Font_.Fonts_T,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildFieldGrid(List<Widget> children, double width) {
+    final bool twoCol = _isDesktop(width) || _isTablet(width);
+
+    if (!twoCol) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (int i = 0; i < children.length; i++) ...[
+            children[i],
+            if (i < children.length - 1) const SizedBox(height: 15),
+          ],
+        ],
+      );
+    }
+
+    final List<Widget> rows = [];
+    for (int i = 0; i < children.length; i += 2) {
+      if (i + 1 < children.length) {
+        rows.add(Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: children[i]),
+            const SizedBox(width: 10),
+            Expanded(child: children[i + 1]),
+          ],
+        ));
+      } else {
+        rows.add(Row(
+          children: [
+            Expanded(child: children[i]),
+            const SizedBox(width: 10),
+            const Expanded(child: SizedBox.shrink()),
+          ],
+        ));
+      }
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (int i = 0; i < rows.length; i++) ...[
+          rows[i],
+          if (i < rows.length - 1) const SizedBox(height: 15),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTypeSelector(double width) {
+    if (typeModels.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (width < 700) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: List.generate(typeModels.length, (index) {
+          final item = typeModels[index];
+          final selected = index == Value_AreaSer_;
+          return ChoiceChip(
+            label: Text(
+              item.type ?? '',
+              style: TextStyle(
+                fontFamily: Font_.Fonts_T,
+                color: selected ? Colors.white : Colors.black87,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            selected: selected,
+            selectedColor: const Color(0xFF102456),
+            backgroundColor: Colors.grey.shade100,
+            side: BorderSide(
+              color: selected ? const Color(0xFF102456) : Colors.grey.shade300,
+            ),
+            onSelected: (_) {
+              Status4Form_nameshop.clear();
+              Status4Form_bussshop.clear();
+              Status4Form_bussscontact.clear();
+              setState(() {
+                Value_AreaSer_ = index;
+                _verticalGroupValue = item.type ?? '';
+                transModels = [];
+              });
+            },
+          );
+        }),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.grey.shade50,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.grey.shade300),
+      ),
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        alignment: WrapAlignment.spaceAround,
+        children: List.generate(typeModels.length, (index) {
+          final item = typeModels[index];
+          return GestureDetector(
+            onTap: () {
+              Status4Form_nameshop.clear();
+              Status4Form_bussshop.clear();
+              Status4Form_bussscontact.clear();
+              setState(() {
+                Value_AreaSer_ = int.tryParse(item.ser ?? '1') != null
+                    ? int.parse(item.ser!) - 1
+                    : 0;
+                if (Value_AreaSer_ < 0) Value_AreaSer_ = 0;
+                _verticalGroupValue = item.type ?? '';
+                transModels = [];
+              });
+            },
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Radio<TypeModel>(
+                  value: item,
+                  groupValue: typeModels[
+                      Value_AreaSer_.clamp(0, typeModels.length - 1)],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    Status4Form_nameshop.clear();
+                    Status4Form_bussshop.clear();
+                    Status4Form_bussscontact.clear();
+                    setState(() {
+                      Value_AreaSer_ = int.tryParse(value.ser ?? '1') != null
+                          ? int.parse(value.ser!) - 1
+                          : 0;
+                      if (Value_AreaSer_ < 0) Value_AreaSer_ = 0;
+                      _verticalGroupValue = value.type ?? '';
+                      transModels = [];
+                    });
+                  },
+                  activeColor: const Color(0xFF102456),
+                ),
+                Text(
+                  item.type ?? '',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                    fontFamily: Font_.Fonts_T,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _buildTopBar(double width) {
+    final isCompact = width < 700;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (widget.addForForm == null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              onPressed: () => widget.updateMessage?.call(0),
+              icon: const Icon(Icons.arrow_back_rounded, color: Colors.red),
+              label: const Text(
+                'ย้อนกลับ',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: FontWeight_.Fonts_T,
+                ),
+              ),
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Colors.red),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
+          ),
+        if (widget.addForForm == null) const SizedBox(height: 8),
+        if (widget.addForForm == null)
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'เพิ่มข้อมูลทะเบียนลูกค้า',
+                  style: TextStyle(
+                    fontSize: isCompact ? 18 : 24,
+                    fontWeight: FontWeight.bold,
+                    color: PeopleChaoScreen_Color.Colors_Text1_,
+                    fontFamily: FontWeight_.Fonts_T,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        if (widget.addForForm == null) const SizedBox(height: 8),
+        if (widget.addForForm == null)
+          Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.7),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade300),
+            ),
+            child: Wrap(
+              crossAxisAlignment: WrapCrossAlignment.start,
+              alignment: WrapAlignment.start,
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                _buildModeChip(
+                  title: 'แบบปกติ',
+                  active: ser_tap == 0,
+                  activeColor: Colors.black,
+                  inactiveColor: Colors.grey,
+                  onTap: () => setState(() => ser_tap = 0),
+                ),
+                _buildModeChip(
+                  title: 'แบบExcel',
+                  active: ser_tap == 1,
+                  activeColor: Colors.orange.shade700,
+                  inactiveColor: Colors.orange.shade100,
+                  onTap: () => setState(() => ser_tap = 1),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildModeChip({
+    required String title,
+    required bool active,
+    required Color activeColor,
+    required Color inactiveColor,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        constraints: const BoxConstraints(minWidth: 120),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? activeColor : inactiveColor,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Center(
+          child: AutoSizeText(
+            title,
+            minFontSize: 10,
+            maxFontSize: 14,
+            style: const TextStyle(
+              color: Colors.white,
+              fontFamily: FontWeight_.Fonts_T,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNormalForm(double width) {
+    final businessLabel =
+        _isPersonalType ? 'ชื่อ-นามสกุล' : 'ชื่อผู้เช่า/บริษัท';
+
+    return Form(
+      key: _formKey,
+      child: Column(
+        children: [
+          _buildSectionCard(
+            title: 'ประเภทข้อมูลลูกค้า',
+            icon: Icons.badge_outlined,
+            child: _buildTypeSelector(width),
+          ),
+          _buildSectionCard(
+            title: 'ข้อมูลร้านค้าและผู้ติดต่อ',
+            icon: Icons.storefront_outlined,
+            child: _buildFieldGrid([
+              _buildTextField(
+                controller: Status4Form_nameshop,
+                label: 'ชื่อร้านค้า',
+                hint: 'ระบุชื่อร้านค้า',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'กรอกข้อมูลให้ครบถ้วน';
+                  }
+                  return null;
+                },
+              ),
+              _buildTextField(
+                controller: Status4Form_typeshop,
+                label: 'ประเภทร้านค้า',
+                hint: 'ระบุประเภทร้านค้า',
+              ),
+              _buildTextField(
+                controller:
+                    //  _isPersonalType
+                    //     ? Status4Form_bussshop
+                    //     :
+                    Status4Form_bussscontact,
+                label: businessLabel,
+                hint: 'ระบุ$businessLabel',
+              ),
+              _buildTextField(
+                controller: Status4Form_bussshop,
+                label: 'ชื่อบุคคลติดต่อ',
+                hint: 'ระบุชื่อบุคคลติดต่อ',
+                onChanged: (value) {
+                  // if (_isPersonalType) {
+                  //   Status4Form_nameshop.text = value.trim();
+                  // }
+                },
+              ),
+              _buildTextField(
+                controller: Status4Form_tel,
+                label: 'เบอร์โทร',
+                hint: 'ระบุเบอร์โทร',
+                keyboardType: TextInputType.phone,
+                maxLength: 10,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+              ),
+              _buildTextField(
+                controller: Status4Form_email,
+                label: 'อีเมล',
+                hint: 'ระบุอีเมล',
+                keyboardType: TextInputType.emailAddress,
+              ),
+            ], width),
+          ),
+          _buildSectionCard(
+            title: 'ข้อมูลส่วนบุคคล',
+            icon: Icons.person_outline,
+            child: _buildFieldGrid([
+              _buildTextField(
+                controller: Status4Form_tax,
+                label: 'ID/TAX ID',
+                hint: 'ระบุ ID/TAX ID',
+                keyboardType: TextInputType.number,
+                maxLength: 13,
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
+                  FilteringTextInputFormatter.digitsOnly,
+                ],
+                validator: (value) {
+                  final text = value?.trim() ?? '';
+                  if (text.isEmpty) return 'กรอกข้อมูลให้ครบถ้วน';
+                  if (text.length < 13) return 'กรอกอย่างน้อย 13 หลัก';
+                  return null;
+                },
+              ),
+              _buildDateField(),
+              _buildTextField(
+                controller: Status4Form_religion,
+                label: 'ศาสนา',
+                hint: 'ระบุศาสนา',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'กรอกข้อมูลให้ครบถ้วน';
+                  }
+                  return null;
+                },
+              ),
+              _buildTextField(
+                controller: Status4Form_national,
+                label: 'สัญชาติ',
+                hint: 'ระบุสัญชาติ',
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'กรอกข้อมูลให้ครบถ้วน';
+                  }
+                  return null;
+                },
+              ),
+            ], width),
+          ),
+          _buildSectionCard(
+            title: 'ที่อยู่',
+            icon: Icons.location_on_outlined,
+            child: _buildTextField(
+              controller: Status4Form_address,
+              label: 'ที่อยู่',
+              hint: 'ระบุที่อยู่',
+            ),
+          ),
+          Align(
+            alignment: Alignment.center,
+            child: SizedBox(
+              width: width < 700 ? double.infinity : 180,
+              height: 44,
+              child: ElevatedButton.icon(
+                onPressed: _saving ? null : _submitForm,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: FontWeight_.Fonts_T,
+                  ),
+                ),
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: Text(_saving ? 'กำลังบันทึก...' : 'บันทึก'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-        child: Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Container(
-        decoration: const BoxDecoration(
-          color: AppbackgroundColor.Sub_Abg_Colors,
-          borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(10),
-              topRight: Radius.circular(10),
-              bottomLeft: Radius.circular(10),
-              bottomRight: Radius.circular(10)),
-          // border: Border.all(color: Colors.grey, width: 1),
-        ),
-        child: Column(
-          children: [
-            InkWell(
-              onTap: () {
-                widget.updateMessage(0);
-              },
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(0, 4, 4, 0),
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(4, 4, 2, 0),
-                    child: Container(
-                      width: 100,
-                      decoration: BoxDecoration(
-                        color: Colors.red[700],
-                        borderRadius: const BorderRadius.only(
-                          topLeft: Radius.circular(10),
-                          topRight: Radius.circular(10),
-                          bottomLeft: Radius.circular(10),
-                          bottomRight: Radius.circular(10),
-                        ),
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                      padding: const EdgeInsets.all(2.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: const [
-                          AutoSizeText(
-                            ' <  ',
-                            overflow: TextOverflow.ellipsis,
-                            minFontSize: 8,
-                            maxFontSize: 14,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: FontWeight_.Fonts_T,
-                            ),
-                          ),
-                          AutoSizeText(
-                            'ย้อนกลับ ',
-                            overflow: TextOverflow.ellipsis,
-                            minFontSize: 8,
-                            maxFontSize: 14,
-                            style: TextStyle(
-                              decoration: TextDecoration.underline,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: FontWeight_.Fonts_T,
-                            ),
-                          ),
+    final width = MediaQuery.of(context).size.width;
+    final contentMaxWidth = _isDesktop(width) ? 1320.0 : 1000.0;
+
+    return Material(
+      color: Colors.transparent,
+      child: Padding(
+        padding: EdgeInsets.all(width < 700 ? 6 : 12),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppbackgroundColor.Sub_Abg_Colors,
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.all(width < 700 ? 8 : 14),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: contentMaxWidth),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildTopBar(width),
+                          const SizedBox(height: 10),
+                          ser_tap == 1
+                              ? const Add_Custo_EXC_Screen()
+                              : _buildNormalForm(width),
                         ],
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(4.0),
-              child: Container(
-                decoration: BoxDecoration(
-                  // color: Colors.white.withOpacity(0.3),
-                  borderRadius: const BorderRadius.only(
-                    topLeft: Radius.circular(15),
-                    topRight: Radius.circular(15),
-                    bottomLeft: Radius.circular(15),
-                    bottomRight: Radius.circular(15),
-                  ),
-                  border: Border.all(color: Colors.grey, width: 1),
-                ),
-                padding: const EdgeInsets.all(4.0),
-                child: Row(
-                  children: [
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          ser_tap = 0;
-                        });
-                      },
-                      child: Container(
-                        width: 100,
-                        decoration: BoxDecoration(
-                          color: (ser_tap == 0)
-                              ? Colors.pink[700]
-                              : Colors.pink[200],
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
-                          ),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        padding: const EdgeInsets.all(2.0),
-                        child: Center(
-                          child: AutoSizeText(
-                            minFontSize: 8,
-                            maxFontSize: 14,
-                            'แบบปกติ',
-                            style: TextStyle(
-                              color: Colors.white,
-                              // fontWeight: FontWeight.bold,
-                              fontFamily: FontWeight_.Fonts_T,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: () {
-                        setState(() {
-                          ser_tap = 1;
-                        });
-                      },
-                      child: Container(
-                        width: 100,
-                        decoration: BoxDecoration(
-                          color: (ser_tap == 1)
-                              ? Colors.orange[700]
-                              : Colors.orange[200],
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10),
-                          ),
-                          border: Border.all(color: Colors.white, width: 2),
-                        ),
-                        padding: const EdgeInsets.all(2.0),
-                        child: Center(
-                          child: AutoSizeText(
-                            minFontSize: 8,
-                            maxFontSize: 14,
-                            'แบบExcel',
-                            style: TextStyle(
-                              color: Colors.white,
-                              // fontWeight: FontWeight.bold,
-                              fontFamily: FontWeight_.Fonts_T,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ),
-            (ser_tap == 1)
-                ? Add_Custo_EXC_Screen()
-                : Expanded(
-                    child: Container(
-                      child: Form(
-                        key: _formKey,
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: const [
-                                  Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: AutoSizeText(
-                                      minFontSize: 10,
-                                      maxFontSize: 20,
-                                      'เพิ่มข้อมูลทะเบียนลูกค้า',
-                                      style: TextStyle(
-                                        color: PeopleChaoScreen_Color
-                                            .Colors_Text1_,
-                                        // fontWeight: FontWeight.bold,
-                                        fontFamily: FontWeight_.Fonts_T,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              // _searchBar(),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    Text(
-                                      'รูปผู้เช่า',
-                                      textAlign: TextAlign.start,
-                                      style: TextStyle(
-                                        color: PeopleChaoScreen_Color
-                                            .Colors_Text2_,
-                                        // fontWeight: FontWeight.bold,
-                                        fontFamily: Font_.Fonts_T,
-                                      ),
-                                    ),
-                                    IconButton(
-                                      onPressed: () async {
-                                        convert_base64(ImageSource.gallery);
-
-                                        // deleteFile();
-                                        // setState(() {
-                                        //   fiew = 'pic_tenant';
-                                        // });
-                                        // uploadImage(ImageSource.gallery);
-                                        // // _getFromGallery2();
-                                      },
-                                      icon: const Icon(
-                                        Icons.edit,
-                                        color: Colors.red,
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 1,
-                                      child: (base64_Image == null)
-                                          ? Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Container(
-                                                  width: 80,
-                                                  height: 80,
-                                                  color: Colors.grey,
-                                                ),
-                                              ],
-                                            )
-                                          : Image.memory(
-                                              base64Decode(
-                                                  base64_Image.toString()),
-                                              width: 100, height: 100,
-                                              // height: 200,
-                                              // fit: BoxFit.cover,
-                                            ),
-                                    ),
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ประเภท',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Container(
-                                            decoration: BoxDecoration(
-                                              color:
-                                                  Colors.white.withOpacity(0.3),
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                topLeft: Radius.circular(15),
-                                                topRight: Radius.circular(15),
-                                                bottomLeft: Radius.circular(15),
-                                                bottomRight:
-                                                    Radius.circular(15),
-                                              ),
-                                              border: Border.all(
-                                                  color: Colors.grey, width: 1),
-                                            ),
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: StreamBuilder(
-                                                stream: Stream.periodic(
-                                                    const Duration(seconds: 0)),
-                                                builder: (context, snapshot) {
-                                                  return RadioGroup<
-                                                      TypeModel>.builder(
-                                                    direction: Axis.horizontal,
-                                                    groupValue:
-                                                        typeModels.elementAt(
-                                                            Value_AreaSer_),
-                                                    horizontalAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceAround,
-                                                    onChanged: (value) {
-                                                      Status4Form_nameshop
-                                                          .clear();
-                                                      Status4Form_bussshop
-                                                          .clear();
-                                                      Status4Form_bussscontact
-                                                          .clear();
-                                                      setState(() {
-                                                        Value_AreaSer_ =
-                                                            int.parse(value!
-                                                                    .ser!) -
-                                                                1;
-                                                        _verticalGroupValue =
-                                                            value.type!;
-                                                        _TransModels = [];
-                                                      });
-                                                      print(Value_AreaSer_);
-                                                    },
-                                                    items: typeModels,
-                                                    textStyle: const TextStyle(
-                                                      fontSize: 15,
-                                                      color:
-                                                          PeopleChaoScreen_Color
-                                                              .Colors_Text2_,
-                                                    ),
-                                                    itemBuilder:
-                                                        (typeXModels) =>
-                                                            RadioButtonBuilder(
-                                                      typeXModels.type!,
-                                                    ),
-                                                  );
-                                                })),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ชื่อร้านค้า',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          // keyboardType: TextInputType.name,
-                                          controller: Status4Form_nameshop,
-                                          // onChanged: (value) {
-                                          //   // Status4Form_nameshop.text = value.trim();
-                                          //   (Value_AreaSer_ + 1) == 1
-                                          //       ? Status4Form_bussshop.text =
-                                          //           value.trim()
-                                          //       : Status4Form_bussscontact.text =
-                                          //           value.trim();
-                                          // },
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return 'กรอกข้อมูลให้ครบถ้วน ';
-                                            }
-                                            // if (int.parse(value.toString()) < 13) {
-                                            //   return '< 13';
-                                            // }
-                                            return null;
-                                          },
-                                          //  controller: (Value_AreaSer_ + 1) == 1
-                                          //                                         ? Status4Form_bussshop
-                                          //                                         : Status4Form_bussscontact,
-                                          //                                     onChanged: (value) {
-                                          //                                       Status4Form_nameshop.text = value.trim();
-                                          //                                       if ((Value_AreaSer_ + 1) == 1) {
-                                          //                                         _Form_bussshop = value.trim();
-                                          //                                         Status4Form_bussshop.text =
-                                          //                                                 value.trim()
-                                          //                                       } else {
-                                          //                                         _Form_bussscontact = value.trim();
-                                          //                                         Status4Form_bussscontact.text =
-                                          //                                                 value.trim()
-                                          //                                       }
-                                          //                                     },
-
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุชื่อร้านค้า',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          // for below version 2 use this
-                                          // FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          // // for version 2 and greater youcan also use this
-                                          // FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ประเภทร้านค้า',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: Status4Form_typeshop,
-                                          // onChanged: (value) =>
-                                          //     _Form_typeshop =
-                                          //         value.trim(),
-                                          //initialValue: _Form_typeshop,
-                                          // validator: (value) {
-                                          //   if (value == null || value.isEmpty) {
-                                          //     return 'กรอกข้อมูลให้ครบถ้วน ';
-                                          //   }
-                                          //   // if (int.parse(value.toString()) < 13) {
-                                          //   //   return '< 13';
-                                          //   // }
-                                          //   return null;
-                                          // },
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุประเภทร้านค้า',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          //   // for below version 2 use this
-                                          //   FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          //   // for version 2 and greater youcan also use this
-                                          //   FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ชื่อผู้เช่า/บริษัท',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: (Value_AreaSer_ + 1) == 1
-                                              ? Status4Form_bussshop
-                                              : Status4Form_bussscontact,
-                                          onChanged: (value) {
-                                            // Status4Form_nameshop.text = value.trim();
-                                            if ((Value_AreaSer_ + 1) == 1) {
-                                              _Form_bussshop = value.trim();
-                                            } else {
-                                              _Form_bussscontact = value.trim();
-                                            }
-                                          },
-
-                                          //initialValue: _Form_bussshop,
-                                          // validator: (value) {
-                                          //   if (value == null || value.isEmpty) {
-                                          //     return 'กรอกข้อมูลให้ครบถ้วน ';
-                                          //   }
-                                          //   // if (int.parse(value.toString()) < 13) {
-                                          //   //   return '< 13';
-                                          //   // }
-                                          //   return null;
-                                          // },
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText:
-                                                  'ระบุชื่อผู้เช่า/บริษัท',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          //   // for below version 2 use this
-                                          //   FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          //   // for version 2 and greater youcan also use this
-                                          //   FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ชื่อบุคคลติดต่อ',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: Status4Form_bussshop,
-                                          onChanged: (value) {
-                                            if ((Value_AreaSer_ + 1) == 1) {
-                                              Status4Form_nameshop.text =
-                                                  value.trim();
-                                            } else {}
-                                          },
-                                          // validator: (value) {
-                                          //   if (value == null || value.isEmpty) {
-                                          //     return 'กรอกข้อมูลให้ครบถ้วน ';
-                                          //   }
-                                          //   // if (int.parse(value.toString()) < 13) {
-                                          //   //   return '< 13';
-                                          //   // }
-                                          //   return null;
-                                          // },
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุชื่อบุคคลติดต่อ',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          //   // for below version 2 use this
-                                          //   FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          //   // for version 2 and greater youcan also use this
-                                          //   FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ที่อยู่',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 5,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: Status4Form_address,
-                                          // onChanged: (value) =>
-                                          //     _Form_address =
-                                          //         value.trim(),
-                                          //initialValue: _Form_address,
-                                          // validator: (value) {
-                                          //   if (value == null || value.isEmpty) {
-                                          //     return 'กรอกข้อมูลให้ครบถ้วน ';
-                                          //   }
-                                          //   // if (int.parse(value.toString()) < 13) {
-                                          //   //   return '< 13';
-                                          //   // }
-                                          //   return null;
-                                          // },
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุที่อยู่',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          //   // for below version 2 use this
-                                          //   FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          //   // for version 2 and greater youcan also use this
-                                          //   FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'เบอร์โทร',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: Status4Form_tel,
-                                          // onChanged: (value) =>
-                                          //     _Form_tel =
-                                          //         value.trim(),
-                                          //initialValue: _Form_tel,
-                                          // validator: (value) {
-                                          //   if (value == null || value.isEmpty) {
-                                          //     return 'กรอกข้อมูลให้ครบถ้วน ';
-                                          //   }
-                                          //   // if (int.parse(value.toString()) < 13) {
-                                          //   //   return '< 13';
-                                          //   // }
-                                          //   return null;
-                                          // },
-                                          maxLength: 10,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุเบอร์โทร',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          inputFormatters: <TextInputFormatter>[
-                                            // for below version 2 use this
-                                            FilteringTextInputFormatter.allow(
-                                                RegExp(r'[0-9]')),
-                                            // for version 2 and greater youcan also use this
-                                            FilteringTextInputFormatter
-                                                .digitsOnly
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'อีเมล',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: Status4Form_email,
-                                          // onChanged: (value) =>
-                                          //     _Form_email =
-                                          //         value.trim(),
-                                          //initialValue: _Form_email,
-                                          // validator: (value) {
-                                          //   if (value == null || value.isEmpty) {
-                                          //     return 'กรอกข้อมูลให้ครบถ้วน ';
-                                          //   }
-                                          //   // if (int.parse(value.toString()) < 13) {
-                                          //   //   return '< 13';
-                                          //   // }
-                                          //   return null;
-                                          // },
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุอีเมล',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          //   // for below version 2 use this
-                                          //   FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          //   // for version 2 and greater youcan also use this
-                                          //   FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Row(
-                                  children: [
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        'ID/TAX ID',
-                                        textAlign: TextAlign.start,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: TextFormField(
-                                          //keyboardType: TextInputType.none,
-                                          controller: Status4Form_tax,
-                                          // onChanged: (value) =>
-                                          //     _Form_tax =
-                                          //         value.trim(),
-                                          //initialValue: _Form_tax,
-                                          validator: (value) {
-                                            if (value == null ||
-                                                value.isEmpty) {
-                                              return 'กรอกข้อมูลให้ครบถ้วน ';
-                                            }
-                                            // if (int.parse(value.toString()) < 13) {
-                                            //   return '< 13';
-                                            // }
-                                            return null;
-                                          },
-                                          // maxLength: 13,
-                                          cursorColor: Colors.green,
-                                          decoration: InputDecoration(
-                                              fillColor:
-                                                  Colors.white.withOpacity(0.3),
-                                              filled: true,
-                                              // prefixIcon:
-                                              //     const Icon(Icons.person, color: Colors.black),
-                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                              focusedBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.black,
-                                                ),
-                                              ),
-                                              enabledBorder:
-                                                  const OutlineInputBorder(
-                                                borderRadius: BorderRadius.only(
-                                                  topRight: Radius.circular(15),
-                                                  topLeft: Radius.circular(15),
-                                                  bottomRight:
-                                                      Radius.circular(15),
-                                                  bottomLeft:
-                                                      Radius.circular(15),
-                                                ),
-                                                borderSide: BorderSide(
-                                                  width: 1,
-                                                  color: Colors.grey,
-                                                ),
-                                              ),
-                                              labelText: 'ระบุID/TAX ID',
-                                              labelStyle: const TextStyle(
-                                                color: PeopleChaoScreen_Color
-                                                    .Colors_Text2_,
-                                                // fontWeight: FontWeight.bold,
-                                                fontFamily: Font_.Fonts_T,
-                                              )),
-                                          // inputFormatters: <TextInputFormatter>[
-                                          //   // for below version 2 use this
-                                          //   FilteringTextInputFormatter.allow(RegExp(r'[0-9]')),
-                                          //   // for version 2 and greater youcan also use this
-                                          //   FilteringTextInputFormatter.digitsOnly
-                                          // ],
-                                        ),
-                                      ),
-                                    ),
-                                    const Expanded(
-                                      flex: 1,
-                                      child: Text(
-                                        '',
-                                        textAlign: TextAlign.center,
-                                        style: TextStyle(
-                                          color: PeopleChaoScreen_Color
-                                              .Colors_Text2_,
-                                          // fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                        ),
-                                      ),
-                                    ),
-                                    Expanded(
-                                      flex: 2,
-                                      child: Container(
-                                        decoration: const BoxDecoration(
-                                          // color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(6),
-                                            topRight: Radius.circular(6),
-                                            bottomLeft: Radius.circular(6),
-                                            bottomRight: Radius.circular(6),
-                                          ),
-                                          // border: Border.all(color: Colors.grey, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        // child: const Icon(Icons.check_box_outline_blank)
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-
-                              const SizedBox(
-                                height: 50,
-                              ),
-
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: InkWell(
-                                      onTap: () async {
-                                        if (_formKey.currentState!.validate()) {
-                                          print(
-                                              '---------------------------------->');
-                                          print(Value_AreaSer_);
-                                          print(_verticalGroupValue);
-                                          print(
-                                              '${typeModels.elementAt(Value_AreaSer_).type}');
-
-                                          print(
-                                              '---------------------------------->');
-
-                                          print(Status4Form_nameshop.text);
-                                          print(Status4Form_typeshop.text);
-                                          print(Status4Form_nameshop.text);
-                                          print(Status4Form_bussshop.text);
-                                          print(Status4Form_bussscontact.text);
-
-                                          print(Status4Form_address.text);
-                                          print(Status4Form_email.text);
-                                          print(Status4Form_tax.text);
-                                          print(
-                                              '----------------------------------');
-                                          // Value_AreaSer_ = int.parse(value!.ser!) - 1;
-                                          // _verticalGroupValue = value.type!;
-                                          SharedPreferences preferences =
-                                              await SharedPreferences
-                                                  .getInstance();
-                                          var ren = preferences
-                                              .getString('renTalSer');
-                                          var user =
-                                              preferences.getString('ser');
-
-                                          String? nameshop =
-                                              Status4Form_nameshop.text
-                                                  .toString();
-                                          String? typeshop =
-                                              Status4Form_typeshop.text
-                                                  .toString();
-                                          String? bussshop =
-                                              Status4Form_bussshop.text
-                                                  .toString();
-                                          String? bussscontact =
-                                              (_verticalGroupValue
-                                                          .toString()
-                                                          .trim() ==
-                                                      'ส่วนตัว/บุคคลธรรมดา')
-                                                  ? Status4Form_bussshop.text
-                                                      .toString()
-                                                  : Status4Form_bussscontact
-                                                      .text
-                                                      .toString();
-                                          String? address = Status4Form_address
-                                              .text
-                                              .toString();
-                                          String? tel =
-                                              Status4Form_tel.text.toString();
-                                          String? email =
-                                              Status4Form_email.text.toString();
-                                          String? tax =
-                                              Status4Form_tax.text.toString();
-
-                                          String url =
-                                              '${MyConstant().domain}/InC_CustoAdd_Bureau.php?isAdd=true&ren=$ren';
-
-                                          var response = await http
-                                              .post(Uri.parse(url), body: {
-                                            'ciddoc': '',
-                                            'qutser': '',
-                                            'user': '',
-                                            'sumdis': '',
-                                            'sumdisp': '',
-                                            'dateY': '',
-                                            'dateY1': '',
-                                            'time': '',
-                                            'payment1': '',
-                                            'payment2': '',
-                                            'pSer1': '',
-                                            'pSer2': '',
-                                            'sum_whta': '',
-                                            'bill': '',
-                                            'fileNameSlip': '',
-                                            'areaSer': (typeModels
-                                                        .elementAt(
-                                                            Value_AreaSer_)
-                                                        .type
-                                                        .toString()
-                                                        .trim() ==
-                                                    'ส่วนตัว/บุคคลธรรมดา')
-                                                ? '1'
-                                                : '2',
-                                            'typeModels':
-                                                '${typeModels.elementAt(Value_AreaSer_).type}',
-                                            'typeshop': Status4Form_typeshop
-                                                .text
-                                                .toString(),
-                                            'nameshop': Status4Form_nameshop
-                                                .text
-                                                .toString(),
-                                            'bussshop': Status4Form_bussshop
-                                                .text
-                                                .toString(),
-                                            'bussscontact':
-                                                (Value_AreaSer_ + 1) == 1
-                                                    ? Status4Form_bussshop.text
-                                                        .toString()
-                                                    : Status4Form_bussscontact
-                                                        .text
-                                                        .toString(),
-                                            'address': Status4Form_address.text
-                                                .toString(),
-                                            'tel':
-                                                Status4Form_tel.text.toString(),
-                                            'tax':
-                                                Status4Form_tax.text.toString(),
-                                            'email': Status4Form_email.text
-                                                .toString(),
-                                            'Serbool': '',
-                                            'area_rent_sum': '',
-                                            'comment': '',
-                                            'zser': ''.trim().toString(),
-                                          }).then((value) async {
-                                            setState(() {
-                                              Status4Form_nameshop.clear();
-                                              Status4Form_typeshop.clear();
-                                              Status4Form_nameshop.clear();
-                                              Status4Form_bussshop.clear();
-                                              Status4Form_bussscontact.clear();
-                                              Status4Form_address.clear();
-                                              Status4Form_email.clear();
-                                              Status4Form_tax.clear();
-                                            });
-                                            // print('$value');
-                                            var result =
-                                                json.decode(value.body);
-                                            // print('$result ');
-                                            for (var map in result) {
-                                              CustomerModel CustomerModels =
-                                                  CustomerModel.fromJson(map);
-                                              print(CustomerModels.custno);
-                                              print(CustomerModels.custno);
-                                              setState(() {
-                                                cust_no_ =
-                                                    CustomerModels.custno!;
-                                              });
-                                              uploadImage();
-                                            }
-
-                                            setState(() {
-                                              Status4Form_nameshop.clear();
-                                              Status4Form_typeshop.clear();
-                                              Status4Form_nameshop.clear();
-                                              Status4Form_bussshop.clear();
-                                              Status4Form_bussscontact.clear();
-                                              Status4Form_address.clear();
-                                              Status4Form_email.clear();
-                                              Status4Form_tax.clear();
-                                            });
-                                          });
-                                        }
-                                        // if (base64_Image == null) {
-                                        //   print('กรุณาอัพโหลดรูปภาพ');
-                                        //   ScaffoldMessenger.of(context)
-                                        //       .showSnackBar(
-                                        //     const SnackBar(
-                                        //         backgroundColor: Colors.red,
-                                        //         content: Text(
-                                        //             ' ผิดพลาด กรุณาอัพโหลดรูปภาพ... !',
-                                        //             style: TextStyle(
-                                        //                 color: Colors.white,
-                                        //                 fontWeight:
-                                        //                     FontWeight.bold,
-                                        //                 fontFamily:
-                                        //                     Font_.Fonts_T))),
-                                        //   );
-                                        // } else {
-                                        //   if (_formKey.currentState!
-                                        //       .validate()) {
-                                        //     print(
-                                        //         '---------------------------------->');
-                                        //     print(Value_AreaSer_);
-                                        //     print(_verticalGroupValue);
-                                        //     print(
-                                        //         '${typeModels.elementAt(Value_AreaSer_).type}');
-
-                                        //     print(
-                                        //         '---------------------------------->');
-
-                                        //     print(Status4Form_nameshop.text);
-                                        //     print(Status4Form_typeshop.text);
-                                        //     print(Status4Form_nameshop.text);
-                                        //     print(Status4Form_bussshop.text);
-                                        //     print(
-                                        //         Status4Form_bussscontact.text);
-
-                                        //     print(Status4Form_address.text);
-                                        //     print(Status4Form_email.text);
-                                        //     print(Status4Form_tax.text);
-                                        //     print(
-                                        //         '----------------------------------');
-                                        //     // Value_AreaSer_ = int.parse(value!.ser!) - 1;
-                                        //     // _verticalGroupValue = value.type!;
-                                        //     SharedPreferences preferences =
-                                        //         await SharedPreferences
-                                        //             .getInstance();
-                                        //     var ren = preferences
-                                        //         .getString('renTalSer');
-                                        //     var user =
-                                        //         preferences.getString('ser');
-
-                                        //     String? nameshop =
-                                        //         Status4Form_nameshop.text
-                                        //             .toString();
-                                        //     String? typeshop =
-                                        //         Status4Form_typeshop.text
-                                        //             .toString();
-                                        //     String? bussshop =
-                                        //         Status4Form_bussshop.text
-                                        //             .toString();
-                                        //     String? bussscontact =
-                                        //         (_verticalGroupValue
-                                        //                     .toString()
-                                        //                     .trim() ==
-                                        //                 'ส่วนตัว/บุคคลธรรมดา')
-                                        //             ? Status4Form_bussshop.text
-                                        //                 .toString()
-                                        //             : Status4Form_bussscontact
-                                        //                 .text
-                                        //                 .toString();
-                                        //     String? address =
-                                        //         Status4Form_address.text
-                                        //             .toString();
-                                        //     String? tel =
-                                        //         Status4Form_tel.text.toString();
-                                        //     String? email = Status4Form_email
-                                        //         .text
-                                        //         .toString();
-                                        //     String? tax =
-                                        //         Status4Form_tax.text.toString();
-
-                                        //     String url =
-                                        //         '${MyConstant().domain}/InC_CustoAdd_Bureau.php?isAdd=true&ren=$ren';
-
-                                        //     var response = await http
-                                        //         .post(Uri.parse(url), body: {
-                                        //       'ciddoc': '',
-                                        //       'qutser': '',
-                                        //       'user': '',
-                                        //       'sumdis': '',
-                                        //       'sumdisp': '',
-                                        //       'dateY': '',
-                                        //       'dateY1': '',
-                                        //       'time': '',
-                                        //       'payment1': '',
-                                        //       'payment2': '',
-                                        //       'pSer1': '',
-                                        //       'pSer2': '',
-                                        //       'sum_whta': '',
-                                        //       'bill': '',
-                                        //       'fileNameSlip': '',
-                                        //       'areaSer': (typeModels
-                                        //                   .elementAt(
-                                        //                       Value_AreaSer_)
-                                        //                   .type
-                                        //                   .toString()
-                                        //                   .trim() ==
-                                        //               'ส่วนตัว/บุคคลธรรมดา')
-                                        //           ? '1'
-                                        //           : '2',
-                                        //       'typeModels':
-                                        //           '${typeModels.elementAt(Value_AreaSer_).type}',
-                                        //       'typeshop': Status4Form_typeshop
-                                        //           .text
-                                        //           .toString(),
-                                        //       'nameshop': Status4Form_nameshop
-                                        //           .text
-                                        //           .toString(),
-                                        //       'bussshop': Status4Form_bussshop
-                                        //           .text
-                                        //           .toString(),
-                                        //       'bussscontact':
-                                        //           (Value_AreaSer_ + 1) == 1
-                                        //               ? Status4Form_bussshop
-                                        //                   .text
-                                        //                   .toString()
-                                        //               : Status4Form_bussscontact
-                                        //                   .text
-                                        //                   .toString(),
-                                        //       'address': Status4Form_address
-                                        //           .text
-                                        //           .toString(),
-                                        //       'tel': Status4Form_tel.text
-                                        //           .toString(),
-                                        //       'tax': Status4Form_tax.text
-                                        //           .toString(),
-                                        //       'email': Status4Form_email.text
-                                        //           .toString(),
-                                        //       'Serbool': '',
-                                        //       'area_rent_sum': '',
-                                        //       'comment': '',
-                                        //       'zser': ''.trim().toString(),
-                                        //     }).then((value) async {
-                                        //       setState(() {
-                                        //         Status4Form_nameshop.clear();
-                                        //         Status4Form_typeshop.clear();
-                                        //         Status4Form_nameshop.clear();
-                                        //         Status4Form_bussshop.clear();
-                                        //         Status4Form_bussscontact
-                                        //             .clear();
-                                        //         Status4Form_address.clear();
-                                        //         Status4Form_email.clear();
-                                        //         Status4Form_tax.clear();
-                                        //       });
-                                        //       // print('$value');
-                                        //       var result =
-                                        //           json.decode(value.body);
-                                        //       // print('$result ');
-                                        //       for (var map in result) {
-                                        //         CustomerModel CustomerModels =
-                                        //             CustomerModel.fromJson(map);
-                                        //         print(CustomerModels.custno);
-                                        //         print(CustomerModels.custno);
-                                        //         setState(() {
-                                        //           cust_no_ =
-                                        //               CustomerModels.custno!;
-                                        //         });
-                                        //         uploadImage();
-                                        //       }
-
-                                        //       setState(() {
-                                        //         Status4Form_nameshop.clear();
-                                        //         Status4Form_typeshop.clear();
-                                        //         Status4Form_nameshop.clear();
-                                        //         Status4Form_bussshop.clear();
-                                        //         Status4Form_bussscontact
-                                        //             .clear();
-                                        //         Status4Form_address.clear();
-                                        //         Status4Form_email.clear();
-                                        //         Status4Form_tax.clear();
-                                        //       });
-                                        //     });
-                                        //   }
-                                        // }
-                                      },
-                                      child: Container(
-                                        width: 130,
-                                        height: 50,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.green,
-                                          borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              topRight: Radius.circular(20),
-                                              bottomLeft: Radius.circular(20),
-                                              bottomRight: Radius.circular(20)),
-                                        ),
-                                        child: const Center(
-                                          child: Text('บันทึก',
-                                              maxLines: 3,
-                                              overflow: TextOverflow.ellipsis,
-                                              softWrap: false,
-                                              style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold,
-                                                fontFamily: FontWeight_.Fonts_T,
-                                              )),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-          ],
+            ],
+          ),
         ),
       ),
-    ));
+    );
   }
 }

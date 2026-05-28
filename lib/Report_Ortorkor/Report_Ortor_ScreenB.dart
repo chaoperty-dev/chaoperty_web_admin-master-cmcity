@@ -468,7 +468,7 @@ class _Report_Ortor_ScreenBState extends State<Report_Ortor_ScreenB> {
         });
       });
     } catch (e) {
-      print(e);
+      // print(e);
     }
   }
 
@@ -515,7 +515,7 @@ class _Report_Ortor_ScreenBState extends State<Report_Ortor_ScreenB> {
         });
       });
     } catch (e) {
-      print(e);
+     //  print(e);
     }
   }
 
@@ -568,7 +568,7 @@ class _Report_Ortor_ScreenBState extends State<Report_Ortor_ScreenB> {
         setState(() {
           Value_InvoiceDate_Daily = "${formatter.format(result)}";
         });
-        print("${Value_InvoiceDate_Daily}");
+        // print("${Value_InvoiceDate_Daily}");
         // if (Value_Chang_Zone_Daily != null) {
         //   red_Trans_bill();
         //   red_Trans_billDailyBank();

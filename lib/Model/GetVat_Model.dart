@@ -5,9 +5,10 @@ class VatModel {
   String? st;
   String? vtypex;
   String? data_update;
+   String? vtype;
 
   VatModel(
-      {this.ser, this.vat, this.pct, this.st, this.vtypex, this.data_update});
+      {this.ser, this.vat, this.pct, this.st, this.vtypex, this.data_update, this.vtype});
 
   VatModel.fromJson(Map<String, dynamic> json) {
     ser = json['ser'];
@@ -16,6 +17,7 @@ class VatModel {
     st = json['st'];
     vtypex = json['vtypex'];
     data_update = json['data_update'];
+    vtype = json['vtype'];
   }
 
   Map<String, dynamic> toJson() {
@@ -26,6 +28,7 @@ class VatModel {
     data['st'] = this.st;
     data['vtypex'] = this.vtypex;
     data['data_update'] = this.data_update;
+    data['vtype'] = this.vtype;
     return data;
   }
 }

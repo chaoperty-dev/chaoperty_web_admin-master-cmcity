@@ -321,7 +321,7 @@ class _Account_Bill_InvoceSuccessState
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -379,7 +379,7 @@ class _Account_Bill_InvoceSuccessState
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           PayMentModel _PayMentModel = PayMentModel.fromJson(map);
@@ -436,12 +436,12 @@ class _Account_Bill_InvoceSuccessState
     String url = (Serdata.toString() == 'All')
         ? '${MyConstant().domain}/GC_billPay_invoiceMon_history.php?isAdd=true&ren=$ren&Serdata=$Serdata&serzone=$zone&_monts=$MONTH_Now&yex=$YEAR_Now'
         : '${MyConstant().domain}/GC_billPay_invoiceMon_history.php?isAdd=true&ren=$ren&Serdata=$Serdata&serzone=$zone&_monts=$MONTH_Now&yex=$YEAR_Now';
-    print('result $url');
+    //print('result $url');
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           InvoiceReModel transMeterModel = InvoiceReModel.fromJson(map);
@@ -537,10 +537,10 @@ class _Account_Bill_InvoceSuccessState
       });
     } else {
       // Handle the case where contractxPakanModels is empty
-      // print("contractxPakanModels is empty, no data to add. $data");
+      // //print("contractxPakanModels is empty, no data to add. $data");
     }
 
-    // print("Data added: $data");
+    // //print("Data added: $data");
   }
 
   //-------------------------------------->
@@ -688,12 +688,12 @@ class _Account_Bill_InvoceSuccessState
 
     String url =
         '${MyConstant().domain}/GC_bill_invoice_history.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docnoin=$docnoin';
-    print(url);
+    //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           InvoiceHistoryModel _InvoiceHistoryModel =
@@ -868,7 +868,7 @@ class _Account_Bill_InvoceSuccessState
 
     // Check if the difference is greater than 15 minutes
     if (difference.inMinutes > int.parse('${time_check}')) {
-      // print('เกิน กำหนด.');
+      // //print('เกิน กำหนด.');
       // Count_time_check = Count_time_check + 1;
       return true;
     } else {
@@ -883,13 +883,13 @@ class _Account_Bill_InvoceSuccessState
         (ac4_3.where((item) => item["st"] == '1').toList().length <= 10)
             ? (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.83
-                : 1200
+                : 1400
             : (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.83 +
                     ((ac4_3.where((item) => item["st"] == '1').toList().length -
                             10) *
                         30)
-                : 1200 +
+                : 1400 +
                     ((ac4_3.where((item) => item["st"] == '1').toList().length -
                             10) *
                         30);
@@ -1049,7 +1049,7 @@ class _Account_Bill_InvoceSuccessState
                                         int selectedIndex = ac4_3.indexWhere(
                                             (items) =>
                                                 items["ser"] == item["ser"]);
-                                        // print(ac1[selectedIndex]
+                                        // //print(ac1[selectedIndex]
                                         //     [
                                         //     "pn"]);
                                         // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
@@ -2237,21 +2237,21 @@ class _Account_Bill_InvoceSuccessState
     var ciddoc = Get_Value_cid;
     var qutser = Get_Value_NameShop_index;
     var because = Formbecause_.text?.toString() ?? '';
-    // print('numinvoice 1 $numinvoice');
+    // //print('numinvoice 1 $numinvoice');
     String url =
         '${MyConstant().domain}/UPC_Invoice_history.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&numinvoice=$numinvoice&remark=$because';
     try {
-      print('numinvoice 2 $numinvoice');
+      //print('numinvoice 2 $numinvoice');
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result>>>>>>> $result');
-      // print('numinvoice 3 $numinvoice');
+      // //print('result>>>>>>> $result');
+      // //print('numinvoice 3 $numinvoice');
 
       if (result.toString() == 'true') {
         setState(() async {
           Loading_Trans_bill();
-          // print('numinvoice 4 $numinvoice');
+          // //print('numinvoice 4 $numinvoice');
           // red_InvoiceMon_bill();
           _InvoiceHistoryModels.clear();
           sum_pvat = 0;
@@ -2261,7 +2261,7 @@ class _Account_Bill_InvoceSuccessState
           sum_disamt = 0;
           sum_disp = 0;
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
     Navigator.pop(context, 'OK');
@@ -2275,21 +2275,21 @@ class _Account_Bill_InvoceSuccessState
     var ciddoc = Get_Value_cid;
     var qutser = Get_Value_NameShop_index;
     var because = Formbecause_.text.toString() ?? '';
-    // print('numinvoice 1 $numinvoice');
+    // //print('numinvoice 1 $numinvoice');
     String url =
         '${MyConstant().domain}/UPC_Invoice_history.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&numinvoice=$numinvoice&remark=$because';
     try {
-      // print('numinvoice 2 $numinvoice');
+      // //print('numinvoice 2 $numinvoice');
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result>>>>>>> $result');
-      // print('numinvoice 3 $numinvoice');
+      // //print('result>>>>>>> $result');
+      // //print('numinvoice 3 $numinvoice');
 
       if (result.toString() == 'true') {
         setState(() async {
           Loading_Trans_bill();
-          // print('numinvoice 4 $numinvoice');
+          // //print('numinvoice 4 $numinvoice');
           // red_InvoiceMon_bill();
           _InvoiceHistoryModels.clear();
           sum_pvat = 0;
@@ -2299,7 +2299,7 @@ class _Account_Bill_InvoceSuccessState
           sum_disamt = 0;
           sum_disp = 0;
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }

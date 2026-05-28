@@ -13,14 +13,17 @@ import 'package:printing/printing.dart';
 import '../../CRC_16_Prompay/generate_qrcode.dart';
 import '../../ChaoArea/ChaoAreaRenew_Screen.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/PreviewPdfgen_Bills_INV.dart';
+import '../../Model/GetInvoice_history_Model.dart';
 import '../../PeopleChao/Bills_.dart';
 import '../../Style/File_s.dart';
 import '../../Style/ThaiBaht.dart';
 import '../../Style/loadAndCacheImage.dart';
 
 class Pdfgen_BillingNoteInvlice_TP9 {
-  //////////---------------------------------------------------->(ใบวางบิล แจ้งหนี้)  ใช้  ++
+  //////////---------------------------------------------------->(ใบวางบิล แจ้งหนี้)  ใช้  ++ electricityModels
   static void exportPDF_BillingNoteInvlice_TP9(
+      List<InvoiceHistoryModel> _InvoiceHistoryModels,
       foder,
       Cust_no,
       cid_,
@@ -41,12 +44,12 @@ class Pdfgen_BillingNoteInvlice_TP9 {
       DisC,
       Total,
       renTal_name,
-      cname_,
+      sname_,
       addr_,
       tel_,
       email_,
       tax_,
-      sname_,
+      cname_,
       bill_addr,
       bill_email,
       bill_tel,
@@ -69,67 +72,185 @@ class Pdfgen_BillingNoteInvlice_TP9 {
       fonts_pdf,
       electricityModels,
       Con_remark,
-      _InvoiceHistoryModels) async {
-    int YearQRthai = await int.parse(DateFormat('yyyy')
-            .format(DateTime.parse(End_Bill_Paydate))
-            .toString()) +
+      paper,
+      paper_run,
+      sum_net_amount_pvat,
+      sum_net_non_pvat,
+      customer_name) async {
+    ///---------------------> พ.ศ. สำหรับ QR Code (Thai Year for QR)
+    int YearQRthai = int.parse(
+          DateFormat('yyyy').format(DateTime.parse(End_Bill_Paydate)),
+        ) +
         543;
+
+    ///---------------------> เริ่มต้นเอกสาร PDF (Create PDF document)
     final pdf = pw.Document();
-    // final fontData = await rootBundle.load("ThaiFonts/Sarabun-Medium.ttf");
-    // var dataint = fontData.buffer
-    //     .asUint8List(fontData.offsetInBytes, fontData.lengthInBytes);
-    // final PdfFont font = PdfFont.of(pdf, data: dataint);
-    // final PdfFont font = PdfFont.of(pdf, data: dataint);
+
+    ///---------------------> โหลดฟอนต์ (Load custom font)
     final font = await rootBundle.load("${fonts_pdf}");
+    final ttf = pw.Font.ttf(font);
+
+    ///---------------------> ตั้งค่าทั่วไป (Style & Formatter)
     var Colors_pd = PdfColors.black;
     var nFormat = NumberFormat("#,##0.00", "en_US");
-    var nFormat2 = NumberFormat("###0.00", "en_US");
-    var nFormat3 = NumberFormat("###-##-##0", "en_US");
-    // double percen =
-    //     (double.parse('$DisC') / double.parse(' $Sum_SubTotal')) * 100.00;
-    final ttf = pw.Font.ttf(font);
     double font_Size = 10.0;
-    //////---------------------------------------------> (วางบิล)
-    DateTime date = DateTime.now();
-    var formatter = new DateFormat.MMMMd('th_TH');
-    String thaiDate = formatter.format(date);
-    //////--------------------------------------------->(ประวัติวางบิล)
 
-    // var formatter = new DateFormat.MMMMd('th_TH');
-    // String thaiDate = formatter.format(date);
+    ///---------------------> วันที่ปัจจุบัน (Current Date for Billing)
+    DateTime date = DateTime.now();
+    var formatter = DateFormat.MMMMd('th_TH');
+
+    ///---------------------> วันที่ธุรกรรม (Transaction Date)
     final thaiDate2 = DateTime.parse(date_Transaction);
-    final formatter2 = DateFormat('d MMMM', 'th_TH');
     final formattedDate2 = formatter.format(thaiDate2);
-    //////--------------->พ.ศ.
+
+    ///---------------------> พ.ศ. จากวันที่ธุรกรรม (Thai Year from Transaction Date)
     DateTime dateTime2 = DateTime.parse(date_Transaction);
     int newYear2 = dateTime2.year + 543;
-    //////--------------------------------------------->
-    String total_QR = '${nFormat.format(double.parse('${Total}'))}';
-    String newTotal_QR = total_QR.replaceAll(RegExp(r'[^0-9]'), '');
-    List netImage = [];
+
+    ///---------------------> โหลดภาพ QR (Load QR Image List)
     List netImage_QR = [];
+
+    ///---------------------> โหลดโลโก้และปรับขนาด (Resize Logo)
     Uint8List? resizedLogo = await getResizedLogo();
-    // for (int i = 0; i < newValuePDFimg.length; i++) {
-    //   netImage.add(await networkImage('${newValuePDFimg[i]}'));
-    // }
-    if (img1 == null || img1.toString() == '') {
-      netImage_QR.add(await networkImage(
-          '${MyConstant().domain}/Awaitdownload/imagenot.png'));
-      // netImage_QR.add(iconImage);
+
+    ///---------------------> Load QR image (โหลดรูป QR หรือรูปแทน)
+    if (img1 == null || img1.toString().isEmpty) {
+      netImage_QR.add(
+        await networkImage(
+          '${MyConstant().domain}/Awaitdownload/imagenot.png',
+        ),
+      );
     } else {
-      netImage_QR.add(await networkImage(
-          '${MyConstant().domain}/files/$foder/payment/${img1}'));
+      netImage_QR.add(
+        await networkImage(
+          '${MyConstant().domain}/files/$foder/payment/$img1',
+        ),
+      );
     }
-    final tableHeaders = [
-      'ลำดับ',
-      'รายการ',
-      'กำหนดชำระ',
-      'จำนวน',
-      'หน่วย',
-      'ราคาต่อหน่วย',
-      'ราคารวม',
-      // 'Total',
+
+    ///---------------------> Table header columns (หัวคอลัมน์ของตาราง)
+
+    final headerColumns = [
+      {
+        'label': 'ลำดับ(#)',
+        'flex': 0,
+        'align': pw.Alignment.centerLeft,
+        'width': 30.0
+      },
+      // {
+      //   'label': 'กำหนดชำระ(Description)',
+      //   'flex': 2,
+      //   'align': pw.Alignment.centerLeft
+      // },
+      {
+        'label': 'รายการ(Description)',
+        'flex': 4,
+        'align': pw.Alignment.centerLeft
+      },
+      {
+        'label': 'จำนวน(Quantity)',
+        'flex': 1,
+        'align': pw.Alignment.centerRight
+      },
+      {'label': 'หน่วย(Unit)', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'VAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'WHT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'ก่อนVAT', 'flex': 2, 'align': pw.Alignment.centerRight},
+      {'label': 'ส่วนลด(Dis)', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {
+        'label': 'ยอดสุทธิ(Price)',
+        'flex': 2,
+        'align': pw.Alignment.centerRight
+      },
     ];
+
+    ///////------------------------------->
+
+    double getTotalByField(
+      List<InvoiceHistoryModel> invoices,
+      String? Function(InvoiceHistoryModel item) getter,
+    ) {
+      return invoices.fold(0.0, (sum, item) {
+        final value = double.tryParse(getter(item) ?? '0.00') ?? 0.00;
+        return sum + value;
+      });
+    }
+
+    ///////----------------->
+
+    final totalAmt = getTotalByField(_InvoiceHistoryModels, (item) => item.amt);
+    final totalPvat =
+        getTotalByField(_InvoiceHistoryModels, (item) => item.pvat);
+    final totalVat = getTotalByField(_InvoiceHistoryModels, (item) => item.vat);
+    final totalWht = getTotalByField(_InvoiceHistoryModels, (item) => item.wht);
+
+    // final totalDis = _InvoiceHistoryModels.isNotEmpty
+    //     ? double.tryParse(
+    //             _InvoiceHistoryModels.first.disendbillper ?? '0.00') ??
+    //         0.00
+    //     : 0.00;
+
+    final totalDis = _InvoiceHistoryModels.isNotEmpty
+        ? double.tryParse(_InvoiceHistoryModels.first.disendbill ?? '0.00') ??
+            0.00
+        : 0.00;
+
+    final totalprice =
+        getTotalByField(_InvoiceHistoryModels, (item) => item.total);
+
+    final totalBill = totalprice - totalDis;
+
+    String totalBill_QR =
+        totalBill.toString().replaceAll(RegExp(r'[^0-9]'), '');
+// _InvoiceHistoryModels.
+    ///////------------------------------->
+
+    String getFormattedText(String? data) {
+      final value =
+          (data == null) ? 0.00 : double.tryParse(data ?? '0.00') ?? 0.00;
+      return nFormat.format(value);
+    }
+
+    bool isPositive(String? value) {
+      return (double.tryParse(value ?? '0.00') ?? 0.00) > 0;
+    }
+
+    pw.Widget buildCell({
+      required String text,
+      int flex = 1,
+      double padding = 2.0,
+      pw.Alignment alignment = pw.Alignment.centerRight,
+      pw.TextAlign textAlign = pw.TextAlign.right,
+    }) {
+      return pw.Expanded(
+        flex: flex,
+        child: pw.Container(
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.white,
+            border: pw.Border(
+              left: pw.BorderSide(color: PdfColors.grey600),
+              right: pw.BorderSide(color: PdfColors.grey600),
+            ),
+          ),
+          padding: pw.EdgeInsets.all(padding),
+          child: pw.Align(
+            alignment: alignment,
+            child: pw.Text(
+              text,
+              maxLines: 2,
+              textAlign: textAlign,
+              style: pw.TextStyle(
+                fontSize: font_Size,
+                font: ttf,
+                color: PdfColors.grey800,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    ///////------------------------------->
 
     pw.Widget Header(context) {
       return pw.Column(children: [
@@ -161,54 +282,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                       ),
                     ),
             ),
-            // (netImage.isEmpty)
-            //     ? pw.Container(
-            //         height: 60,
-            //         width: 60,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.grey200,
-            //           border: pw.Border(
-            //             right: pw.BorderSide(color: PdfColors.grey300),
-            //             left: pw.BorderSide(color: PdfColors.grey300),
-            //             top: pw.BorderSide(color: PdfColors.grey300),
-            //             bottom: pw.BorderSide(color: PdfColors.grey300),
-            //           ),
-            //         ),
-            //         child: pw.Center(
-            //           child: pw.Text(
-            //             '$bill_name ',
-            //             maxLines: 1,
-            //             style: pw.TextStyle(
-            //               fontSize: 10,
-            //               font: ttf,
-            //               color: Colors_pd,
-            //             ),
-            //           ),
-            //         ))
 
-            //     // pw.Image(
-            //     //     pw.MemoryImage(iconImage),
-            //     //     height: 72,
-            //     //     width: 70,
-            //     //   )
-            //     : pw.Container(
-            //         height: 60,
-            //         width: 60,
-            //         decoration: const pw.BoxDecoration(
-            //           color: PdfColors.grey200,
-            //           border: pw.Border(
-            //             right: pw.BorderSide(color: PdfColors.grey300),
-            //             left: pw.BorderSide(color: PdfColors.grey300),
-            //             top: pw.BorderSide(color: PdfColors.grey300),
-            //             bottom: pw.BorderSide(color: PdfColors.grey300),
-            //           ),
-            //         ),
-            //         child: pw.Image(
-            //           (netImage[0]),
-            //           // fit: pw.BoxFit.fill,
-            //           height: 60,
-            //           width: 60,
-            //         )),
             pw.SizedBox(width: 1 * PdfPageFormat.mm),
             pw.Container(
               // color: PdfColors.grey200,
@@ -351,7 +425,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                         pw.CrossAxisAlignment.start,
                                     children: [
                                       pw.Text(
-                                        'นามลูกค้า /Name : ${(sname_.toString() == '' || sname_ == null || sname_.toString() == 'null') ? '-' : sname_}',
+                                        'นามลูกค้า /Name : $customer_name',
                                         // (sname_.toString() == null ||
                                         //         sname_.toString() == '' ||
                                         //         sname_.toString() == 'null')
@@ -686,7 +760,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                           border: pw.Border(
                             // right: pw.BorderSide(color: PdfColors.grey600),
                             left: pw.BorderSide(color: PdfColors.grey600),
-                            bottom: pw.BorderSide(color: PdfColors.grey600),
+                            // bottom: pw.BorderSide(color: PdfColors.grey600),
                           ),
                         ),
                         child: pw.Row(
@@ -700,7 +774,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                     // color: PdfColors.green100,
                                     border: pw.Border(
                                       bottom: pw.BorderSide(
-                                          color: PdfColors.grey800),
+                                          color: PdfColors.grey600),
                                     ),
                                   ),
                                   padding: const pw.EdgeInsets.all(2.0),
@@ -886,48 +960,6 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                     ],
                                   )),
                             ),
-                            // pw.Expanded(
-                            //   flex: 1,
-                            //   child: pw.Container(
-                            //       height: 35,
-                            //       padding: const pw.EdgeInsets.all(2.0),
-                            //       child: pw.Column(
-                            //         mainAxisAlignment:
-                            //             pw.MainAxisAlignment.center,
-                            //         crossAxisAlignment:
-                            //             pw.CrossAxisAlignment.center,
-                            //         children: [
-                            //           pw.Text(
-                            //             'รูปแบบชำระ/Payment Type',
-                            //             textAlign: pw.TextAlign.center,
-                            //             style: pw.TextStyle(
-                            //               fontSize: font_Size,
-                            //               font: ttf,
-                            //               fontWeight: pw.FontWeight.bold,
-                            //               color: Colors_pd,
-                            //             ),
-                            //           ),
-                            //           pw.Text(
-                            //             (payment_Ptser1 == null)
-                            //                 ? '-'
-                            //                 : (payment_Ptser1 == '1')
-                            //                     ? 'เงินสด'
-                            //                     : (payment_Ptser1 == '2' ||
-                            //                             payment_Ptser1 == '5' ||
-                            //                             payment_Ptser1 == '6')
-                            //                         ? 'เงินโอน'
-                            //                         : 'อื่นๆ',
-                            //             textAlign: pw.TextAlign.center,
-                            //             style: pw.TextStyle(
-                            //               fontSize: font_Size,
-                            //               font: ttf,
-                            //               fontWeight: pw.FontWeight.bold,
-                            //               color: Colors_pd,
-                            //             ),
-                            //           ),
-                            //         ],
-                            //       )),
-                            // ),
                           ],
                         ),
                       )),
@@ -935,13 +967,13 @@ class Pdfgen_BillingNoteInvlice_TP9 {
               ),
             ),
             pw.Container(
-              // decoration: const pw.BoxDecoration(
-              //   // color: PdfColors.green100,
-              //   border: pw.Border(
-              //     top: pw.BorderSide(color: PdfColors.grey800),
-              //     bottom: pw.BorderSide(color: PdfColors.grey800),
-              //   ),
-              // ),
+              decoration: const pw.BoxDecoration(
+                // color: PdfColors.green100,
+                border: pw.Border(
+                    // top: pw.BorderSide(color: PdfColors.grey600),
+                    // bottom: pw.BorderSide(color: PdfColors.grey600),
+                    ),
+              ),
               child: pw.Row(
                 children: [
                   pw.Container(
@@ -951,7 +983,9 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                       border: pw.Border(
                         left: pw.BorderSide(color: PdfColors.grey600),
                         right: pw.BorderSide(color: PdfColors.grey600),
-                        bottom: pw.BorderSide(color: PdfColors.grey600),
+                        bottom:
+                            pw.BorderSide(color: PdfColors.grey600, width: 2),
+                        top: pw.BorderSide(color: PdfColors.grey600),
                       ),
                     ),
                     height: 30,
@@ -981,14 +1015,15 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                     ),
                   ),
                   pw.Expanded(
-                    flex: 1,
+                    flex: 2,
                     child: pw.Container(
                       decoration: const pw.BoxDecoration(
                         // color: PdfColors.green100,
                         border: pw.Border(
                           right: pw.BorderSide(color: PdfColors.grey600),
-                          // top: pw.BorderSide(color: PdfColors.grey800),
-                          bottom: pw.BorderSide(color: PdfColors.grey600),
+                          top: pw.BorderSide(color: PdfColors.grey600),
+                          bottom:
+                              pw.BorderSide(color: PdfColors.grey600, width: 2),
                         ),
                       ),
                       height: 30,
@@ -1025,8 +1060,9 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                         // color: PdfColors.green100,
                         border: pw.Border(
                           right: pw.BorderSide(color: PdfColors.grey600),
-                          // top: pw.BorderSide(color: PdfColors.grey800),
-                          bottom: pw.BorderSide(color: PdfColors.grey600),
+                          top: pw.BorderSide(color: PdfColors.grey600),
+                          bottom:
+                              pw.BorderSide(color: PdfColors.grey600, width: 2),
                         ),
                       ),
                       height: 30,
@@ -1057,14 +1093,15 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                     ),
                   ),
                   pw.Expanded(
-                    flex: 2,
+                    flex: 1,
                     child: pw.Container(
                       decoration: const pw.BoxDecoration(
                         // color: PdfColors.green100,
                         border: pw.Border(
                           right: pw.BorderSide(color: PdfColors.grey600),
-                          // top: pw.BorderSide(color: PdfColors.grey800),
-                          bottom: pw.BorderSide(color: PdfColors.grey600),
+                          top: pw.BorderSide(color: PdfColors.grey600),
+                          bottom:
+                              pw.BorderSide(color: PdfColors.grey600, width: 2),
                         ),
                       ),
                       height: 30,
@@ -1102,7 +1139,8 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                         border: pw.Border(
                           right: pw.BorderSide(color: PdfColors.grey600),
                           top: pw.BorderSide(color: PdfColors.grey600),
-                          bottom: pw.BorderSide(color: PdfColors.grey600),
+                          bottom:
+                              pw.BorderSide(color: PdfColors.grey600, width: 2),
                         ),
                       ),
                       height: 30,
@@ -1140,7 +1178,8 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                         border: pw.Border(
                           right: pw.BorderSide(color: PdfColors.grey600),
                           top: pw.BorderSide(color: PdfColors.grey600),
-                          bottom: pw.BorderSide(color: PdfColors.grey600),
+                          bottom:
+                              pw.BorderSide(color: PdfColors.grey600, width: 2),
                         ),
                       ),
                       height: 30,
@@ -1171,7 +1210,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                     ),
                   ),
                   pw.Expanded(
-                    flex: 1,
+                    flex: 2,
                     child: pw.Container(
                       decoration: const pw.BoxDecoration(
                         // color: PdfColors.green100,
@@ -1179,7 +1218,8 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                           // left: pw.BorderSide(color: PdfColors.grey800),
                           right: pw.BorderSide(color: PdfColors.grey600),
                           top: pw.BorderSide(color: PdfColors.grey600),
-                          bottom: pw.BorderSide(color: PdfColors.grey600),
+                          bottom:
+                              pw.BorderSide(color: PdfColors.grey600, width: 2),
                         ),
                       ),
                       height: 30,
@@ -1213,30 +1253,35 @@ class Pdfgen_BillingNoteInvlice_TP9 {
               ),
             ),
 
-            pw.Container(
-                // height: 800,
-                // color: PdfColors.green100,
-                child: pw.Table(
-                    border: const pw.TableBorder(
-                        left: pw.BorderSide(color: PdfColors.grey800, width: 1),
-                        right:
-                            pw.BorderSide(color: PdfColors.grey800, width: 1),
-                        verticalInside: pw.BorderSide(
-                            width: 1,
-                            color: PdfColors.grey800,
-                            style: pw.BorderStyle.solid)),
+            pw.Column(
+              children: List.generate(_InvoiceHistoryModels.length, (index) {
+                final invoices = _InvoiceHistoryModels[index];
+
+                return pw.Container(
+                  decoration: const pw.BoxDecoration(
+                    // color: PdfColors.green100,
+                    border: pw.Border(
+                        // top: pw.BorderSide(color: PdfColors.grey600),
+                        // bottom: pw.BorderSide(color: PdfColors.grey600),
+                        ),
+                  ),
+                  child: pw.Row(
                     children: [
-                  for (int index = 0; index < tableData003.length; index++)
-                    pw.TableRow(children: [
                       pw.Container(
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.white,
+                          border: pw.Border(
+                            left: pw.BorderSide(color: PdfColors.grey600),
+                          ),
+                        ),
                         width: 30,
                         padding: const pw.EdgeInsets.all(2.0),
                         child: pw.Align(
-                          alignment: pw.Alignment.topCenter,
+                          alignment: pw.Alignment.center,
                           child: pw.Text(
                             '${index + 1}',
                             maxLines: 2,
-                            textAlign: pw.TextAlign.left,
+                            textAlign: pw.TextAlign.center,
                             style: pw.TextStyle(
                                 fontSize: font_Size,
                                 font: ttf,
@@ -1244,143 +1289,203 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                           ),
                         ),
                       ),
-                      pw.Expanded(
-                        flex: 1,
-                        child: pw.Container(
-                          padding: const pw.EdgeInsets.all(2.0),
-                          child: pw.Align(
-                            alignment: pw.Alignment.topLeft,
-                            child: pw.Text(
-                              '${tableData003[index][11]}',
-                              maxLines: 2,
-                              textAlign: pw.TextAlign.left,
-                              style: pw.TextStyle(
-                                  fontSize: font_Size,
-                                  font: ttf,
-                                  color: PdfColors.grey800),
-                            ),
-                          ),
-                        ),
+                      buildCell(
+                        text: '${invoices.refno}',
+                        flex: 2,
+                        alignment: pw.Alignment.centerLeft,
+                        textAlign: pw.TextAlign.center,
                       ),
-                      pw.Expanded(
-                          flex: 4,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topLeft,
-                              child: pw.Text(
-                                // (tableData003[index][0].toString() == '6')
-                                //     ? '${tableData003[index][2]}'
-                                //     : '${tableData003[index][2]} ${DateFormat('dd/MM').format(DateTime.parse(tableData003[index][1]))}/${DateTime.parse('${tableData003[index][1]}').year + 543}',
+                      buildCell(
+                        text: (invoices.unitser.toString() == '6')
+                            ? '${invoices.descr} [ หน่วยที่ใช้ไป ${invoices.ovalue}-${invoices.nvalue} ]' //descr
+                            : '${invoices.descr} ${DateFormat('MMM', 'th').format(DateTime.parse(invoices.date!))} ${DateTime.parse('${invoices.date}').year + 543}',
+                        flex: 4,
+                        alignment: pw.Alignment.centerLeft,
+                        textAlign: pw.TextAlign.left,
+                      ),
+                      buildCell(
+                        text: getFormattedText(invoices.qty),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: (invoices.dis_list.toString() == '0.00')
+                            ? getFormattedText(invoices.pri)
+                            : getFormattedText(invoices.pvat_original),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${invoices.dis_list}'),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${invoices.pvat}'),
+                        flex: 2,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+            // pw.Table(
+            //   border: const pw.TableBorder(
+            //       left: pw.BorderSide(color: PdfColors.grey600),
+            //       right: pw.BorderSide(color: PdfColors.grey600),
+            //       verticalInside: pw.BorderSide(
+            //           width: 1,
+            //           color: PdfColors.grey800,
+            //           style: pw.BorderStyle.solid)),
+            //   children: List.generate(_InvoiceHistoryModels.length, (index) {
+            //     final invoices = _InvoiceHistoryModels[index];
 
-                                (tableData003[index][0].toString() == '6')
-                                    ? '${tableData003[index][2]}[ หน่วยที่ใช้ไป ${tableData003[index][8]}-${tableData003[index][9]} ]'
-                                    : '${tableData003[index][2]} ${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData003[index][1]}'))} ${DateTime.parse('${tableData003[index][1]}').year + 543}',
+            //     return pw.TableRow(children: [
+            //       pw.Container(
+            //         // decoration: const pw.BoxDecoration(
+            //         //   color: PdfColors.white,
+            //         //   border: pw.Border(
+            //         //     left: pw.BorderSide(color: PdfColors.grey600),
+            //         //   ),
+            //         // ),
+            //         width: 30,
+            //         padding: const pw.EdgeInsets.all(2.0),
+            //         child: pw.Align(
+            //           alignment: pw.Alignment.center,
+            //           child: pw.Text(
+            //             '${index + 1}',
+            //             maxLines: 2,
+            //             textAlign: pw.TextAlign.center,
+            //             style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 color: PdfColors.grey800),
+            //           ),
+            //         ),
+            //       ),
+            //       buildCell(
+            //         text: (invoices.refno == null ||
+            //                 invoices.refno.toString() == '')
+            //             ? '-'
+            //             : '${invoices.refno}',
+            //         flex: 2,
+            //         alignment: pw.Alignment.centerLeft,
+            //         textAlign: pw.TextAlign.center,
+            //       ),
+            //       buildCell(
+            //         text: (invoices.unitser.toString() == '6')
+            //             ? '${invoices.descr} [ หน่วยที่ใช้ไป ${invoices.ovalue}-${invoices.nvalue} ]'
+            //             : '${invoices.descr} ${DateFormat('MMM', 'th').format(DateTime.parse(invoices.date!))} ${DateTime.parse('${invoices.date}').year + 543}',
+            //         flex: 4,
+            //         alignment: pw.Alignment.centerLeft,
+            //         textAlign: pw.TextAlign.left,
+            //       ),
+            //       buildCell(
+            //         text: getFormattedText(invoices.qty),
+            //         // text: (getFormattedText(invoices.tf) != '0.00')
+            //         //     ? '${getFormattedText(invoices.pri)} '
+            //         //         '(tf ${getFormattedText(((double.tryParse(invoices.amt ?? '0.00') ?? 0.00) - (double.tryParse(invoices.vat ?? '0.00') ?? 0.00) - (double.tryParse(invoices.pvat ?? '0.00') ?? 0.00)).toString())})'
+            //         //     : getFormattedText(invoices.nvat),
+            //         flex: 1,
+            //         alignment: pw.Alignment.centerRight,
+            //         textAlign: pw.TextAlign.right,
+            //       ),
+            //       // buildCell(
+            //       //   text: (invoices.ele_ty.toString() != '0' &&
+            //       //           invoices.ele_ty != null)
+            //       //       ? 'อัตราพิเศษ'
+            //       //       : isPositive(invoices.dis_list)
+            //       //           ? (invoices.unitser.toString() == '6')
+            //       //               ? getFormattedText('${invoices.pri}')
+            //       //               // : getFormattedText(
+            //       //               //     '${invoices.pvat_original}')
+            //       //               : '-'
+            //       //           : (invoices.unitser.toString() == '6')
+            //       //               ? getFormattedText('${invoices.pri}')
+            //       //               : getFormattedText('${invoices.pvat}'),
 
-                                // (tableData003[index][0].toString() == '6')
-                                //     ? '${tableData003[index][2]}[ หน่วยที่ใช้ไป ${tableData003[index][8]}-${tableData003[index][9]} ]'
-                                //     : '${tableData003[index][2]} ${DateFormat('dd/MM').format(DateTime.parse(tableData003[index][1]))}/${DateTime.parse('${tableData003[index][1]}').year + 543}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.left,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 2,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData003[index][12]}',
-                                // (tableData003[index][0].toString() == '6')
-                                //     ? '${tableData003[index][10]}'
-                                //     : (tableData003[index][10].toString() ==
-                                //             '0.00')
-                                //         ? '1.00'
-                                //         : '${tableData003[index][10]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                (tableData003[index][14].toString() != '0' &&
-                                        tableData003[index][14] != null)
-                                    ? 'อัตราพิเศษ'
-                                    : (tableData003[index][7].toString() ==
-                                            '0.00')
-                                        ? '${tableData003[index][5]}'
-                                        : '${tableData003[index][7]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                (tableData003[index][18].toString() == '0.00' ||
-                                        tableData003[index][18].toString() ==
-                                            '0')
-                                    ? '0.00'
-                                    : '${tableData003[index][18]}',
-                                // '0',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                // (tableData003[index][18].toString() == '0.00' ||
-                                //         tableData003[index][18].toString() ==
-                                //             '0')
-                                //     ? '${tableData003[index][6]}'
-                                //     : '${tableData003[index][22]}',
-                                '${tableData003[index][5]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                    ]),
-                ])),
+            //       //   // (invoices.pri.toString() == '0.00')
+            //       //   //     ? getFormattedText('${invoices.amt}')
+            //       //   //     : getFormattedText('${invoices.pvat}'),
+            //       //   flex: 1,
+            //       //   alignment: pw.Alignment.centerRight,
+            //       //   textAlign: pw.TextAlign.right,
+            //       // ),
+            //       buildCell(
+            //         text: (invoices.ele_ty.toString() != '0' &&
+            //                 invoices.ele_ty != null)
+            //             ? 'อัตราพิเศษ'
+            //             : (invoices.dtype.toString() == 'KU')
+            //                 ? getFormattedText('${invoices.pri}')
+            //                 : '-',
+            //         flex: 1,
+            //         alignment: pw.Alignment.centerRight,
+            //         textAlign: pw.TextAlign.right,
+            //       ),
+            //       // buildCell(
+            //       //   text: isPositive(invoices.dis_list)
+            //       //       ? getFormattedText('${invoices.vat_original}')
+            //       //       : getFormattedText('${invoices.vat}'),
+            //       //   flex: 1,
+            //       //   alignment: pw.Alignment.centerRight,
+            //       //   textAlign: pw.TextAlign.right,
+            //       // ),
+            //       // buildCell(
+            //       //   text: isPositive(invoices.dis_list)
+            //       //       ? getFormattedText('${invoices.wht_original}')
+            //       //       : getFormattedText('${invoices.wht}'),
+            //       //   flex: 1,
+            //       //   alignment: pw.Alignment.centerRight,
+            //       //   textAlign: pw.TextAlign.right,
+            //       // ),
+            //       // buildCell(
+            //       //   text: isPositive(invoices.dis_list)
+            //       //       ? getFormattedText('${invoices.pvat_original}')
+            //       //       : getFormattedText('${invoices.pvat}'),
+            //       //   flex: 2,
+            //       //   alignment: pw.Alignment.centerRight,
+            //       //   textAlign: pw.TextAlign.right,
+            //       // ),
+            //       // buildCell(
+            //       //   text: (invoices.dtype.toString() == 'KU')
+            //       //       ? getFormattedText('${invoices.amt}')
+            //       //       : getFormattedText('${invoices.pri}'),
+            //       //   flex: 1,
+            //       //   alignment: pw.Alignment.centerRight,
+            //       //   textAlign: pw.TextAlign.right,
+            //       // ),
+            //       // buildCell(
+            //       //   text: (double.tryParse(invoices.pvat_original.toString()) !=
+            //       //           0)
+            //       //       ? getFormattedText('${invoices.pvat_original}')
+            //       //       : (invoices.dtype.toString() == 'KU')
+            //       //           ? getFormattedText('${invoices.amt}')
+            //       //           : getFormattedText('${invoices.pri}'),
+            //       //   flex: 1,
+            //       //   alignment: pw.Alignment.centerRight,
+            //       //   textAlign: pw.TextAlign.right,
+            //       // ),
+
+            //       buildCell(
+            //         text: getFormattedText('${invoices.dis_list}'),
+            //         flex: 1,
+            //         alignment: pw.Alignment.centerRight,
+            //         textAlign: pw.TextAlign.right,
+            //       ),
+            //       buildCell(
+            //         text: getFormattedText('${invoices.pvat}'), // total
+            //         flex: 2,
+            //         alignment: pw.Alignment.centerRight,
+            //         textAlign: pw.TextAlign.right,
+            //       ),
+            //     ]);
+            //   }),
+            // ),
 
             pw.Container(
               decoration: const pw.BoxDecoration(
@@ -1418,16 +1523,19 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                             color: PdfColors.grey800),
                       ),
                     ),
+                  pw.Container(
+                    width: 30,
+                  ),
                   pw.Spacer(flex: 6),
                   pw.Expanded(
-                    flex: 4,
+                    flex: 5,
                     child: pw.Column(
                       crossAxisAlignment: pw.CrossAxisAlignment.start,
                       children: [
                         pw.Row(
                           children: [
                             pw.Expanded(
-                              flex: 1,
+                              flex: 3,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1444,7 +1552,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  'รวมราคาสินค้า / Sub Total',
+                                  'รวมราคาสินค้า ไม่มี/ยกเว้นภาษี',
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
                                       fontWeight: pw.FontWeight.bold,
@@ -1454,7 +1562,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                               ),
                             ),
                             pw.Expanded(
-                              flex: 1,
+                              flex: 2,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1471,7 +1579,189 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  '${nFormat.format(double.parse(SubTotal.toString()))}',
+                                  '${nFormat.format(double.parse(sum_net_non_pvat.toString()))}',
+                                  textAlign: pw.TextAlign.right,
+                                  style: pw.TextStyle(
+                                      fontSize: font_Size,
+                                      fontWeight: pw.FontWeight.bold,
+                                      font: ttf,
+                                      color: PdfColors.grey800),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        pw.Row(
+                          children: [
+                            pw.Expanded(
+                              flex: 3,
+                              child: pw.Container(
+                                decoration: const pw.BoxDecoration(
+                                  color: PdfColors.white,
+                                  border: const pw.Border(
+                                    top:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    left:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    bottom:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    right:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                  ),
+                                ),
+                                padding: const pw.EdgeInsets.all(2.0),
+                                child: pw.Text(
+                                  'รวมราคาสินค้าคำนวณภาษีมูลค่าเพิ่ม',
+                                  style: pw.TextStyle(
+                                      fontSize: font_Size,
+                                      fontWeight: pw.FontWeight.bold,
+                                      font: ttf,
+                                      color: PdfColors.grey800),
+                                ),
+                              ),
+                            ),
+                            pw.Expanded(
+                              flex: 2,
+                              child: pw.Container(
+                                decoration: const pw.BoxDecoration(
+                                  color: PdfColors.white,
+                                  border: const pw.Border(
+                                    left:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    top:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    right:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    bottom:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                  ),
+                                ),
+                                padding: const pw.EdgeInsets.all(2.0),
+                                child: pw.Text(
+                                  '${nFormat.format(double.parse(sum_net_amount_pvat.toString()))}',
+                                  // '${nFormat.format(double.parse(Sum_SubTotal.toString()) * 100 / 107)}',
+                                  textAlign: pw.TextAlign.right,
+                                  style: pw.TextStyle(
+                                      fontSize: font_Size,
+                                      fontWeight: pw.FontWeight.bold,
+                                      font: ttf,
+                                      color: PdfColors.grey800),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        // pw.Row(
+                        //   children: [
+                        //     pw.Expanded(
+                        //       flex: 1,
+                        //       child: pw.Container(
+                        //         decoration: const pw.BoxDecoration(
+                        //           color: PdfColors.white,
+                        //           border: const pw.Border(
+                        //             top: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //             left: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //             bottom: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //             right: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //           ),
+                        //         ),
+                        //         padding: const pw.EdgeInsets.all(2.0),
+                        //         child: pw.Text(
+                        //           'จำนวนเงินหลังหักส่วนลด',
+                        //           style: pw.TextStyle(
+                        //               fontSize: font_Size,
+                        //               fontWeight: pw.FontWeight.bold,
+                        //               font: ttf,
+                        //               color: PdfColors.grey800),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //     pw.Expanded(
+                        //       flex: 1,
+                        //       child: pw.Container(
+                        //         decoration: const pw.BoxDecoration(
+                        //           color: PdfColors.white,
+                        //           border: const pw.Border(
+                        //             left: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //             top: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //             bottom: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //             right: pw.BorderSide(
+                        //                 color: PdfColors.grey600),
+                        //           ),
+                        //         ),
+                        //         padding: const pw.EdgeInsets.all(2.0),
+                        //         child: pw.Text(
+                        //           '${nFormat.format(double.parse(sum_net_non_pvat.toString()) + double.parse(sum_net_amount_pvat.toString()) - double.parse(DisC.toString()))}', // 1+2-3
+                        //           textAlign: pw.TextAlign.right,
+                        //           style: pw.TextStyle(
+                        //               fontSize: font_Size,
+                        //               fontWeight: pw.FontWeight.bold,
+                        //               font: ttf,
+                        //               color: PdfColors.grey800),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
+                        pw.Row(
+                          children: [
+                            pw.Expanded(
+                              flex: 3,
+                              child: pw.Container(
+                                decoration: const pw.BoxDecoration(
+                                  color: PdfColors.white,
+                                  border: const pw.Border(
+                                    top:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    left:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    bottom:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    right:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                  ),
+                                ),
+                                padding: const pw.EdgeInsets.all(2.0),
+                                child: pw.Text(
+                                  'ภาษีมูลค่าเพิ่ม 7%/ Vat',
+                                  style: pw.TextStyle(
+                                      fontSize: font_Size,
+                                      fontWeight: pw.FontWeight.bold,
+                                      font: ttf,
+                                      color: PdfColors.grey800),
+                                ),
+                              ),
+                            ),
+                            pw.Expanded(
+                              flex: 2,
+                              child: pw.Container(
+                                decoration: const pw.BoxDecoration(
+                                  color: PdfColors.white,
+                                  border: const pw.Border(
+                                    left:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    top:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    right:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    bottom:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                  ),
+                                ),
+                                padding: const pw.EdgeInsets.all(2.0),
+                                child: pw.Text(
+                                  '${nFormat.format(totalVat)}',
+                                  // '${nFormat.format(double.parse(Vat.toString()))}',
+                                  //  '${nFormat.format(double.parse(sum_net_amount_pvat.toString()) * 7 / 100)}',
                                   textAlign: pw.TextAlign.right,
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
@@ -1486,7 +1776,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                         pw.Row(
                           children: [
                             pw.Expanded(
-                              flex: 1,
+                              flex: 3,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1503,7 +1793,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  'ภาษีมูลค่าเพิ่ม / Vat',
+                                  'จำนวนเงินรวมทั้งสิ้น',
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
                                       fontWeight: pw.FontWeight.bold,
@@ -1513,7 +1803,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                               ),
                             ),
                             pw.Expanded(
-                              flex: 1,
+                              flex: 2,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1522,15 +1812,18 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                         pw.BorderSide(color: PdfColors.grey600),
                                     top:
                                         pw.BorderSide(color: PdfColors.grey600),
-                                    right:
-                                        pw.BorderSide(color: PdfColors.grey600),
                                     bottom:
+                                        pw.BorderSide(color: PdfColors.grey600),
+                                    right:
                                         pw.BorderSide(color: PdfColors.grey600),
                                   ),
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  '${nFormat.format(double.parse(Vat.toString()))}',
+                                  '${nFormat.format(double.parse(sum_net_amount_pvat.toString()) + totalVat + sum_net_non_pvat)}',
+                                  // '${nFormat.format(totalPvat + totalVat)}',
+                                  // '${nFormat.format(double.parse(sum_net_non_pvat.toString()))}',
+                                  // '${nFormat.format(double.parse(Sum_SubTotal.toString()))}',
                                   textAlign: pw.TextAlign.right,
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
@@ -1542,69 +1835,11 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                             ),
                           ],
                         ),
+
                         pw.Row(
                           children: [
                             pw.Expanded(
-                              flex: 1,
-                              child: pw.Container(
-                                decoration: const pw.BoxDecoration(
-                                  color: PdfColors.white,
-                                  border: const pw.Border(
-                                    top:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    left:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    bottom:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    right:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                  ),
-                                ),
-                                padding: const pw.EdgeInsets.all(2.0),
-                                child: pw.Text(
-                                  'รวม / Sum',
-                                  style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      fontWeight: pw.FontWeight.bold,
-                                      font: ttf,
-                                      color: PdfColors.grey800),
-                                ),
-                              ),
-                            ),
-                            pw.Expanded(
-                              flex: 1,
-                              child: pw.Container(
-                                decoration: const pw.BoxDecoration(
-                                  color: PdfColors.white,
-                                  border: const pw.Border(
-                                    left:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    top:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    right:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    bottom:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                  ),
-                                ),
-                                padding: const pw.EdgeInsets.all(2.0),
-                                child: pw.Text(
-                                  '${nFormat.format(double.parse(SubTotal.toString()) + double.parse(Vat.toString()))}',
-                                  textAlign: pw.TextAlign.right,
-                                  style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      fontWeight: pw.FontWeight.bold,
-                                      font: ttf,
-                                      color: PdfColors.grey800),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        pw.Row(
-                          children: [
-                            pw.Expanded(
-                              flex: 1,
+                              flex: 3,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1631,7 +1866,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                               ),
                             ),
                             pw.Expanded(
-                              flex: 1,
+                              flex: 2,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1648,7 +1883,8 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  '${nFormat.format(double.parse(Deduct.toString()))}',
+                                  '${nFormat.format(totalWht)}',
+                                  // '${nFormat.format(double.parse(Deduct.toString()))}',
                                   textAlign: pw.TextAlign.right,
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
@@ -1663,66 +1899,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                         pw.Row(
                           children: [
                             pw.Expanded(
-                              flex: 1,
-                              child: pw.Container(
-                                decoration: const pw.BoxDecoration(
-                                  color: PdfColors.white,
-                                  border: const pw.Border(
-                                    top:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    left:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    bottom:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    right:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                  ),
-                                ),
-                                padding: const pw.EdgeInsets.all(2.0),
-                                child: pw.Text(
-                                  'ยอดรวม / Total',
-                                  style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      fontWeight: pw.FontWeight.bold,
-                                      font: ttf,
-                                      color: PdfColors.grey800),
-                                ),
-                              ),
-                            ),
-                            pw.Expanded(
-                              flex: 1,
-                              child: pw.Container(
-                                decoration: const pw.BoxDecoration(
-                                  color: PdfColors.white,
-                                  border: const pw.Border(
-                                    left:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    top:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    bottom:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                    right:
-                                        pw.BorderSide(color: PdfColors.grey600),
-                                  ),
-                                ),
-                                padding: const pw.EdgeInsets.all(2.0),
-                                child: pw.Text(
-                                  '${nFormat.format(double.parse(Sum_SubTotal.toString()))}',
-                                  textAlign: pw.TextAlign.right,
-                                  style: pw.TextStyle(
-                                      fontSize: font_Size,
-                                      fontWeight: pw.FontWeight.bold,
-                                      font: ttf,
-                                      color: PdfColors.grey800),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        pw.Row(
-                          children: [
-                            pw.Expanded(
-                              flex: 1,
+                              flex: 3,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1749,7 +1926,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                               ),
                             ),
                             pw.Expanded(
-                              flex: 1,
+                              flex: 2,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1766,7 +1943,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  '${nFormat.format(double.parse(DisC.toString()))}',
+                                  '${nFormat.format(double.parse(totalDis.toString()))}', // totalDis
                                   textAlign: pw.TextAlign.right,
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
@@ -1778,10 +1955,11 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                             ),
                           ],
                         ),
+
                         pw.Row(
                           children: [
                             pw.Expanded(
-                              flex: 1,
+                              flex: 3,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1808,7 +1986,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                               ),
                             ),
                             pw.Expanded(
-                              flex: 1,
+                              flex: 2,
                               child: pw.Container(
                                 decoration: const pw.BoxDecoration(
                                   color: PdfColors.white,
@@ -1825,7 +2003,8 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                 ),
                                 padding: const pw.EdgeInsets.all(2.0),
                                 child: pw.Text(
-                                  '${nFormat.format(double.parse(Total.toString()))}',
+                                  '${nFormat.format(totalBill)}',
+                                  // '${nFormat.format(double.parse(Total.toString()))}',
                                   textAlign: pw.TextAlign.right,
                                   style: pw.TextStyle(
                                       fontSize: font_Size,
@@ -1873,7 +2052,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                           /// "${nFormat2.format(double.parse(Total.toString()))}",
                           ///
                           ///       '(~${convertToThaiBaht(double.parse(Total.toString()) - double.parse(dis_sum_Matjum.toString()))}~)',
-                          '(~${convertToThaiBaht(double.parse(Total.toString()))}~)',
+                          '(~${convertToThaiBaht(totalBill)}~)',
                           style: pw.TextStyle(
                             fontSize: font_Size,
                             fontWeight: pw.FontWeight.bold,
@@ -1907,7 +2086,8 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                   ),
                                 ),
                                 pw.Text(
-                                  '${nFormat.format(double.parse(Total.toString()))}',
+                                  '${nFormat.format(totalBill)}',
+                                  // '${nFormat.format(double.parse(Total.toString()))}',
                                   // '${Total}',
                                   style: pw.TextStyle(
                                       fontWeight: pw.FontWeight.bold,
@@ -2109,7 +2289,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                   ),
                                 ),
                                 pw.Text(
-                                  'วันที่/Date...........................................',
+                                  'วันที่/Date...........................................1',
                                   textAlign: pw.TextAlign.center,
                                   style: pw.TextStyle(
                                     fontSize: font_Size,
@@ -2137,7 +2317,7 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                   pw.Container(
                                     child: pw.BarcodeWidget(
                                         data:
-                                            '|$selectedValue_bank_bno\r${cFinn.replaceAll('-', '')}\r${DateFormat('ddMM').format(DateTime.parse(End_Bill_Paydate))}$YearQRthai\r${newTotal_QR}',
+                                            '|$selectedValue_bank_bno\r${cFinn.replaceAll('-', '')}\r${DateFormat('ddMM').format(DateTime.parse(End_Bill_Paydate))}$YearQRthai\r${totalBill_QR}',
                                         barcode: pw.Barcode.qrCode(),
                                         width: 55,
                                         height: 55),
@@ -2147,10 +2327,11 @@ class Pdfgen_BillingNoteInvlice_TP9 {
                                       data: generateQRCode(
                                           promptPayID:
                                               "$selectedValue_bank_bno",
-                                          amount: double.parse(
-                                              (Total == null || Total == '')
-                                                  ? '0'
-                                                  : '$Total')),
+                                          amount: double.parse('$totalBill')),
+                                      //  double.parse(
+                                      //     (Total == null || Total == '')
+                                      //         ? '0'
+                                      //         : '$Total')),
                                       barcode: pw.Barcode.qrCode(),
                                       width: 55,
                                       height: 55),

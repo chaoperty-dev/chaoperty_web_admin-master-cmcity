@@ -1,9 +1,11 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetFinnancetrans_Model.dart';
 import '../Model/GetUser_Model.dart';
 import '../Model/Read_DataONBill_PDF_Model.dart';
@@ -33,7 +35,8 @@ import '../PDF_TP9/PDF_Temporary_Receipt_TP9/pdf_Temporar_TP9.dart';
 import '../PDF_TP9_Lao/PDF_Temporary_Receipt_TP9/pdf_Temporar_TP9.dart';
 
 class ManTemporary_Receipt_PDF {
-  // --------------------------------> PDF หลังรับชำระ และ ประวัติบิล
+  // ─────────────────────────────────────────────────────────────────
+  // PDF หลังรับชำระ และ ประวัติบิล
   static void ManTemporaryReceipt_PDF(
       docno, ////----->เลขที่รับชำระ
       context, ////----->context
@@ -109,7 +112,7 @@ class ManTemporary_Receipt_PDF {
     String url_1 =
         '${MyConstant().domain}/GC_Data_OnBill_TemporaryPDF.php?isAdd=true&ren=$ren&ciddoc=$docnoin';
     try {
-      var response = await http.get(Uri.parse(url_1));
+      var response = await httpClient.get(Uri.parse(url_1));
       var result = json.decode(response.body);
 
       if (result.toString() != 'null') {
@@ -150,7 +153,7 @@ class ManTemporary_Receipt_PDF {
     String url_usersell =
         '${MyConstant().domain}/GC_User_PDF.php?isAdd=true&serUser=$ser_user';
     try {
-      var response = await http.get(Uri.parse(url_usersell));
+      var response = await httpClient.get(Uri.parse(url_usersell));
       var result = json.decode(response.body);
 
       if (result.toString() != 'null') {
@@ -169,7 +172,7 @@ class ManTemporary_Receipt_PDF {
     String url =
         '${MyConstant().domain}/GC_bill_pay_amt.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&docnoin=$docnoin';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
       var result = json.decode(response.body);
 
       ///  print('BBBBBBBBBBBBBBBB>>>> $result');
@@ -224,7 +227,7 @@ class ManTemporary_Receipt_PDF {
     String url2 =
         '${MyConstant().domain}/GC_bill_pay_history.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docnoin=$docnoin';
     try {
-      var response = await http.get(Uri.parse(url2));
+      var response = await httpClient.get(Uri.parse(url2));
 
       var result = json.decode(response.body);
       //print(result);
@@ -279,7 +282,7 @@ class ManTemporary_Receipt_PDF {
     String url_4 =
         '${MyConstant().domain}/GC_countmiter_PDF.php?isAdd=true&ren=$ren&ciddoc=$cid_&docnoin=$docnoin&type_doc=Receipt';
     try {
-      var response = await http.get(Uri.parse(url_4));
+      var response = await httpClient.get(Uri.parse(url_4));
 
       var result = json.decode(response.body);
       print(result);

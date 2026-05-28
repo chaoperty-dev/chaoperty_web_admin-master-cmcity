@@ -27,15 +27,15 @@ Future<void> read_CheckBeamAll(Ser_, Pay_Ke) async {
 
     if (response.statusCode == 200) {
       // Request was successful
-      print('Response: successful');
+     // print('Response: successful');
       // print('Response: ${response.body}');
     } else {
-      print('Response: failed');
+      //print('Response: failed');
       // Request failed
       // print('Failed with status code: ${response.statusCode}');
     }
   } catch (error) {
-    print('Response: error');
+   // print('Response: error');
     // Error occurred during the request
     // print('Error: $error');
   }

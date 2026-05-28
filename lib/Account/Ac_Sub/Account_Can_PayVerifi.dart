@@ -819,13 +819,13 @@ class _Account_Cancel_PayVerifiState extends State<Account_Cancel_PayVerifi> {
         (ac9_3.where((item) => item["st"] == '1').toList().length <= 8)
             ? (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.85
-                : 1200
+                : 1400
             : (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.85 +
                     ((ac9_3.where((item) => item["st"] == '1').toList().length -
                             8) *
                         30)
-                : 1200 +
+                : 1400 +
                     ((ac9_3.where((item) => item["st"] == '1').toList().length -
                             8) *
                         30);
@@ -1187,7 +1187,7 @@ class _Account_Cancel_PayVerifiState extends State<Account_Cancel_PayVerifi> {
                                           setState(() {
                                             Date_Typepay = int.parse(value!);
                                           });
-                                          print(Date_Typepay);
+                                          //   print(Date_Typepay);
                                           Loading_Trans_bill();
                                           // red_Trans_bill();
                                         },

@@ -1,4 +1,4 @@
-// ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member, prefer_const_constructors, unnecessary_import, implementation_imports, prefer_const_constructors_in_immutables, non_constant_identifier_names, avoid_init_to_null, prefer_void_to_null, unnecessary_brace_in_string_interps, avoid_print, empty_catches, sized_box_for_whitespace, use_build_context_synchronously, file_names, prefer_const_literals_to_create_immutables, prefer_const_declarations, unnecessary_string_interpolations, prefer_collection_literals, sort_child_properties_last, avoid_unnecessary_containers, prefer_is_empty, prefer_final_fields, camel_case_types, avoid_web_libraries_in_flutter, prefer_typing_uninitialized_variables, no_leading_underscores_for_local_identifiers, deprecated_member_use
+// ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member, prefer_const_constructors, unnecessary_import, implementation_imports, prefer_const_constructors_in_immutables, non_constant_identifier_names, avoid_init_to_null, prefer_void_to_null, unnecessary_brace_in_string_interps, avoid_//print, empty_catches, sized_box_for_whitespace, use_build_context_synchronously, file_names, prefer_const_literals_to_create_immutables, prefer_const_declarations, unnecessary_string_interpolations, prefer_collection_literals, sort_child_properties_last, avoid_unnecessary_containers, prefer_is_empty, prefer_final_fields, camel_case_types, avoid_web_libraries_in_flutter, prefer_typing_uninitialized_variables, no_leading_underscores_for_local_identifiers, deprecated_member_use
 import 'dart:convert';
 import 'dart:ui';
 
@@ -20,7 +20,7 @@ dynamic captureAndConvertToBase64(chartKey, Name) async {
   // Encode the bytes to base64
   final base64String = base64Encode(buffer);
   int timestamp = DateTime.now().millisecondsSinceEpoch;
-  print(base64String);
+  //print(base64String);
   String fileName = '${Name}_$timestamp.png';
   await Future.delayed(Duration(milliseconds: 100));
   String Foder_ = '';
@@ -38,16 +38,16 @@ dynamic captureAndConvertToBase64(chartKey, Name) async {
     );
 
     if (response.statusCode == 200) {
-      print('Image uploaded successfully');
+      //print('Image uploaded successfully');
       downloadImage(fileName);
       // downloadImage('${MyConstant().domain}/files/$foder/contract/$Form_Img_',
       //         '${Form_Img_}')
       //     .deleteFile(fileName_Slip);
     } else {      downloadImage(fileName);
-      print('Image upload failed');
+      //print('Image upload failed');
     }
   } catch (e) {
-    print('Error during image processing: $e');
+    //print('Error during image processing: $e');
   }
 
   // return base64String;
@@ -77,7 +77,7 @@ Future<void> downloadImage_slip(String imageUrl, String name) async {
     // finally we remove the AnchorElement
     a.remove();
   } catch (e) {
-    print(e);
+    //print(e);
   }
 }
 dynamic downloadImage(fileName) async {
@@ -107,7 +107,7 @@ dynamic downloadImage(fileName) async {
     await Future.delayed(Duration(seconds: 5));
     deleteFile(fileName);
   } catch (e) {
-    print(e);
+    //print(e);
     deleteFile(fileName);
   }
 }
@@ -123,14 +123,14 @@ dynamic deleteFile(fileName) async {
     if (response.statusCode == 200) {
       final responseBody = response.body;
       if (responseBody == 'File deleted successfully.') {
-        print('File deleted successfully!');
+        //print('File deleted successfully!');
       } else {
-        print('Failed to delete file: $responseBody');
+        //print('Failed to delete file: $responseBody');
       }
     } else {
-      print('Failed to delete file. Status code: ${response.statusCode}');
+      //print('Failed to delete file. Status code: ${response.statusCode}');
     }
   } catch (e) {
-    print('An error occurred: $e');
+    //print('An error occurred: $e');
   }
 }

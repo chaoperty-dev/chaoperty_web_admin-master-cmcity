@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../ChiangMai_Municipality/Model/Address_Model.dart';
 
 class CustomerModel {
@@ -50,6 +51,10 @@ class CustomerModel {
   String? uuid;
 
   AddressModel? address;
+  dynamic age;
+  String? birth;
+  String? religion;
+  String? national;
 
   CustomerModel({
     this.ser,
@@ -100,59 +105,129 @@ class CustomerModel {
     this.wnote,
     this.uuid,
     this.address,
+    this.age,
+    this.birth,
+    this.religion,
+    this.national,
   });
 
-  factory CustomerModel.fromJson(Map<dynamic, dynamic> json) {
+  /// แปลง dynamic -> String? อย่างปลอดภัย
+  /// - String: คืนเดิม
+  /// - num/bool: toString()
+  /// - List: ถ้าเป็นลิสต์ของสตริง/นัมเบอร์ -> join ด้วย ','
+  ///         ถ้ามีชนิดปนกัน -> jsonEncode
+  /// - Map อื่นๆ -> jsonEncode
+  static String? _asString(dynamic v) {
+    if (v == null) return null;
+    if (v is String) return v;
+    if (v is num || v is bool) return v.toString();
+    if (v is List) {
+      // ลอง map เป็นสตริง (กรอง null) แล้ว join
+      final list = v
+          .where((e) => e != null)
+          .map((e) {
+            if (e is String) return e;
+            if (e is num || e is bool) return e.toString();
+            return null;
+          })
+          .whereType<String>()
+          .toList();
+
+      if (list.length == v.length) {
+        return list.join(','); // ได้ลิสต์สตริงล้วน
+      }
+      // มีชนิดซับซ้อน ปล่อยเป็น JSON
+      try {
+        return jsonEncode(v);
+      } catch (_) {
+        return v.toString();
+      }
+    }
+    if (v is Map) {
+      try {
+        return jsonEncode(v);
+      } catch (_) {
+        return v.toString();
+      }
+    }
+    return v.toString();
+  }
+
+  /// แปลง address จากทั้ง Map/String/null -> AddressModel?
+  static AddressModel? _parseAddress(dynamic v) {
+    if (v == null) return null;
+    if (v is String) {
+      final s = v.trim();
+      if (s.isEmpty || s.toLowerCase() == 'null') return null;
+      try {
+        final decoded = jsonDecode(s);
+        if (decoded is Map<String, dynamic>) {
+          return AddressModel.fromJson(decoded);
+        }
+        return null;
+      } catch (_) {
+        return null;
+      }
+    }
+    if (v is Map<String, dynamic>) return AddressModel.fromJson(v);
+    if (v is Map) return AddressModel.fromJson(Map<String, dynamic>.from(v));
+    return null;
+  }
+
+  factory CustomerModel.fromJson(Map<String, dynamic> json) {
     return CustomerModel(
       ser: json['ser'],
       user: json['user'],
       rser: json['rser'],
-      datex: json['datex'],
-      timex: json['timex'],
-      custno: json['custno'],
-      taxno: json['taxno'],
-      scname: json['scname'],
-      stype: json['stype'],
-      tser: json['tser'],
+      datex: _asString(json['datex']),
+      timex: _asString(json['timex']),
+      custno: _asString(json['custno']),
+      taxno: _asString(json['taxno']),
+      scname: _asString(json['scname']),
+      stype: _asString(json['stype']),
+      tser: _asString(json['tser']),
       typeser: json['typeser'],
-      type: json['type'],
-      cname: json['cname'],
-      branch: json['branch'],
-      attn: json['attn'],
-      addr1: json['addr_1'],
-      addr2: json['addr_2'],
-      zip: json['zip'],
-      tel: json['tel'],
-      tax: json['tax'],
-      fax: json['fax'],
-      email: json['email'],
-      lineid: json['lineid'],
-      lastday: json['lastday'],
-      status: json['status'],
+      type: _asString(json['type']),
+      cname: _asString(json['cname']),
+      branch: _asString(json['branch']),
+      attn: _asString(json['attn']),
+      addr1: _asString(json['addr_1']),
+      addr2: _asString(json['addr_2']),
+      zip: _asString(json['zip']),
+      tel: _asString(json['tel']),
+      tax: _asString(json['tax']),
+      fax: _asString(json['fax']),
+      email: _asString(json['email']),
+      lineid: _asString(json['lineid']),
+      lastday: _asString(json['lastday']),
+      status: _asString(json['status']),
       st: json['st'],
-      dataUpdate: json['data_update'],
-      cid: json['cid'],
-      docno: json['docno'],
-      sdate: json['sdate'],
-      ldate: json['ldate'],
-      period: json['period'],
-      nday: json['nday'],
-      ctype: json['ctype'],
-      zser: json['zser'],
-      zn: json['zn'],
-      aser: json['aser'],
-      ln: json['ln'],
-      qty: json['qty'],
-      area: json['area'],
-      rtser: json['rtser'],
-      rtname: json['rtname'],
-      user_name: json['user_name'],
-      passw: json['passw'],
-      sname: json['sname'],
-      wnote: json['wnote'],
-      uuid: json['uuid'],
-      address:
-          json['json'] != null ? AddressModel.fromJson(json['json']) : null,
+      dataUpdate: _asString(json['data_update']),
+      cid: _asString(json['cid']),
+      docno: _asString(json['docno']),
+      sdate: _asString(json['sdate']),
+      ldate: _asString(json['ldate']),
+      period: _asString(json['period']),
+      nday: _asString(json['nday']),
+      ctype: _asString(json['ctype']),
+      zser: _asString(json['zser']),
+      zn: _asString(json['zn']),
+      aser: _asString(json['aser']),
+      ln: _asString(json['ln']),
+      qty: _asString(json['qty']),
+      area: _asString(json['area']),
+      rtser: _asString(json['rtser']),
+      rtname: _asString(json['rtname']),
+      user_name: _asString(json['user_name']),
+      passw: _asString(json['passw']),
+      sname: _asString(json['sname']),
+      wnote: _asString(json['wnote']),
+      uuid: _asString(json['uuid']),
+      address: _parseAddress(json['json']),
+      age: json['age'],
+      birth: _asString(json['birth']),
+      religion: _asString(json['religion']),
+      national: _asString(json['national']),
     );
   }
 
@@ -206,6 +281,10 @@ class CustomerModel {
     data['wnote'] = wnote;
     data['uuid'] = uuid;
     data['json'] = address?.toJson();
+    data['age'] = age;
+    data['birth'] = birth;
+    data['religion'] = religion;
+    data['national'] = national;
     return data;
   }
 }

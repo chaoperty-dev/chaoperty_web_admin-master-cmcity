@@ -20,6 +20,8 @@ class Read_DataONBill_PDFModel {
   String? type;
   String? zn;
   String? ln;
+  String? lncode;
+  String? ln_c;
   String? custno;
   String? remark;
   String? user;
@@ -32,6 +34,7 @@ class Read_DataONBill_PDFModel {
   String? paper_run;
   String? amt_up;
   String? vat_up;
+  String? user_updata;
 
   Read_DataONBill_PDFModel({
     this.ser,
@@ -55,6 +58,8 @@ class Read_DataONBill_PDFModel {
     this.type,
     this.zn,
     this.ln,
+    this.lncode,
+    this.ln_c,
     this.custno,
     this.remark,
     this.user,
@@ -67,6 +72,7 @@ class Read_DataONBill_PDFModel {
     this.paper_run,
     this.amt_up,
     this.vat_up,
+    this.user_updata,
   });
 
   Read_DataONBill_PDFModel.fromJson(Map<String, dynamic> json) {
@@ -91,6 +97,8 @@ class Read_DataONBill_PDFModel {
     type = json['type'];
     zn = json['zn'];
     ln = json['ln'];
+    lncode = json['lncode'];
+    ln_c = json['ln_c'];
     custno = json['custno'];
     remark = json['remark'];
     user = json['user'];
@@ -104,6 +112,7 @@ class Read_DataONBill_PDFModel {
     paper_run = json['paper_run'];
     amt_up = json['amt_up'];
     vat_up = json['vat_up'];
+    user_updata = json['user_updata'];
   }
 
   Map<String, dynamic> toJson() {
@@ -129,6 +138,8 @@ class Read_DataONBill_PDFModel {
     data['type'] = this.type;
     data['zn'] = this.zn;
     data['ln'] = this.ln;
+    data['lncode'] = this.lncode;
+    data['ln_c'] = this.ln_c;
     data['custno'] = this.custno;
     data['remark'] = this.remark;
     data['user'] = this.user;
@@ -142,6 +153,7 @@ class Read_DataONBill_PDFModel {
     data['paper_run'] = this.paper_run;
     data['amt_up'] = this.amt_up;
     data['vat_up'] = this.vat_up;
+    data['user_updata'] = this.user_updata;
     return data;
   }
 }

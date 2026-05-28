@@ -66,7 +66,7 @@ class _DragIntoListExample extends State<DragIntoListExample> {
       setState(() {
         subzoneModels.add(subzoneModelx);
       });
-      print(result);
+      // print(result);
       for (var map in result) {
         SubZoneModel subzoneModel = SubZoneModel.fromJson(map);
         setState(() {
@@ -232,7 +232,11 @@ class _DragIntoListExample extends State<DragIntoListExample> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 12),
                       child: Text(
-                        '${zoneModels[indexz].zn}',
+                        (zoneModels[indexz].number_zn == null ||
+                                zoneModels[indexz].number_zn.toString() == '0')
+                            ? '${zoneModels[indexz].zn}'
+                            : '${zoneModels[indexz].number_zn}. ' +
+                                '${zoneModels[indexz].zn}',
                       ),
                     ),
                   ],
@@ -247,7 +251,11 @@ class _DragIntoListExample extends State<DragIntoListExample> {
                       padding: const EdgeInsets.symmetric(
                           vertical: 15, horizontal: 12),
                       child: Text(
-                        '${zoneModels[indexz].zn}',
+                        (zoneModels[indexz].number_zn == null ||
+                                zoneModels[indexz].number_zn.toString() == '0')
+                            ? '${zoneModels[indexz].zn}'
+                            : '${zoneModels[indexz].number_zn}. ' +
+                                '${zoneModels[indexz].zn}',
                       ),
                     ),
                   ],
@@ -699,11 +707,11 @@ class _DragIntoListExample extends State<DragIntoListExample> {
                           padding: const EdgeInsets.all(8.0),
                           child: TextButton(
                             onPressed: () async {
-                              print(
-                                  ' ${_contents.length} ${_contents[1].children.length} ${_contents[1].children[0].feedbackWidget.toString()}');
-                              print((_contents[1].children[0].feedbackWidget
-                                      as Text)
-                                  .data);
+                              //  print(
+                              //' ${_contents.length} ${_contents[1].children.length} ${_contents[1].children[0].feedbackWidget.toString()}');
+                              // print((_contents[1].children[0].feedbackWidget
+                              //         as Text)
+                              //     .data);
                               for (int index = 0;
                                   index < _contents.length;
                                   index++) {
@@ -720,7 +728,7 @@ class _DragIntoListExample extends State<DragIntoListExample> {
                                 //     Order2.toString().substring(0, Order22);
                                 var sub_zone =
                                     (_contents[index].lastTarget as Text).data;
-                                print('sub_zone $sub_zone');
+                                //     print('sub_zone $sub_zone');
                                 List<DragAndDropItem> reverseOrder =
                                     _contents[index].children;
 
@@ -728,24 +736,15 @@ class _DragIntoListExample extends State<DragIntoListExample> {
                                 //   reverseOrdersub.add(
                                 //       _contents[index].children.toString());
                                 // });
-
+                                // print(
+                                //     'reverseOrder.length : ${reverseOrder.length}');
                                 for (int i = 0; i < reverseOrder.length; i++) {
-                                  // var reverse = reverseOrder[i]
-                                  //     .feedbackWidget
-                                  //     .toString()
-                                  //     .indexOf('"');
-                                  // var reverse2 = reverseOrder[i]
-                                  //     .feedbackWidget
-                                  //     .toString()
-                                  //     .substring(reverse + 1);
-                                  // var zone = reverse2
-                                  //     .toString()
-                                  //     .substring(0, reverse2.length - 2);
+                                  var noSer = i + 1;
                                   var zone =
                                       (reverseOrder[i].feedbackWidget as Text)
                                           .data;
-                                  print('zone $zone');
-                                  edit_Sub_zone(sub_zone!, zone!, index);
+                                  // print('${noSer} : zone $zone');
+                                  edit_Sub_zone(sub_zone!, zone!, index, noSer);
                                 }
                               }
 
@@ -803,7 +802,8 @@ class _DragIntoListExample extends State<DragIntoListExample> {
     );
   }
 
-  Future<Null> edit_Sub_zone(String sub_zone, String zone, int index) async {
+  Future<Null> edit_Sub_zone(
+      String sub_zone, String zone, int index, int noSer) async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
     String? ren = preferences.getString('renTalSer');
     String? ser_user = preferences.getString('ser');
@@ -811,26 +811,74 @@ class _DragIntoListExample extends State<DragIntoListExample> {
     var zone_sub = sub_zone;
     var zone_name = zone;
     var row_num = index;
-    print('zone_sub $zone_sub >>zone_name>> $zone_name >>index>> $index');
-    String url =
-        '${MyConstant().domain}/upC_zone_sub.php?isAdd=true&ren=$ren&ser_user=$ser_user&zone_sub=$zone_sub&zone_name=$zone_name&row_num=$row_num';
+    var no_Ser = noSer;
+
+    // print('zone_sub $zone_sub >>zone_name>> $zone_name >>index>> $index');
+
+    final uri = Uri.parse('${MyConstant().domain}/upC_zoneSub_V2.php');
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await http.post(
+        uri,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8',
+        },
+        body: {
+          'isAdd': 'true',
+          'ren': ren ?? '',
+          'ser_user': ser_user ?? '',
+          'zone_sub': zone_sub,
+          'zone_name': zone_name,
+          'row_num': row_num.toString(),
+          'noSer': no_Ser.toString(),
+        },
+      );
 
+      // PHP ฝั่งนั้น echo 'true' หรือ 'false' (ซึ่งเป็น JSON boolean valid)
       var result = json.decode(response.body);
 
       Insert_log.Insert_logs('ตั้งค่า', 'จัดโซนพื้นที่');
+
       if (result.toString() == 'true') {
-        print(
-            'true zone_sub $zone_sub >>zone_name>> $zone_name >>index>> $index');
-        // setState(() {
-        //   subzoneModels.clear;
-        //   read_GC_Sub_zone();
-        // });
+        // ถ้าต้องการ refresh UI ตรงนี้ค่อย setState ด้านนอก หรือหลังวน loop เสร็จ
+        // print('true zone_sub $zone_sub >>zone_name>> $zone_name >>index>> $index');
       }
-    } catch (e) {}
+    } catch (e) {
+      // ถ้าอยาก debug เพิ่มเติม ใส่ print(e);
+      // print('edit_Sub_zone error: $e');
+    }
   }
+
+  // Future<Null> edit_Sub_zone(
+  //     String sub_zone, String zone, int index, int noSer) async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   String? ren = preferences.getString('renTalSer');
+  //   String? ser_user = preferences.getString('ser');
+
+  //   var zone_sub = sub_zone;
+  //   var zone_name = zone;
+  //   var row_num = index;
+  //   var no_Ser = noSer;
+  //   // print('zone_sub $zone_sub >>zone_name>> $zone_name >>index>> $index');
+  //   String url =
+  //       '${MyConstant().domain}/upC_zone_sub.php?isAdd=true&ren=$ren&ser_user=$ser_user&zone_sub=$zone_sub&zone_name=$zone_name&row_num=$row_num';
+
+  //   try {
+  //     var response = await http.get(Uri.parse(url));
+
+  //     var result = json.decode(response.body);
+
+  //     Insert_log.Insert_logs('ตั้งค่า', 'จัดโซนพื้นที่');
+  //     if (result.toString() == 'true') {
+  //       // print(
+  //       //   'true zone_sub $zone_sub >>zone_name>> $zone_name >>index>> $index');
+  //       // setState(() {
+  //       //   subzoneModels.clear;
+  //       //   read_GC_Sub_zone();
+  //       // });
+  //     }
+  //   } catch (e) {}
+  // }
 
   _onItemReorder(
       int oldItemIndex, int oldListIndex, int newItemIndex, int newListIndex) {

@@ -42,6 +42,16 @@ class ContractPhotoModel {
   String? pic_tenant;
   String? pic_shop;
   String? pic_plan;
+  String? sub_cid;
+  String? stime;
+  String? ltime;
+  String? d1;
+  String? d2;
+  String? d3;
+  String? d4;
+  String? d5;
+  String? d6;
+  String? d7;
 
   ContractPhotoModel({
     this.ser,
@@ -86,6 +96,16 @@ class ContractPhotoModel {
     this.pic_tenant,
     this.pic_shop,
     this.pic_plan,
+    this.sub_cid,
+    this.stime,
+    this.ltime,
+    this.d1,
+    this.d2,
+    this.d3,
+    this.d4,
+    this.d5,
+    this.d6,
+    this.d7,
   });
 
   ContractPhotoModel.fromJson(Map<String, dynamic> json) {
@@ -132,6 +152,16 @@ class ContractPhotoModel {
     pic_tenant = json['pic_tenant'];
     pic_shop = json['pic_shop'];
     pic_plan = json['pic_plan'];
+    sub_cid = json['sub_cid'];
+    stime = json['stime'];
+    ltime = json['ltime'];
+    d1 = json['d1'];
+    d2 = json['d2'];
+    d3 = json['d3'];
+    d4 = json['d4'];
+    d5 = json['d5'];
+    d6 = json['d6'];
+    d7 = json['d7'];
   }
 
   Map<String, dynamic> toJson() {
@@ -179,6 +209,16 @@ class ContractPhotoModel {
     data['pic_tenant'] = this.pic_tenant;
     data['pic_shop'] = this.pic_shop;
     data['pic_plan'] = this.pic_plan;
+    data['sub_cid'] = this.sub_cid;
+    data['stime'] = this.stime;
+    data['ltime'] = this.ltime;
+    data['d1'] = this.d1;
+    data['d2'] = this.d2;
+    data['d3'] = this.d3;
+    data['d4'] = this.d4;
+    data['d5'] = this.d5;
+    data['d6'] = this.d6;
+    data['d7'] = this.d7;
     return data;
   }
 }

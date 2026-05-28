@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../PeopleChao/Rental_Information.dart';
 import '../../../../Style/ThaiBaht.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/Preview_Agreement.dart';
 import '../../Style/loadAndCacheImage.dart';
 
 class Pdfgen_Agreement_Choice3 {
@@ -75,11 +76,13 @@ class Pdfgen_Agreement_Choice3 {
     // final PdfFont font = PdfFont.of(pdf, data: dataint);
     final font = await rootBundle.load("fonts/THSarabunNew.ttf");
     final font2 = await rootBundle.load("fonts/THSarabunNew.ttf");
+    final font3 = await rootBundle.load("fonts/SarabunBold.ttf");
     var Colors_pd = PdfColors.black;
     var Colors_pd2 = PdfColors.grey800;
     var Colors_pd3 = PdfColors.black;
     final ttf = pw.Font.ttf(font);
     final ttf2 = pw.Font.ttf(font2);
+    final ttf3 = pw.Font.ttf(font3);
     double font_Size = 12.5;
     int space_Size = 10;
     DateTime date = DateTime.now();
@@ -213,6 +216,13 @@ class Pdfgen_Agreement_Choice3 {
           }); ///// ไม่ น้ำ-ไฟฟ้า
 
 ///////////////////////------------------------------------------------->
+    final imageCheck = await rootBundle.load('images/check1.png');
+    final imageSquare = await rootBundle.load('images/square3.png');
+
+    final check = pw.MemoryImage(imageCheck.buffer.asUint8List());
+    final square = pw.MemoryImage(imageSquare.buffer.asUint8List());
+
+    ///////////////////////------------------------------------------------->
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4.copyWith(
@@ -1597,7 +1607,7 @@ class Pdfgen_Agreement_Choice3 {
                           color: Colors_pd,
                         ),
                       ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      pw.SizedBox(height: 8 * PdfPageFormat.mm), //13
                       pw.Text(
                         ' ' * 12 +
                             'หากผู้รับบริการประสงค์จะใช้ไฟฟ้าหรือน้ำประปา จะต้องชำระค่าธรรมเนียมดังนี้',
@@ -1612,6 +1622,173 @@ class Pdfgen_Agreement_Choice3 {
                       pw.SizedBox(height: 1 * PdfPageFormat.mm),
                       pw.Row(
                         children: [
+                          pw.SizedBox(
+                            width: 38,
+                          ),
+                          pw.Image(
+                            (quotxSelectModels
+                                        .where(
+                                            (e) => e.expser.toString() == '20')
+                                        .length ==
+                                    0)
+                                ? square
+                                : check,
+                            width: 15,
+                            height: 15,
+                          ),
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Text(
+                              (quotxSelectModels
+                                          .where((e) =>
+                                              e.expser.toString() == '20')
+                                          .length ==
+                                      0)
+                                  ? ' ' * 2 + 'ค่ามิเตอร์ไฟฟ้า จำนวน_____บาท'
+                                  : ' ' * 2 +
+                                      'ค่ามิเตอร์ไฟฟ้า จำนวน ${(quotxSelectModels.where((e) => e.expser.toString() == '20').length == 0) ? 0.00 : quotxSelectModels.where((model) => model.expser == '20').map((model) => model.total).join(', ')} บาท',
+                              // (quotxSelectModels
+                              //             .where((e) =>
+                              //                 e.expser.toString() == '20')
+                              //             .length ==
+                              //         0)
+                              //     ? ' ' * 15 +
+                              //         '[   ]  ค่ามิเตอร์ไฟฟ้า จำนวน_____บาท'
+                              //     : ' ' * 15 +
+                              //         '[ / ]  ค่ามิเตอร์ไฟฟ้า จำนวน ${(quotxSelectModels.where((e) => e.expser.toString() == '20').length == 0) ? 0.00 : quotxSelectModels.where((model) => model.expser == '20').map((model) => model.total).join(', ')} บาท',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                color: Colors_pd,
+                                fontSize: font_Size,
+                                fontWeight: pw.FontWeight.bold,
+                                font: ttf,
+                              ),
+                            ),
+                          ),
+                          pw.Text(
+                            ' ' * 15,
+                            textAlign: pw.TextAlign.left,
+                            style: pw.TextStyle(
+                              color: Colors_pd,
+                              fontSize: font_Size,
+                              fontWeight: pw.FontWeight.bold,
+                              font: ttf,
+                            ),
+                          ),
+                          pw.Image(
+                            (quotxSelectModels
+                                        .where(
+                                            (e) => e.expser.toString() == '21')
+                                        .length ==
+                                    0)
+                                ? square
+                                : check,
+                            width: 15,
+                            height: 15,
+                          ),
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Text(
+                              (quotxSelectModels
+                                          .where((e) =>
+                                              e.expser.toString() == '21')
+                                          .length ==
+                                      0)
+                                  ? ' ' * 2 + 'ค่ามิเตอร์น้ำประปา จำนวน_____บาท'
+                                  : ' ' * 2 +
+                                      'ค่ามิเตอร์น้ำประปา จำนวน ${(quotxSelectModels.where((e) => e.expser.toString() == '21').length == 0) ? 0.00 : quotxSelectModels.where((model) => model.expser == '21').map((model) => model.total).join(', ')} บาท',
+                              // (quotxSelectModels
+                              //             .where((e) =>
+                              //                 e.expser.toString() == '21')
+                              //             .length ==
+                              //         0)
+                              //     ? ' ' * 15 +
+                              //         '[   ] ค่ามิเตอร์น้ำประปา จำนวน_____บาท'
+                              //     : ' ' * 15 +
+                              //         '[ / ] ค่ามิเตอร์น้ำประปา จำนวน ${(quotxSelectModels.where((e) => e.expser.toString() == '21').length == 0) ? 0.00 : quotxSelectModels.where((model) => model.expser == '21').map((model) => model.total).join(', ')} บาท',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                color: Colors_pd,
+                                fontSize: font_Size,
+                                fontWeight: pw.FontWeight.bold,
+                                font: ttf,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      pw.Row(
+                        children: [
+                          pw.SizedBox(
+                            width: 38,
+                          ),
+                          pw.Image(
+                            (quotxSelectModels
+                                        .where((e) =>
+                                            e.expser.toString() == '20' ||
+                                            e.expser.toString() == '21')
+                                        .length ==
+                                    0)
+                                ? check
+                                : square,
+                            width: 15,
+                            height: 15,
+                          ),
+                          pw.Expanded(
+                            flex: 1,
+                            child: pw.Text(
+                              (quotxSelectModels
+                                          .where((e) =>
+                                              e.expser.toString() == '20' ||
+                                              e.expser.toString() == '21')
+                                          .length ==
+                                      0)
+                                  // (hasNonCash_No_water_ele == true)
+                                  ? ' ' * 2 + 'ไม่ใช้มิเตอร์ไฟฟ้าและน้ำประปา '
+                                  : ' ' * 2 + 'ไม่ใช้มิเตอร์ไฟฟ้าและน้ำประปา ',
+                              // (quotxSelectModels
+                              //             .where((e) =>
+                              //                 e.expser.toString() == '20' ||
+                              //                 e.expser.toString() == '21')
+                              //             .length ==
+                              //         0)
+                              //     // (hasNonCash_No_water_ele == true)
+                              //     ? ' ' * 15 +
+                              //         '[ / ] ไม่ใช้มิเตอร์ไฟฟ้าและน้ำประปา '
+                              //     : ' ' * 15 +
+                              //         '[   ] ไม่ใช้มิเตอร์ไฟฟ้าและน้ำประปา ',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                color: Colors_pd,
+                                fontSize: font_Size,
+                                fontWeight: pw.FontWeight.bold,
+                                font: ttf,
+                              ),
+                            ),
+                          ),
+                          pw.Text(
+                            ' ' * 15,
+                            textAlign: pw.TextAlign.left,
+                            style: pw.TextStyle(
+                              color: Colors_pd,
+                              fontSize: font_Size,
+                              fontWeight: pw.FontWeight.bold,
+                              font: ttf,
+                            ),
+                          ),
+                          pw.Image(
+                            (quotxSelectModels
+                                        .where(
+                                            (e) => e.expser.toString() == '19')
+                                        .length ==
+                                    0)
+                                ? square
+                                : check,
+                            width: 15,
+                            height: 15,
+                          ),
+
                           pw.Expanded(
                             flex: 1,
                             child: pw.Text(
@@ -1620,10 +1797,18 @@ class Pdfgen_Agreement_Choice3 {
                                               e.expser.toString() == '19')
                                           .length ==
                                       0)
-                                  ? ' ' * 15 +
-                                      '[   ] ค่าชุดผ้ากันเปื้อน จำนวน_____บาท'
-                                  : ' ' * 15 +
-                                      '[ / ] ค่าชุดผ้ากันเปื้อน จำนวน ${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '19').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท',
+                                  ? ' ' * 2 + 'ค่าชุดผ้ากันเปื้อน จำนวน_____บาท'
+                                  : ' ' * 2 +
+                                      'ค่าชุดผ้ากันเปื้อน จำนวน ${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '19').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท',
+                              // (quotxSelectModels
+                              //             .where((e) =>
+                              //                 e.expser.toString() == '19')
+                              //             .length ==
+                              //         0)
+                              //     ? ' ' * 15 +
+                              //         '[   ] ค่าชุดผ้ากันเปื้อน จำนวน_____บาท'
+                              //     : ' ' * 15 +
+                              //         '[ / ] ค่าชุดผ้ากันเปื้อน จำนวน ${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '19').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท',
                               textAlign: pw.TextAlign.left,
                               style: pw.TextStyle(
                                 color: Colors_pd,
@@ -1655,76 +1840,6 @@ class Pdfgen_Agreement_Choice3 {
                           //     ),
                           //   ),
                           // ),
-                          pw.Expanded(
-                            flex: 1,
-                            child: pw.Text(
-                              (quotxSelectModels
-                                          .where((e) =>
-                                              e.expser.toString() == '20')
-                                          .length ==
-                                      0)
-                                  ? ' ' * 15 +
-                                      '[   ]  ค่ามิเตอร์ไฟฟ้า จำนวน_____บาท'
-                                  : ' ' * 15 +
-                                      '[ / ]  ค่ามิเตอร์ไฟฟ้า จำนวน ${(quotxSelectModels.where((e) => e.expser.toString() == '20').length == 0) ? 0.00 : quotxSelectModels.where((model) => model.expser == '20').map((model) => model.total).join(', ')} บาท',
-                              textAlign: pw.TextAlign.left,
-                              style: pw.TextStyle(
-                                color: Colors_pd,
-                                fontSize: font_Size,
-                                fontWeight: pw.FontWeight.bold,
-                                font: ttf,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Row(
-                        children: [
-                          pw.Expanded(
-                            flex: 1,
-                            child: pw.Text(
-                              (quotxSelectModels
-                                          .where((e) =>
-                                              e.expser.toString() == '21')
-                                          .length ==
-                                      0)
-                                  ? ' ' * 15 +
-                                      '[   ] ค่ามิเตอร์น้ำประปา จำนวน_____บาท'
-                                  : ' ' * 15 +
-                                      '[ / ] ค่ามิเตอร์น้ำประปา จำนวน ${(quotxSelectModels.where((e) => e.expser.toString() == '21').length == 0) ? 0.00 : quotxSelectModels.where((model) => model.expser == '21').map((model) => model.total).join(', ')} บาท',
-                              textAlign: pw.TextAlign.left,
-                              style: pw.TextStyle(
-                                color: Colors_pd,
-                                fontSize: font_Size,
-                                fontWeight: pw.FontWeight.bold,
-                                font: ttf,
-                              ),
-                            ),
-                          ),
-                          pw.Expanded(
-                            flex: 1,
-                            child: pw.Text(
-                              (quotxSelectModels
-                                          .where((e) =>
-                                              e.expser.toString() == '20' ||
-                                              e.expser.toString() == '21')
-                                          .length ==
-                                      0)
-                                  // (hasNonCash_No_water_ele == true)
-                                  ? ' ' * 15 +
-                                      '[ / ] ไม่ใช้มิเตอร์ไฟฟ้าและน้ำประปา '
-                                  : ' ' * 15 +
-                                      '[   ] ไม่ใช้มิเตอร์ไฟฟ้าและน้ำประปา ',
-                              textAlign: pw.TextAlign.left,
-                              style: pw.TextStyle(
-                                color: Colors_pd,
-                                fontSize: font_Size,
-                                fontWeight: pw.FontWeight.bold,
-                                font: ttf,
-                              ),
-                            ),
-                          ),
                         ],
                       ),
                       // pw.SizedBox(height: 1 * PdfPageFormat.mm),
@@ -1755,7 +1870,7 @@ class Pdfgen_Agreement_Choice3 {
                       //     pw.Expanded(flex: 1, child: pw.SizedBox()),
                       //   ],
                       // ),
-                      pw.SizedBox(height: 5 * PdfPageFormat.mm),
+                      pw.SizedBox(height: 2 * PdfPageFormat.mm),
                       // pw.Text(
                       //   ' ' * 12 +
                       //       'โดยมีค่าบริการไฟฟ้า หน่วยละ 7 บาท ค่าบริการน้ำประปาหน่วยละ 30 บาท เป็นราคาที่ยังไม่รวมภาษีมูลค่าเพิ่ม',
@@ -1876,32 +1991,76 @@ class Pdfgen_Agreement_Choice3 {
                                   width: 0.3, // Underline thickness
                                 ))),
                                 child: pw.Text(
-                                  (quotxSelectModels
-                                              .where((e) =>
-                                                  e.expser.toString() == '16' ||
-                                                  e.expser.toString() == '19' ||
-                                                  e.expser.toString() == '20' ||
-                                                  e.expser.toString() == '21' ||
-                                                  e.expser.toString() == '25')
-                                              .length ==
-                                          0)
-                                      ? '0.00 (~${convertToThaiBaht(0.00)}~)'
-                                      : (quotxSelectModels
-                                                  .where((e) =>
-                                                      e.expser.toString() ==
-                                                          '16' &&
-                                                      e.cfid.toString() == '1')
-                                                  .length !=
-                                              0)
-                                          ? "${nFormat.format(quotxSelectModels.where((e) => (e.expser.toString() == '16' && e.cfid.toString() == '1') || e.expser.toString() == '19' || e.expser.toString() == '20' || e.expser.toString() == '21' || e.expser.toString() == '25').map((e) => e.first_total != null ? double.parse(e.first_total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท"
-                                          : (quotxSelectModels
-                                                      .where((e) =>
-                                                          e.expser.toString() ==
-                                                          '16')
-                                                      .length ==
-                                                  0)
-                                              ? '0.00 บาท'
-                                              : "${nFormat.format(quotxSelectModels.where((e) => (e.expser.toString() == '16' && e.cfid.toString() != '1') || e.expser.toString() == '19' || e.expser.toString() == '20' || e.expser.toString() == '21' || e.expser.toString() == '25').map((e) => e.first_total != null ? double.parse(e.first_total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท",
+                                  (() {
+                                    final validExp = [
+                                      '16',
+                                      '19',
+                                      '20',
+                                      '21',
+                                      '25'
+                                    ];
+
+                                    final filtered = quotxSelectModels.where(
+                                      (e) => validExp
+                                          .contains(e.expser.toString()),
+                                    );
+
+                                    if (filtered.isEmpty) {
+                                      return '0.00 (~${convertToThaiBaht(0.00)}~)';
+                                    }
+
+                                    final hasCfid1 = filtered.any(
+                                      (e) =>
+                                          e.expser.toString() == '16' &&
+                                          e.cfid.toString() == '1',
+                                    );
+
+                                    final total = filtered
+                                        .where((e) =>
+                                            e.expser.toString() != '16' ||
+                                            (hasCfid1
+                                                ? e.cfid.toString() == '1'
+                                                : e.cfid.toString() != '1'))
+                                        .fold<double>(0.0, (double a, e) {
+                                      final v = double.tryParse(
+                                              (e.first_total ?? '0')
+                                                  .toString()
+                                                  .replaceAll(',', '')
+                                                  .trim()) ??
+                                          0.0;
+                                      return a + v;
+                                    });
+
+                                    return "${nFormat.format(total)} บาท";
+                                  })(),
+
+                                  // (quotxSelectModels
+                                  //             .where((e) =>
+                                  //                 e.expser.toString() == '16' ||
+                                  //                 e.expser.toString() == '19' ||
+                                  //                 e.expser.toString() == '20' ||
+                                  //                 e.expser.toString() == '21' ||
+                                  //                 e.expser.toString() == '25')
+                                  //             .length ==
+                                  //         0)
+                                  //     ? '0.00 (~${convertToThaiBaht(0.00)}~)'
+                                  //     : (quotxSelectModels
+                                  //                 .where((e) =>
+                                  //                     e.expser.toString() ==
+                                  //                         '16' &&
+                                  //                     e.cfid.toString() == '1')
+                                  //                 .length !=
+                                  //             0)
+                                  //         ? "${nFormat.format(quotxSelectModels.where((e) => (e.expser.toString() == '16' && e.cfid.toString() == '1') || e.expser.toString() == '19' || e.expser.toString() == '20' || e.expser.toString() == '21' || e.expser.toString() == '25').map((e) => e.first_total != null ? double.parse(e.first_total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท"
+                                  //         : (quotxSelectModels
+                                  //                     .where((e) =>
+                                  //                         e.expser.toString() ==
+                                  //                         '16')
+                                  //                     .length ==
+                                  //                 0)
+                                  //             ? '0.00 บาท'
+                                  //             : "${nFormat.format(quotxSelectModels.where((e) => (e.expser.toString() == '16' && e.cfid.toString() != '1') || e.expser.toString() == '19' || e.expser.toString() == '20' || e.expser.toString() == '21' || e.expser.toString() == '25').map((e) => e.first_total != null ? double.parse(e.first_total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท",
+
                                   // '${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '16' || e.expser.toString() == '19' || e.expser.toString() == '20' || e.expser.toString() == '21' || e.expser.toString() == '25').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท ' +
                                   //     '(~${convertToThaiBaht(quotxSelectModels.where((e) => e.expser.toString() == '16' || e.expser.toString() == '19' || e.expser.toString() == '20' || e.expser.toString() == '21' || e.expser.toString() == '25').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))}~)',
 
@@ -2836,34 +2995,34 @@ class Pdfgen_Agreement_Choice3 {
             context: context,
             ////////////------------------->
             ///
-            Get_Value_NameShop_index: Get_Value_NameShop_index,
-            Get_Value_cid: Get_Value_cid,
-            verticalGroupValue: _verticalGroupValue,
-            Form_nameshop: Form_nameshop,
-            Form_typeshop: Form_typeshop,
-            Form_bussshop: Form_bussshop,
-            Form_bussscontact: Form_bussscontact,
-            Form_address: Form_address,
-            Form_tel: Form_tel,
-            Form_email: Form_email,
-            Form_tax: Form_tax,
-            Form_ln: Form_ln,
-            Form_zn: Form_zn,
-            Form_area: Form_area,
-            Form_qty: Form_qty,
-            Form_sdate: Form_sdate,
-            Form_ldate: Form_ldate,
-            Form_period: Form_period,
-            Form_rtname: Form_rtname,
-            quotxSelectModels: quotxSelectModels,
-            TransModels: _TransModels,
-            renTal_name: renTal_name,
-            bill_addr: bill_addr,
-            bill_email: bill_email,
-            bill_tel: bill_tel,
-            bill_tax: bill_tax,
-            bill_name: bill_name,
-            newValuePDFimg: newValuePDFimg,
+            // Get_Value_NameShop_index: Get_Value_NameShop_index,
+            // Get_Value_cid: Get_Value_cid,
+            // verticalGroupValue: _verticalGroupValue,
+            // Form_nameshop: Form_nameshop,
+            // Form_typeshop: Form_typeshop,
+            // Form_bussshop: Form_bussshop,
+            // Form_bussscontact: Form_bussscontact,
+            // Form_address: Form_address,
+            // Form_tel: Form_tel,
+            // Form_email: Form_email,
+            // Form_tax: Form_tax,
+            // Form_ln: Form_ln,
+            // Form_zn: Form_zn,
+            // Form_area: Form_area,
+            // Form_qty: Form_qty,
+            // Form_sdate: Form_sdate,
+            // Form_ldate: Form_ldate,
+            // Form_period: Form_period,
+            // Form_rtname: Form_rtname,
+            // quotxSelectModels: quotxSelectModels,
+            // TransModels: _TransModels,
+            // renTal_name: renTal_name,
+            // bill_addr: bill_addr,
+            // bill_email: bill_email,
+            // bill_tel: bill_tel,
+            // bill_tax: bill_tax,
+            // bill_name: bill_name,
+            // newValuePDFimg: newValuePDFimg,
           ),
         ));
   }

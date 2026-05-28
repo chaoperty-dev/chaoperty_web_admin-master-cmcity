@@ -114,7 +114,7 @@ class _BillDocumentState extends State<BillDocument> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -160,7 +160,7 @@ class _BillDocumentState extends State<BillDocument> {
         }
       } else {}
     } catch (e) {}
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
   ///////---------------------------------------------------->
@@ -181,7 +181,7 @@ class _BillDocumentState extends State<BillDocument> {
     var ren = preferences.getString('renTalSer');
     var zone = preferences.getString('zoneSer');
 
-    // print('zone >>>>>> $zone');
+    // //print('zone >>>>>> $zone');
 
     String url =
         '${MyConstant().domain}/GC_doctypeSetting1.php?isAdd=true&ren=$ren';
@@ -190,7 +190,7 @@ class _BillDocumentState extends State<BillDocument> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           DoctypeOneModel doctypeOneModel = DoctypeOneModel.fromJson(map);
@@ -217,7 +217,7 @@ class _BillDocumentState extends State<BillDocument> {
     var ren = preferences.getString('renTalSer');
     var zone = preferences.getString('zoneSer');
 
-    // print('zone >>>>>> $zone');
+    // //print('zone >>>>>> $zone');
 
     String url =
         '${MyConstant().domain}/GC_doctypeSetting2.php?isAdd=true&ren=$ren';
@@ -226,7 +226,7 @@ class _BillDocumentState extends State<BillDocument> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           DoctypeTwoModel doctypeTwoModel = DoctypeTwoModel.fromJson(map);
@@ -834,10 +834,10 @@ class _BillDocumentState extends State<BillDocument> {
                           child: TextButton(
                             onPressed: () async {
                               if (_formKey.currentState!.validate()) {
-                                // print('Ser เอกสาร : ${serDocu.toString()}');
-                                // print(
+                                // //print('Ser เอกสาร : ${serDocu.toString()}');
+                                // //print(
                                 //     'แก้ไขหัวบิล : ${FormtitleDocu_text.text.toString()}');
-                                // print(
+                                // //print(
                                 //     'แก้ไขเลขเอกสาร : ${FormnumDocu_text.text.toString()}');
                                 var name_bull =
                                     Formtitledoc_text.text.toString();
@@ -857,7 +857,7 @@ class _BillDocumentState extends State<BillDocument> {
                                   var response = await http.get(Uri.parse(url));
 
                                   var result = json.decode(response.body);
-                                  // print(result);
+                                  // //print(result);
                                   if (result.toString() == 'true') {
                                     Insert_log.Insert_logs(
                                         'ตั้งค่า', 'เอกสาร>>$typeDocu');
@@ -1130,7 +1130,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                             var result =
                                                 json.decode(response.body);
-                                            // print(result);
+                                            // //print(result);
                                             if (result.toString() == 'true') {
                                               Insert_log.Insert_logs('ตั้งค่า',
                                                   'เอกสาร>>แก้ไข(ชื่อผู้เช่า/บริบัท)');
@@ -1205,8 +1205,8 @@ class _BillDocumentState extends State<BillDocument> {
                                     flex: 1,
                                     child: InkWell(
                                       onTap: () async {
-                                        // print(bill_name);
-                                        // print(bill_name_Check);
+                                        // //print(bill_name);
+                                        // //print(bill_name_Check);
                                         SharedPreferences preferences =
                                             await SharedPreferences
                                                 .getInstance();
@@ -1224,7 +1224,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                           var result =
                                               json.decode(response.body);
-                                          // print(result);
+                                          // //print(result);
                                           setState(() {
                                             bill_name = null;
                                             bill_name_Check = null;
@@ -1391,7 +1391,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                             var result =
                                                 json.decode(response.body);
-                                            // print(result);
+                                            // //print(result);
                                             if (result.toString() == 'true') {
                                               Insert_log.Insert_logs('ตั้งค่า',
                                                   'เอกสาร>>แก้ไข(ที่อยู่)');
@@ -1472,7 +1472,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                           var result =
                                               json.decode(response.body);
-                                          // print(result);
+                                          // //print(result);
                                           if (result.toString() == 'true') {
                                             Insert_log.Insert_logs('ตั้งค่า',
                                                 'เอกสาร>>แก้ไข(ที่อยู่)');
@@ -1593,7 +1593,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                       var result = json.decode(
                                                           response.body);
-                                                      // print(result);
+                                                      // //print(result);
                                                       if (result.toString() ==
                                                           'true') {
                                                         Insert_log.Insert_logs(
@@ -1692,7 +1692,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                     var result = json
                                                         .decode(response.body);
-                                                    // print(result);
+                                                    // //print(result);
                                                     if (result.toString() ==
                                                         'true') {
                                                       Insert_log.Insert_logs(
@@ -1805,7 +1805,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                       var result = json.decode(
                                                           response.body);
-                                                      // print(result);
+                                                      // //print(result);
                                                       if (result.toString() ==
                                                           'true') {
                                                         Insert_log.Insert_logs(
@@ -1912,7 +1912,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                     var result = json
                                                         .decode(response.body);
-                                                    // print(result);
+                                                    // //print(result);
                                                     if (result.toString() ==
                                                         'true') {
                                                       Insert_log.Insert_logs(
@@ -2011,7 +2011,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                       var result = json.decode(
                                                           response.body);
-                                                      // print(result);
+                                                      // //print(result);
                                                       if (result.toString() ==
                                                           'true') {
                                                         Insert_log.Insert_logs(
@@ -2119,7 +2119,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                     var result = json
                                                         .decode(response.body);
-                                                    // print(result);
+                                                    // //print(result);
                                                     if (result.toString() ==
                                                         'true') {
                                                       Insert_log.Insert_logs(
@@ -2564,7 +2564,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                                           '${doctypeOneModels[index].yy}',
                                                                           '${doctypeOneModels[index].mm}',
                                                                         );
-                                                                        // print(
+                                                                        // //print(
                                                                         //     'แก้ไข${doctypeOneModels[index].bills} // ser : ${doctypeOneModels[index].ser}');
                                                                       },
                                                                       child: Container(
@@ -2940,7 +2940,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                                           '${doctypeTwoModels[index].yy}',
                                                                           '${doctypeTwoModels[index].mm}',
                                                                         );
-                                                                        // print(
+                                                                        // //print(
                                                                         //     'แก้ไข${doctypeTwoModels[index].bills}// ser : ${doctypeTwoModels[index].ser}');
                                                                       },
                                                                       child: Container(
@@ -3002,8 +3002,11 @@ class _BillDocumentState extends State<BillDocument> {
                           children: [
                             Container(
                               width: (!Responsive.isDesktop(context))
-                                  ? 500
-                                  : MediaQuery.of(context).size.width * 0.85,
+                                  ? 1400.00
+                                  : MediaQuery.of(context).size.width * 0.84,
+                              // width: (!Responsive.isDesktop(context))
+                              //     ? 500
+                              //     : MediaQuery.of(context).size.width * 0.85,
                               child: Row(
                                 // mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
@@ -3385,7 +3388,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                                           var result =
                                                                               json.decode(response.body);
-                                                                          // print(result);
+                                                                          // //print(result);
                                                                           if (result.toString() ==
                                                                               'true') {
                                                                             Insert_log.Insert_logs('ตั้งค่า',
@@ -3548,7 +3551,7 @@ class _BillDocumentState extends State<BillDocument> {
 
                                                                             var result =
                                                                                 json.decode(response.body);
-                                                                            // print(result);
+                                                                            // //print(result);
                                                                             if (result.toString() ==
                                                                                 'true') {
                                                                               Insert_log.Insert_logs('ตั้งค่า', 'เอกสาร>>แก้ไข(DEFAULT การยกเลิกบิล)');
@@ -3766,7 +3769,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  // print(result);
+                                                                  // //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -4017,7 +4020,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  // print(result);
+                                                                  // //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -4252,7 +4255,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  // print(result);
+                                                                  // //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -4493,7 +4496,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                                       json.decode(
                                                                           response
                                                                               .body);
-                                                                  // print(result);
+                                                                  // //print(result);
                                                                   if (result
                                                                           .toString() ==
                                                                       'true') {
@@ -4830,7 +4833,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                     '${doctypeOneModels[index].yy}',
                                                     '${doctypeOneModels[index].mm}',
                                                   );
-                                                  // print(
+                                                  // //print(
                                                   //     'แก้ไข${doctypeOneModels[index].bills} // ser : ${doctypeOneModels[index].ser}');
                                                 },
                                                 child: Container(
@@ -5163,7 +5166,7 @@ class _BillDocumentState extends State<BillDocument> {
                                                     '${doctypeTwoModels[index].yy}',
                                                     '${doctypeTwoModels[index].mm}',
                                                   );
-                                                  // print(
+                                                  // //print(
                                                   //     'แก้ไข${doctypeTwoModels[index].bills}// ser : ${doctypeTwoModels[index].ser}');
                                                 },
                                                 child: Container(

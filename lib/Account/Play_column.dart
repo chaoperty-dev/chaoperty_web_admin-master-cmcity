@@ -184,7 +184,7 @@ class _PlayColumnState extends State<PlayColumn> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      // print(result);
 
       for (var map in result) {
         ZoneModel zoneModel = ZoneModel.fromJson(map);
@@ -201,7 +201,7 @@ class _PlayColumnState extends State<PlayColumn> {
       }
     } catch (e) {}
 
-    print('zoneSerzoneSer>>>> $zoneSer');
+    // print('zoneSerzoneSer>>>> $zoneSer');
 
     if (zoneSer != '0') {
       if (zoneSer != null) {
@@ -269,7 +269,7 @@ class _PlayColumnState extends State<PlayColumn> {
         }
       } else {}
     } catch (e) {}
-    print('name>>>>>  $renname');
+    // print('name>>>>>  $renname');
   }
 
   Future<Null> read_data() async {
@@ -417,7 +417,7 @@ class _PlayColumnState extends State<PlayColumn> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print("....................... $result");
+      //print("....................... $result");
       if (result.toString() == 'true') {
         setState(() {
           sum_pvat = 0;
@@ -457,8 +457,8 @@ class _PlayColumnState extends State<PlayColumn> {
 
       // print(result);
 
-      print(
-          '----------------------------------------------------3345653----------------------------------------------------------');
+      // print(
+      //     '----------------------------------------------------3345653----------------------------------------------------------');
       if (result != null) {
         sumarea_pay = 0;
         transPlayPayModels.clear();
@@ -469,7 +469,7 @@ class _PlayColumnState extends State<PlayColumn> {
           List<dynamic> successList = transPlayPayModel.play_amt;
           var ara = double.parse(transPlayPayModel.area!);
           // List<dynamic> successList = result[][transPlayModel.play_amt];
-          print('vv>>>>>cid  $vv >>>>araaraara $ara');
+          // print('vv>>>>>cid  $vv >>>>araaraara $ara');
           setState(() {
             sumarea_pay = sumarea_pay + ara;
             transPlayPayModels.add(transPlayPayModel);
@@ -504,9 +504,9 @@ class _PlayColumnState extends State<PlayColumn> {
         }
       } else {}
 
-      print('transPlayxPayModels -------------> ${transPlayxPayModels.length}');
+      //print('transPlayxPayModels -------------> ${transPlayxPayModels.length}');
     } catch (e) {
-      print('e -------------> $e');
+      // print('e -------------> $e');
     }
   }
 
@@ -533,8 +533,8 @@ class _PlayColumnState extends State<PlayColumn> {
 
       // print(result);
 
-      print(
-          '----------------------------------------------------333----------------------------------------------------------');
+      // print(
+      //     '----------------------------------------------------333----------------------------------------------------------');
       if (result != null) {
         sumarea = 0;
         transPlayModels.clear();
@@ -544,12 +544,12 @@ class _PlayColumnState extends State<PlayColumn> {
           var vv = transPlayModel.cid;
           List<dynamic> successList = transPlayModel.play_amt;
 
-          print('>length>transPlayModel>>>>>>>${transPlayModel}');
-          print('>>>>>>successList>>>>>>>$successList');
-          print('>length>successList>>>>>>>${successList.length}');
+          // print('>length>transPlayModel>>>>>>>${transPlayModel}');
+          // print('>>>>>>successList>>>>>>>$successList');
+          // print('>length>successList>>>>>>>${successList.length}');
           var ara = double.parse(transPlayModel.area.toString());
           // List<dynamic> successList = result[][transPlayModel.play_amt];
-          print('>>>>>>araara>>>>>>>$ara');
+          // print('>>>>>>araara>>>>>>>$ara');
           setState(() {
             sumarea = sumarea + ara;
             transPlayModels.add(transPlayModel);
@@ -583,7 +583,7 @@ class _PlayColumnState extends State<PlayColumn> {
         }
       } else {}
     } catch (e) {
-      print('e -------------> $e');
+      //print('e -------------> $e');
     }
   }
 
@@ -616,7 +616,7 @@ class _PlayColumnState extends State<PlayColumn> {
           });
         }
       } else {}
-      print('-------------> ${listcolor.length}  ${listcolor.map((e) => e)}');
+      // print('-------------> ${listcolor.length}  ${listcolor.map((e) => e)}');
     } catch (e) {}
   }
 
@@ -632,7 +632,7 @@ class _PlayColumnState extends State<PlayColumn> {
     var ren = preferences.getString('renTalSer');
     var zone = preferences.getString('zoneSer'); //widget.Get_Value_zone_ser;
     var ref = ciddoc;
-    print('readddddd  -------------> $ref');
+    //print('readddddd  -------------> $ref');
     String url =
         '${MyConstant().domain}/GC_Playcolumn1.php?isAdd=true&ren=$ren&zone=$zone&ref=$ref';
 
@@ -700,10 +700,10 @@ class _PlayColumnState extends State<PlayColumn> {
       //   }
       // }
 
-      print(
-          '-------------------${transPlayListModels.length}--------------${listcolorplay.map((e) => e)}-----------------333456----------------------${transPlayListxModels.length}---------------------');
+      // print(
+      //     '-------------------${transPlayListModels.length}--------------${listcolorplay.map((e) => e)}-----------------333456----------------------${transPlayListxModels.length}---------------------');
     } catch (e) {
-      print('e -------------> $e');
+      //  print('e -------------> $e');
     }
   }
 
@@ -749,8 +749,8 @@ class _PlayColumnState extends State<PlayColumn> {
                                     onTap: () async {
                                       var zoneSer = zoneModels[i].ser;
                                       var zonesName = zoneModels[i].zn;
-                                      print(
-                                          'mmmmm ${zoneSer.toString()} $zonesName');
+                                      // print(
+                                      //     'mmmmm ${zoneSer.toString()} $zonesName');
 
                                       SharedPreferences preferences =
                                           await SharedPreferences.getInstance();
@@ -1139,12 +1139,12 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                                         child: InkWell(
                                                                                             borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
                                                                                             onDoubleTap: () {
-                                                                                              print('onDoubleTap');
+                                                                                              // print('onDoubleTap');
 
                                                                                               de_item(v);
                                                                                             },
                                                                                             onLongPress: () {
-                                                                                              print('onLongPress');
+                                                                                              //print('onLongPress');
                                                                                               de_item(v);
                                                                                             },
                                                                                             onTap: () async {
@@ -1363,7 +1363,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                                             child: InkWell(
                                                                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
                                                                                                 onDoubleTap: () {
-                                                                                                  print('onDoubleTap');
+                                                                                                  //print('onDoubleTap');
                                                                                                   in_Trans_select(v, i);
                                                                                                   var ciddoc = transPlayModels[index].cid;
 
@@ -1383,7 +1383,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                                                   de_item(v);
                                                                                                 },
                                                                                                 onLongPress: () {
-                                                                                                  print('onLongPress');
+                                                                                                  // print('onLongPress');
                                                                                                   in_Trans_select(v, i);
                                                                                                   var ciddoc = transPlayModels[index].cid;
 
@@ -2075,7 +2075,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                     .toString();
                               });
 
-                              print('sum_dis $sum_dis');
+                              //print('sum_dis $sum_dis');
                             },
                             cursorColor: Colors.black,
                             decoration: InputDecoration(
@@ -2223,8 +2223,8 @@ class _PlayColumnState extends State<PlayColumn> {
                                           setState(() {
                                             selectedValue = item.bno!;
                                           });
-                                          print(
-                                              '**/*/*   --- ${selectedValue}');
+                                          // print(
+                                          //     '**/*/*   --- ${selectedValue}');
                                         },
                                         value: '${item.ser}:${item.ptname}',
                                         child: Row(
@@ -2259,7 +2259,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                         ),
                                       )).toList(),
                                   onChanged: (value) async {
-                                    print(value);
+                                    //print(value);
                                     // Do something when changing the item if you want.
 
                                     var zones = value!.indexOf(':');
@@ -2284,8 +2284,8 @@ class _PlayColumnState extends State<PlayColumn> {
                                                 .toString();
                                       }
                                     });
-                                    print(
-                                        'mmmmm ${rtnameSer.toString()} $rtnameName');
+                                    // print(
+                                    //     'mmmmm ${rtnameSer.toString()} $rtnameName');
                                     // print(
                                     //     'pppppp $paymentSer1 $paymentName1');
                                     // print('Form_payment1.text');
@@ -2451,7 +2451,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                           String end = DateFormat('dd-MM-yyyy')
                                               .format(newDate);
 
-                                          print('$start $end');
+                                          //print('$start $end');
                                           setState(() {
                                             Value_newDateY1 = start;
                                             Value_newDateD1 = end;
@@ -2569,7 +2569,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                           String end = DateFormat('dd-MM-yyyy')
                                               .format(newDate);
 
-                                          print('$start $end');
+                                          // print('$start $end');
                                           setState(() {
                                             Value_newDateY = start;
                                             Value_newDateD = end;
@@ -2791,7 +2791,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                             .red[
                                                                         600],
                                                                     borderRadius: const BorderRadius
-                                                                        .only(
+                                                                            .only(
                                                                         topLeft:
                                                                             Radius.circular(
                                                                                 10),
@@ -2807,7 +2807,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                   ),
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       const Center(
@@ -2861,7 +2861,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                   ),
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       const Center(
@@ -3285,7 +3285,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                         color: Colors.white,
                                                         padding:
                                                             const EdgeInsets
-                                                                .fromLTRB(
+                                                                    .fromLTRB(
                                                                 4, 8, 4, 2),
                                                         child: Column(
                                                           crossAxisAlignment:
@@ -3316,7 +3316,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                 ),
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .all(
+                                                                            .all(
                                                                         8.0),
                                                                 child: Center(
                                                                   child: Text(
@@ -3720,17 +3720,17 @@ class _PlayColumnState extends State<PlayColumn> {
                                     : Form_payment2.text;
                               });
 
-                              print(
-                                  '${double.parse(pay1) + double.parse(pay2)} /// ${(sum_amt - sum_disamt)}****${Form_payment1.text}***${Form_payment2.text}');
-                              print('************************************++++');
-                              print(
-                                  '>>1>  ${Form_payment1.text} //// $pay1//***${double.parse(pay1)}');
-                              print(
-                                  '>>2>  ${Form_payment2.text} //// $pay2 //***${double.parse(pay2)}');
+                              // print(
+                              //     '${double.parse(pay1) + double.parse(pay2)} /// ${(sum_amt - sum_disamt)}****${Form_payment1.text}***${Form_payment2.text}');
+                              // print('************************************++++');
+                              // print(
+                              //     '>>1>  ${Form_payment1.text} //// $pay1//***${double.parse(pay1)}');
+                              // print(
+                              //     '>>2>  ${Form_payment2.text} //// $pay2 //***${double.parse(pay2)}');
 
-                              print(
-                                  '${(sum_amt - sum_disamt)}//****${double.parse(pay1) + double.parse(pay2)}');
-                              print('************************************++++');
+                              // print(
+                              //     '${(sum_amt - sum_disamt)}//****${double.parse(pay1) + double.parse(pay2)}');
+                              // print('************************************++++');
                               if (double.parse(pay1) < 0.00 ||
                                   double.parse(pay2) < 0.00) {
                                 _showMyDialogPay_Error(
@@ -3783,7 +3783,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                           (sum_amt - sum_disamt)) {
                                     if ((sum_amt - sum_disamt) != 0) {
                                       if (select_page == 0) {
-                                        print('(select_page == 0)');
+                                        // print('(select_page == 0)');
                                         if ((double.parse(pay1) +
                                                 double.parse(pay2) !=
                                             (sum_amt - sum_disamt))) {
@@ -4130,7 +4130,7 @@ class _PlayColumnState extends State<PlayColumn> {
 
     var poslok = 'ยกเลิกรับชำระ';
 
-    print('tser >>.> $tser');
+    //print('tser >>.> $tser');
 
     String url =
         '${MyConstant().domain}/De_tran_item_colum.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&tser=$tser&tdocno=$tdocno&user=$user&poslok=$poslok';
@@ -4146,7 +4146,7 @@ class _PlayColumnState extends State<PlayColumn> {
           // price_add.clear();
           read_GC_Playcolumn();
         });
-        print('rrrrrrrrrrrrrr');
+        // print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -4168,7 +4168,7 @@ class _PlayColumnState extends State<PlayColumn> {
 
     var poslok = 'ยกเลิกรับชำระ';
 
-    print('tser >>.> $tser');
+    //print('tser >>.> $tser');
 
     String url =
         '${MyConstant().domain}/De_tran_item_colum.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&tser=$tser&tdocno=$tdocno&user=$user&poslok=$poslok';
@@ -4184,7 +4184,7 @@ class _PlayColumnState extends State<PlayColumn> {
             red_listdate(ciddoc);
           }
         });
-        print('rrrrrrrrrrrrrr');
+        // print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -4560,7 +4560,7 @@ class _PlayColumnState extends State<PlayColumn> {
           text_add.clear();
           price_add.clear();
         });
-        print('rrrrrrrrrrrrrr');
+        // print('rrrrrrrrrrrrrr');
       } else if (result.toString() == 'false') {
         setState(() {
           // red_Trans_bill();
@@ -4568,7 +4568,7 @@ class _PlayColumnState extends State<PlayColumn> {
           text_add.clear();
           price_add.clear();
         });
-        print('rrrrrrrrrrrrrrfalse');
+        //print('rrrrrrrrrrrrrrfalse');
       } else {
         setState(() {
           // red_Trans_bill();
@@ -4592,7 +4592,7 @@ class _PlayColumnState extends State<PlayColumn> {
       //           style:
       //               TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
       // );
-      print('rrrrrrrrrrrrrr $e');
+      //print('rrrrrrrrrrrrrr $e');
     }
   }
 
@@ -4908,12 +4908,12 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                                             child: InkWell(
                                                                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
                                                                                                 onDoubleTap: () {
-                                                                                                  print('onDoubleTap');
+                                                                                                  //print('onDoubleTap');
 
                                                                                                   de_item(v);
                                                                                                 },
                                                                                                 onLongPress: () {
-                                                                                                  print('onLongPress');
+                                                                                                  //  print('onLongPress');
                                                                                                   de_item(v);
                                                                                                 },
                                                                                                 onTap: () async {
@@ -5139,7 +5139,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                                                 child: InkWell(
                                                                                                     borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
                                                                                                     onDoubleTap: () {
-                                                                                                      print('onDoubleTap');
+                                                                                                      //print('onDoubleTap');
                                                                                                       in_Trans_select(v, i);
                                                                                                       var ciddoc = transPlayModels[index].cid;
 
@@ -5159,7 +5159,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                                                       de_item(v);
                                                                                                     },
                                                                                                     onLongPress: () {
-                                                                                                      print('onLongPress');
+                                                                                                      // print('onLongPress');
                                                                                                       in_Trans_select(v, i);
                                                                                                       var ciddoc = transPlayModels[index].cid;
 
@@ -5863,7 +5863,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                         .toString();
                                   });
 
-                                  print('sum_dis $sum_dis');
+                                  //print('sum_dis $sum_dis');
                                 },
                                 cursorColor: Colors.black,
                                 decoration: InputDecoration(
@@ -6013,8 +6013,8 @@ class _PlayColumnState extends State<PlayColumn> {
                                               setState(() {
                                                 selectedValue = item.bno!;
                                               });
-                                              print(
-                                                  '**/*/*   --- ${selectedValue}');
+                                              // print(
+                                              //     '**/*/*   --- ${selectedValue}');
                                             },
                                             value: '${item.ser}:${item.ptname}',
                                             child: Row(
@@ -6051,7 +6051,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                             ),
                                           )).toList(),
                                       onChanged: (value) async {
-                                        print(value);
+                                        // print(value);
                                         // Do something when changing the item if you want.
 
                                         var zones = value!.indexOf(':');
@@ -6079,8 +6079,8 @@ class _PlayColumnState extends State<PlayColumn> {
                                                     .toString();
                                           }
                                         });
-                                        print(
-                                            'mmmmm ${rtnameSer.toString()} $rtnameName');
+                                        // print(
+                                        //     'mmmmm ${rtnameSer.toString()} $rtnameName');
                                         // print(
                                         //     'pppppp $paymentSer1 $paymentName1');
                                         // print('Form_payment1.text');
@@ -6250,7 +6250,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                   DateFormat('dd-MM-yyyy')
                                                       .format(newDate);
 
-                                              print('$start $end');
+                                              // print('$start $end');
                                               setState(() {
                                                 Value_newDateY1 = start;
                                                 Value_newDateD1 = end;
@@ -6371,7 +6371,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                   DateFormat('dd-MM-yyyy')
                                                       .format(newDate);
 
-                                              print('$start $end');
+                                              // print('$start $end');
                                               setState(() {
                                                 Value_newDateY = start;
                                                 Value_newDateD = end;
@@ -6594,7 +6594,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                               Padding(
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .all(
+                                                                            .all(
                                                                         8.0),
                                                                 child: InkWell(
                                                                   child: Container(
@@ -6602,8 +6602,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                       decoration: BoxDecoration(
                                                                         color: Colors
                                                                             .red[600],
-                                                                        borderRadius: const BorderRadius
-                                                                            .only(
+                                                                        borderRadius: const BorderRadius.only(
                                                                             topLeft:
                                                                                 Radius.circular(10),
                                                                             topRight: Radius.circular(10),
@@ -6637,7 +6636,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                               Padding(
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .all(
+                                                                            .all(
                                                                         8.0),
                                                                 child: InkWell(
                                                                   child: Container(
@@ -7092,7 +7091,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                     .white,
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .fromLTRB(
+                                                                            .fromLTRB(
                                                                         4,
                                                                         8,
                                                                         4,
@@ -7117,9 +7116,8 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                               bottomLeft: Radius.circular(0),
                                                                               bottomRight: Radius.circular(0)),
                                                                         ),
-                                                                        padding: const EdgeInsets
-                                                                            .all(
-                                                                            8.0),
+                                                                        padding:
+                                                                            const EdgeInsets.all(8.0),
                                                                         child:
                                                                             Center(
                                                                           child:
@@ -7376,7 +7374,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                   ),
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       TextButton(
@@ -7551,19 +7549,19 @@ class _PlayColumnState extends State<PlayColumn> {
                                         : Form_payment2.text;
                                   });
 
-                                  print(
-                                      '${double.parse(pay1) + double.parse(pay2)} /// ${(sum_amt - sum_disamt)}****${Form_payment1.text}***${Form_payment2.text}');
-                                  print(
-                                      '************************************++++');
-                                  print(
-                                      '>>1>  ${Form_payment1.text} //// $pay1//***${double.parse(pay1)}');
-                                  print(
-                                      '>>2>  ${Form_payment2.text} //// $pay2 //***${double.parse(pay2)}');
+                                  // print(
+                                  //     '${double.parse(pay1) + double.parse(pay2)} /// ${(sum_amt - sum_disamt)}****${Form_payment1.text}***${Form_payment2.text}');
+                                  // print(
+                                  //     '************************************++++');
+                                  // print(
+                                  //     '>>1>  ${Form_payment1.text} //// $pay1//***${double.parse(pay1)}');
+                                  // print(
+                                  //     '>>2>  ${Form_payment2.text} //// $pay2 //***${double.parse(pay2)}');
 
-                                  print(
-                                      '${(sum_amt - sum_disamt)}//****${double.parse(pay1) + double.parse(pay2)}');
-                                  print(
-                                      '************************************++++');
+                                  // print(
+                                  //     '${(sum_amt - sum_disamt)}//****${double.parse(pay1) + double.parse(pay2)}');
+                                  // print(
+                                  //     '************************************++++');
                                   if (double.parse(pay1) < 0.00 ||
                                       double.parse(pay2) < 0.00) {
                                     _showMyDialogPay_Error(
@@ -7620,7 +7618,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                               (sum_amt - sum_disamt)) {
                                         if ((sum_amt - sum_disamt) != 0) {
                                           if (select_page == 0) {
-                                            print('(select_page == 0)');
+                                            // print('(select_page == 0)');
                                             if ((double.parse(pay1) +
                                                     double.parse(pay2) !=
                                                 (sum_amt - sum_disamt))) {
@@ -7888,7 +7886,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                                     .circular(
                                                                         10)),
                                                         onDoubleTap: () {
-                                                          print('onDoubleTap');
+                                                          //print('onDoubleTap');
                                                           if (listcolorplay[
                                                                   v] ==
                                                               transPlayListxModels[
@@ -7901,7 +7899,7 @@ class _PlayColumnState extends State<PlayColumn> {
                                                           de_item_his(v);
                                                         },
                                                         onLongPress: () {
-                                                          print('onLongPress');
+                                                          //  print('onLongPress');
                                                           if (listcolorplay[
                                                                   v] ==
                                                               transPlayListxModels[
@@ -8081,7 +8079,7 @@ class _PlayColumnState extends State<PlayColumn> {
     var tser = transPlayListxModels[index].ser_trans;
     var tdocno = transPlayListxModels[index].docno_trans;
 
-    print('object $tdocno');
+    //print('object $tdocno');
     String url =
         '${MyConstant().domain}/In_tran_select_column.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&tser=$tser&tdocno=$tdocno&user=$user';
     try {
@@ -8099,7 +8097,7 @@ class _PlayColumnState extends State<PlayColumn> {
               index, transPlayListxModels[index].docno_trans.toString());
         });
 
-        print('rrrrrrrrrrrrrr ${listcolorplay.map((e) => e)}');
+        // print('rrrrrrrrrrrrrr ${listcolorplay.map((e) => e)}');
       } else if (result.toString() == 'false') {
         // deall_Trans_select(index);
         setState(() {
@@ -8108,7 +8106,7 @@ class _PlayColumnState extends State<PlayColumn> {
           listcolorplay.removeAt(index);
           listcolorplay.insert(index, '0');
         });
-        print('rrrrrrrrrrrrrrfalse ${listcolorplay.map((e) => e)}');
+        // print('rrrrrrrrrrrrrrfalse ${listcolorplay.map((e) => e)}');
       } else {
         // setState(() {
         //   red_Trans_select2();
@@ -8122,7 +8120,7 @@ class _PlayColumnState extends State<PlayColumn> {
       //           style:
       //               TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
       // );
-      print('rrrrrrrrrrrrrr $e');
+      // print('rrrrrrrrrrrrrr $e');
     }
   }
 
@@ -8136,7 +8134,7 @@ class _PlayColumnState extends State<PlayColumn> {
     var tser = transPlayxModels[index].ser_trans;
     var tdocno = transPlayxModels[index].docno_trans;
 
-    print('object $tdocno');
+    //print('object $tdocno');
     String url =
         '${MyConstant().domain}/In_tran_select_column.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&tser=$tser&tdocno=$tdocno&user=$user';
     try {
@@ -8154,7 +8152,7 @@ class _PlayColumnState extends State<PlayColumn> {
               incolor, transPlayxModels[index].docno_trans.toString());
         });
 
-        print('rrrrrrrrrrrrrr');
+        //print('rrrrrrrrrrrrrr');
       } else if (result.toString() == 'false') {
         // deall_Trans_select(index);
         setState(() {
@@ -8163,7 +8161,7 @@ class _PlayColumnState extends State<PlayColumn> {
           listcolor.removeAt(incolor);
           listcolor.insert(incolor, '0');
         });
-        print('rrrrrrrrrrrrrrfalse');
+        // print('rrrrrrrrrrrrrrfalse');
       } else {
         // setState(() {
         //   red_Trans_select2();
@@ -8177,7 +8175,7 @@ class _PlayColumnState extends State<PlayColumn> {
       //           style:
       //               TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
       // );
-      print('rrrrrrrrrrrrrr $e');
+      //print('rrrrrrrrrrrrrr $e');
     }
   }
 
@@ -8199,10 +8197,10 @@ class _PlayColumnState extends State<PlayColumn> {
           red_Trans_select22();
           sum = sum - double.parse(_TransModels[index].pvat!);
         });
-        print('rrrrrrrrrrrrrr');
+        // print('rrrrrrrrrrrrrr');
       } else if (result.toString() == 'false') {
         setState(() {});
-        print('rrrrrrrrrrrrrrfalse');
+        // print('rrrrrrrrrrrrrrfalse');
       } else {
         // ScaffoldMessenger.of(context).showSnackBar(
         //   SnackBar(
@@ -8212,7 +8210,7 @@ class _PlayColumnState extends State<PlayColumn> {
         // );
       }
     } catch (e) {
-      print('rrrrrrrrrrrrrr $e');
+      //print('rrrrrrrrrrrrrr $e');
     }
   }
 
@@ -8275,8 +8273,8 @@ class _PlayColumnState extends State<PlayColumn> {
         }
       }
 
-      print(
-          '${listcolorplay.length}  ${listcolorplay.map((e) => e)} ${listcolorplay[index]} ${transPlayListxModels[index].date_trans}');
+      // print(
+      //    '${listcolorplay.length}  ${listcolorplay.map((e) => e)} ${listcolorplay[index]} ${transPlayListxModels[index].date_trans}');
 
       setState(() {
         // read_data();
@@ -8357,19 +8355,19 @@ class _PlayColumnState extends State<PlayColumn> {
         }
 
         setState(() {
-          print('>>>>>>>>>>>ssssss>>>>$sum_amt');
+          //print('>>>>>>>>>>>ssssss>>>>$sum_amt');
           Form_payment1.text =
               (sum_amt - sum_disamt).toStringAsFixed(2).toString();
         });
       } else {
         setState(() {
-          print('>>>>>>>>>>>ssssss>>>>$sum_amt');
+          // print('>>>>>>>>>>>ssssss>>>>$sum_amt');
           Form_payment1.text = '0.00';
         });
       }
 
-      print(
-          '${listcolor.length}  ${listcolor.map((e) => e)} ${listcolor[index]} ${transPlayxModels[index].date_trans}');
+      //  print(
+      //   '${listcolor.length}  ${listcolor.map((e) => e)} ${listcolor[index]} ${transPlayxModels[index].date_trans}');
 
       setState(() {
         read_data();
@@ -8455,13 +8453,13 @@ class _PlayColumnState extends State<PlayColumn> {
         }
 
         setState(() {
-          print('>>>>>>>>>>>ssssss>>>>$sum_amt');
+          //print('>>>>>>>>>>>ssssss>>>>$sum_amt');
           Form_payment1.text =
               (sum_amt - sum_disamt).toStringAsFixed(2).toString();
         });
       } else {
         setState(() {
-          print('>>>>>>>>>>>ssssss>>>>$sum_amt');
+          //  print('>>>>>>>>>>>ssssss>>>>$sum_amt');
           Form_payment1.text = '0.00';
         });
       }
@@ -8508,12 +8506,12 @@ class _PlayColumnState extends State<PlayColumn> {
     await reader.onLoadEnd.first;
     String fileName_ = file.name;
     String extension = fileName_.split('.').last;
-    print('File name: $fileName_');
-    print('Extension: $extension');
+    // print('File name: $fileName_');
+    // print('Extension: $extension');
     setState(() {
       base64_Slip = base64Encode(reader.result as Uint8List);
     });
-    print(base64_Slip);
+    // print(base64_Slip);
     setState(() {
       extension_ = extension;
       file_ = file;
@@ -8619,18 +8617,18 @@ class _PlayColumnState extends State<PlayColumn> {
       request.open('POST',
           '${MyConstant().domain}/File_uploadSlip.php?name=$fileName_Slip&Foder=$foder&Pathfoder=$Path_foder');
       request.send(formData);
-      print(formData);
+      // print(formData);
 
       // Handle the response
       await request.onLoad.first;
 
       if (request.status == 200) {
-        print('File uploaded successfully!');
+        //   print('File uploaded successfully!');
       } else {
-        print('File upload failed with status code: ${request.status}');
+        // print('File upload failed with status code: ${request.status}');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      //print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -8680,8 +8678,8 @@ class _PlayColumnState extends State<PlayColumn> {
     var sum_whta = sum_wht.toString();
     var comment = Form_note.text.toString();
 
-    print('in_Trans_invoice()///$fileName_Slip_');
-    print('in_Trans_invoice>>> $payment1  $payment2 $bill');
+    // print('in_Trans_invoice()///$fileName_Slip_');
+    // print('in_Trans_invoice>>> $payment1  $payment2 $bill');
 
     String url = pamentpage == 0
         ? '${MyConstant().domain}/In_tran_financet1.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&sumdis=$sumdis&sumdisp=$sumdisp&dateY=$dateY&dateY1=$dateY1&time=$time&payment1=$payment1&payment2=$payment2&pSer1=$pSer1&pSer2=$pSer2&sum_whta=$sum_whta&bill=$bill&fileNameSlip=$fileName_Slip_&comment=$comment'
@@ -8690,8 +8688,8 @@ class _PlayColumnState extends State<PlayColumn> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(
-          ' fileName_Slip_///// $fileName_Slip_///pamentpage//$pamentpage//////////*------> $result ');
+      // print(
+      //     ' fileName_Slip_///// $fileName_Slip_///pamentpage//$pamentpage//////////*------> $result ');
       if (result.toString() != 'No') {
         for (var map in result) {
           CFinnancetransModel cFinnancetransModel =
@@ -8699,9 +8697,9 @@ class _PlayColumnState extends State<PlayColumn> {
           setState(() {
             cFinn = cFinnancetransModel.docno;
           });
-          print('in_Trans_invoice///zzzzasaaa123454>>>>  $cFinn');
-          print(
-              'in_Trans_invoice///bnobnobnobno123454>>>>  ${cFinnancetransModel.bno}');
+          // print('in_Trans_invoice///zzzzasaaa123454>>>>  $cFinn');
+          // print(
+          //     'in_Trans_invoice///bnobnobnobno123454>>>>  ${cFinnancetransModel.bno}');
         }
 
         Insert_log.Insert_logs(
@@ -8769,7 +8767,7 @@ class _PlayColumnState extends State<PlayColumn> {
           tableData00 = [];
           _customTileExpanded = false;
         });
-        print('rrrrrrrrrrrrrr');
+        //  print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }

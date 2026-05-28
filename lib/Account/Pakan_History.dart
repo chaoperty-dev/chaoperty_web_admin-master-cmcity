@@ -1062,7 +1062,7 @@ class _PakanHistoryState extends State<PakanHistory> {
                           bottomRight: Radius.circular(0)),
                       border: Border.all(color: Colors.white, width: 1),
                     ),
-                         padding: const EdgeInsets.all(4.0),
+                    padding: const EdgeInsets.all(4.0),
                     child: Translate.TranslateAndSetText(
                         "ประวัติรับเงินประกันผู้เช่า",
                         (Ser_Tap == 0) ? Colors.white : Colors.black,
@@ -1096,7 +1096,7 @@ class _PakanHistoryState extends State<PakanHistory> {
                           bottomRight: Radius.circular(0)),
                       border: Border.all(color: Colors.white, width: 1),
                     ),
-                      padding: const EdgeInsets.all(4.0),
+                    padding: const EdgeInsets.all(4.0),
                     child: Translate.TranslateAndSetText(
                         "ประวัติคืนเงินประกันผู้เช่า",
                         (Ser_Tap == 1) ? Colors.white : Colors.black,

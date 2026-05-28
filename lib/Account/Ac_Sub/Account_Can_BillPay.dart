@@ -792,13 +792,13 @@ class _Account_Cancel_BillPayState extends State<Account_Cancel_BillPay> {
         (ac9_1.where((item) => item["st"] == '1').toList().length <= 9)
             ? (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.85
-                : 1200
+                : 1400
             : (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.85 +
                     ((ac9_1.where((item) => item["st"] == '1').toList().length -
                             9) *
                         30)
-                : 1200 +
+                : 1400 +
                     ((ac9_1.where((item) => item["st"] == '1').toList().length -
                             9) *
                         30);
@@ -1160,7 +1160,7 @@ class _Account_Cancel_BillPayState extends State<Account_Cancel_BillPay> {
                                           setState(() {
                                             Date_Typepay = int.parse(value!);
                                           });
-                                          print(Date_Typepay);
+                                          //  print(Date_Typepay);
                                           Loading_Trans_bill();
                                           // red_Trans_bill();
                                         },

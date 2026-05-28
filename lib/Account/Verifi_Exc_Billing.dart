@@ -481,7 +481,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
       ///------------------------->
       if (result != null) {
         final file = result.files.single;
-        print('Selected file: ${file.name}');
+        // print('Selected file: ${file.name}');
         if (file.extension == 'xlsx') {
           final Uint8List bytes = file.bytes!;
           final excel = Excel.decodeBytes(bytes);
@@ -489,11 +489,11 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
             for (var row in excel.tables[table]!.rows) {
               if (index <= 2) {
                 index++;
-                print(index);
+                //  print(index);
                 // excel.tables[table]!.rows.length;
               } else if (index + 2 >= excel.tables[table]!.rows.length) {
                 index++;
-                print(index);
+                //print(index);
               } else {
                 var record_type = '${row[0]!.value}';
                 var sequence_no = '${row[1]!.value}';
@@ -548,7 +548,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
                   });
                   // print('table ---------------- >${sname}');
                 } catch (e) {}
-                print(map);
+                // print(map);
                 index++;
               }
             }
@@ -583,7 +583,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
               return convertedValues;
             }).toList();
 
-            print(rawData);
+            // print(rawData);
             for (var row in data) {
               if (index <= 2) {
                 index++;
@@ -646,10 +646,10 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
                   });
                   // print('table ---------------- >${sname}');
                 } catch (e) {}
-                print(index);
-                print(map);
+                // print(index);
+                // print(map);
                 index++;
-                print(limitedList_bankExcBilling.length);
+                // print(limitedList_bankExcBilling.length);
               }
             }
           }
@@ -668,10 +668,10 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
         }
       } else {
         // User canceled the file selection.
-        print('File selection canceled.');
+        // print('File selection canceled.');
       }
     } catch (e) {
-      print('Error selecting or reading the file: $e');
+      //  print('Error selecting or reading the file: $e');
     }
   }
 
@@ -1116,7 +1116,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
             ),
             width: (Responsive.isDesktop(context))
                 ? MediaQuery.of(context).size.width * 0.85
-                : 1200,
+                : 1400,
             child: Column(
               children: [
                 ScrollConfiguration(
@@ -1141,7 +1141,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
                                               500
                                           : MediaQuery.of(context).size.width *
                                               0.85
-                                      : 1200,
+                                      : 1400,
                                   decoration: BoxDecoration(
                                     color: AppbackgroundColor.TiTile_Colors,
                                     borderRadius: BorderRadius.only(
@@ -3944,7 +3944,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
         height: MediaQuery.of(context).size.height * 0.63,
         width: Responsive.isDesktop(context)
             ? MediaQuery.of(context).size.width * 0.85
-            : 1200,
+            : 1400,
         decoration: const BoxDecoration(
           color: AppbackgroundColor.Sub_Abg_Colors,
           borderRadius: BorderRadius.only(
@@ -4865,8 +4865,8 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
                                                                       index);
                                                                 });
 
-                                                                print(
-                                                                    '${InvoiceModels[index].ser} ${InvoiceModels[index].cid} ${InvoiceModels[index].docno}');
+                                                                //print(
+                                                                //   '${InvoiceModels[index].ser} ${InvoiceModels[index].cid} ${InvoiceModels[index].docno}');
                                                               },
                                                               child: Container(
                                                                 width: 100,
@@ -5293,7 +5293,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
                                 setState(() {
                                   bills_name_ = bill_set;
                                 });
-                                print(bills_name_);
+                                // print(bills_name_);
                               },
                               // onSaved: (value) {
                               //   // selectedValue = value.toString();
@@ -5707,7 +5707,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
                                           setState(() {
                                             bills_name_ = bill_set;
                                           });
-                                          print(bills_name_);
+                                          // print(bills_name_);
                                         },
                                         // onSaved: (value) {
                                         //   // selectedValue = value.toString();
@@ -6019,8 +6019,8 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
 
 /////////----------------------------------------------------------->
   Future<Null> red_Trans_select(index) async {
-    print(
-        'Ser : ${InvoiceModels[index].ser} // docno :  ${InvoiceModels[index].docno} ///total : ${InvoiceModels[index].total_dis}');
+    // print(
+    //   'Ser : ${InvoiceModels[index].ser} // docno :  ${InvoiceModels[index].docno} ///total : ${InvoiceModels[index].total_dis}');
     if (_InvoiceHistoryModels.length != 0) {
       setState(() {
         _InvoiceHistoryModels.clear();
@@ -6147,9 +6147,9 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       if (result.toString() != 'No') {
-        print('result.toString() != No');
+        //   print('result.toString() != No');
         for (var map in result) {
           CFinnancetransModel cFinnancetransModel =
               CFinnancetransModel.fromJson(map);
@@ -6158,7 +6158,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
 
             doctax = cFinnancetransModel.doctax;
           });
-          print('zzzzasaaa123454>>>>  $cFinn');
+          // print('zzzzasaaa123454>>>>  $cFinn');
         }
         setState(() {
           Invoic_selectAllSuccess.add(InvoiceModels[index].docno.toString());
@@ -6190,7 +6190,7 @@ class _Verifi_Exc_BillingState extends State<Verifi_Exc_Billing> {
           _InvoiceModels.clear();
           _InvoiceHistoryModels.clear();
         });
-        print('rrrrrrrrrrrrrr');
+        //  print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }

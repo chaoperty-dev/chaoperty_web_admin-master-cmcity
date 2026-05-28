@@ -663,7 +663,7 @@ class _ReportScreen1State extends State<ReportScreen1> {
         YE_Trans_Mon = DateFormat('yyyy').format(selectedDate);
         // lastDay();
       });
-      print('Selected month: ${Mon_Trans_Mon}, Year: ${YE_Trans_Mon}');
+      //   print('Selected month: ${Mon_Trans_Mon}, Year: ${YE_Trans_Mon}');
     }
   }
 
@@ -690,8 +690,8 @@ class _ReportScreen1State extends State<ReportScreen1> {
     setState(() {
       Value_TransDate_Daily = _selectedDate;
     });
-    print(Value_TransDate_Daily_S);
-    print(Value_TransDate_Daily_L);
+    // print(Value_TransDate_Daily_S);
+    // print(Value_TransDate_Daily_L);
   }
 
   ///////////--------------------------------------------->
@@ -818,7 +818,7 @@ class _ReportScreen1State extends State<ReportScreen1> {
                                 TypeIncome = value.toString();
                                 TypeIncome_ser = '${selectedIndex + 1}';
                               });
-                              print(TypeIncome_ser);
+                              //  print(TypeIncome_ser);
                             },
                           ),
                         ),
@@ -1880,7 +1880,7 @@ class _ReportScreen1State extends State<ReportScreen1> {
                                 TypeIncome = value.toString();
                                 TypeIncome_ser = '${selectedIndex + 1}';
                               });
-                              print(TypeIncome_ser);
+                              //  print(TypeIncome_ser);
                             },
                           ),
                         ),
@@ -7257,7 +7257,7 @@ class _ReportScreen1State extends State<ReportScreen1> {
       } else {
         //Sales_tax
         if (Value_Report == 'รายงานรายรับ') {
-          print(_ReportValue_type);
+          //   print(_ReportValue_type);
           (_ReportValue_type == "ปกติ")
               ? Excgen_IncomeReport.exportExcel_IncomeReport(
                   '$TypeIncome_ser',

@@ -1168,7 +1168,7 @@ class _BillingScreenState extends State<BillingScreen> {
                           bottomRight: Radius.circular(0)),
                       border: Border.all(color: Colors.white, width: 1),
                     ),
-                     padding: const EdgeInsets.all(4.0),
+                    padding: const EdgeInsets.all(4.0),
                     child: Translate.TranslateAndSetText(
                         "ประวัติวางบิล(ชำระแล้ว)",
                         (Ser_Tap == 2) ? Colors.white : Colors.black,
@@ -1191,7 +1191,7 @@ class _BillingScreenState extends State<BillingScreen> {
             ],
           ),
         ),
-      (Ser_Tap == 1)
+        (Ser_Tap == 1)
             ? const Verifi_Exc_Billing()
             : (Ser_Tap == 2)
                 ? Account_Bill_InvoceSuccess()
@@ -1199,3305 +1199,3305 @@ class _BillingScreenState extends State<BillingScreen> {
                 /// bill_pay()
                 : (Ser_Tap == 0)
                     ? const Account_Bill_Invoce()
-                    :SizedBox()
-          //  Padding(
-          //           padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
-          //           child: Column(
-          //             children: [
-          //               Container(
-          //                 width: (Responsive.isDesktop(context))
-          //                     ?
-          //                     //  (rtser.toString() == '50' ||
-          //                     //         rtser.toString() == '72' ||
-          //                     //         rtser.toString() == '92' ||
-          //                     //         rtser.toString() == '93' ||
-          //                     //         rtser.toString() == '94')
-          //                     //     ? MediaQuery.of(context).size.width * 0.88
-          //                     //     :
-          //                     calculatedWidth
-          //                     : 1200,
-          //                 decoration: const BoxDecoration(
-          //                   color: AppbackgroundColor.Sub_Abg_Colors,
-          //                   borderRadius: BorderRadius.only(
-          //                       topLeft: Radius.circular(10),
-          //                       topRight: Radius.circular(10),
-          //                       bottomLeft: Radius.circular(10),
-          //                       bottomRight: Radius.circular(10)),
-          //                   // border: Border.all(color: Colors.grey, width: 1),
-          //                 ),
-          //                 child: Column(
-          //                   children: [
-          //                     Container(
-          //                         width: (Responsive.isDesktop(context))
-          //                             ?
-          //                             //  (rtser.toString() == '50' ||
-          //                             //         rtser.toString() == '72' ||
-          //                             //         rtser.toString() == '92' ||
-          //                             //         rtser.toString() == '93' ||
-          //                             //         rtser.toString() == '94')
-          //                             //     ? MediaQuery.of(context).size.width *
-          //                             //         0.88
-          //                             //     :
-          //                             calculatedWidth
-          //                             : 1200,
-          //                         child: Column(
-          //                           children: [
-          //                             ScrollConfiguration(
-          //                               behavior:
-          //                                   ScrollConfiguration.of(context)
-          //                                       .copyWith(dragDevices: {
-          //                                 PointerDeviceKind.touch,
-          //                                 PointerDeviceKind.mouse,
-          //                               }),
-          //                               child: SingleChildScrollView(
-          //                                 scrollDirection: Axis.horizontal,
-          //                                 dragStartBehavior:
-          //                                     DragStartBehavior.start,
-          //                                 child: Row(
-          //                                   children: [
-          //                                     SizedBox(
-          //                                       child: Column(
-          //                                         children: [
-          //                                           Container(
-          //                                             width: (Responsive
-          //                                                     .isDesktop(
-          //                                                         context))
-          //                                                 ?
-          //                                                 //  (rtser.toString() == '50' ||
-          //                                                 //         rtser.toString() ==
-          //                                                 //             '72' ||
-          //                                                 //         rtser.toString() ==
-          //                                                 //             '92' ||
-          //                                                 //         rtser.toString() ==
-          //                                                 //             '93' ||
-          //                                                 //         rtser.toString() ==
-          //                                                 //             '94')
-          //                                                 //     ? MediaQuery.of(
-          //                                                 //                 context)
-          //                                                 //             .size
-          //                                                 //             .width *
-          //                                                 //         0.9
-          //                                                 //     :
-          //                                                 calculatedWidth
-          //                                                 : 1200,
-          //                                             decoration: BoxDecoration(
-          //                                               color:
-          //                                                   AppbackgroundColor
-          //                                                       .TiTile_Colors,
-          //                                               borderRadius:
-          //                                                   BorderRadius.only(
-          //                                                       topLeft: Radius
-          //                                                           .circular(
-          //                                                               10),
-          //                                                       topRight:
-          //                                                           Radius
-          //                                                               .circular(
-          //                                                                   10),
-          //                                                       bottomLeft: Radius
-          //                                                           .circular(
-          //                                                               0),
-          //                                                       bottomRight:
-          //                                                           Radius
-          //                                                               .circular(
-          //                                                                   0)),
-          //                                             ),
-          //                                             padding:
-          //                                                 const EdgeInsets.all(
-          //                                                     8.0),
-          //                                             child: Column(
-          //                                               children: [
-          //                                                 Padding(
-          //                                                   padding:
-          //                                                       const EdgeInsets
-          //                                                           .all(2.0),
-          //                                                   child: Row(
-          //                                                     children: [
-          //                                                       Padding(
-          //                                                         padding:
-          //                                                             EdgeInsets
-          //                                                                 .all(
-          //                                                                     2.0),
-          //                                                         child: Translate.TranslateAndSetText(
-          //                                                             'ค้นหา :',
-          //                                                             AccountScreen_Color
-          //                                                                 .Colors_Text1_,
-          //                                                             TextAlign
-          //                                                                 .start,
-          //                                                             FontWeight
-          //                                                                 .bold,
-          //                                                             FontWeight_
-          //                                                                 .Fonts_T,
-          //                                                             14,
-          //                                                             1),
-          //                                                       ),
-          //                                                       Expanded(
-          //                                                         // flex: 1,
-          //                                                         child:
-          //                                                             Container(
-          //                                                           height:
-          //                                                               35, //Date_ser
-          //                                                           // width: 150,
-          //                                                           decoration:
-          //                                                               BoxDecoration(
-          //                                                             color: AppbackgroundColor
-          //                                                                 .Sub_Abg_Colors,
-          //                                                             borderRadius: const BorderRadius
-          //                                                                     .only(
-          //                                                                 topLeft: Radius.circular(
-          //                                                                     8),
-          //                                                                 topRight: Radius.circular(
-          //                                                                     0),
-          //                                                                 bottomLeft: Radius.circular(
-          //                                                                     8),
-          //                                                                 bottomRight:
-          //                                                                     Radius.circular(0)),
-          //                                                             border: Border.all(
-          //                                                                 color: Colors
-          //                                                                     .grey,
-          //                                                                 width:
-          //                                                                     1),
-          //                                                           ),
-          //                                                           child:
-          //                                                               _searchBarMain1(),
-          //                                                         ),
-          //                                                       ),
-          //                                                       Padding(
-          //                                                         padding:
-          //                                                             const EdgeInsets
-          //                                                                     .fromLTRB(
-          //                                                                 0,
-          //                                                                 2,
-          //                                                                 2,
-          //                                                                 2),
-          //                                                         child:
-          //                                                             Container(
-          //                                                           height: 35,
-          //                                                           decoration:
-          //                                                               BoxDecoration(
-          //                                                             color: AppbackgroundColor
-          //                                                                 .Sub_Abg_Colors,
-          //                                                             // .withOpacity(0.5),
-          //                                                             borderRadius: BorderRadius.only(
-          //                                                                 topLeft: Radius.circular(
-          //                                                                     0),
-          //                                                                 topRight: Radius.circular(
-          //                                                                     8),
-          //                                                                 bottomLeft: Radius.circular(
-          //                                                                     0),
-          //                                                                 bottomRight:
-          //                                                                     Radius.circular(8)),
-          //                                                             // border: Border.all(
-          //                                                             //     color:
-          //                                                             //         Colors.grey,
-          //                                                             //     width: 1),
-          //                                                           ),
-          //                                                           width: 130,
-          //                                                           // height: 30,
-          //                                                           padding:
-          //                                                               const EdgeInsets.all(
-          //                                                                   2.0),
-          //                                                           child:
-          //                                                               DropdownButtonHideUnderline(
-          //                                                             child: DropdownButton2<
-          //                                                                 String>(
-          //                                                               isExpanded:
-          //                                                                   true,
-          //                                                               hint:
-          //                                                                   Center(
-          //                                                                 child:
-          //                                                                     Text(
-          //                                                                   'หัวข้อ',
-          //                                                                   style:
-          //                                                                       const TextStyle(
-          //                                                                     fontSize: 14,
-          //                                                                     color: AccountScreen_Color.Colors_Text1_,
-          //                                                                     fontWeight: FontWeight.bold,
-          //                                                                     fontFamily: Font_.Fonts_T,
-          //                                                                   ),
-          //                                                                 ),
-          //                                                               ),
+                    : SizedBox()
+        //  Padding(
+        //           padding: const EdgeInsets.fromLTRB(8, 0, 8, 0),
+        //           child: Column(
+        //             children: [
+        //               Container(
+        //                 width: (Responsive.isDesktop(context))
+        //                     ?
+        //                     //  (rtser.toString() == '50' ||
+        //                     //         rtser.toString() == '72' ||
+        //                     //         rtser.toString() == '92' ||
+        //                     //         rtser.toString() == '93' ||
+        //                     //         rtser.toString() == '94')
+        //                     //     ? MediaQuery.of(context).size.width * 0.88
+        //                     //     :
+        //                     calculatedWidth
+        //                     : 1200,
+        //                 decoration: const BoxDecoration(
+        //                   color: AppbackgroundColor.Sub_Abg_Colors,
+        //                   borderRadius: BorderRadius.only(
+        //                       topLeft: Radius.circular(10),
+        //                       topRight: Radius.circular(10),
+        //                       bottomLeft: Radius.circular(10),
+        //                       bottomRight: Radius.circular(10)),
+        //                   // border: Border.all(color: Colors.grey, width: 1),
+        //                 ),
+        //                 child: Column(
+        //                   children: [
+        //                     Container(
+        //                         width: (Responsive.isDesktop(context))
+        //                             ?
+        //                             //  (rtser.toString() == '50' ||
+        //                             //         rtser.toString() == '72' ||
+        //                             //         rtser.toString() == '92' ||
+        //                             //         rtser.toString() == '93' ||
+        //                             //         rtser.toString() == '94')
+        //                             //     ? MediaQuery.of(context).size.width *
+        //                             //         0.88
+        //                             //     :
+        //                             calculatedWidth
+        //                             : 1200,
+        //                         child: Column(
+        //                           children: [
+        //                             ScrollConfiguration(
+        //                               behavior:
+        //                                   ScrollConfiguration.of(context)
+        //                                       .copyWith(dragDevices: {
+        //                                 PointerDeviceKind.touch,
+        //                                 PointerDeviceKind.mouse,
+        //                               }),
+        //                               child: SingleChildScrollView(
+        //                                 scrollDirection: Axis.horizontal,
+        //                                 dragStartBehavior:
+        //                                     DragStartBehavior.start,
+        //                                 child: Row(
+        //                                   children: [
+        //                                     SizedBox(
+        //                                       child: Column(
+        //                                         children: [
+        //                                           Container(
+        //                                             width: (Responsive
+        //                                                     .isDesktop(
+        //                                                         context))
+        //                                                 ?
+        //                                                 //  (rtser.toString() == '50' ||
+        //                                                 //         rtser.toString() ==
+        //                                                 //             '72' ||
+        //                                                 //         rtser.toString() ==
+        //                                                 //             '92' ||
+        //                                                 //         rtser.toString() ==
+        //                                                 //             '93' ||
+        //                                                 //         rtser.toString() ==
+        //                                                 //             '94')
+        //                                                 //     ? MediaQuery.of(
+        //                                                 //                 context)
+        //                                                 //             .size
+        //                                                 //             .width *
+        //                                                 //         0.9
+        //                                                 //     :
+        //                                                 calculatedWidth
+        //                                                 : 1200,
+        //                                             decoration: BoxDecoration(
+        //                                               color:
+        //                                                   AppbackgroundColor
+        //                                                       .TiTile_Colors,
+        //                                               borderRadius:
+        //                                                   BorderRadius.only(
+        //                                                       topLeft: Radius
+        //                                                           .circular(
+        //                                                               10),
+        //                                                       topRight:
+        //                                                           Radius
+        //                                                               .circular(
+        //                                                                   10),
+        //                                                       bottomLeft: Radius
+        //                                                           .circular(
+        //                                                               0),
+        //                                                       bottomRight:
+        //                                                           Radius
+        //                                                               .circular(
+        //                                                                   0)),
+        //                                             ),
+        //                                             padding:
+        //                                                 const EdgeInsets.all(
+        //                                                     8.0),
+        //                                             child: Column(
+        //                                               children: [
+        //                                                 Padding(
+        //                                                   padding:
+        //                                                       const EdgeInsets
+        //                                                           .all(2.0),
+        //                                                   child: Row(
+        //                                                     children: [
+        //                                                       Padding(
+        //                                                         padding:
+        //                                                             EdgeInsets
+        //                                                                 .all(
+        //                                                                     2.0),
+        //                                                         child: Translate.TranslateAndSetText(
+        //                                                             'ค้นหา :',
+        //                                                             AccountScreen_Color
+        //                                                                 .Colors_Text1_,
+        //                                                             TextAlign
+        //                                                                 .start,
+        //                                                             FontWeight
+        //                                                                 .bold,
+        //                                                             FontWeight_
+        //                                                                 .Fonts_T,
+        //                                                             14,
+        //                                                             1),
+        //                                                       ),
+        //                                                       Expanded(
+        //                                                         // flex: 1,
+        //                                                         child:
+        //                                                             Container(
+        //                                                           height:
+        //                                                               35, //Date_ser
+        //                                                           // width: 150,
+        //                                                           decoration:
+        //                                                               BoxDecoration(
+        //                                                             color: AppbackgroundColor
+        //                                                                 .Sub_Abg_Colors,
+        //                                                             borderRadius: const BorderRadius
+        //                                                                     .only(
+        //                                                                 topLeft: Radius.circular(
+        //                                                                     8),
+        //                                                                 topRight: Radius.circular(
+        //                                                                     0),
+        //                                                                 bottomLeft: Radius.circular(
+        //                                                                     8),
+        //                                                                 bottomRight:
+        //                                                                     Radius.circular(0)),
+        //                                                             border: Border.all(
+        //                                                                 color: Colors
+        //                                                                     .grey,
+        //                                                                 width:
+        //                                                                     1),
+        //                                                           ),
+        //                                                           child:
+        //                                                               _searchBarMain1(),
+        //                                                         ),
+        //                                                       ),
+        //                                                       Padding(
+        //                                                         padding:
+        //                                                             const EdgeInsets
+        //                                                                     .fromLTRB(
+        //                                                                 0,
+        //                                                                 2,
+        //                                                                 2,
+        //                                                                 2),
+        //                                                         child:
+        //                                                             Container(
+        //                                                           height: 35,
+        //                                                           decoration:
+        //                                                               BoxDecoration(
+        //                                                             color: AppbackgroundColor
+        //                                                                 .Sub_Abg_Colors,
+        //                                                             // .withOpacity(0.5),
+        //                                                             borderRadius: BorderRadius.only(
+        //                                                                 topLeft: Radius.circular(
+        //                                                                     0),
+        //                                                                 topRight: Radius.circular(
+        //                                                                     8),
+        //                                                                 bottomLeft: Radius.circular(
+        //                                                                     0),
+        //                                                                 bottomRight:
+        //                                                                     Radius.circular(8)),
+        //                                                             // border: Border.all(
+        //                                                             //     color:
+        //                                                             //         Colors.grey,
+        //                                                             //     width: 1),
+        //                                                           ),
+        //                                                           width: 130,
+        //                                                           // height: 30,
+        //                                                           padding:
+        //                                                               const EdgeInsets.all(
+        //                                                                   2.0),
+        //                                                           child:
+        //                                                               DropdownButtonHideUnderline(
+        //                                                             child: DropdownButton2<
+        //                                                                 String>(
+        //                                                               isExpanded:
+        //                                                                   true,
+        //                                                               hint:
+        //                                                                   Center(
+        //                                                                 child:
+        //                                                                     Text(
+        //                                                                   'หัวข้อ',
+        //                                                                   style:
+        //                                                                       const TextStyle(
+        //                                                                     fontSize: 14,
+        //                                                                     color: AccountScreen_Color.Colors_Text1_,
+        //                                                                     fontWeight: FontWeight.bold,
+        //                                                                     fontFamily: Font_.Fonts_T,
+        //                                                                   ),
+        //                                                                 ),
+        //                                                               ),
 
-          //                                                               items: ac4_1
-          //                                                                   .asMap()
-          //                                                                   .entries
-          //                                                                   .map((entry) {
-          //                                                                 int index =
-          //                                                                     entry.key; // Get the index
-          //                                                                 var item =
-          //                                                                     entry.value;
-          //                                                                 return DropdownMenuItem<
-          //                                                                     String>(
-          //                                                                   value:
-          //                                                                       item["ser"], // Use "ser" as the value
-          //                                                                   enabled:
-          //                                                                       false, // Set to true to allow selection
-          //                                                                   child:
-          //                                                                       StatefulBuilder(
-          //                                                                     builder: (context, menuSetState) {
-          //                                                                       // final isSelected = selectedItems.contains(item);
-          //                                                                       return InkWell(
-          //                                                                         onTap: () {
-          //                                                                           int selectedIndex = ac4_1.indexWhere((items) => items["ser"] == item["ser"]);
-          //                                                                           // print(ac1[selectedIndex]
-          //                                                                           //     [
-          //                                                                           //     "pn"]);
-          //                                                                           // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
-          //                                                                           //This rebuilds the StatefulWidget to update the button's text
-          //                                                                           setState(() {
-          //                                                                             if (item["st"]! == '1') {
-          //                                                                               ac4_1[selectedIndex]["st"] = '0';
-          //                                                                             } else {
-          //                                                                               ac4_1[selectedIndex]["st"] = '1';
-          //                                                                             }
-          //                                                                           });
-          //                                                                           //This rebuilds the dropdownMenu Widget to update the check mark
-          //                                                                           menuSetState(() {});
-          //                                                                         },
-          //                                                                         child: Container(
-          //                                                                           height: double.infinity,
-          //                                                                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
-          //                                                                           child: Row(
-          //                                                                             children: [
-          //                                                                               if (item["st"]! == '1')
-          //                                                                                 Icon(
-          //                                                                                   Icons.check_box_outlined,
-          //                                                                                   color: Colors.green[400],
-          //                                                                                 )
-          //                                                                               else
-          //                                                                                 const Icon(Icons.check_box_outline_blank),
-          //                                                                               Expanded(
-          //                                                                                 child: Text(
-          //                                                                                   item["pn"]!,
-          //                                                                                   maxLines: 2,
-          //                                                                                   style: const TextStyle(
-          //                                                                                     fontSize: 12,
-          //                                                                                     color: AccountScreen_Color.Colors_Text1_,
-          //                                                                                     fontWeight: FontWeight.w600,
-          //                                                                                     fontFamily: Font_.Fonts_T,
-          //                                                                                   ),
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             ],
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       );
-          //                                                                     },
-          //                                                                   ),
-          //                                                                 );
-          //                                                               }).toList(),
-          //                                                               //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
-          //                                                               // value: selectedItems.isEmpty ? null : selectedItems.last,
-          //                                                               onChanged:
-          //                                                                   (value) {},
-          //                                                             ),
-          //                                                           ),
-          //                                                         ),
-          //                                                       ),
-          //                                                       Container(
-          //                                                           width: 150,
-          //                                                           child:
-          //                                                               Next_page())
-          //                                                       // Expanded(
-          //                                                       //     child:
-          //                                                       //         Next_page_billCancel())
-          //                                                     ],
-          //                                                   ),
-          //                                                 ),
-          //                                                 const Divider(),
-          //                                                 Row(
-          //                                                   children: [
-          //                                                     // Expanded(
-          //                                                     //   child:
-          //                                                     Container(
-          //                                                       decoration:
-          //                                                           BoxDecoration(
-          //                                                         color: AppbackgroundColor
-          //                                                                 .Sub_Abg_Colors
-          //                                                             .withOpacity(
-          //                                                                 0.5),
-          //                                                         borderRadius: const BorderRadius
-          //                                                                 .only(
-          //                                                             topLeft:
-          //                                                                 Radius.circular(
-          //                                                                     10),
-          //                                                             topRight:
-          //                                                                 Radius.circular(
-          //                                                                     10),
-          //                                                             bottomLeft:
-          //                                                                 Radius.circular(
-          //                                                                     10),
-          //                                                             bottomRight:
-          //                                                                 Radius.circular(
-          //                                                                     10)),
-          //                                                         // border: Border.all(color: Colors.white, width: 1),
-          //                                                       ),
-          //                                                       child: Row(
-          //                                                         children: [
-          //                                                           Padding(
-          //                                                             padding:
-          //                                                                 EdgeInsets.all(
-          //                                                                     2.0),
+        //                                                               items: ac4_1
+        //                                                                   .asMap()
+        //                                                                   .entries
+        //                                                                   .map((entry) {
+        //                                                                 int index =
+        //                                                                     entry.key; // Get the index
+        //                                                                 var item =
+        //                                                                     entry.value;
+        //                                                                 return DropdownMenuItem<
+        //                                                                     String>(
+        //                                                                   value:
+        //                                                                       item["ser"], // Use "ser" as the value
+        //                                                                   enabled:
+        //                                                                       false, // Set to true to allow selection
+        //                                                                   child:
+        //                                                                       StatefulBuilder(
+        //                                                                     builder: (context, menuSetState) {
+        //                                                                       // final isSelected = selectedItems.contains(item);
+        //                                                                       return InkWell(
+        //                                                                         onTap: () {
+        //                                                                           int selectedIndex = ac4_1.indexWhere((items) => items["ser"] == item["ser"]);
+        //                                                                           // print(ac1[selectedIndex]
+        //                                                                           //     [
+        //                                                                           //     "pn"]);
+        //                                                                           // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
+        //                                                                           //This rebuilds the StatefulWidget to update the button's text
+        //                                                                           setState(() {
+        //                                                                             if (item["st"]! == '1') {
+        //                                                                               ac4_1[selectedIndex]["st"] = '0';
+        //                                                                             } else {
+        //                                                                               ac4_1[selectedIndex]["st"] = '1';
+        //                                                                             }
+        //                                                                           });
+        //                                                                           //This rebuilds the dropdownMenu Widget to update the check mark
+        //                                                                           menuSetState(() {});
+        //                                                                         },
+        //                                                                         child: Container(
+        //                                                                           height: double.infinity,
+        //                                                                           padding: const EdgeInsets.symmetric(horizontal: 4.0),
+        //                                                                           child: Row(
+        //                                                                             children: [
+        //                                                                               if (item["st"]! == '1')
+        //                                                                                 Icon(
+        //                                                                                   Icons.check_box_outlined,
+        //                                                                                   color: Colors.green[400],
+        //                                                                                 )
+        //                                                                               else
+        //                                                                                 const Icon(Icons.check_box_outline_blank),
+        //                                                                               Expanded(
+        //                                                                                 child: Text(
+        //                                                                                   item["pn"]!,
+        //                                                                                   maxLines: 2,
+        //                                                                                   style: const TextStyle(
+        //                                                                                     fontSize: 12,
+        //                                                                                     color: AccountScreen_Color.Colors_Text1_,
+        //                                                                                     fontWeight: FontWeight.w600,
+        //                                                                                     fontFamily: Font_.Fonts_T,
+        //                                                                                   ),
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             ],
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       );
+        //                                                                     },
+        //                                                                   ),
+        //                                                                 );
+        //                                                               }).toList(),
+        //                                                               //Use last selected item as the current value so if we've limited menu height, it scroll to last item.
+        //                                                               // value: selectedItems.isEmpty ? null : selectedItems.last,
+        //                                                               onChanged:
+        //                                                                   (value) {},
+        //                                                             ),
+        //                                                           ),
+        //                                                         ),
+        //                                                       ),
+        //                                                       Container(
+        //                                                           width: 150,
+        //                                                           child:
+        //                                                               Next_page())
+        //                                                       // Expanded(
+        //                                                       //     child:
+        //                                                       //         Next_page_billCancel())
+        //                                                     ],
+        //                                                   ),
+        //                                                 ),
+        //                                                 const Divider(),
+        //                                                 Row(
+        //                                                   children: [
+        //                                                     // Expanded(
+        //                                                     //   child:
+        //                                                     Container(
+        //                                                       decoration:
+        //                                                           BoxDecoration(
+        //                                                         color: AppbackgroundColor
+        //                                                                 .Sub_Abg_Colors
+        //                                                             .withOpacity(
+        //                                                                 0.5),
+        //                                                         borderRadius: const BorderRadius
+        //                                                                 .only(
+        //                                                             topLeft:
+        //                                                                 Radius.circular(
+        //                                                                     10),
+        //                                                             topRight:
+        //                                                                 Radius.circular(
+        //                                                                     10),
+        //                                                             bottomLeft:
+        //                                                                 Radius.circular(
+        //                                                                     10),
+        //                                                             bottomRight:
+        //                                                                 Radius.circular(
+        //                                                                     10)),
+        //                                                         // border: Border.all(color: Colors.white, width: 1),
+        //                                                       ),
+        //                                                       child: Row(
+        //                                                         children: [
+        //                                                           Padding(
+        //                                                             padding:
+        //                                                                 EdgeInsets.all(
+        //                                                                     2.0),
 
-          //                                                             ///Status_dates
-          //                                                             child: Translate.TranslateAndSetText(
-          //                                                                 'สถานะ :',
-          //                                                                 ReportScreen_Color
-          //                                                                     .Colors_Text2_,
-          //                                                                 TextAlign
-          //                                                                     .start,
-          //                                                                 null,
-          //                                                                 Font_
-          //                                                                     .Fonts_T,
-          //                                                                 12,
-          //                                                                 1),
-          //                                                           ),
-          //                                                           Padding(
-          //                                                             padding:
-          //                                                                 const EdgeInsets.all(
-          //                                                                     2.0),
-          //                                                             child:
-          //                                                                 Container(
-          //                                                               decoration:
-          //                                                                   const BoxDecoration(
-          //                                                                 color:
-          //                                                                     AppbackgroundColor.Sub_Abg_Colors,
-          //                                                                 borderRadius: BorderRadius.only(
-          //                                                                     topLeft: Radius.circular(10),
-          //                                                                     topRight: Radius.circular(10),
-          //                                                                     bottomLeft: Radius.circular(10),
-          //                                                                     bottomRight: Radius.circular(10)),
-          //                                                                 // border: Border.all(color: Colors.grey, width: 1),
-          //                                                               ),
-          //                                                               width:
-          //                                                                   250,
-          //                                                               padding:
-          //                                                                   const EdgeInsets.all(2.0),
-          //                                                               child:
-          //                                                                   DropdownButtonFormField2(
-          //                                                                 alignment:
-          //                                                                     Alignment.center,
-          //                                                                 focusColor:
-          //                                                                     Colors.white,
-          //                                                                 autofocus:
-          //                                                                     false,
-          //                                                                 decoration:
-          //                                                                     InputDecoration(
-          //                                                                   floatingLabelAlignment:
-          //                                                                       FloatingLabelAlignment.center,
-          //                                                                   enabled:
-          //                                                                       true,
-          //                                                                   hoverColor:
-          //                                                                       Colors.brown,
-          //                                                                   prefixIconColor:
-          //                                                                       Colors.blue,
-          //                                                                   fillColor:
-          //                                                                       Colors.white.withOpacity(0.05),
-          //                                                                   filled:
-          //                                                                       false,
-          //                                                                   isDense:
-          //                                                                       true,
-          //                                                                   contentPadding:
-          //                                                                       EdgeInsets.zero,
-          //                                                                   border:
-          //                                                                       OutlineInputBorder(
-          //                                                                     borderSide: const BorderSide(color: Colors.red),
-          //                                                                     borderRadius: BorderRadius.circular(10),
-          //                                                                   ),
-          //                                                                   focusedBorder:
-          //                                                                       const OutlineInputBorder(
-          //                                                                     borderRadius: BorderRadius.only(
-          //                                                                       topRight: Radius.circular(10),
-          //                                                                       topLeft: Radius.circular(10),
-          //                                                                       bottomRight: Radius.circular(10),
-          //                                                                       bottomLeft: Radius.circular(10),
-          //                                                                     ),
-          //                                                                     borderSide: BorderSide(
-          //                                                                       width: 1,
-          //                                                                       color: Color.fromARGB(255, 231, 227, 227),
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                 ),
-          //                                                                 isExpanded:
-          //                                                                     false,
-          //                                                                 // value: YEAR_Now,
-          //                                                                 hint: Translate.TranslateAndSetText(
-          //                                                                     'ประจำเดือน',
-          //                                                                     AccountScreen_Color.Colors_Text1_,
-          //                                                                     TextAlign.start,
-          //                                                                     null,
-          //                                                                     Font_.Fonts_T,
-          //                                                                     12,
-          //                                                                     1),
-          //                                                                 // value: (Status_dates == null)
-          //                                                                 //     ? 'ประจำเดือน'
-          //                                                                 //     : (Status_dates == 1)
-          //                                                                 //         ? 'เลยกำหนดชำระ'
-          //                                                                 //         : (Status_dates == 2)
-          //                                                                 //             ? 'ยังเลยกำหนดชำระ'
-          //                                                                 //             : 'ประจำเดือน',
+        //                                                             ///Status_dates
+        //                                                             child: Translate.TranslateAndSetText(
+        //                                                                 'สถานะ :',
+        //                                                                 ReportScreen_Color
+        //                                                                     .Colors_Text2_,
+        //                                                                 TextAlign
+        //                                                                     .start,
+        //                                                                 null,
+        //                                                                 Font_
+        //                                                                     .Fonts_T,
+        //                                                                 12,
+        //                                                                 1),
+        //                                                           ),
+        //                                                           Padding(
+        //                                                             padding:
+        //                                                                 const EdgeInsets.all(
+        //                                                                     2.0),
+        //                                                             child:
+        //                                                                 Container(
+        //                                                               decoration:
+        //                                                                   const BoxDecoration(
+        //                                                                 color:
+        //                                                                     AppbackgroundColor.Sub_Abg_Colors,
+        //                                                                 borderRadius: BorderRadius.only(
+        //                                                                     topLeft: Radius.circular(10),
+        //                                                                     topRight: Radius.circular(10),
+        //                                                                     bottomLeft: Radius.circular(10),
+        //                                                                     bottomRight: Radius.circular(10)),
+        //                                                                 // border: Border.all(color: Colors.grey, width: 1),
+        //                                                               ),
+        //                                                               width:
+        //                                                                   250,
+        //                                                               padding:
+        //                                                                   const EdgeInsets.all(2.0),
+        //                                                               child:
+        //                                                                   DropdownButtonFormField2(
+        //                                                                 alignment:
+        //                                                                     Alignment.center,
+        //                                                                 focusColor:
+        //                                                                     Colors.white,
+        //                                                                 autofocus:
+        //                                                                     false,
+        //                                                                 decoration:
+        //                                                                     InputDecoration(
+        //                                                                   floatingLabelAlignment:
+        //                                                                       FloatingLabelAlignment.center,
+        //                                                                   enabled:
+        //                                                                       true,
+        //                                                                   hoverColor:
+        //                                                                       Colors.brown,
+        //                                                                   prefixIconColor:
+        //                                                                       Colors.blue,
+        //                                                                   fillColor:
+        //                                                                       Colors.white.withOpacity(0.05),
+        //                                                                   filled:
+        //                                                                       false,
+        //                                                                   isDense:
+        //                                                                       true,
+        //                                                                   contentPadding:
+        //                                                                       EdgeInsets.zero,
+        //                                                                   border:
+        //                                                                       OutlineInputBorder(
+        //                                                                     borderSide: const BorderSide(color: Colors.red),
+        //                                                                     borderRadius: BorderRadius.circular(10),
+        //                                                                   ),
+        //                                                                   focusedBorder:
+        //                                                                       const OutlineInputBorder(
+        //                                                                     borderRadius: BorderRadius.only(
+        //                                                                       topRight: Radius.circular(10),
+        //                                                                       topLeft: Radius.circular(10),
+        //                                                                       bottomRight: Radius.circular(10),
+        //                                                                       bottomLeft: Radius.circular(10),
+        //                                                                     ),
+        //                                                                     borderSide: BorderSide(
+        //                                                                       width: 1,
+        //                                                                       color: Color.fromARGB(255, 231, 227, 227),
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                 ),
+        //                                                                 isExpanded:
+        //                                                                     false,
+        //                                                                 // value: YEAR_Now,
+        //                                                                 hint: Translate.TranslateAndSetText(
+        //                                                                     'ประจำเดือน',
+        //                                                                     AccountScreen_Color.Colors_Text1_,
+        //                                                                     TextAlign.start,
+        //                                                                     null,
+        //                                                                     Font_.Fonts_T,
+        //                                                                     12,
+        //                                                                     1),
+        //                                                                 // value: (Status_dates == null)
+        //                                                                 //     ? 'ประจำเดือน'
+        //                                                                 //     : (Status_dates == 1)
+        //                                                                 //         ? 'เลยกำหนดชำระ'
+        //                                                                 //         : (Status_dates == 2)
+        //                                                                 //             ? 'ยังเลยกำหนดชำระ'
+        //                                                                 //             : 'ประจำเดือน',
 
-          //                                                                 icon:
-          //                                                                     const Icon(
-          //                                                                   Icons.arrow_drop_down,
-          //                                                                   // Icons.sort_rounded,
-          //                                                                   color:
-          //                                                                       Colors.black,
-          //                                                                 ),
-          //                                                                 style:
-          //                                                                     const TextStyle(
-          //                                                                   color:
-          //                                                                       Colors.grey,
-          //                                                                 ),
-          //                                                                 iconSize:
-          //                                                                     20,
-          //                                                                 buttonHeight: (Status_dates == 0)
-          //                                                                     ? 30
-          //                                                                     : 47,
-          //                                                                 buttonWidth:
-          //                                                                     250,
-          //                                                                 // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-          //                                                                 dropdownDecoration:
-          //                                                                     BoxDecoration(
-          //                                                                   // color: Colors
-          //                                                                   //     .amber,
-          //                                                                   borderRadius:
-          //                                                                       BorderRadius.circular(10),
-          //                                                                   border:
-          //                                                                       Border.all(color: Colors.white, width: 1),
-          //                                                                 ),
-          //                                                                 items: [
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '0',
-          //                                                                     child: Translate.TranslateAndSetText('🟢ประจำเดือน', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 12, 1),
-          //                                                                   ),
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '1',
-          //                                                                     child: Column(
-          //                                                                       mainAxisAlignment: MainAxisAlignment.center,
-          //                                                                       crossAxisAlignment: CrossAxisAlignment.start,
-          //                                                                       children: [
-          //                                                                         Translate.TranslateAndSetText('🟢เลยกำหนดชำระ', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 12, 1),
-          //                                                                         Translate.TranslateAndSetText('***(กำหนดชำระ < วันปัจจุบัน)', Colors.red[300], TextAlign.start, null, Font_.Fonts_T, 10, 2),
-          //                                                                       ],
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '2',
-          //                                                                     child: Column(
-          //                                                                       mainAxisAlignment: MainAxisAlignment.center,
-          //                                                                       crossAxisAlignment: CrossAxisAlignment.start,
-          //                                                                       children: [
-          //                                                                         Translate.TranslateAndSetText('🟢ยังไม่เลยกำหนดชำระ', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 12, 1),
-          //                                                                         Translate.TranslateAndSetText('**(กำหนดชำระ >= วันปัจจุบัน)', Colors.red[300], TextAlign.start, null, Font_.Fonts_T, 10, 2),
-          //                                                                       ],
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                 ],
+        //                                                                 icon:
+        //                                                                     const Icon(
+        //                                                                   Icons.arrow_drop_down,
+        //                                                                   // Icons.sort_rounded,
+        //                                                                   color:
+        //                                                                       Colors.black,
+        //                                                                 ),
+        //                                                                 style:
+        //                                                                     const TextStyle(
+        //                                                                   color:
+        //                                                                       Colors.grey,
+        //                                                                 ),
+        //                                                                 iconSize:
+        //                                                                     20,
+        //                                                                 buttonHeight: (Status_dates == 0)
+        //                                                                     ? 30
+        //                                                                     : 47,
+        //                                                                 buttonWidth:
+        //                                                                     250,
+        //                                                                 // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+        //                                                                 dropdownDecoration:
+        //                                                                     BoxDecoration(
+        //                                                                   // color: Colors
+        //                                                                   //     .amber,
+        //                                                                   borderRadius:
+        //                                                                       BorderRadius.circular(10),
+        //                                                                   border:
+        //                                                                       Border.all(color: Colors.white, width: 1),
+        //                                                                 ),
+        //                                                                 items: [
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '0',
+        //                                                                     child: Translate.TranslateAndSetText('🟢ประจำเดือน', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 12, 1),
+        //                                                                   ),
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '1',
+        //                                                                     child: Column(
+        //                                                                       mainAxisAlignment: MainAxisAlignment.center,
+        //                                                                       crossAxisAlignment: CrossAxisAlignment.start,
+        //                                                                       children: [
+        //                                                                         Translate.TranslateAndSetText('🟢เลยกำหนดชำระ', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 12, 1),
+        //                                                                         Translate.TranslateAndSetText('***(กำหนดชำระ < วันปัจจุบัน)', Colors.red[300], TextAlign.start, null, Font_.Fonts_T, 10, 2),
+        //                                                                       ],
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '2',
+        //                                                                     child: Column(
+        //                                                                       mainAxisAlignment: MainAxisAlignment.center,
+        //                                                                       crossAxisAlignment: CrossAxisAlignment.start,
+        //                                                                       children: [
+        //                                                                         Translate.TranslateAndSetText('🟢ยังไม่เลยกำหนดชำระ', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 12, 1),
+        //                                                                         Translate.TranslateAndSetText('**(กำหนดชำระ >= วันปัจจุบัน)', Colors.red[300], TextAlign.start, null, Font_.Fonts_T, 10, 2),
+        //                                                                       ],
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                 ],
 
-          //                                                                 onChanged:
-          //                                                                     (value) async {
-          //                                                                   setState(() {
-          //                                                                     Status_dates = int.parse(value.toString());
-          //                                                                   });
-          //                                                                   red_InvoiceMon_bill();
-          //                                                                 },
-          //                                                               ),
-          //                                                             ),
-          //                                                           ),
-          //                                                           if (Status_dates ==
-          //                                                               0)
-          //                                                             Padding(
-          //                                                               padding:
-          //                                                                   EdgeInsets.all(2.0),
-          //                                                               child: Translate.TranslateAndSetText(
-          //                                                                   'เดือนที่ครบกำหนด :',
-          //                                                                   AccountScreen_Color.Colors_Text1_,
-          //                                                                   TextAlign.start,
-          //                                                                   null,
-          //                                                                   Font_.Fonts_T,
-          //                                                                   14,
-          //                                                                   1),
-          //                                                             ),
-          //                                                           if (Status_dates ==
-          //                                                               0)
-          //                                                             Padding(
-          //                                                               padding:
-          //                                                                   const EdgeInsets.all(2.0),
-          //                                                               child:
-          //                                                                   Container(
-          //                                                                 decoration:
-          //                                                                     const BoxDecoration(
-          //                                                                   color:
-          //                                                                       AppbackgroundColor.Sub_Abg_Colors,
-          //                                                                   borderRadius: BorderRadius.only(
-          //                                                                       topLeft: Radius.circular(10),
-          //                                                                       topRight: Radius.circular(10),
-          //                                                                       bottomLeft: Radius.circular(10),
-          //                                                                       bottomRight: Radius.circular(10)),
-          //                                                                   // border: Border.all(color: Colors.grey, width: 1),
-          //                                                                 ),
-          //                                                                 width:
-          //                                                                     120,
-          //                                                                 padding:
-          //                                                                     const EdgeInsets.all(2.0),
-          //                                                                 child:
-          //                                                                     DropdownButtonFormField2(
-          //                                                                   alignment:
-          //                                                                       Alignment.center,
-          //                                                                   focusColor:
-          //                                                                       Colors.white,
-          //                                                                   autofocus:
-          //                                                                       false,
-          //                                                                   decoration:
-          //                                                                       InputDecoration(
-          //                                                                     floatingLabelAlignment: FloatingLabelAlignment.center,
-          //                                                                     enabled: true,
-          //                                                                     hoverColor: Colors.brown,
-          //                                                                     prefixIconColor: Colors.blue,
-          //                                                                     fillColor: Colors.white.withOpacity(0.05),
-          //                                                                     filled: false,
-          //                                                                     isDense: true,
-          //                                                                     contentPadding: EdgeInsets.zero,
-          //                                                                     border: OutlineInputBorder(
-          //                                                                       borderSide: const BorderSide(color: Colors.red),
-          //                                                                       borderRadius: BorderRadius.circular(10),
-          //                                                                     ),
-          //                                                                     focusedBorder: const OutlineInputBorder(
-          //                                                                       borderRadius: BorderRadius.only(
-          //                                                                         topRight: Radius.circular(10),
-          //                                                                         topLeft: Radius.circular(10),
-          //                                                                         bottomRight: Radius.circular(10),
-          //                                                                         bottomLeft: Radius.circular(10),
-          //                                                                       ),
-          //                                                                       borderSide: BorderSide(
-          //                                                                         width: 1,
-          //                                                                         color: Color.fromARGB(255, 231, 227, 227),
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                   isExpanded:
-          //                                                                       false,
-          //                                                                   //value: MONTH_Now,
-          //                                                                   hint: Translate.TranslateAndSetText(
-          //                                                                       MONTH_Now == null ? 'เลือก' : '${monthsInThai[int.parse('${MONTH_Now}') - 1]}',
-          //                                                                       AccountScreen_Color.Colors_Text1_,
-          //                                                                       TextAlign.start,
-          //                                                                       null,
-          //                                                                       Font_.Fonts_T,
-          //                                                                       14,
-          //                                                                       1),
+        //                                                                 onChanged:
+        //                                                                     (value) async {
+        //                                                                   setState(() {
+        //                                                                     Status_dates = int.parse(value.toString());
+        //                                                                   });
+        //                                                                   red_InvoiceMon_bill();
+        //                                                                 },
+        //                                                               ),
+        //                                                             ),
+        //                                                           ),
+        //                                                           if (Status_dates ==
+        //                                                               0)
+        //                                                             Padding(
+        //                                                               padding:
+        //                                                                   EdgeInsets.all(2.0),
+        //                                                               child: Translate.TranslateAndSetText(
+        //                                                                   'เดือนที่ครบกำหนด :',
+        //                                                                   AccountScreen_Color.Colors_Text1_,
+        //                                                                   TextAlign.start,
+        //                                                                   null,
+        //                                                                   Font_.Fonts_T,
+        //                                                                   14,
+        //                                                                   1),
+        //                                                             ),
+        //                                                           if (Status_dates ==
+        //                                                               0)
+        //                                                             Padding(
+        //                                                               padding:
+        //                                                                   const EdgeInsets.all(2.0),
+        //                                                               child:
+        //                                                                   Container(
+        //                                                                 decoration:
+        //                                                                     const BoxDecoration(
+        //                                                                   color:
+        //                                                                       AppbackgroundColor.Sub_Abg_Colors,
+        //                                                                   borderRadius: BorderRadius.only(
+        //                                                                       topLeft: Radius.circular(10),
+        //                                                                       topRight: Radius.circular(10),
+        //                                                                       bottomLeft: Radius.circular(10),
+        //                                                                       bottomRight: Radius.circular(10)),
+        //                                                                   // border: Border.all(color: Colors.grey, width: 1),
+        //                                                                 ),
+        //                                                                 width:
+        //                                                                     120,
+        //                                                                 padding:
+        //                                                                     const EdgeInsets.all(2.0),
+        //                                                                 child:
+        //                                                                     DropdownButtonFormField2(
+        //                                                                   alignment:
+        //                                                                       Alignment.center,
+        //                                                                   focusColor:
+        //                                                                       Colors.white,
+        //                                                                   autofocus:
+        //                                                                       false,
+        //                                                                   decoration:
+        //                                                                       InputDecoration(
+        //                                                                     floatingLabelAlignment: FloatingLabelAlignment.center,
+        //                                                                     enabled: true,
+        //                                                                     hoverColor: Colors.brown,
+        //                                                                     prefixIconColor: Colors.blue,
+        //                                                                     fillColor: Colors.white.withOpacity(0.05),
+        //                                                                     filled: false,
+        //                                                                     isDense: true,
+        //                                                                     contentPadding: EdgeInsets.zero,
+        //                                                                     border: OutlineInputBorder(
+        //                                                                       borderSide: const BorderSide(color: Colors.red),
+        //                                                                       borderRadius: BorderRadius.circular(10),
+        //                                                                     ),
+        //                                                                     focusedBorder: const OutlineInputBorder(
+        //                                                                       borderRadius: BorderRadius.only(
+        //                                                                         topRight: Radius.circular(10),
+        //                                                                         topLeft: Radius.circular(10),
+        //                                                                         bottomRight: Radius.circular(10),
+        //                                                                         bottomLeft: Radius.circular(10),
+        //                                                                       ),
+        //                                                                       borderSide: BorderSide(
+        //                                                                         width: 1,
+        //                                                                         color: Color.fromARGB(255, 231, 227, 227),
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                   isExpanded:
+        //                                                                       false,
+        //                                                                   //value: MONTH_Now,
+        //                                                                   hint: Translate.TranslateAndSetText(
+        //                                                                       MONTH_Now == null ? 'เลือก' : '${monthsInThai[int.parse('${MONTH_Now}') - 1]}',
+        //                                                                       AccountScreen_Color.Colors_Text1_,
+        //                                                                       TextAlign.start,
+        //                                                                       null,
+        //                                                                       Font_.Fonts_T,
+        //                                                                       14,
+        //                                                                       1),
 
-          //                                                                   icon:
-          //                                                                       const Icon(
-          //                                                                     Icons.arrow_drop_down,
-          //                                                                     color: Colors.black,
-          //                                                                   ),
-          //                                                                   style:
-          //                                                                       const TextStyle(
-          //                                                                     color: Colors.grey,
-          //                                                                   ),
-          //                                                                   iconSize:
-          //                                                                       20,
-          //                                                                   buttonHeight:
-          //                                                                       30,
-          //                                                                   buttonWidth:
-          //                                                                       200,
-          //                                                                   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-          //                                                                   dropdownDecoration:
-          //                                                                       BoxDecoration(
-          //                                                                     // color: Colors
-          //                                                                     //     .amber,
-          //                                                                     borderRadius: BorderRadius.circular(10),
-          //                                                                     border: Border.all(color: Colors.white, width: 1),
-          //                                                                   ),
-          //                                                                   items: [
-          //                                                                     for (int item = 1; item < 13; item++)
-          //                                                                       DropdownMenuItem<String>(
-          //                                                                         value: '${item}',
-          //                                                                         child: Translate.TranslateAndSetText('${monthsInThai[item - 1]}', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
+        //                                                                   icon:
+        //                                                                       const Icon(
+        //                                                                     Icons.arrow_drop_down,
+        //                                                                     color: Colors.black,
+        //                                                                   ),
+        //                                                                   style:
+        //                                                                       const TextStyle(
+        //                                                                     color: Colors.grey,
+        //                                                                   ),
+        //                                                                   iconSize:
+        //                                                                       20,
+        //                                                                   buttonHeight:
+        //                                                                       30,
+        //                                                                   buttonWidth:
+        //                                                                       200,
+        //                                                                   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+        //                                                                   dropdownDecoration:
+        //                                                                       BoxDecoration(
+        //                                                                     // color: Colors
+        //                                                                     //     .amber,
+        //                                                                     borderRadius: BorderRadius.circular(10),
+        //                                                                     border: Border.all(color: Colors.white, width: 1),
+        //                                                                   ),
+        //                                                                   items: [
+        //                                                                     for (int item = 1; item < 13; item++)
+        //                                                                       DropdownMenuItem<String>(
+        //                                                                         value: '${item}',
+        //                                                                         child: Translate.TranslateAndSetText('${monthsInThai[item - 1]}', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
 
-          //                                                                         //  Text(
-          //                                                                         //   '${monthsInThai[item - 1]}',
-          //                                                                         //   // '${item}',
-          //                                                                         //   textAlign: TextAlign.center,
-          //                                                                         //   style: const TextStyle(
-          //                                                                         //     overflow: TextOverflow.ellipsis,
-          //                                                                         //     fontSize: 14,
-          //                                                                         //     color: Colors.grey,
-          //                                                                         //   ),
-          //                                                                         // ),
-          //                                                                       )
-          //                                                                   ],
+        //                                                                         //  Text(
+        //                                                                         //   '${monthsInThai[item - 1]}',
+        //                                                                         //   // '${item}',
+        //                                                                         //   textAlign: TextAlign.center,
+        //                                                                         //   style: const TextStyle(
+        //                                                                         //     overflow: TextOverflow.ellipsis,
+        //                                                                         //     fontSize: 14,
+        //                                                                         //     color: Colors.grey,
+        //                                                                         //   ),
+        //                                                                         // ),
+        //                                                                       )
+        //                                                                   ],
 
-          //                                                                   onChanged:
-          //                                                                       (value) async {
-          //                                                                     MONTH_Now = value;
-          //                                                                     red_InvoiceMon_bill();
+        //                                                                   onChanged:
+        //                                                                       (value) async {
+        //                                                                     MONTH_Now = value;
+        //                                                                     red_InvoiceMon_bill();
 
-          //                                                                     // red_Trans_bill();
-          //                                                                     // if (Value_Chang_Zone_Income !=
-          //                                                                     //     null) {
-          //                                                                     //   red_Trans_billIncome();
-          //                                                                     //   red_Trans_billMovemen();
-          //                                                                     // }
-          //                                                                   },
-          //                                                                 ),
-          //                                                               ),
-          //                                                             ),
-          //                                                           if (Status_dates ==
-          //                                                               0)
-          //                                                             Padding(
-          //                                                               padding:
-          //                                                                   EdgeInsets.all(2.0),
-          //                                                               child: Translate.TranslateAndSetText(
-          //                                                                   'ปีที่ครบกำหนด :',
-          //                                                                   AccountScreen_Color.Colors_Text1_,
-          //                                                                   TextAlign.start,
-          //                                                                   null,
-          //                                                                   Font_.Fonts_T,
-          //                                                                   14,
-          //                                                                   1),
-          //                                                             ),
-          //                                                           if (Status_dates ==
-          //                                                               0)
-          //                                                             Padding(
-          //                                                               padding:
-          //                                                                   const EdgeInsets.all(2.0),
-          //                                                               child:
-          //                                                                   Container(
-          //                                                                 decoration:
-          //                                                                     const BoxDecoration(
-          //                                                                   color:
-          //                                                                       AppbackgroundColor.Sub_Abg_Colors,
-          //                                                                   borderRadius: BorderRadius.only(
-          //                                                                       topLeft: Radius.circular(10),
-          //                                                                       topRight: Radius.circular(10),
-          //                                                                       bottomLeft: Radius.circular(10),
-          //                                                                       bottomRight: Radius.circular(10)),
-          //                                                                   // border: Border.all(color: Colors.grey, width: 1),
-          //                                                                 ),
-          //                                                                 width:
-          //                                                                     120,
-          //                                                                 padding:
-          //                                                                     const EdgeInsets.all(2.0),
-          //                                                                 child:
-          //                                                                     DropdownButtonFormField2(
-          //                                                                   alignment:
-          //                                                                       Alignment.center,
-          //                                                                   focusColor:
-          //                                                                       Colors.white,
-          //                                                                   autofocus:
-          //                                                                       false,
-          //                                                                   decoration:
-          //                                                                       InputDecoration(
-          //                                                                     floatingLabelAlignment: FloatingLabelAlignment.center,
-          //                                                                     enabled: true,
-          //                                                                     hoverColor: Colors.brown,
-          //                                                                     prefixIconColor: Colors.blue,
-          //                                                                     fillColor: Colors.white.withOpacity(0.05),
-          //                                                                     filled: false,
-          //                                                                     isDense: true,
-          //                                                                     contentPadding: EdgeInsets.zero,
-          //                                                                     border: OutlineInputBorder(
-          //                                                                       borderSide: const BorderSide(color: Colors.red),
-          //                                                                       borderRadius: BorderRadius.circular(10),
-          //                                                                     ),
-          //                                                                     focusedBorder: const OutlineInputBorder(
-          //                                                                       borderRadius: BorderRadius.only(
-          //                                                                         topRight: Radius.circular(10),
-          //                                                                         topLeft: Radius.circular(10),
-          //                                                                         bottomRight: Radius.circular(10),
-          //                                                                         bottomLeft: Radius.circular(10),
-          //                                                                       ),
-          //                                                                       borderSide: BorderSide(
-          //                                                                         width: 1,
-          //                                                                         color: Color.fromARGB(255, 231, 227, 227),
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                   isExpanded:
-          //                                                                       false,
-          //                                                                   // value: YEAR_Now,
-          //                                                                   hint:
-          //                                                                       Text(
-          //                                                                     YEAR_Now == null ? 'เลือก-Select' : '$YEAR_Now',
-          //                                                                     maxLines: 2,
-          //                                                                     textAlign: TextAlign.center,
-          //                                                                     style: const TextStyle(
-          //                                                                       overflow: TextOverflow.ellipsis,
-          //                                                                       fontSize: 12,
-          //                                                                       color: Colors.grey,
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                   icon:
-          //                                                                       const Icon(
-          //                                                                     Icons.arrow_drop_down,
-          //                                                                     color: Colors.black,
-          //                                                                   ),
-          //                                                                   style:
-          //                                                                       const TextStyle(
-          //                                                                     color: Colors.grey,
-          //                                                                   ),
-          //                                                                   iconSize:
-          //                                                                       20,
-          //                                                                   buttonHeight:
-          //                                                                       30,
-          //                                                                   buttonWidth:
-          //                                                                       200,
-          //                                                                   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-          //                                                                   dropdownDecoration:
-          //                                                                       BoxDecoration(
-          //                                                                     // color: Colors
-          //                                                                     //     .amber,
-          //                                                                     borderRadius: BorderRadius.circular(10),
-          //                                                                     border: Border.all(color: Colors.white, width: 1),
-          //                                                                   ),
-          //                                                                   items: YE_Th.map((item) =>
-          //                                                                       DropdownMenuItem<String>(
-          //                                                                         value: '${item}',
-          //                                                                         child: Text(
-          //                                                                           '${item}',
-          //                                                                           textAlign: TextAlign.center,
-          //                                                                           style: const TextStyle(
-          //                                                                             overflow: TextOverflow.ellipsis,
-          //                                                                             fontSize: 14,
-          //                                                                             color: Colors.grey,
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       )).toList(),
+        //                                                                     // red_Trans_bill();
+        //                                                                     // if (Value_Chang_Zone_Income !=
+        //                                                                     //     null) {
+        //                                                                     //   red_Trans_billIncome();
+        //                                                                     //   red_Trans_billMovemen();
+        //                                                                     // }
+        //                                                                   },
+        //                                                                 ),
+        //                                                               ),
+        //                                                             ),
+        //                                                           if (Status_dates ==
+        //                                                               0)
+        //                                                             Padding(
+        //                                                               padding:
+        //                                                                   EdgeInsets.all(2.0),
+        //                                                               child: Translate.TranslateAndSetText(
+        //                                                                   'ปีที่ครบกำหนด :',
+        //                                                                   AccountScreen_Color.Colors_Text1_,
+        //                                                                   TextAlign.start,
+        //                                                                   null,
+        //                                                                   Font_.Fonts_T,
+        //                                                                   14,
+        //                                                                   1),
+        //                                                             ),
+        //                                                           if (Status_dates ==
+        //                                                               0)
+        //                                                             Padding(
+        //                                                               padding:
+        //                                                                   const EdgeInsets.all(2.0),
+        //                                                               child:
+        //                                                                   Container(
+        //                                                                 decoration:
+        //                                                                     const BoxDecoration(
+        //                                                                   color:
+        //                                                                       AppbackgroundColor.Sub_Abg_Colors,
+        //                                                                   borderRadius: BorderRadius.only(
+        //                                                                       topLeft: Radius.circular(10),
+        //                                                                       topRight: Radius.circular(10),
+        //                                                                       bottomLeft: Radius.circular(10),
+        //                                                                       bottomRight: Radius.circular(10)),
+        //                                                                   // border: Border.all(color: Colors.grey, width: 1),
+        //                                                                 ),
+        //                                                                 width:
+        //                                                                     120,
+        //                                                                 padding:
+        //                                                                     const EdgeInsets.all(2.0),
+        //                                                                 child:
+        //                                                                     DropdownButtonFormField2(
+        //                                                                   alignment:
+        //                                                                       Alignment.center,
+        //                                                                   focusColor:
+        //                                                                       Colors.white,
+        //                                                                   autofocus:
+        //                                                                       false,
+        //                                                                   decoration:
+        //                                                                       InputDecoration(
+        //                                                                     floatingLabelAlignment: FloatingLabelAlignment.center,
+        //                                                                     enabled: true,
+        //                                                                     hoverColor: Colors.brown,
+        //                                                                     prefixIconColor: Colors.blue,
+        //                                                                     fillColor: Colors.white.withOpacity(0.05),
+        //                                                                     filled: false,
+        //                                                                     isDense: true,
+        //                                                                     contentPadding: EdgeInsets.zero,
+        //                                                                     border: OutlineInputBorder(
+        //                                                                       borderSide: const BorderSide(color: Colors.red),
+        //                                                                       borderRadius: BorderRadius.circular(10),
+        //                                                                     ),
+        //                                                                     focusedBorder: const OutlineInputBorder(
+        //                                                                       borderRadius: BorderRadius.only(
+        //                                                                         topRight: Radius.circular(10),
+        //                                                                         topLeft: Radius.circular(10),
+        //                                                                         bottomRight: Radius.circular(10),
+        //                                                                         bottomLeft: Radius.circular(10),
+        //                                                                       ),
+        //                                                                       borderSide: BorderSide(
+        //                                                                         width: 1,
+        //                                                                         color: Color.fromARGB(255, 231, 227, 227),
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                   isExpanded:
+        //                                                                       false,
+        //                                                                   // value: YEAR_Now,
+        //                                                                   hint:
+        //                                                                       Text(
+        //                                                                     YEAR_Now == null ? 'เลือก-Select' : '$YEAR_Now',
+        //                                                                     maxLines: 2,
+        //                                                                     textAlign: TextAlign.center,
+        //                                                                     style: const TextStyle(
+        //                                                                       overflow: TextOverflow.ellipsis,
+        //                                                                       fontSize: 12,
+        //                                                                       color: Colors.grey,
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                   icon:
+        //                                                                       const Icon(
+        //                                                                     Icons.arrow_drop_down,
+        //                                                                     color: Colors.black,
+        //                                                                   ),
+        //                                                                   style:
+        //                                                                       const TextStyle(
+        //                                                                     color: Colors.grey,
+        //                                                                   ),
+        //                                                                   iconSize:
+        //                                                                       20,
+        //                                                                   buttonHeight:
+        //                                                                       30,
+        //                                                                   buttonWidth:
+        //                                                                       200,
+        //                                                                   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+        //                                                                   dropdownDecoration:
+        //                                                                       BoxDecoration(
+        //                                                                     // color: Colors
+        //                                                                     //     .amber,
+        //                                                                     borderRadius: BorderRadius.circular(10),
+        //                                                                     border: Border.all(color: Colors.white, width: 1),
+        //                                                                   ),
+        //                                                                   items: YE_Th.map((item) =>
+        //                                                                       DropdownMenuItem<String>(
+        //                                                                         value: '${item}',
+        //                                                                         child: Text(
+        //                                                                           '${item}',
+        //                                                                           textAlign: TextAlign.center,
+        //                                                                           style: const TextStyle(
+        //                                                                             overflow: TextOverflow.ellipsis,
+        //                                                                             fontSize: 14,
+        //                                                                             color: Colors.grey,
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       )).toList(),
 
-          //                                                                   onChanged:
-          //                                                                       (value) async {
-          //                                                                     YEAR_Now = value;
-          //                                                                     red_InvoiceMon_bill();
+        //                                                                   onChanged:
+        //                                                                       (value) async {
+        //                                                                     YEAR_Now = value;
+        //                                                                     red_InvoiceMon_bill();
 
-          //                                                                     // red_Trans_bill();
-          //                                                                     // if (Value_Chang_Zone_Income !=
-          //                                                                     //     null) {
-          //                                                                     //   red_Trans_billIncome();
-          //                                                                     //   red_Trans_billMovemen();
-          //                                                                     // }
-          //                                                                   },
-          //                                                                 ),
-          //                                                               ),
-          //                                                             ),
-          //                                                           Padding(
-          //                                                             padding:
-          //                                                                 EdgeInsets.all(
-          //                                                                     2.0),
-          //                                                             child: Translate.TranslateAndSetText(
-          //                                                                 'เรียงจาก :',
-          //                                                                 AccountScreen_Color
-          //                                                                     .Colors_Text1_,
-          //                                                                 TextAlign
-          //                                                                     .start,
-          //                                                                 null,
-          //                                                                 Font_
-          //                                                                     .Fonts_T,
-          //                                                                 14,
-          //                                                                 1),
-          //                                                           ),
-          //                                                           Padding(
-          //                                                             padding:
-          //                                                                 const EdgeInsets.all(
-          //                                                                     2.0),
-          //                                                             child:
-          //                                                                 Container(
-          //                                                               decoration:
-          //                                                                   const BoxDecoration(
-          //                                                                 color:
-          //                                                                     AppbackgroundColor.Sub_Abg_Colors,
-          //                                                                 borderRadius: BorderRadius.only(
-          //                                                                     topLeft: Radius.circular(10),
-          //                                                                     topRight: Radius.circular(10),
-          //                                                                     bottomLeft: Radius.circular(10),
-          //                                                                     bottomRight: Radius.circular(10)),
-          //                                                                 // border: Border.all(color: Colors.grey, width: 1),
-          //                                                               ),
-          //                                                               width:
-          //                                                                   160,
-          //                                                               padding:
-          //                                                                   const EdgeInsets.all(2.0),
-          //                                                               child:
-          //                                                                   DropdownButtonFormField2(
-          //                                                                 alignment:
-          //                                                                     Alignment.center,
-          //                                                                 focusColor:
-          //                                                                     Colors.white,
-          //                                                                 autofocus:
-          //                                                                     false,
-          //                                                                 decoration:
-          //                                                                     InputDecoration(
-          //                                                                   floatingLabelAlignment:
-          //                                                                       FloatingLabelAlignment.center,
-          //                                                                   enabled:
-          //                                                                       true,
-          //                                                                   hoverColor:
-          //                                                                       Colors.brown,
-          //                                                                   prefixIconColor:
-          //                                                                       Colors.blue,
-          //                                                                   fillColor:
-          //                                                                       Colors.white.withOpacity(0.05),
-          //                                                                   filled:
-          //                                                                       false,
-          //                                                                   isDense:
-          //                                                                       true,
-          //                                                                   contentPadding:
-          //                                                                       EdgeInsets.zero,
-          //                                                                   border:
-          //                                                                       OutlineInputBorder(
-          //                                                                     borderSide: const BorderSide(color: Colors.red),
-          //                                                                     borderRadius: BorderRadius.circular(10),
-          //                                                                   ),
-          //                                                                   focusedBorder:
-          //                                                                       const OutlineInputBorder(
-          //                                                                     borderRadius: BorderRadius.only(
-          //                                                                       topRight: Radius.circular(10),
-          //                                                                       topLeft: Radius.circular(10),
-          //                                                                       bottomRight: Radius.circular(10),
-          //                                                                       bottomLeft: Radius.circular(10),
-          //                                                                     ),
-          //                                                                     borderSide: BorderSide(
-          //                                                                       width: 1,
-          //                                                                       color: Color.fromARGB(255, 231, 227, 227),
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                 ),
-          //                                                                 isExpanded:
-          //                                                                     false,
-          //                                                                 // value: YEAR_Now,
-          //                                                                 hint: Translate.TranslateAndSetText(
-          //                                                                     'เลขที่ใบแจ้งหนี้',
-          //                                                                     AccountScreen_Color.Colors_Text1_,
-          //                                                                     TextAlign.start,
-          //                                                                     null,
-          //                                                                     Font_.Fonts_T,
-          //                                                                     12,
-          //                                                                     1),
+        //                                                                     // red_Trans_bill();
+        //                                                                     // if (Value_Chang_Zone_Income !=
+        //                                                                     //     null) {
+        //                                                                     //   red_Trans_billIncome();
+        //                                                                     //   red_Trans_billMovemen();
+        //                                                                     // }
+        //                                                                   },
+        //                                                                 ),
+        //                                                               ),
+        //                                                             ),
+        //                                                           Padding(
+        //                                                             padding:
+        //                                                                 EdgeInsets.all(
+        //                                                                     2.0),
+        //                                                             child: Translate.TranslateAndSetText(
+        //                                                                 'เรียงจาก :',
+        //                                                                 AccountScreen_Color
+        //                                                                     .Colors_Text1_,
+        //                                                                 TextAlign
+        //                                                                     .start,
+        //                                                                 null,
+        //                                                                 Font_
+        //                                                                     .Fonts_T,
+        //                                                                 14,
+        //                                                                 1),
+        //                                                           ),
+        //                                                           Padding(
+        //                                                             padding:
+        //                                                                 const EdgeInsets.all(
+        //                                                                     2.0),
+        //                                                             child:
+        //                                                                 Container(
+        //                                                               decoration:
+        //                                                                   const BoxDecoration(
+        //                                                                 color:
+        //                                                                     AppbackgroundColor.Sub_Abg_Colors,
+        //                                                                 borderRadius: BorderRadius.only(
+        //                                                                     topLeft: Radius.circular(10),
+        //                                                                     topRight: Radius.circular(10),
+        //                                                                     bottomLeft: Radius.circular(10),
+        //                                                                     bottomRight: Radius.circular(10)),
+        //                                                                 // border: Border.all(color: Colors.grey, width: 1),
+        //                                                               ),
+        //                                                               width:
+        //                                                                   160,
+        //                                                               padding:
+        //                                                                   const EdgeInsets.all(2.0),
+        //                                                               child:
+        //                                                                   DropdownButtonFormField2(
+        //                                                                 alignment:
+        //                                                                     Alignment.center,
+        //                                                                 focusColor:
+        //                                                                     Colors.white,
+        //                                                                 autofocus:
+        //                                                                     false,
+        //                                                                 decoration:
+        //                                                                     InputDecoration(
+        //                                                                   floatingLabelAlignment:
+        //                                                                       FloatingLabelAlignment.center,
+        //                                                                   enabled:
+        //                                                                       true,
+        //                                                                   hoverColor:
+        //                                                                       Colors.brown,
+        //                                                                   prefixIconColor:
+        //                                                                       Colors.blue,
+        //                                                                   fillColor:
+        //                                                                       Colors.white.withOpacity(0.05),
+        //                                                                   filled:
+        //                                                                       false,
+        //                                                                   isDense:
+        //                                                                       true,
+        //                                                                   contentPadding:
+        //                                                                       EdgeInsets.zero,
+        //                                                                   border:
+        //                                                                       OutlineInputBorder(
+        //                                                                     borderSide: const BorderSide(color: Colors.red),
+        //                                                                     borderRadius: BorderRadius.circular(10),
+        //                                                                   ),
+        //                                                                   focusedBorder:
+        //                                                                       const OutlineInputBorder(
+        //                                                                     borderRadius: BorderRadius.only(
+        //                                                                       topRight: Radius.circular(10),
+        //                                                                       topLeft: Radius.circular(10),
+        //                                                                       bottomRight: Radius.circular(10),
+        //                                                                       bottomLeft: Radius.circular(10),
+        //                                                                     ),
+        //                                                                     borderSide: BorderSide(
+        //                                                                       width: 1,
+        //                                                                       color: Color.fromARGB(255, 231, 227, 227),
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                 ),
+        //                                                                 isExpanded:
+        //                                                                     false,
+        //                                                                 // value: YEAR_Now,
+        //                                                                 hint: Translate.TranslateAndSetText(
+        //                                                                     'เลขที่ใบแจ้งหนี้',
+        //                                                                     AccountScreen_Color.Colors_Text1_,
+        //                                                                     TextAlign.start,
+        //                                                                     null,
+        //                                                                     Font_.Fonts_T,
+        //                                                                     12,
+        //                                                                     1),
 
-          //                                                                 icon:
-          //                                                                     const Icon(
-          //                                                                   Icons.arrow_drop_down,
-          //                                                                   // Icons.sort_rounded,
-          //                                                                   color:
-          //                                                                       Colors.black,
-          //                                                                 ),
-          //                                                                 style:
-          //                                                                     const TextStyle(
-          //                                                                   color:
-          //                                                                       Colors.grey,
-          //                                                                 ),
-          //                                                                 iconSize:
-          //                                                                     20,
-          //                                                                 buttonHeight:
-          //                                                                     30,
-          //                                                                 buttonWidth:
-          //                                                                     160,
-          //                                                                 // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-          //                                                                 dropdownDecoration:
-          //                                                                     BoxDecoration(
-          //                                                                   // color: Colors
-          //                                                                   //     .amber,
-          //                                                                   borderRadius:
-          //                                                                       BorderRadius.circular(10),
-          //                                                                   border:
-          //                                                                       Border.all(color: Colors.white, width: 1),
-          //                                                                 ),
-          //                                                                 items: [
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '0',
-          //                                                                     child: Translate.TranslateAndSetText('เลขที่ใบแจ้งหนี้', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
-          //                                                                   ),
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '1',
-          //                                                                     child: Translate.TranslateAndSetText('เลขที่สัญญา', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
-          //                                                                   ),
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '2',
-          //                                                                     child: Translate.TranslateAndSetText('วันที่ออกใบ', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
-          //                                                                   ),
-          //                                                                   DropdownMenuItem<String>(
-          //                                                                     value: '3',
-          //                                                                     child: Translate.TranslateAndSetText('วันที่ครบกำหนด', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
-          //                                                                   ),
-          //                                                                 ],
+        //                                                                 icon:
+        //                                                                     const Icon(
+        //                                                                   Icons.arrow_drop_down,
+        //                                                                   // Icons.sort_rounded,
+        //                                                                   color:
+        //                                                                       Colors.black,
+        //                                                                 ),
+        //                                                                 style:
+        //                                                                     const TextStyle(
+        //                                                                   color:
+        //                                                                       Colors.grey,
+        //                                                                 ),
+        //                                                                 iconSize:
+        //                                                                     20,
+        //                                                                 buttonHeight:
+        //                                                                     30,
+        //                                                                 buttonWidth:
+        //                                                                     160,
+        //                                                                 // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+        //                                                                 dropdownDecoration:
+        //                                                                     BoxDecoration(
+        //                                                                   // color: Colors
+        //                                                                   //     .amber,
+        //                                                                   borderRadius:
+        //                                                                       BorderRadius.circular(10),
+        //                                                                   border:
+        //                                                                       Border.all(color: Colors.white, width: 1),
+        //                                                                 ),
+        //                                                                 items: [
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '0',
+        //                                                                     child: Translate.TranslateAndSetText('เลขที่ใบแจ้งหนี้', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
+        //                                                                   ),
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '1',
+        //                                                                     child: Translate.TranslateAndSetText('เลขที่สัญญา', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
+        //                                                                   ),
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '2',
+        //                                                                     child: Translate.TranslateAndSetText('วันที่ออกใบ', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
+        //                                                                   ),
+        //                                                                   DropdownMenuItem<String>(
+        //                                                                     value: '3',
+        //                                                                     child: Translate.TranslateAndSetText('วันที่ครบกำหนด', Colors.grey, TextAlign.start, null, Font_.Fonts_T, 14, 1),
+        //                                                                   ),
+        //                                                                 ],
 
-          //                                                                 onChanged:
-          //                                                                     (value) async {
-          //                                                                   if (value.toString() ==
-          //                                                                       '0') {
-          //                                                                     limitedList_InvoiceModels_.sort((a, b) => b.docno!.compareTo(a.docno!));
-          //                                                                   } else if (value.toString() ==
-          //                                                                       '1') {
-          //                                                                     limitedList_InvoiceModels_.sort((a, b) => b.cid!.compareTo(a.cid!));
-          //                                                                   } else if (value.toString() ==
-          //                                                                       '2') {
-          //                                                                     //DateFormat('dd-MM').format(DateTime.parse('${InvoiceModels[index].daterec}'))
-          //                                                                     limitedList_InvoiceModels_.sort((a, b) => DateTime.parse(b.daterec!).compareTo(DateTime.parse(a.daterec!)));
-          //                                                                     // InvoiceModels.sort((a, b) => b.daterec!.compareTo(a.daterec!));
-          //                                                                   } else if (value.toString() ==
-          //                                                                       '3') {
-          //                                                                     limitedList_InvoiceModels_.sort((a, b) => DateTime.parse(b.date!).compareTo(DateTime.parse(a.date!)));
-          //                                                                     // InvoiceModels.sort((a, b) => b.date!.compareTo(a.date!));
-          //                                                                   } else {
-          //                                                                     limitedList_InvoiceModels_.sort((a, b) => b.docno!.compareTo(a.docno!));
-          //                                                                   }
-          //                                                                   //  limitedList_InvoiceModels_
-          //                                                                   setState(() {
-          //                                                                     _InvoiceModels = limitedList_InvoiceModels_;
-          //                                                                   });
-          //                                                                   read_Invoice_limit();
-          //                                                                   // print(value);
-          //                                                                 },
-          //                                                               ),
-          //                                                             ),
-          //                                                           ),
-          //                                                           // if (InvoiceModels
-          //                                                           //         .length !=
-          //                                                           //     0)
-          //                                                           //   Container(
-          //                                                           //       padding:
-          //                                                           //           const EdgeInsets.all(
-          //                                                           //               8.0),
-          //                                                           //       // width: 130,
-          //                                                           //       child:
-          //                                                           //           Next_page_Save())
-          //                                                         ],
-          //                                                       ),
-          //                                                     ),
-          //                                                     // ),
-          //                                                     Expanded(
-          //                                                       child: Row(
-          //                                                         mainAxisAlignment:
-          //                                                             MainAxisAlignment
-          //                                                                 .end,
-          //                                                         children: [
-          //                                                           if (api_key ==
-          //                                                               'Y')
-          //                                                             Container(
-          //                                                               decoration:
-          //                                                                   BoxDecoration(
-          //                                                                 color:
-          //                                                                     Colors.deepOrange[400],
-          //                                                                 borderRadius: const BorderRadius.only(
-          //                                                                     topLeft: Radius.circular(8),
-          //                                                                     topRight: Radius.circular(8),
-          //                                                                     bottomLeft: Radius.circular(8),
-          //                                                                     bottomRight: Radius.circular(8)),
-          //                                                                 border: Border.all(
-          //                                                                     color: Colors.grey,
-          //                                                                     width: 1),
-          //                                                               ),
-          //                                                               width:
-          //                                                                   200,
-          //                                                               child:
-          //                                                                   Padding(
-          //                                                                 padding:
-          //                                                                     const EdgeInsets.all(8.0),
-          //                                                                 child:
-          //                                                                     InkWell(
-          //                                                                   onTap:
-          //                                                                       () async {
-          //                                                                     PanaraConfirmDialog.showAnimatedGrow(
-          //                                                                       context,
-          //                                                                       title: "Check Payment",
-          //                                                                       message: "เช็คการชำระเงิน",
-          //                                                                       confirmButtonText: "Confirm",
-          //                                                                       cancelButtonText: "Cancel",
-          //                                                                       onTapConfirm: () async {
-          //                                                                         Dia_log();
-          //                                                                         for (var index = 0; index < _InvoiceModels.length; index++) {
-          //                                                                           if (_InvoiceModels[index].refapi != "") {
-          //                                                                             var refapi = _InvoiceModels[index].refapi;
-          //                                                                             var incid = _InvoiceModels[index].cid;
-          //                                                                             var indocno = _InvoiceModels[index].docno;
-          //                                                                             var insum = double.parse(_InvoiceModels[index].total_dis!);
-          //                                                                             var name = _InvoiceModels[index].scname;
-          //                                                                             var datec = _InvoiceModels[index].date;
+        //                                                                 onChanged:
+        //                                                                     (value) async {
+        //                                                                   if (value.toString() ==
+        //                                                                       '0') {
+        //                                                                     limitedList_InvoiceModels_.sort((a, b) => b.docno!.compareTo(a.docno!));
+        //                                                                   } else if (value.toString() ==
+        //                                                                       '1') {
+        //                                                                     limitedList_InvoiceModels_.sort((a, b) => b.cid!.compareTo(a.cid!));
+        //                                                                   } else if (value.toString() ==
+        //                                                                       '2') {
+        //                                                                     //DateFormat('dd-MM').format(DateTime.parse('${InvoiceModels[index].daterec}'))
+        //                                                                     limitedList_InvoiceModels_.sort((a, b) => DateTime.parse(b.daterec!).compareTo(DateTime.parse(a.daterec!)));
+        //                                                                     // InvoiceModels.sort((a, b) => b.daterec!.compareTo(a.daterec!));
+        //                                                                   } else if (value.toString() ==
+        //                                                                       '3') {
+        //                                                                     limitedList_InvoiceModels_.sort((a, b) => DateTime.parse(b.date!).compareTo(DateTime.parse(a.date!)));
+        //                                                                     // InvoiceModels.sort((a, b) => b.date!.compareTo(a.date!));
+        //                                                                   } else {
+        //                                                                     limitedList_InvoiceModels_.sort((a, b) => b.docno!.compareTo(a.docno!));
+        //                                                                   }
+        //                                                                   //  limitedList_InvoiceModels_
+        //                                                                   setState(() {
+        //                                                                     _InvoiceModels = limitedList_InvoiceModels_;
+        //                                                                   });
+        //                                                                   read_Invoice_limit();
+        //                                                                   // print(value);
+        //                                                                 },
+        //                                                               ),
+        //                                                             ),
+        //                                                           ),
+        //                                                           // if (InvoiceModels
+        //                                                           //         .length !=
+        //                                                           //     0)
+        //                                                           //   Container(
+        //                                                           //       padding:
+        //                                                           //           const EdgeInsets.all(
+        //                                                           //               8.0),
+        //                                                           //       // width: 130,
+        //                                                           //       child:
+        //                                                           //           Next_page_Save())
+        //                                                         ],
+        //                                                       ),
+        //                                                     ),
+        //                                                     // ),
+        //                                                     Expanded(
+        //                                                       child: Row(
+        //                                                         mainAxisAlignment:
+        //                                                             MainAxisAlignment
+        //                                                                 .end,
+        //                                                         children: [
+        //                                                           if (api_key ==
+        //                                                               'Y')
+        //                                                             Container(
+        //                                                               decoration:
+        //                                                                   BoxDecoration(
+        //                                                                 color:
+        //                                                                     Colors.deepOrange[400],
+        //                                                                 borderRadius: const BorderRadius.only(
+        //                                                                     topLeft: Radius.circular(8),
+        //                                                                     topRight: Radius.circular(8),
+        //                                                                     bottomLeft: Radius.circular(8),
+        //                                                                     bottomRight: Radius.circular(8)),
+        //                                                                 border: Border.all(
+        //                                                                     color: Colors.grey,
+        //                                                                     width: 1),
+        //                                                               ),
+        //                                                               width:
+        //                                                                   200,
+        //                                                               child:
+        //                                                                   Padding(
+        //                                                                 padding:
+        //                                                                     const EdgeInsets.all(8.0),
+        //                                                                 child:
+        //                                                                     InkWell(
+        //                                                                   onTap:
+        //                                                                       () async {
+        //                                                                     PanaraConfirmDialog.showAnimatedGrow(
+        //                                                                       context,
+        //                                                                       title: "Check Payment",
+        //                                                                       message: "เช็คการชำระเงิน",
+        //                                                                       confirmButtonText: "Confirm",
+        //                                                                       cancelButtonText: "Cancel",
+        //                                                                       onTapConfirm: () async {
+        //                                                                         Dia_log();
+        //                                                                         for (var index = 0; index < _InvoiceModels.length; index++) {
+        //                                                                           if (_InvoiceModels[index].refapi != "") {
+        //                                                                             var refapi = _InvoiceModels[index].refapi;
+        //                                                                             var incid = _InvoiceModels[index].cid;
+        //                                                                             var indocno = _InvoiceModels[index].docno;
+        //                                                                             var insum = double.parse(_InvoiceModels[index].total_dis!);
+        //                                                                             var name = _InvoiceModels[index].scname;
+        //                                                                             var datec = _InvoiceModels[index].date;
 
-          //                                                                             // print('$refapi $insum $incid $indocno $name $datec');
-          //                                                                             // if (_InvoiceModels[index].ser_noti != null) {
-          //                                                                             SharedPreferences preferences = await SharedPreferences.getInstance();
-          //                                                                             var ren = preferences.getString('renTalSer');
-          //                                                                             String url = '${MyConstant().domain}/chack_invoice_api.php?isAdd=true&ren=$ren&refapi=$refapi&name=$name&insum=$insum&datec=$datec';
+        //                                                                             // print('$refapi $insum $incid $indocno $name $datec');
+        //                                                                             // if (_InvoiceModels[index].ser_noti != null) {
+        //                                                                             SharedPreferences preferences = await SharedPreferences.getInstance();
+        //                                                                             var ren = preferences.getString('renTalSer');
+        //                                                                             String url = '${MyConstant().domain}/chack_invoice_api.php?isAdd=true&ren=$ren&refapi=$refapi&name=$name&insum=$insum&datec=$datec';
 
-          //                                                                             try {
-          //                                                                               var response = await http.get(Uri.parse(url));
+        //                                                                             try {
+        //                                                                               var response = await http.get(Uri.parse(url));
 
-          //                                                                               var result = json.decode(response.body);
+        //                                                                               var result = json.decode(response.body);
 
-          //                                                                               if (result.toString() != 'No') {
-          //                                                                                 print(result.toString());
-          //                                                                                 ChackpayinvoiceModel chackpayinvoiceModel = ChackpayinvoiceModel.fromJson(result);
-          //                                                                                 var amountx = chackpayinvoiceModel.amount;
-          //                                                                                 var ref_idx = chackpayinvoiceModel.ref_id;
-          //                                                                                 var transTimex = chackpayinvoiceModel.transTime;
-          //                                                                                 var reference2x = chackpayinvoiceModel.reference2;
-          //                                                                                 var reference1x = chackpayinvoiceModel.reference1;
-          //                                                                                 var Value_newDateY1 = DateTime.now();
-          //                                                                                 var Value_newDatepay = chackpayinvoiceModel.transDate;
-          //                                                                                 // print('>>>> $amountx $ref_idx $transTimex $reference2x $reference1x $Value_newDatepay');
-          //                                                                                 red_Trans_selectPay_check(index).then((value) => in_Trans_invoice_refnoPay_chack(index, Value_newDateY1, Value_newDatepay, '0'));
-          //                                                                               } else {
-          //                                                                                 print('ยังไม่มีการชำระ');
-          //                                                                               }
-          //                                                                             } catch (e) {
-          //                                                                               // print('Error-Dis(read_GC_rental) : ${e}');
-          //                                                                             }
-          //                                                                           } else {
-          //                                                                             print(' ${_InvoiceModels[index].cid}');
-          //                                                                           }
-          //                                                                         }
-          //                                                                         setState(() {
-          //                                                                           // Future.delayed(const Duration(milliseconds: 800));
-          //                                                                           red_InvoiceMon_bill();
-          //                                                                         });
-          //                                                                         Navigator.pop(context);
-          //                                                                         Navigator.pop(context);
-          //                                                                       },
-          //                                                                       onTapCancel: () {
-          //                                                                         Navigator.pop(context);
-          //                                                                       },
-          //                                                                       panaraDialogType: PanaraDialogType.success,
-          //                                                                     );
-          //                                                                   },
-          //                                                                   child:
-          //                                                                       Row(
-          //                                                                     mainAxisAlignment: MainAxisAlignment.center,
-          //                                                                     children: [
-          //                                                                       Text(
-          //                                                                         'Check Payment',
-          //                                                                         textAlign: TextAlign.center,
-          //                                                                         style: const TextStyle(
-          //                                                                           color: Colors.white,
-          //                                                                           // fontWeight:
-          //                                                                           //     FontWeight.bold,
-          //                                                                           fontFamily: Font_.Fonts_T,
-          //                                                                         ),
-          //                                                                       ),
-          //                                                                     ],
-          //                                                                   ),
-          //                                                                 ),
-          //                                                               ),
-          //                                                             ),
-          //                                                           if (api_key ==
-          //                                                               'Y')
-          //                                                             SizedBox(
-          //                                                               width:
-          //                                                                   10,
-          //                                                             ),
-          //                                                           Container(
-          //                                                             decoration:
-          //                                                                 BoxDecoration(
-          //                                                               color: Colors
-          //                                                                   .blueAccent,
-          //                                                               borderRadius: const BorderRadius.only(
-          //                                                                   topLeft:
-          //                                                                       Radius.circular(8),
-          //                                                                   topRight: Radius.circular(8),
-          //                                                                   bottomLeft: Radius.circular(8),
-          //                                                                   bottomRight: Radius.circular(8)),
-          //                                                               border: Border.all(
-          //                                                                   color:
-          //                                                                       Colors.grey,
-          //                                                                   width: 1),
-          //                                                             ),
-          //                                                             width:
-          //                                                                 200,
-          //                                                             child:
-          //                                                                 Padding(
-          //                                                               padding:
-          //                                                                   const EdgeInsets.all(8.0),
-          //                                                               child:
-          //                                                                   InkWell(
-          //                                                                 onTap:
-          //                                                                     () async {
-          //                                                                   PanaraConfirmDialog.showAnimatedGrow(
-          //                                                                     context,
-          //                                                                     title: "Line Notification",
-          //                                                                     message: "แจ้งเตือนชำระค่าบริการผ่านไลน์",
-          //                                                                     confirmButtonText: "Confirm",
-          //                                                                     cancelButtonText: "Cancel",
-          //                                                                     onTapConfirm: () async {
-          //                                                                       for (var index = 0; index < _InvoiceModels.length; index++) {
-          //                                                                         if (_InvoiceModels[index].ser_noti != null) {
-          //                                                                           var serregis = _InvoiceModels[index].ser_noti;
-          //                                                                           var incid = _InvoiceModels[index].cid;
-          //                                                                           var indocno = _InvoiceModels[index].docno;
-          //                                                                           var insum = nFormat.format(double.parse(_InvoiceModels[index].total_dis!));
-          //                                                                           if (_InvoiceModels[index].ser_noti != null) {
-          //                                                                             SharedPreferences preferences = await SharedPreferences.getInstance();
-          //                                                                             var ren = preferences.getString('renTalSer');
-          //                                                                             String url = '${MyConstant().domain}/sent_line_noti.php?isAdd=true&ren=$ren&serregis=$serregis&incid=$incid&indocno=$indocno&insum=$insum';
-          //                                                                             renTal_name = preferences.getString('renTalName');
-          //                                                                             try {
-          //                                                                               var response = await http.get(Uri.parse(url));
+        //                                                                               if (result.toString() != 'No') {
+        //                                                                                 print(result.toString());
+        //                                                                                 ChackpayinvoiceModel chackpayinvoiceModel = ChackpayinvoiceModel.fromJson(result);
+        //                                                                                 var amountx = chackpayinvoiceModel.amount;
+        //                                                                                 var ref_idx = chackpayinvoiceModel.ref_id;
+        //                                                                                 var transTimex = chackpayinvoiceModel.transTime;
+        //                                                                                 var reference2x = chackpayinvoiceModel.reference2;
+        //                                                                                 var reference1x = chackpayinvoiceModel.reference1;
+        //                                                                                 var Value_newDateY1 = DateTime.now();
+        //                                                                                 var Value_newDatepay = chackpayinvoiceModel.transDate;
+        //                                                                                 // print('>>>> $amountx $ref_idx $transTimex $reference2x $reference1x $Value_newDatepay');
+        //                                                                                 red_Trans_selectPay_check(index).then((value) => in_Trans_invoice_refnoPay_chack(index, Value_newDateY1, Value_newDatepay, '0'));
+        //                                                                               } else {
+        //                                                                                 print('ยังไม่มีการชำระ');
+        //                                                                               }
+        //                                                                             } catch (e) {
+        //                                                                               // print('Error-Dis(read_GC_rental) : ${e}');
+        //                                                                             }
+        //                                                                           } else {
+        //                                                                             print(' ${_InvoiceModels[index].cid}');
+        //                                                                           }
+        //                                                                         }
+        //                                                                         setState(() {
+        //                                                                           // Future.delayed(const Duration(milliseconds: 800));
+        //                                                                           red_InvoiceMon_bill();
+        //                                                                         });
+        //                                                                         Navigator.pop(context);
+        //                                                                         Navigator.pop(context);
+        //                                                                       },
+        //                                                                       onTapCancel: () {
+        //                                                                         Navigator.pop(context);
+        //                                                                       },
+        //                                                                       panaraDialogType: PanaraDialogType.success,
+        //                                                                     );
+        //                                                                   },
+        //                                                                   child:
+        //                                                                       Row(
+        //                                                                     mainAxisAlignment: MainAxisAlignment.center,
+        //                                                                     children: [
+        //                                                                       Text(
+        //                                                                         'Check Payment',
+        //                                                                         textAlign: TextAlign.center,
+        //                                                                         style: const TextStyle(
+        //                                                                           color: Colors.white,
+        //                                                                           // fontWeight:
+        //                                                                           //     FontWeight.bold,
+        //                                                                           fontFamily: Font_.Fonts_T,
+        //                                                                         ),
+        //                                                                       ),
+        //                                                                     ],
+        //                                                                   ),
+        //                                                                 ),
+        //                                                               ),
+        //                                                             ),
+        //                                                           if (api_key ==
+        //                                                               'Y')
+        //                                                             SizedBox(
+        //                                                               width:
+        //                                                                   10,
+        //                                                             ),
+        //                                                           Container(
+        //                                                             decoration:
+        //                                                                 BoxDecoration(
+        //                                                               color: Colors
+        //                                                                   .blueAccent,
+        //                                                               borderRadius: const BorderRadius.only(
+        //                                                                   topLeft:
+        //                                                                       Radius.circular(8),
+        //                                                                   topRight: Radius.circular(8),
+        //                                                                   bottomLeft: Radius.circular(8),
+        //                                                                   bottomRight: Radius.circular(8)),
+        //                                                               border: Border.all(
+        //                                                                   color:
+        //                                                                       Colors.grey,
+        //                                                                   width: 1),
+        //                                                             ),
+        //                                                             width:
+        //                                                                 200,
+        //                                                             child:
+        //                                                                 Padding(
+        //                                                               padding:
+        //                                                                   const EdgeInsets.all(8.0),
+        //                                                               child:
+        //                                                                   InkWell(
+        //                                                                 onTap:
+        //                                                                     () async {
+        //                                                                   PanaraConfirmDialog.showAnimatedGrow(
+        //                                                                     context,
+        //                                                                     title: "Line Notification",
+        //                                                                     message: "แจ้งเตือนชำระค่าบริการผ่านไลน์",
+        //                                                                     confirmButtonText: "Confirm",
+        //                                                                     cancelButtonText: "Cancel",
+        //                                                                     onTapConfirm: () async {
+        //                                                                       for (var index = 0; index < _InvoiceModels.length; index++) {
+        //                                                                         if (_InvoiceModels[index].ser_noti != null) {
+        //                                                                           var serregis = _InvoiceModels[index].ser_noti;
+        //                                                                           var incid = _InvoiceModels[index].cid;
+        //                                                                           var indocno = _InvoiceModels[index].docno;
+        //                                                                           var insum = nFormat.format(double.parse(_InvoiceModels[index].total_dis!));
+        //                                                                           if (_InvoiceModels[index].ser_noti != null) {
+        //                                                                             SharedPreferences preferences = await SharedPreferences.getInstance();
+        //                                                                             var ren = preferences.getString('renTalSer');
+        //                                                                             String url = '${MyConstant().domain}/sent_line_noti.php?isAdd=true&ren=$ren&serregis=$serregis&incid=$incid&indocno=$indocno&insum=$insum';
+        //                                                                             renTal_name = preferences.getString('renTalName');
+        //                                                                             try {
+        //                                                                               var response = await http.get(Uri.parse(url));
 
-          //                                                                               var result = json.decode(response.body);
+        //                                                                               var result = json.decode(response.body);
 
-          //                                                                               if (result.toString() == 'Line Successfully') {
-          //                                                                                 // print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
-          //                                                                                 // ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                                 //   SnackBar(
-          //                                                                                 //     content: Text(
-          //                                                                                 //       'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ) (${_InvoiceModels[index].scname} : ${_InvoiceModels[index].cname})',
-          //                                                                                 //       style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                                 //     ),
-          //                                                                                 //   ),
-          //                                                                                 // );
-          //                                                                               } else {
-          //                                                                                 // print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
-          //                                                                                 // ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                                 //   SnackBar(
-          //                                                                                 //     content: Text(
-          //                                                                                 //       'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่) (${_InvoiceModels[index].scname} : ${_InvoiceModels[index].cname})',
-          //                                                                                 //       style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                                 //     ),
-          //                                                                                 //   ),
-          //                                                                                 // );
-          //                                                                               }
-          //                                                                             } catch (e) {
-          //                                                                               // print('Error-Dis(read_GC_rental) : ${e}');
-          //                                                                             }
-          //                                                                           }
-          //                                                                         }
-          //                                                                         if (index + 1 == _InvoiceModels.length) {
-          //                                                                           Navigator.pop(context);
-          //                                                                           ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                             SnackBar(
-          //                                                                               content: Text(
-          //                                                                                 'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)',
-          //                                                                                 style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                           );
-          //                                                                           ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                             SnackBar(
-          //                                                                               content: Text(
-          //                                                                                 'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)',
-          //                                                                                 style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                           );
-          //                                                                         }
-          //                                                                       }
-          //                                                                       // Navigator.pop(context);
-          //                                                                     },
-          //                                                                     onTapCancel: () {
-          //                                                                       Navigator.pop(context);
-          //                                                                     },
-          //                                                                     panaraDialogType: PanaraDialogType.success,
-          //                                                                   );
-          //                                                                 },
-          //                                                                 child:
-          //                                                                     Row(
-          //                                                                   mainAxisAlignment:
-          //                                                                       MainAxisAlignment.center,
-          //                                                                   children: [
-          //                                                                     Icon(
-          //                                                                       Icons.notifications,
-          //                                                                       color: Colors.yellow.shade900,
-          //                                                                     ),
-          //                                                                     SizedBox(
-          //                                                                       width: 10,
-          //                                                                     ),
-          //                                                                     Text(
-          //                                                                       'Line Notification',
-          //                                                                       textAlign: TextAlign.center,
-          //                                                                       style: const TextStyle(
-          //                                                                         color: Colors.black,
-          //                                                                         // fontWeight:
-          //                                                                         //     FontWeight.bold,
-          //                                                                         fontFamily: Font_.Fonts_T,
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                   ],
-          //                                                                 ),
-          //                                                               ),
-          //                                                             ),
-          //                                                           ),
-          //                                                         ],
-          //                                                       ),
-          //                                                     )
-          //                                                   ],
-          //                                                 ),
-          //                                                 const Divider(),
-          //                                                 Row(
-          //                                                   mainAxisAlignment:
-          //                                                       MainAxisAlignment
-          //                                                           .center,
-          //                                                   children: [
-          //                                                     (invoice_select.length !=
-          //                                                                 0 &&
-          //                                                             InvoiceModels
-          //                                                                     .length !=
-          //                                                                 0)
-          //                                                         ? Padding(
-          //                                                             padding:
-          //                                                                 const EdgeInsets.all(
-          //                                                                     8.0),
-          //                                                             child:
-          //                                                                 Row(
-          //                                                               mainAxisAlignment:
-          //                                                                   MainAxisAlignment.spaceBetween,
-          //                                                               children: [
-          //                                                                 Container(
-          //                                                                   decoration:
-          //                                                                       BoxDecoration(
-          //                                                                     color: Colors.white,
-          //                                                                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(0), bottomLeft: Radius.circular(8), bottomRight: Radius.circular(0)),
-          //                                                                     border: Border.all(color: Colors.grey, width: 1),
-          //                                                                   ),
-          //                                                                   padding:
-          //                                                                       const EdgeInsets.all(2),
-          //                                                                   child:
-          //                                                                       Text(
-          //                                                                     'Save ( ${invoice_select.length} )',
-          //                                                                     textAlign: TextAlign.center,
-          //                                                                     style: TextStyle(
-          //                                                                       fontSize: 13,
-          //                                                                       color: Colors.grey[800],
-          //                                                                       fontWeight: FontWeight.bold,
-          //                                                                       fontFamily: FontWeight_.Fonts_T,
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                 ),
-          //                                                                 PopupMenuButton(
-          //                                                                   child:
-          //                                                                       Container(
-          //                                                                     decoration: BoxDecoration(
-          //                                                                       color: Colors.orange,
-          //                                                                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(0), topRight: Radius.circular(8), bottomLeft: Radius.circular(0), bottomRight: Radius.circular(8)),
-          //                                                                       border: Border.all(color: Colors.grey, width: 1),
-          //                                                                     ),
-          //                                                                     padding: const EdgeInsets.all(2),
-          //                                                                     child: const Icon(
-          //                                                                       Icons.download,
-          //                                                                       color: Colors.white,
-          //                                                                       size: 22,
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                   itemBuilder: (BuildContext context) =>
-          //                                                                       [
-          //                                                                     PopupMenuItem(
-          //                                                                         onTap: () async {
-          //                                                                           Future.delayed(const Duration(microseconds: 800), () async {
-          //                                                                             List newValuePDFimg = [];
+        //                                                                               if (result.toString() == 'Line Successfully') {
+        //                                                                                 // print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+        //                                                                                 // ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                                 //   SnackBar(
+        //                                                                                 //     content: Text(
+        //                                                                                 //       'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ) (${_InvoiceModels[index].scname} : ${_InvoiceModels[index].cname})',
+        //                                                                                 //       style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                                 //     ),
+        //                                                                                 //   ),
+        //                                                                                 // );
+        //                                                                               } else {
+        //                                                                                 // print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+        //                                                                                 // ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                                 //   SnackBar(
+        //                                                                                 //     content: Text(
+        //                                                                                 //       'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่) (${_InvoiceModels[index].scname} : ${_InvoiceModels[index].cname})',
+        //                                                                                 //       style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                                 //     ),
+        //                                                                                 //   ),
+        //                                                                                 // );
+        //                                                                               }
+        //                                                                             } catch (e) {
+        //                                                                               // print('Error-Dis(read_GC_rental) : ${e}');
+        //                                                                             }
+        //                                                                           }
+        //                                                                         }
+        //                                                                         if (index + 1 == _InvoiceModels.length) {
+        //                                                                           Navigator.pop(context);
+        //                                                                           ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                             SnackBar(
+        //                                                                               content: Text(
+        //                                                                                 'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)',
+        //                                                                                 style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                           );
+        //                                                                           ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                             SnackBar(
+        //                                                                               content: Text(
+        //                                                                                 'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)',
+        //                                                                                 style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                           );
+        //                                                                         }
+        //                                                                       }
+        //                                                                       // Navigator.pop(context);
+        //                                                                     },
+        //                                                                     onTapCancel: () {
+        //                                                                       Navigator.pop(context);
+        //                                                                     },
+        //                                                                     panaraDialogType: PanaraDialogType.success,
+        //                                                                   );
+        //                                                                 },
+        //                                                                 child:
+        //                                                                     Row(
+        //                                                                   mainAxisAlignment:
+        //                                                                       MainAxisAlignment.center,
+        //                                                                   children: [
+        //                                                                     Icon(
+        //                                                                       Icons.notifications,
+        //                                                                       color: Colors.yellow.shade900,
+        //                                                                     ),
+        //                                                                     SizedBox(
+        //                                                                       width: 10,
+        //                                                                     ),
+        //                                                                     Text(
+        //                                                                       'Line Notification',
+        //                                                                       textAlign: TextAlign.center,
+        //                                                                       style: const TextStyle(
+        //                                                                         color: Colors.black,
+        //                                                                         // fontWeight:
+        //                                                                         //     FontWeight.bold,
+        //                                                                         fontFamily: Font_.Fonts_T,
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                   ],
+        //                                                                 ),
+        //                                                               ),
+        //                                                             ),
+        //                                                           ),
+        //                                                         ],
+        //                                                       ),
+        //                                                     )
+        //                                                   ],
+        //                                                 ),
+        //                                                 const Divider(),
+        //                                                 Row(
+        //                                                   mainAxisAlignment:
+        //                                                       MainAxisAlignment
+        //                                                           .center,
+        //                                                   children: [
+        //                                                     (invoice_select.length !=
+        //                                                                 0 &&
+        //                                                             InvoiceModels
+        //                                                                     .length !=
+        //                                                                 0)
+        //                                                         ? Padding(
+        //                                                             padding:
+        //                                                                 const EdgeInsets.all(
+        //                                                                     8.0),
+        //                                                             child:
+        //                                                                 Row(
+        //                                                               mainAxisAlignment:
+        //                                                                   MainAxisAlignment.spaceBetween,
+        //                                                               children: [
+        //                                                                 Container(
+        //                                                                   decoration:
+        //                                                                       BoxDecoration(
+        //                                                                     color: Colors.white,
+        //                                                                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(0), bottomLeft: Radius.circular(8), bottomRight: Radius.circular(0)),
+        //                                                                     border: Border.all(color: Colors.grey, width: 1),
+        //                                                                   ),
+        //                                                                   padding:
+        //                                                                       const EdgeInsets.all(2),
+        //                                                                   child:
+        //                                                                       Text(
+        //                                                                     'Save ( ${invoice_select.length} )',
+        //                                                                     textAlign: TextAlign.center,
+        //                                                                     style: TextStyle(
+        //                                                                       fontSize: 13,
+        //                                                                       color: Colors.grey[800],
+        //                                                                       fontWeight: FontWeight.bold,
+        //                                                                       fontFamily: FontWeight_.Fonts_T,
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                 ),
+        //                                                                 PopupMenuButton(
+        //                                                                   child:
+        //                                                                       Container(
+        //                                                                     decoration: BoxDecoration(
+        //                                                                       color: Colors.orange,
+        //                                                                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(0), topRight: Radius.circular(8), bottomLeft: Radius.circular(0), bottomRight: Radius.circular(8)),
+        //                                                                       border: Border.all(color: Colors.grey, width: 1),
+        //                                                                     ),
+        //                                                                     padding: const EdgeInsets.all(2),
+        //                                                                     child: const Icon(
+        //                                                                       Icons.download,
+        //                                                                       color: Colors.white,
+        //                                                                       size: 22,
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                   itemBuilder: (BuildContext context) =>
+        //                                                                       [
+        //                                                                     PopupMenuItem(
+        //                                                                         onTap: () async {
+        //                                                                           Future.delayed(const Duration(microseconds: 800), () async {
+        //                                                                             List newValuePDFimg = [];
 
-          //                                                                             for (int index = 0; index < 1; index++) {
-          //                                                                               if (renTalModels[0].imglogo!.trim() == '') {
-          //                                                                                 // newValuePDFimg.add(
-          //                                                                                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
-          //                                                                               } else {
-          //                                                                                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
-          //                                                                               }
-          //                                                                             }
+        //                                                                             for (int index = 0; index < 1; index++) {
+        //                                                                               if (renTalModels[0].imglogo!.trim() == '') {
+        //                                                                                 // newValuePDFimg.add(
+        //                                                                                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
+        //                                                                               } else {
+        //                                                                                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
+        //                                                                               }
+        //                                                                             }
 
-          //                                                                             _showMyDialog_SAVE2(newValuePDFimg, 'Folder');
-          //                                                                           });
-          //                                                                         },
-          //                                                                         child: Container(
-          //                                                                           decoration: const BoxDecoration(
-          //                                                                             // color: Colors.green[100]!
-          //                                                                             //     .withOpacity(0.5),
-          //                                                                             border: Border(
-          //                                                                               bottom: BorderSide(
-          //                                                                                 color: Colors.black12,
-          //                                                                                 width: 1,
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                           padding: const EdgeInsets.all(2.0),
-          //                                                                           // width: 200,
-          //                                                                           child: Row(
-          //                                                                             children: [
-          //                                                                               Text(
-          //                                                                                 'Save( ${invoice_select.length} ) : Folder ',
-          //                                                                                 style: const TextStyle(
-          //                                                                                   fontSize: 14,
-          //                                                                                   color: ReportScreen_Color.Colors_Text2_,
-          //                                                                                   // fontWeight: FontWeight.bold,
-          //                                                                                   fontFamily: Font_.Fonts_T,
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                               Icon(Icons.folder, color: Colors.amber[600])
-          //                                                                             ],
-          //                                                                           ),
-          //                                                                         )),
-          //                                                                     PopupMenuItem(
-          //                                                                         onTap: () async {
-          //                                                                           Future.delayed(const Duration(microseconds: 800), () async {
-          //                                                                             List newValuePDFimg = [];
+        //                                                                             _showMyDialog_SAVE2(newValuePDFimg, 'Folder');
+        //                                                                           });
+        //                                                                         },
+        //                                                                         child: Container(
+        //                                                                           decoration: const BoxDecoration(
+        //                                                                             // color: Colors.green[100]!
+        //                                                                             //     .withOpacity(0.5),
+        //                                                                             border: Border(
+        //                                                                               bottom: BorderSide(
+        //                                                                                 color: Colors.black12,
+        //                                                                                 width: 1,
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                           padding: const EdgeInsets.all(2.0),
+        //                                                                           // width: 200,
+        //                                                                           child: Row(
+        //                                                                             children: [
+        //                                                                               Text(
+        //                                                                                 'Save( ${invoice_select.length} ) : Folder ',
+        //                                                                                 style: const TextStyle(
+        //                                                                                   fontSize: 14,
+        //                                                                                   color: ReportScreen_Color.Colors_Text2_,
+        //                                                                                   // fontWeight: FontWeight.bold,
+        //                                                                                   fontFamily: Font_.Fonts_T,
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                               Icon(Icons.folder, color: Colors.amber[600])
+        //                                                                             ],
+        //                                                                           ),
+        //                                                                         )),
+        //                                                                     PopupMenuItem(
+        //                                                                         onTap: () async {
+        //                                                                           Future.delayed(const Duration(microseconds: 800), () async {
+        //                                                                             List newValuePDFimg = [];
 
-          //                                                                             for (int index = 0; index < 1; index++) {
-          //                                                                               if (renTalModels[0].imglogo!.trim() == '') {
-          //                                                                                 // newValuePDFimg.add(
-          //                                                                                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
-          //                                                                               } else {
-          //                                                                                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
-          //                                                                               }
-          //                                                                             }
+        //                                                                             for (int index = 0; index < 1; index++) {
+        //                                                                               if (renTalModels[0].imglogo!.trim() == '') {
+        //                                                                                 // newValuePDFimg.add(
+        //                                                                                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
+        //                                                                               } else {
+        //                                                                                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
+        //                                                                               }
+        //                                                                             }
 
-          //                                                                             _showMyDialog_SAVE2(newValuePDFimg, 'File');
-          //                                                                           });
-          //                                                                         },
-          //                                                                         child: Container(
-          //                                                                           decoration: const BoxDecoration(
-          //                                                                             // color: Colors.green[100]!
-          //                                                                             //     .withOpacity(0.5),
-          //                                                                             border: Border(
-          //                                                                               bottom: BorderSide(
-          //                                                                                 color: Colors.black12,
-          //                                                                                 width: 1,
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                           padding: const EdgeInsets.all(2.0),
-          //                                                                           // width: 200,
-          //                                                                           child: Row(
-          //                                                                             children: [
-          //                                                                               Text(
-          //                                                                                 'Save( ${invoice_select.length} ) : File ',
-          //                                                                                 style: const TextStyle(
-          //                                                                                   fontSize: 14,
-          //                                                                                   color: ReportScreen_Color.Colors_Text2_,
-          //                                                                                   // fontWeight: FontWeight.bold,
-          //                                                                                   fontFamily: Font_.Fonts_T,
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                               const Icon(Icons.file_copy, color: AppBarColors.ABar_Colors)
-          //                                                                             ],
-          //                                                                           ),
-          //                                                                         )),
-          //                                                                     PopupMenuItem(
-          //                                                                         onTap: () async {
-          //                                                                           setState(() {
-          //                                                                             invoice_select.clear();
-          //                                                                           });
-          //                                                                         },
-          //                                                                         child: Container(
-          //                                                                           decoration: const BoxDecoration(
-          //                                                                             // color: Colors.green[100]!
-          //                                                                             //     .withOpacity(0.5),
-          //                                                                             border: Border(
-          //                                                                               bottom: BorderSide(
-          //                                                                                 color: Colors.black12,
-          //                                                                                 width: 1,
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                           padding: const EdgeInsets.all(2.0),
-          //                                                                           // width: 200,
-          //                                                                           child: Row(
-          //                                                                             children: [
-          //                                                                               Translate.TranslateAndSetText('ยกเลิกทั้งหมด( ${invoice_select.length} ) : ', AccountScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-          //                                                                               // Text(
-          //                                                                               //   'ยกเลิกทั้งหมด( ${invoice_select.length} ) : ',
-          //                                                                               //   style: const TextStyle(
-          //                                                                               //     fontSize: 14,
-          //                                                                               //     color: ReportScreen_Color.Colors_Text2_,
-          //                                                                               //     // fontWeight: FontWeight.bold,
-          //                                                                               //     fontFamily: Font_.Fonts_T,
-          //                                                                               //   ),
-          //                                                                               // ),
-          //                                                                               const Icon(
-          //                                                                                 Icons.check_box_outline_blank,
-          //                                                                                 color: Colors.red,
-          //                                                                                 size: 22,
-          //                                                                               ),
-          //                                                                             ],
-          //                                                                           ),
-          //                                                                         )),
-          //                                                                   ],
-          //                                                                 ),
-          //                                                                 // Container(
-          //                                                                 //   decoration:
-          //                                                                 //       BoxDecoration(
-          //                                                                 //     color:
-          //                                                                 //         Colors.orange,
-          //                                                                 //     borderRadius: const BorderRadius.only(
-          //                                                                 //         topLeft: Radius.circular(0),
-          //                                                                 //         topRight: Radius.circular(8),
-          //                                                                 //         bottomLeft: Radius.circular(0),
-          //                                                                 //         bottomRight: Radius.circular(8)),
-          //                                                                 //     border: Border.all(
-          //                                                                 //         color: Colors.grey,
-          //                                                                 //         width: 1),
-          //                                                                 //   ),
-          //                                                                 //   padding:
-          //                                                                 //       const EdgeInsets.all(2),
-          //                                                                 //   child:
-          //                                                                 //       InkWell(
-          //                                                                 //     onTap:
-          //                                                                 //         () async {
-          //                                                                 //       List
-          //                                                                 //           newValuePDFimg =
-          //                                                                 //           [];
+        //                                                                             _showMyDialog_SAVE2(newValuePDFimg, 'File');
+        //                                                                           });
+        //                                                                         },
+        //                                                                         child: Container(
+        //                                                                           decoration: const BoxDecoration(
+        //                                                                             // color: Colors.green[100]!
+        //                                                                             //     .withOpacity(0.5),
+        //                                                                             border: Border(
+        //                                                                               bottom: BorderSide(
+        //                                                                                 color: Colors.black12,
+        //                                                                                 width: 1,
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                           padding: const EdgeInsets.all(2.0),
+        //                                                                           // width: 200,
+        //                                                                           child: Row(
+        //                                                                             children: [
+        //                                                                               Text(
+        //                                                                                 'Save( ${invoice_select.length} ) : File ',
+        //                                                                                 style: const TextStyle(
+        //                                                                                   fontSize: 14,
+        //                                                                                   color: ReportScreen_Color.Colors_Text2_,
+        //                                                                                   // fontWeight: FontWeight.bold,
+        //                                                                                   fontFamily: Font_.Fonts_T,
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                               const Icon(Icons.file_copy, color: AppBarColors.ABar_Colors)
+        //                                                                             ],
+        //                                                                           ),
+        //                                                                         )),
+        //                                                                     PopupMenuItem(
+        //                                                                         onTap: () async {
+        //                                                                           setState(() {
+        //                                                                             invoice_select.clear();
+        //                                                                           });
+        //                                                                         },
+        //                                                                         child: Container(
+        //                                                                           decoration: const BoxDecoration(
+        //                                                                             // color: Colors.green[100]!
+        //                                                                             //     .withOpacity(0.5),
+        //                                                                             border: Border(
+        //                                                                               bottom: BorderSide(
+        //                                                                                 color: Colors.black12,
+        //                                                                                 width: 1,
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                           padding: const EdgeInsets.all(2.0),
+        //                                                                           // width: 200,
+        //                                                                           child: Row(
+        //                                                                             children: [
+        //                                                                               Translate.TranslateAndSetText('ยกเลิกทั้งหมด( ${invoice_select.length} ) : ', AccountScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+        //                                                                               // Text(
+        //                                                                               //   'ยกเลิกทั้งหมด( ${invoice_select.length} ) : ',
+        //                                                                               //   style: const TextStyle(
+        //                                                                               //     fontSize: 14,
+        //                                                                               //     color: ReportScreen_Color.Colors_Text2_,
+        //                                                                               //     // fontWeight: FontWeight.bold,
+        //                                                                               //     fontFamily: Font_.Fonts_T,
+        //                                                                               //   ),
+        //                                                                               // ),
+        //                                                                               const Icon(
+        //                                                                                 Icons.check_box_outline_blank,
+        //                                                                                 color: Colors.red,
+        //                                                                                 size: 22,
+        //                                                                               ),
+        //                                                                             ],
+        //                                                                           ),
+        //                                                                         )),
+        //                                                                   ],
+        //                                                                 ),
+        //                                                                 // Container(
+        //                                                                 //   decoration:
+        //                                                                 //       BoxDecoration(
+        //                                                                 //     color:
+        //                                                                 //         Colors.orange,
+        //                                                                 //     borderRadius: const BorderRadius.only(
+        //                                                                 //         topLeft: Radius.circular(0),
+        //                                                                 //         topRight: Radius.circular(8),
+        //                                                                 //         bottomLeft: Radius.circular(0),
+        //                                                                 //         bottomRight: Radius.circular(8)),
+        //                                                                 //     border: Border.all(
+        //                                                                 //         color: Colors.grey,
+        //                                                                 //         width: 1),
+        //                                                                 //   ),
+        //                                                                 //   padding:
+        //                                                                 //       const EdgeInsets.all(2),
+        //                                                                 //   child:
+        //                                                                 //       InkWell(
+        //                                                                 //     onTap:
+        //                                                                 //         () async {
+        //                                                                 //       List
+        //                                                                 //           newValuePDFimg =
+        //                                                                 //           [];
 
-          //                                                                 //       for (int index = 0;
-          //                                                                 //           index < 1;
-          //                                                                 //           index++) {
-          //                                                                 //         if (renTalModels[0].imglogo!.trim() == '') {
-          //                                                                 //           // newValuePDFimg.add(
-          //                                                                 //           //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
-          //                                                                 //         } else {
-          //                                                                 //           newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
-          //                                                                 //         }
-          //                                                                 //       }
+        //                                                                 //       for (int index = 0;
+        //                                                                 //           index < 1;
+        //                                                                 //           index++) {
+        //                                                                 //         if (renTalModels[0].imglogo!.trim() == '') {
+        //                                                                 //           // newValuePDFimg.add(
+        //                                                                 //           //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
+        //                                                                 //         } else {
+        //                                                                 //           newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
+        //                                                                 //         }
+        //                                                                 //       }
 
-          //                                                                 //       _showMyDialog_SAVE2(newValuePDFimg);
-          //                                                                 //     },
-          //                                                                 //     child:
-          //                                                                 //         const Icon(
-          //                                                                 //       Icons.download,
-          //                                                                 //       color:
-          //                                                                 //           Colors.white,
-          //                                                                 //       size:
-          //                                                                 //           22,
-          //                                                                 //     ),
-          //                                                                 //   ),
-          //                                                                 // )
-          //                                                               ],
-          //                                                             ),
-          //                                                           )
-          //                                                         : (Text_searchBar_main1
-          //                                                                 .text
-          //                                                                 .isNotEmpty)
-          //                                                             ? const Expanded(
-          //                                                                 flex:
-          //                                                                     1,
-          //                                                                 child:
-          //                                                                     Text(
-          //                                                                   '...',
-          //                                                                   textAlign:
-          //                                                                       TextAlign.center,
-          //                                                                   style:
-          //                                                                       TextStyle(
-          //                                                                     color: Colors.green,
-          //                                                                     // fontWeight:
-          //                                                                     //     FontWeight.bold,
-          //                                                                     fontFamily: Font_.Fonts_T,
-          //                                                                   ),
-          //                                                                 ))
-          //                                                             : Padding(
-          //                                                                 padding: const EdgeInsets.fromLTRB(
-          //                                                                     8,
-          //                                                                     0,
-          //                                                                     4,
-          //                                                                     0),
-          //                                                                 child:
-          //                                                                     Container(
-          //                                                                   decoration:
-          //                                                                       BoxDecoration(
-          //                                                                     color: Colors.white,
-          //                                                                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8), bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
-          //                                                                     border: Border.all(color: Colors.grey, width: 1),
-          //                                                                   ),
-          //                                                                   padding:
-          //                                                                       const EdgeInsets.all(2.0),
-          //                                                                   width:
-          //                                                                       100,
-          //                                                                   child:
-          //                                                                       InkWell(
-          //                                                                     onTap: () async {
-          //                                                                       setState(() {
-          //                                                                         invoice_select_delete.clear();
-          //                                                                         invoice_select.clear();
-          //                                                                       });
-          //                                                                       // print(InvoiceModels
-          //                                                                       //     .length);
-          //                                                                       for (int index = 0; index < InvoiceModels.length; index++) {
-          //                                                                         if (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') {
-          //                                                                         } else {
-          //                                                                           setState(() {
-          //                                                                             invoice_select.add('${InvoiceModels[index].docno}');
-          //                                                                           });
-          //                                                                         }
-          //                                                                       }
-          //                                                                     },
-          //                                                                     child: Text(
-          //                                                                       'All: ${(endIndex / limit)}/${(limitedList_InvoiceModels_.length / limit).ceil()} [✔]',
-          //                                                                       textAlign: TextAlign.center,
-          //                                                                       style: const TextStyle(
-          //                                                                         color: Colors.green,
-          //                                                                         // fontWeight:
-          //                                                                         //     FontWeight.bold,
-          //                                                                         fontFamily: Font_.Fonts_T,
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                 ),
-          //                                                               ),
-          //                                                     Expanded(
-          //                                                       flex: 12,
-          //                                                       child: Row(
-          //                                                         mainAxisAlignment:
-          //                                                             MainAxisAlignment
-          //                                                                 .start,
-          //                                                         children: ac4_1
-          //                                                             .where((item) => item["st"] == '1') // Filter items
-          //                                                             .toList() // Convert to a list
-          //                                                             .asMap()
-          //                                                             .entries
-          //                                                             .map((entry) {
-          //                                                           int index =
-          //                                                               entry
-          //                                                                   .key; // Get the index
-          //                                                           var item = entry
-          //                                                               .value; // Get the item
+        //                                                                 //       _showMyDialog_SAVE2(newValuePDFimg);
+        //                                                                 //     },
+        //                                                                 //     child:
+        //                                                                 //         const Icon(
+        //                                                                 //       Icons.download,
+        //                                                                 //       color:
+        //                                                                 //           Colors.white,
+        //                                                                 //       size:
+        //                                                                 //           22,
+        //                                                                 //     ),
+        //                                                                 //   ),
+        //                                                                 // )
+        //                                                               ],
+        //                                                             ),
+        //                                                           )
+        //                                                         : (Text_searchBar_main1
+        //                                                                 .text
+        //                                                                 .isNotEmpty)
+        //                                                             ? const Expanded(
+        //                                                                 flex:
+        //                                                                     1,
+        //                                                                 child:
+        //                                                                     Text(
+        //                                                                   '...',
+        //                                                                   textAlign:
+        //                                                                       TextAlign.center,
+        //                                                                   style:
+        //                                                                       TextStyle(
+        //                                                                     color: Colors.green,
+        //                                                                     // fontWeight:
+        //                                                                     //     FontWeight.bold,
+        //                                                                     fontFamily: Font_.Fonts_T,
+        //                                                                   ),
+        //                                                                 ))
+        //                                                             : Padding(
+        //                                                                 padding: const EdgeInsets.fromLTRB(
+        //                                                                     8,
+        //                                                                     0,
+        //                                                                     4,
+        //                                                                     0),
+        //                                                                 child:
+        //                                                                     Container(
+        //                                                                   decoration:
+        //                                                                       BoxDecoration(
+        //                                                                     color: Colors.white,
+        //                                                                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(8), bottomLeft: Radius.circular(8), bottomRight: Radius.circular(8)),
+        //                                                                     border: Border.all(color: Colors.grey, width: 1),
+        //                                                                   ),
+        //                                                                   padding:
+        //                                                                       const EdgeInsets.all(2.0),
+        //                                                                   width:
+        //                                                                       100,
+        //                                                                   child:
+        //                                                                       InkWell(
+        //                                                                     onTap: () async {
+        //                                                                       setState(() {
+        //                                                                         invoice_select_delete.clear();
+        //                                                                         invoice_select.clear();
+        //                                                                       });
+        //                                                                       // print(InvoiceModels
+        //                                                                       //     .length);
+        //                                                                       for (int index = 0; index < InvoiceModels.length; index++) {
+        //                                                                         if (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') {
+        //                                                                         } else {
+        //                                                                           setState(() {
+        //                                                                             invoice_select.add('${InvoiceModels[index].docno}');
+        //                                                                           });
+        //                                                                         }
+        //                                                                       }
+        //                                                                     },
+        //                                                                     child: Text(
+        //                                                                       'All: ${(endIndex / limit)}/${(limitedList_InvoiceModels_.length / limit).ceil()} [✔]',
+        //                                                                       textAlign: TextAlign.center,
+        //                                                                       style: const TextStyle(
+        //                                                                         color: Colors.green,
+        //                                                                         // fontWeight:
+        //                                                                         //     FontWeight.bold,
+        //                                                                         fontFamily: Font_.Fonts_T,
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                 ),
+        //                                                               ),
+        //                                                     Expanded(
+        //                                                       flex: 12,
+        //                                                       child: Row(
+        //                                                         mainAxisAlignment:
+        //                                                             MainAxisAlignment
+        //                                                                 .start,
+        //                                                         children: ac4_1
+        //                                                             .where((item) => item["st"] == '1') // Filter items
+        //                                                             .toList() // Convert to a list
+        //                                                             .asMap()
+        //                                                             .entries
+        //                                                             .map((entry) {
+        //                                                           int index =
+        //                                                               entry
+        //                                                                   .key; // Get the index
+        //                                                           var item = entry
+        //                                                               .value; // Get the item
 
-          //                                                           return Expanded(
-          //                                                             flex: 1,
-          //                                                             child:
-          //                                                                 Padding(
-          //                                                               padding:
-          //                                                                   EdgeInsets.all(0.0),
-          //                                                               child: Translate
-          //                                                                   .TranslateAndSetText(
-          //                                                                 item["pn"] ??
-          //                                                                     "", // Use "pn" or an empty string if null
-          //                                                                 AccountScreen_Color
-          //                                                                     .Colors_Text1_,
-          //                                                                 (item["ser"] == '2' || item["ser"] == '3' || item["ser"] == '8' || item["ser"] == '12' || item["ser"] == '13' || item["ser"] == '14')
-          //                                                                     ? TextAlign.center
-          //                                                                     : (item["ser"] == '9' || item["ser"] == '10' || item["ser"] == '11')
-          //                                                                         ? TextAlign.right
-          //                                                                         : TextAlign.start,
-          //                                                                 FontWeight
-          //                                                                     .bold,
-          //                                                                 FontWeight_
-          //                                                                     .Fonts_T,
-          //                                                                 14,
-          //                                                                 1,
-          //                                                               ),
-          //                                                             ),
-          //                                                           );
-          //                                                         }).toList(),
-          //                                                       ),
-          //                                                     ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'เลขสัญญา',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .start,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 2,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'เลขที่ใบแจ้งหนี้',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .start,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // // Expanded(
-          //                                                     // //   flex: 1,
-          //                                                     // //   child: Text(
-          //                                                     // //     'สถานะ',
-          //                                                     // //     textAlign: TextAlign.start,
-          //                                                     // //     style: TextStyle(
-          //                                                     // //       color: ManageScreen_Color
-          //                                                     // //           .Colors_Text1_,
-          //                                                     // //       fontWeight: FontWeight.bold,
-          //                                                     // //       fontFamily: FontWeight_.Fonts_T,
-          //                                                     // //     ),
-          //                                                     // //   ),
-          //                                                     // // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'ออกใบแจ้งหนี้',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .start,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       12,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'กำหนดชำระ',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .start,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       12,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 2,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'ชื่อร้านค้า',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .start,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // // Expanded(
-          //                                                     // //   flex: 2,
-          //                                                     // //   child: Text(
-          //                                                     // //     'รอบการเช่า',
-          //                                                     // //     textAlign: TextAlign.start,
-          //                                                     // //     style: TextStyle(
-          //                                                     // //       color: ManageScreen_Color
-          //                                                     // //           .Colors_Text1_,
-          //                                                     // //       fontWeight: FontWeight.bold,
-          //                                                     // //       fontFamily: FontWeight_.Fonts_T,
-          //                                                     // //     ),
-          //                                                     // //   ),
-          //                                                     // // ),
-          //                                                     // // Expanded(
-          //                                                     // //   flex: 1,
-          //                                                     // //   child: Translate.TranslateAndSetText(
-          //                                                     // //       'โซน',
-          //                                                     // //       AccountScreen_Color
-          //                                                     // //           .Colors_Text1_,
-          //                                                     // //       TextAlign
-          //                                                     // //           .start,
-          //                                                     // //       FontWeight
-          //                                                     // //           .bold,
-          //                                                     // //       FontWeight_
-          //                                                     // //           .Fonts_T,
-          //                                                     // //       14,
-          //                                                     // //       1),
-          //                                                     // // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'รหัสพื้นที่',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .start,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'ช่องทางชำระ',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .center,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // // for (int index = 0;
-          //                                                     // //     index < expModels.length;
-          //                                                     // //     index++)
-          //                                                     // //   Expanded(
-          //                                                     // //     flex: 2,
-          //                                                     // //     child: Text(
-          //                                                     // //       '${expModels[index].expname}',
-          //                                                     // //       textAlign: TextAlign.end,
-          //                                                     // //       style: TextStyle(
-          //                                                     // //         color: ManageScreen_Color
-          //                                                     // //             .Colors_Text1_,
-          //                                                     // //         fontWeight: FontWeight.bold,
-          //                                                     // //         fontFamily:
-          //                                                     // //             FontWeight_.Fonts_T,
-          //                                                     // //       ),
-          //                                                     // //     ),
-          //                                                     // //   ),
-          //                                                     // // Expanded(
-          //                                                     // //   flex: 2,
-          //                                                     // //   child: Text(
-          //                                                     // //     'ภาษีมูลค่าเพิ่ม',
-          //                                                     // //     textAlign: TextAlign.end,
-          //                                                     // //     style: TextStyle(
-          //                                                     // //       color: ManageScreen_Color
-          //                                                     // //           .Colors_Text1_,
-          //                                                     // //       fontWeight: FontWeight.bold,
-          //                                                     // //       fontFamily: FontWeight_.Fonts_T,
-          //                                                     // //     ),
-          //                                                     // //   ),
-          //                                                     // // ),
-          //                                                     // // Expanded(
-          //                                                     // //   flex: 2,
-          //                                                     // //   child: Text(
-          //                                                     // //     'ภาษีหัก ณ ที่จ่าย',
-          //                                                     // //     textAlign: TextAlign.end,
-          //                                                     // //     style: TextStyle(
-          //                                                     // //       color: ManageScreen_Color
-          //                                                     // //           .Colors_Text1_,
-          //                                                     // //       fontWeight: FontWeight.bold,
-          //                                                     // //       fontFamily: FontWeight_.Fonts_T,
-          //                                                     // //     ),
-          //                                                     // //   ),
-          //                                                     // // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'ส่วนลด',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .end,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'ยอดรวม',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .end,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
-          //                                                     // Expanded(
-          //                                                     //   flex: 1,
-          //                                                     //   child: Translate.TranslateAndSetText(
-          //                                                     //       'ยอดสุทธิ',
-          //                                                     //       AccountScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       TextAlign
-          //                                                     //           .center,
-          //                                                     //       FontWeight
-          //                                                     //           .bold,
-          //                                                     //       FontWeight_
-          //                                                     //           .Fonts_T,
-          //                                                     //       14,
-          //                                                     //       1),
-          //                                                     // ),
+        //                                                           return Expanded(
+        //                                                             flex: 1,
+        //                                                             child:
+        //                                                                 Padding(
+        //                                                               padding:
+        //                                                                   EdgeInsets.all(0.0),
+        //                                                               child: Translate
+        //                                                                   .TranslateAndSetText(
+        //                                                                 item["pn"] ??
+        //                                                                     "", // Use "pn" or an empty string if null
+        //                                                                 AccountScreen_Color
+        //                                                                     .Colors_Text1_,
+        //                                                                 (item["ser"] == '2' || item["ser"] == '3' || item["ser"] == '8' || item["ser"] == '12' || item["ser"] == '13' || item["ser"] == '14')
+        //                                                                     ? TextAlign.center
+        //                                                                     : (item["ser"] == '9' || item["ser"] == '10' || item["ser"] == '11')
+        //                                                                         ? TextAlign.right
+        //                                                                         : TextAlign.start,
+        //                                                                 FontWeight
+        //                                                                     .bold,
+        //                                                                 FontWeight_
+        //                                                                     .Fonts_T,
+        //                                                                 14,
+        //                                                                 1,
+        //                                                               ),
+        //                                                             ),
+        //                                                           );
+        //                                                         }).toList(),
+        //                                                       ),
+        //                                                     ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'เลขสัญญา',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .start,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 2,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'เลขที่ใบแจ้งหนี้',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .start,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // // Expanded(
+        //                                                     // //   flex: 1,
+        //                                                     // //   child: Text(
+        //                                                     // //     'สถานะ',
+        //                                                     // //     textAlign: TextAlign.start,
+        //                                                     // //     style: TextStyle(
+        //                                                     // //       color: ManageScreen_Color
+        //                                                     // //           .Colors_Text1_,
+        //                                                     // //       fontWeight: FontWeight.bold,
+        //                                                     // //       fontFamily: FontWeight_.Fonts_T,
+        //                                                     // //     ),
+        //                                                     // //   ),
+        //                                                     // // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'ออกใบแจ้งหนี้',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .start,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       12,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'กำหนดชำระ',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .start,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       12,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 2,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'ชื่อร้านค้า',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .start,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // // Expanded(
+        //                                                     // //   flex: 2,
+        //                                                     // //   child: Text(
+        //                                                     // //     'รอบการเช่า',
+        //                                                     // //     textAlign: TextAlign.start,
+        //                                                     // //     style: TextStyle(
+        //                                                     // //       color: ManageScreen_Color
+        //                                                     // //           .Colors_Text1_,
+        //                                                     // //       fontWeight: FontWeight.bold,
+        //                                                     // //       fontFamily: FontWeight_.Fonts_T,
+        //                                                     // //     ),
+        //                                                     // //   ),
+        //                                                     // // ),
+        //                                                     // // Expanded(
+        //                                                     // //   flex: 1,
+        //                                                     // //   child: Translate.TranslateAndSetText(
+        //                                                     // //       'โซน',
+        //                                                     // //       AccountScreen_Color
+        //                                                     // //           .Colors_Text1_,
+        //                                                     // //       TextAlign
+        //                                                     // //           .start,
+        //                                                     // //       FontWeight
+        //                                                     // //           .bold,
+        //                                                     // //       FontWeight_
+        //                                                     // //           .Fonts_T,
+        //                                                     // //       14,
+        //                                                     // //       1),
+        //                                                     // // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'รหัสพื้นที่',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .start,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'ช่องทางชำระ',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .center,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // // for (int index = 0;
+        //                                                     // //     index < expModels.length;
+        //                                                     // //     index++)
+        //                                                     // //   Expanded(
+        //                                                     // //     flex: 2,
+        //                                                     // //     child: Text(
+        //                                                     // //       '${expModels[index].expname}',
+        //                                                     // //       textAlign: TextAlign.end,
+        //                                                     // //       style: TextStyle(
+        //                                                     // //         color: ManageScreen_Color
+        //                                                     // //             .Colors_Text1_,
+        //                                                     // //         fontWeight: FontWeight.bold,
+        //                                                     // //         fontFamily:
+        //                                                     // //             FontWeight_.Fonts_T,
+        //                                                     // //       ),
+        //                                                     // //     ),
+        //                                                     // //   ),
+        //                                                     // // Expanded(
+        //                                                     // //   flex: 2,
+        //                                                     // //   child: Text(
+        //                                                     // //     'ภาษีมูลค่าเพิ่ม',
+        //                                                     // //     textAlign: TextAlign.end,
+        //                                                     // //     style: TextStyle(
+        //                                                     // //       color: ManageScreen_Color
+        //                                                     // //           .Colors_Text1_,
+        //                                                     // //       fontWeight: FontWeight.bold,
+        //                                                     // //       fontFamily: FontWeight_.Fonts_T,
+        //                                                     // //     ),
+        //                                                     // //   ),
+        //                                                     // // ),
+        //                                                     // // Expanded(
+        //                                                     // //   flex: 2,
+        //                                                     // //   child: Text(
+        //                                                     // //     'ภาษีหัก ณ ที่จ่าย',
+        //                                                     // //     textAlign: TextAlign.end,
+        //                                                     // //     style: TextStyle(
+        //                                                     // //       color: ManageScreen_Color
+        //                                                     // //           .Colors_Text1_,
+        //                                                     // //       fontWeight: FontWeight.bold,
+        //                                                     // //       fontFamily: FontWeight_.Fonts_T,
+        //                                                     // //     ),
+        //                                                     // //   ),
+        //                                                     // // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'ส่วนลด',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .end,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'ยอดรวม',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .end,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
+        //                                                     // Expanded(
+        //                                                     //   flex: 1,
+        //                                                     //   child: Translate.TranslateAndSetText(
+        //                                                     //       'ยอดสุทธิ',
+        //                                                     //       AccountScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       TextAlign
+        //                                                     //           .center,
+        //                                                     //       FontWeight
+        //                                                     //           .bold,
+        //                                                     //       FontWeight_
+        //                                                     //           .Fonts_T,
+        //                                                     //       14,
+        //                                                     //       1),
+        //                                                     // ),
 
-          //                                                     // Expanded(
-          //                                                     //   flex: 2,
-          //                                                     //   child: Text(
-          //                                                     //     'หมายเหตุ',
-          //                                                     //     textAlign: TextAlign.end,
-          //                                                     //     style: TextStyle(
-          //                                                     //       color: ManageScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       fontWeight: FontWeight.bold,
-          //                                                     //       fontFamily: FontWeight_.Fonts_T,
-          //                                                     //     ),
-          //                                                     //   ),
-          //                                                     // ),
-          //                                                     // if (rtser.toString() == '50' ||
-          //                                                     //     rtser.toString() ==
-          //                                                     //         '72' ||
-          //                                                     //     rtser.toString() ==
-          //                                                     //         '92' ||
-          //                                                     //     rtser.toString() ==
-          //                                                     //         '93' ||
-          //                                                     //     rtser.toString() ==
-          //                                                     //         '94')
-          //                                                     // Container(
-          //                                                     //   width: 70,
-          //                                                     //   child: Text(
-          //                                                     //     '',
-          //                                                     //     textAlign:
-          //                                                     //         TextAlign
-          //                                                     //             .end,
-          //                                                     //     style:
-          //                                                     //         TextStyle(
-          //                                                     //       color: ManageScreen_Color
-          //                                                     //           .Colors_Text1_,
-          //                                                     //       fontWeight:
-          //                                                     //           FontWeight
-          //                                                     //               .bold,
-          //                                                     //       fontFamily:
-          //                                                     //           FontWeight_
-          //                                                     //               .Fonts_T,
-          //                                                     //     ),
-          //                                                     //   ),
-          //                                                     // ),
-          //                                                     Expanded(
-          //                                                       flex: 3,
-          //                                                       child: (invoice_select_delete.length !=
-          //                                                                   0 &&
-          //                                                               InvoiceModels.length !=
-          //                                                                   0)
-          //                                                           ? Padding(
-          //                                                               padding:
-          //                                                                   const EdgeInsets.all(8.0),
-          //                                                               child:
-          //                                                                   Row(
-          //                                                                 mainAxisAlignment:
-          //                                                                     MainAxisAlignment.end,
-          //                                                                 children: [
-          //                                                                   Container(
-          //                                                                     decoration: BoxDecoration(
-          //                                                                       color: Colors.white,
-          //                                                                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(0), bottomLeft: Radius.circular(8), bottomRight: Radius.circular(0)),
-          //                                                                       border: Border.all(color: Colors.grey, width: 1),
-          //                                                                     ),
-          //                                                                     padding: const EdgeInsets.all(2),
-          //                                                                     child: Text(
-          //                                                                       'delete ( ${invoice_select_delete.length} )',
-          //                                                                       textAlign: TextAlign.center,
-          //                                                                       style: TextStyle(
-          //                                                                         fontSize: 13,
-          //                                                                         color: Colors.grey[800],
-          //                                                                         fontWeight: FontWeight.bold,
-          //                                                                         fontFamily: FontWeight_.Fonts_T,
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                   PopupMenuButton(
-          //                                                                     child: Container(
-          //                                                                       decoration: BoxDecoration(
-          //                                                                         color: Colors.red,
-          //                                                                         borderRadius: const BorderRadius.only(topLeft: Radius.circular(0), topRight: Radius.circular(8), bottomLeft: Radius.circular(0), bottomRight: Radius.circular(8)),
-          //                                                                         border: Border.all(color: Colors.grey, width: 1),
-          //                                                                       ),
-          //                                                                       padding: const EdgeInsets.all(2),
-          //                                                                       child: const Icon(
-          //                                                                         Icons.delete,
-          //                                                                         color: Colors.white,
-          //                                                                         size: 22,
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                     itemBuilder: (BuildContext context) => [
-          //                                                                       PopupMenuItem(
-          //                                                                           onTap: () async {
-          //                                                                             Future.delayed(const Duration(microseconds: 800), () async {
-          //                                                                               _showMyDialog_delete();
-          //                                                                             });
-          //                                                                           },
-          //                                                                           child: Container(
-          //                                                                             decoration: const BoxDecoration(
-          //                                                                               // color: Colors.green[100]!
-          //                                                                               //     .withOpacity(0.5),
-          //                                                                               border: Border(
-          //                                                                                 bottom: BorderSide(
-          //                                                                                   color: Colors.black12,
-          //                                                                                   width: 1,
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                             padding: const EdgeInsets.all(2.0),
-          //                                                                             // width: 200,
-          //                                                                             child: Row(
-          //                                                                               children: [
-          //                                                                                 Translate.TranslateAndSetText('ยืนยันทั้งหมด( ${invoice_select_delete.length} ) : ', AccountScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-          //                                                                                 // Text(
-          //                                                                                 //   'ยืนยันทั้งหมด( ${invoice_select_delete.length} ) : ',
-          //                                                                                 //   style: const TextStyle(
-          //                                                                                 //     fontSize: 14,
-          //                                                                                 //     color: ReportScreen_Color.Colors_Text2_,
-          //                                                                                 //     // fontWeight: FontWeight.bold,
-          //                                                                                 //     fontFamily: Font_.Fonts_T,
-          //                                                                                 //   ),
-          //                                                                                 // ),
-          //                                                                                 const Icon(Icons.check_box, color: AppBarColors.ABar_Colors)
-          //                                                                               ],
-          //                                                                             ),
-          //                                                                           )),
-          //                                                                       PopupMenuItem(
-          //                                                                           onTap: () async {
-          //                                                                             setState(() {
-          //                                                                               invoice_select_delete.clear();
-          //                                                                             });
-          //                                                                           },
-          //                                                                           child: Container(
-          //                                                                             decoration: const BoxDecoration(
-          //                                                                               // color: Colors.green[100]!
-          //                                                                               //     .withOpacity(0.5),
-          //                                                                               border: Border(
-          //                                                                                 bottom: BorderSide(
-          //                                                                                   color: Colors.black12,
-          //                                                                                   width: 1,
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                             padding: const EdgeInsets.all(2.0),
-          //                                                                             // width: 200,
-          //                                                                             child: Row(
-          //                                                                               children: [
-          //                                                                                 Translate.TranslateAndSetText('ยกเลิกทั้งหมด( ${invoice_select_delete.length} ) : ', AccountScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-          //                                                                                 // Text(
-          //                                                                                 //   'ยกเลิกทั้งหมด( ${invoice_select_delete.length} ) : ',
-          //                                                                                 //   style: const TextStyle(
-          //                                                                                 //     fontSize: 14,
-          //                                                                                 //     color: ReportScreen_Color.Colors_Text2_,
-          //                                                                                 //     // fontWeight: FontWeight.bold,
-          //                                                                                 //     fontFamily: Font_.Fonts_T,
-          //                                                                                 //   ),
-          //                                                                                 // ),
-          //                                                                                 const Icon(
-          //                                                                                   Icons.check_box_outline_blank,
-          //                                                                                   color: Colors.red,
-          //                                                                                   size: 22,
-          //                                                                                 ),
-          //                                                                               ],
-          //                                                                             ),
-          //                                                                           )),
-          //                                                                     ],
-          //                                                                   ),
-          //                                                                   // Container(
-          //                                                                   //   decoration:
-          //                                                                   //       BoxDecoration(
-          //                                                                   //     color:
-          //                                                                   //         Colors.red,
-          //                                                                   //     borderRadius: const BorderRadius.only(
-          //                                                                   //         topLeft: Radius.circular(0),
-          //                                                                   //         topRight: Radius.circular(8),
-          //                                                                   //         bottomLeft: Radius.circular(0),
-          //                                                                   //         bottomRight: Radius.circular(8)),
-          //                                                                   //     border:
-          //                                                                   //         Border.all(color: Colors.grey, width: 1),
-          //                                                                   //   ),
-          //                                                                   //   padding:
-          //                                                                   //       const EdgeInsets.all(2),
-          //                                                                   //   child:
-          //                                                                   //       InkWell(
-          //                                                                   //     onTap:
-          //                                                                   //         () async {
-          //                                                                   //       _showMyDialog_delete();
-          //                                                                   //     },
-          //                                                                   //     child:
-          //                                                                   //         const Icon(
-          //                                                                   //       Icons.delete,
-          //                                                                   //       color: Colors.white,
-          //                                                                   //       size: 22,
-          //                                                                   //     ),
-          //                                                                   //   ),
-          //                                                                   // )
-          //                                                                 ],
-          //                                                               ),
-          //                                                             )
-          //                                                           : Container(
-          //                                                               width:
-          //                                                                   50,
-          //                                                               child:
-          //                                                                   const Text(
-          //                                                                 '',
-          //                                                                 textAlign:
-          //                                                                     TextAlign.start,
-          //                                                                 style:
-          //                                                                     TextStyle(
-          //                                                                   color:
-          //                                                                       ManageScreen_Color.Colors_Text1_,
-          //                                                                   fontWeight:
-          //                                                                       FontWeight.bold,
-          //                                                                   fontFamily:
-          //                                                                       FontWeight_.Fonts_T,
-          //                                                                 ),
-          //                                                               ),
-          //                                                             ),
-          //                                                     ),
-          //                                                   ],
-          //                                                 ),
-          //                                               ],
-          //                                             ),
-          //                                           ),
-          //                                           Container(
-          //                                               height: MediaQuery.of(
-          //                                                           context)
-          //                                                       .size
-          //                                                       .height *
-          //                                                   0.63,
-          //                                               width: Responsive
-          //                                                       .isDesktop(
-          //                                                           context)
-          //                                                   ?
-          //                                                   // (rtser.toString() == '50' ||
-          //                                                   //         rtser.toString() ==
-          //                                                   //             '72' ||
-          //                                                   //         rtser.toString() ==
-          //                                                   //             '92' ||
-          //                                                   //         rtser.toString() ==
-          //                                                   //             '93' ||
-          //                                                   //         rtser.toString() ==
-          //                                                   //             '94')
-          //                                                   //     ? MediaQuery.of(context)
-          //                                                   //             .size
-          //                                                   //             .width *
-          //                                                   //         0.9
-          //                                                   //     :
-          //                                                   calculatedWidth
-          //                                                   : 1200,
-          //                                               decoration:
-          //                                                   const BoxDecoration(
-          //                                                 color:
-          //                                                     AppbackgroundColor
-          //                                                         .Sub_Abg_Colors,
-          //                                                 borderRadius: BorderRadius.only(
-          //                                                     topLeft: Radius
-          //                                                         .circular(0),
-          //                                                     topRight: Radius
-          //                                                         .circular(0),
-          //                                                     bottomLeft: Radius
-          //                                                         .circular(0),
-          //                                                     bottomRight:
-          //                                                         Radius
-          //                                                             .circular(
-          //                                                                 0)),
-          //                                                 // border: Border.all(color: Colors.grey, width: 1),
-          //                                               ),
-          //                                               child: InvoiceModels
-          //                                                       .isEmpty
-          //                                                   ? SizedBox(
-          //                                                       child: Column(
-          //                                                         mainAxisAlignment:
-          //                                                             MainAxisAlignment
-          //                                                                 .center,
-          //                                                         children: [
-          //                                                           const CircularProgressIndicator(),
-          //                                                           StreamBuilder(
-          //                                                             stream: Stream.periodic(
-          //                                                                 const Duration(
-          //                                                                     milliseconds:
-          //                                                                         25),
-          //                                                                 (i) =>
-          //                                                                     i),
-          //                                                             builder:
-          //                                                                 (context,
-          //                                                                     snapshot) {
-          //                                                               if (!snapshot
-          //                                                                   .hasData)
-          //                                                                 return const Text(
-          //                                                                     '');
-          //                                                               double
-          //                                                                   elapsed =
-          //                                                                   double.parse(snapshot.data.toString()) *
-          //                                                                       0.05;
-          //                                                               return Padding(
-          //                                                                 padding:
-          //                                                                     const EdgeInsets.all(8.0),
-          //                                                                 child: (elapsed > 8.00)
-          //                                                                     ? Translate.TranslateAndSetText('ไม่พบข้อมูล', AccountScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1)
+        //                                                     // Expanded(
+        //                                                     //   flex: 2,
+        //                                                     //   child: Text(
+        //                                                     //     'หมายเหตุ',
+        //                                                     //     textAlign: TextAlign.end,
+        //                                                     //     style: TextStyle(
+        //                                                     //       color: ManageScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       fontWeight: FontWeight.bold,
+        //                                                     //       fontFamily: FontWeight_.Fonts_T,
+        //                                                     //     ),
+        //                                                     //   ),
+        //                                                     // ),
+        //                                                     // if (rtser.toString() == '50' ||
+        //                                                     //     rtser.toString() ==
+        //                                                     //         '72' ||
+        //                                                     //     rtser.toString() ==
+        //                                                     //         '92' ||
+        //                                                     //     rtser.toString() ==
+        //                                                     //         '93' ||
+        //                                                     //     rtser.toString() ==
+        //                                                     //         '94')
+        //                                                     // Container(
+        //                                                     //   width: 70,
+        //                                                     //   child: Text(
+        //                                                     //     '',
+        //                                                     //     textAlign:
+        //                                                     //         TextAlign
+        //                                                     //             .end,
+        //                                                     //     style:
+        //                                                     //         TextStyle(
+        //                                                     //       color: ManageScreen_Color
+        //                                                     //           .Colors_Text1_,
+        //                                                     //       fontWeight:
+        //                                                     //           FontWeight
+        //                                                     //               .bold,
+        //                                                     //       fontFamily:
+        //                                                     //           FontWeight_
+        //                                                     //               .Fonts_T,
+        //                                                     //     ),
+        //                                                     //   ),
+        //                                                     // ),
+        //                                                     Expanded(
+        //                                                       flex: 3,
+        //                                                       child: (invoice_select_delete.length !=
+        //                                                                   0 &&
+        //                                                               InvoiceModels.length !=
+        //                                                                   0)
+        //                                                           ? Padding(
+        //                                                               padding:
+        //                                                                   const EdgeInsets.all(8.0),
+        //                                                               child:
+        //                                                                   Row(
+        //                                                                 mainAxisAlignment:
+        //                                                                     MainAxisAlignment.end,
+        //                                                                 children: [
+        //                                                                   Container(
+        //                                                                     decoration: BoxDecoration(
+        //                                                                       color: Colors.white,
+        //                                                                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(8), topRight: Radius.circular(0), bottomLeft: Radius.circular(8), bottomRight: Radius.circular(0)),
+        //                                                                       border: Border.all(color: Colors.grey, width: 1),
+        //                                                                     ),
+        //                                                                     padding: const EdgeInsets.all(2),
+        //                                                                     child: Text(
+        //                                                                       'delete ( ${invoice_select_delete.length} )',
+        //                                                                       textAlign: TextAlign.center,
+        //                                                                       style: TextStyle(
+        //                                                                         fontSize: 13,
+        //                                                                         color: Colors.grey[800],
+        //                                                                         fontWeight: FontWeight.bold,
+        //                                                                         fontFamily: FontWeight_.Fonts_T,
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                   PopupMenuButton(
+        //                                                                     child: Container(
+        //                                                                       decoration: BoxDecoration(
+        //                                                                         color: Colors.red,
+        //                                                                         borderRadius: const BorderRadius.only(topLeft: Radius.circular(0), topRight: Radius.circular(8), bottomLeft: Radius.circular(0), bottomRight: Radius.circular(8)),
+        //                                                                         border: Border.all(color: Colors.grey, width: 1),
+        //                                                                       ),
+        //                                                                       padding: const EdgeInsets.all(2),
+        //                                                                       child: const Icon(
+        //                                                                         Icons.delete,
+        //                                                                         color: Colors.white,
+        //                                                                         size: 22,
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                     itemBuilder: (BuildContext context) => [
+        //                                                                       PopupMenuItem(
+        //                                                                           onTap: () async {
+        //                                                                             Future.delayed(const Duration(microseconds: 800), () async {
+        //                                                                               _showMyDialog_delete();
+        //                                                                             });
+        //                                                                           },
+        //                                                                           child: Container(
+        //                                                                             decoration: const BoxDecoration(
+        //                                                                               // color: Colors.green[100]!
+        //                                                                               //     .withOpacity(0.5),
+        //                                                                               border: Border(
+        //                                                                                 bottom: BorderSide(
+        //                                                                                   color: Colors.black12,
+        //                                                                                   width: 1,
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                             padding: const EdgeInsets.all(2.0),
+        //                                                                             // width: 200,
+        //                                                                             child: Row(
+        //                                                                               children: [
+        //                                                                                 Translate.TranslateAndSetText('ยืนยันทั้งหมด( ${invoice_select_delete.length} ) : ', AccountScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+        //                                                                                 // Text(
+        //                                                                                 //   'ยืนยันทั้งหมด( ${invoice_select_delete.length} ) : ',
+        //                                                                                 //   style: const TextStyle(
+        //                                                                                 //     fontSize: 14,
+        //                                                                                 //     color: ReportScreen_Color.Colors_Text2_,
+        //                                                                                 //     // fontWeight: FontWeight.bold,
+        //                                                                                 //     fontFamily: Font_.Fonts_T,
+        //                                                                                 //   ),
+        //                                                                                 // ),
+        //                                                                                 const Icon(Icons.check_box, color: AppBarColors.ABar_Colors)
+        //                                                                               ],
+        //                                                                             ),
+        //                                                                           )),
+        //                                                                       PopupMenuItem(
+        //                                                                           onTap: () async {
+        //                                                                             setState(() {
+        //                                                                               invoice_select_delete.clear();
+        //                                                                             });
+        //                                                                           },
+        //                                                                           child: Container(
+        //                                                                             decoration: const BoxDecoration(
+        //                                                                               // color: Colors.green[100]!
+        //                                                                               //     .withOpacity(0.5),
+        //                                                                               border: Border(
+        //                                                                                 bottom: BorderSide(
+        //                                                                                   color: Colors.black12,
+        //                                                                                   width: 1,
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                             padding: const EdgeInsets.all(2.0),
+        //                                                                             // width: 200,
+        //                                                                             child: Row(
+        //                                                                               children: [
+        //                                                                                 Translate.TranslateAndSetText('ยกเลิกทั้งหมด( ${invoice_select_delete.length} ) : ', AccountScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+        //                                                                                 // Text(
+        //                                                                                 //   'ยกเลิกทั้งหมด( ${invoice_select_delete.length} ) : ',
+        //                                                                                 //   style: const TextStyle(
+        //                                                                                 //     fontSize: 14,
+        //                                                                                 //     color: ReportScreen_Color.Colors_Text2_,
+        //                                                                                 //     // fontWeight: FontWeight.bold,
+        //                                                                                 //     fontFamily: Font_.Fonts_T,
+        //                                                                                 //   ),
+        //                                                                                 // ),
+        //                                                                                 const Icon(
+        //                                                                                   Icons.check_box_outline_blank,
+        //                                                                                   color: Colors.red,
+        //                                                                                   size: 22,
+        //                                                                                 ),
+        //                                                                               ],
+        //                                                                             ),
+        //                                                                           )),
+        //                                                                     ],
+        //                                                                   ),
+        //                                                                   // Container(
+        //                                                                   //   decoration:
+        //                                                                   //       BoxDecoration(
+        //                                                                   //     color:
+        //                                                                   //         Colors.red,
+        //                                                                   //     borderRadius: const BorderRadius.only(
+        //                                                                   //         topLeft: Radius.circular(0),
+        //                                                                   //         topRight: Radius.circular(8),
+        //                                                                   //         bottomLeft: Radius.circular(0),
+        //                                                                   //         bottomRight: Radius.circular(8)),
+        //                                                                   //     border:
+        //                                                                   //         Border.all(color: Colors.grey, width: 1),
+        //                                                                   //   ),
+        //                                                                   //   padding:
+        //                                                                   //       const EdgeInsets.all(2),
+        //                                                                   //   child:
+        //                                                                   //       InkWell(
+        //                                                                   //     onTap:
+        //                                                                   //         () async {
+        //                                                                   //       _showMyDialog_delete();
+        //                                                                   //     },
+        //                                                                   //     child:
+        //                                                                   //         const Icon(
+        //                                                                   //       Icons.delete,
+        //                                                                   //       color: Colors.white,
+        //                                                                   //       size: 22,
+        //                                                                   //     ),
+        //                                                                   //   ),
+        //                                                                   // )
+        //                                                                 ],
+        //                                                               ),
+        //                                                             )
+        //                                                           : Container(
+        //                                                               width:
+        //                                                                   50,
+        //                                                               child:
+        //                                                                   const Text(
+        //                                                                 '',
+        //                                                                 textAlign:
+        //                                                                     TextAlign.start,
+        //                                                                 style:
+        //                                                                     TextStyle(
+        //                                                                   color:
+        //                                                                       ManageScreen_Color.Colors_Text1_,
+        //                                                                   fontWeight:
+        //                                                                       FontWeight.bold,
+        //                                                                   fontFamily:
+        //                                                                       FontWeight_.Fonts_T,
+        //                                                                 ),
+        //                                                               ),
+        //                                                             ),
+        //                                                     ),
+        //                                                   ],
+        //                                                 ),
+        //                                               ],
+        //                                             ),
+        //                                           ),
+        //                                           Container(
+        //                                               height: MediaQuery.of(
+        //                                                           context)
+        //                                                       .size
+        //                                                       .height *
+        //                                                   0.63,
+        //                                               width: Responsive
+        //                                                       .isDesktop(
+        //                                                           context)
+        //                                                   ?
+        //                                                   // (rtser.toString() == '50' ||
+        //                                                   //         rtser.toString() ==
+        //                                                   //             '72' ||
+        //                                                   //         rtser.toString() ==
+        //                                                   //             '92' ||
+        //                                                   //         rtser.toString() ==
+        //                                                   //             '93' ||
+        //                                                   //         rtser.toString() ==
+        //                                                   //             '94')
+        //                                                   //     ? MediaQuery.of(context)
+        //                                                   //             .size
+        //                                                   //             .width *
+        //                                                   //         0.9
+        //                                                   //     :
+        //                                                   calculatedWidth
+        //                                                   : 1200,
+        //                                               decoration:
+        //                                                   const BoxDecoration(
+        //                                                 color:
+        //                                                     AppbackgroundColor
+        //                                                         .Sub_Abg_Colors,
+        //                                                 borderRadius: BorderRadius.only(
+        //                                                     topLeft: Radius
+        //                                                         .circular(0),
+        //                                                     topRight: Radius
+        //                                                         .circular(0),
+        //                                                     bottomLeft: Radius
+        //                                                         .circular(0),
+        //                                                     bottomRight:
+        //                                                         Radius
+        //                                                             .circular(
+        //                                                                 0)),
+        //                                                 // border: Border.all(color: Colors.grey, width: 1),
+        //                                               ),
+        //                                               child: InvoiceModels
+        //                                                       .isEmpty
+        //                                                   ? SizedBox(
+        //                                                       child: Column(
+        //                                                         mainAxisAlignment:
+        //                                                             MainAxisAlignment
+        //                                                                 .center,
+        //                                                         children: [
+        //                                                           const CircularProgressIndicator(),
+        //                                                           StreamBuilder(
+        //                                                             stream: Stream.periodic(
+        //                                                                 const Duration(
+        //                                                                     milliseconds:
+        //                                                                         25),
+        //                                                                 (i) =>
+        //                                                                     i),
+        //                                                             builder:
+        //                                                                 (context,
+        //                                                                     snapshot) {
+        //                                                               if (!snapshot
+        //                                                                   .hasData)
+        //                                                                 return const Text(
+        //                                                                     '');
+        //                                                               double
+        //                                                                   elapsed =
+        //                                                                   double.parse(snapshot.data.toString()) *
+        //                                                                       0.05;
+        //                                                               return Padding(
+        //                                                                 padding:
+        //                                                                     const EdgeInsets.all(8.0),
+        //                                                                 child: (elapsed > 8.00)
+        //                                                                     ? Translate.TranslateAndSetText('ไม่พบข้อมูล', AccountScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1)
 
-          //                                                                     //  Text(
-          //                                                                     //     'ไม่พบข้อมูล',
-          //                                                                     //     style: TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T
-          //                                                                     //         //fontSize: 10.0
-          //                                                                     //         ),
-          //                                                                     //   )
-          //                                                                     : Text(
-          //                                                                         'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
-          //                                                                         // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-          //                                                                         style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T
-          //                                                                             //fontSize: 10.0
-          //                                                                             ),
-          //                                                                       ),
-          //                                                               );
-          //                                                             },
-          //                                                           ),
-          //                                                         ],
-          //                                                       ),
-          //                                                     )
-          //                                                   : ListView.builder(
-          //                                                       controller:
-          //                                                           _scrollController2,
-          //                                                       // itemExtent: 50,
-          //                                                       physics:
-          //                                                           const AlwaysScrollableScrollPhysics(),
-          //                                                       shrinkWrap:
-          //                                                           true,
-          //                                                       itemCount:
-          //                                                           InvoiceModels
-          //                                                               .length,
-          //                                                       itemBuilder:
-          //                                                           (BuildContext
-          //                                                                   context,
-          //                                                               int index) {
-          //                                                         return Column(
-          //                                                           children: [
-          //                                                             Material(
-          //                                                               // color:
-          //                                                               //(InvoiceModels[index].btype ==
-          //                                                               //             null ||
-          //                                                               //         InvoiceModels[index].btype.toString() ==
-          //                                                               //             '')
-          //                                                               //     ? Colors
-          //                                                               //         .red[
-          //                                                               //             50]!
-          //                                                               //         .withOpacity(
-          //                                                               //             0.4)
-          //                                                               //     : AppbackgroundColor
-          //                                                               //         .Sub_Abg_Colors,
-          //                                                               child:
-          //                                                                   Container(
-          //                                                                 decoration:
-          //                                                                     BoxDecoration(
-          //                                                                   color: (InvoiceModels[index].date == null)
-          //                                                                       ? null
-          //                                                                       : (DateTime.parse('${InvoiceModels[index].date} 23:59:58').isBefore(DateTime.now()))
-          //                                                                           ? Colors.deepOrange[200]!.withOpacity(0.3)
-          //                                                                           : null,
-          //                                                                   border:
-          //                                                                       Border(
-          //                                                                     bottom: BorderSide(
-          //                                                                       color: Colors.black12,
-          //                                                                       width: 1,
-          //                                                                     ),
-          //                                                                   ),
-          //                                                                 ),
-          //                                                                 child: ListTile(
-          //                                                                     // onTap:
-          //                                                                     //     () async {
-          //                                                                     //   setState(() {
-          //                                                                     //     tappedIndex_ =
-          //                                                                     //         '${index}';
-          //                                                                     //   });
-          //                                                                     // },
-          //                                                                     title: Container(
-          //                                                                   child:
-          //                                                                       Row(
-          //                                                                     mainAxisAlignment: MainAxisAlignment.center,
-          //                                                                     children: [
-          //                                                                       (InvoiceModels[index].date == null || DateTime.parse('${InvoiceModels[index].date} 23:59:58').isBefore(DateTime.now()))
-          //                                                                           ? SizedBox(
-          //                                                                               width: 25,
-          //                                                                               child: Padding(
-          //                                                                                 padding: const EdgeInsets.all(0.0),
-          //                                                                                 child: PopupMenuButton(
-          //                                                                                   onOpened: () {},
-          //                                                                                   child: Center(
-          //                                                                                     child: InkWell(
-          //                                                                                       child: Center(
-          //                                                                                           child: Icon(
-          //                                                                                         Icons.lock_clock,
-          //                                                                                         size: 18,
-          //                                                                                         color: Colors.blueGrey,
-          //                                                                                       )),
-          //                                                                                     ),
-          //                                                                                   ),
-          //                                                                                   itemBuilder: (BuildContext context) => [
-          //                                                                                     PopupMenuItem(
-          //                                                                                         child: Text(
-          //                                                                                       (InvoiceModels[index].date == null) ? '' : '${InvoiceModels[index].docno} : เลยวันครบกำหนดชำระมาแล้ว ${DateTime.now().difference(DateTime.parse(InvoiceModels[index].date!)).inDays} วัน',
-          //                                                                                       overflow: TextOverflow.ellipsis,
-          //                                                                                       maxLines: 2,
-          //                                                                                       style: const TextStyle(
-          //                                                                                           color: PeopleChaoScreen_Color.Colors_Text2_,
-          //                                                                                           //fontWeight: FontWeight.bold,
-          //                                                                                           fontFamily: Font_.Fonts_T),
-          //                                                                                     )),
-          //                                                                                   ],
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             )
-          //                                                                           : SizedBox(width: 25),
-          //                                                                       (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '')
-          //                                                                           ? Padding(
-          //                                                                               padding: const EdgeInsets.all(4.0),
-          //                                                                               child: Container(
-          //                                                                                 width: 60,
-          //                                                                               ),
-          //                                                                             )
-          //                                                                           : Padding(
-          //                                                                               padding: const EdgeInsets.all(4.0),
-          //                                                                               child: InkWell(
-          //                                                                                 onTap: () async {
-          //                                                                                   setState(() {
-          //                                                                                     invoice_select_delete.clear();
-          //                                                                                   });
-          //                                                                                   if (invoice_select.length >= 50) {
-          //                                                                                     setState(() {
-          //                                                                                       invoice_select.remove('${InvoiceModels[index].docno}');
-          //                                                                                     });
-          //                                                                                     Dialog_notimax(50);
-          //                                                                                   } else {
-          //                                                                                     setState(() {
-          //                                                                                       if (invoice_select.contains('${InvoiceModels[index].docno}') == true) {
-          //                                                                                         invoice_select.remove('${InvoiceModels[index].docno}');
-          //                                                                                       } else {
-          //                                                                                         invoice_select.add('${InvoiceModels[index].docno}');
-          //                                                                                       }
-          //                                                                                     });
-          //                                                                                   }
-          //                                                                                 },
-          //                                                                                 child: Container(
-          //                                                                                   decoration: BoxDecoration(
-          //                                                                                     color: Colors.blueGrey[50]!.withOpacity(0.5),
-          //                                                                                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-          //                                                                                     border: Border.all(color: Colors.grey, width: 1),
-          //                                                                                   ),
-          //                                                                                   width: 60,
-          //                                                                                   padding: const EdgeInsets.all(2),
-          //                                                                                   child: Row(
-          //                                                                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                                                                                     children: [
-          //                                                                                       (invoice_select.contains('${InvoiceModels[index].docno}') == true) ? const Icon(Icons.check_box, color: AppBarColors.ABar_Colors) : const Icon(Icons.check_box_outline_blank, color: Colors.grey),
+        //                                                                     //  Text(
+        //                                                                     //     'ไม่พบข้อมูล',
+        //                                                                     //     style: TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T
+        //                                                                     //         //fontSize: 10.0
+        //                                                                     //         ),
+        //                                                                     //   )
+        //                                                                     : Text(
+        //                                                                         'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
+        //                                                                         // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+        //                                                                         style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T
+        //                                                                             //fontSize: 10.0
+        //                                                                             ),
+        //                                                                       ),
+        //                                                               );
+        //                                                             },
+        //                                                           ),
+        //                                                         ],
+        //                                                       ),
+        //                                                     )
+        //                                                   : ListView.builder(
+        //                                                       controller:
+        //                                                           _scrollController2,
+        //                                                       // itemExtent: 50,
+        //                                                       physics:
+        //                                                           const AlwaysScrollableScrollPhysics(),
+        //                                                       shrinkWrap:
+        //                                                           true,
+        //                                                       itemCount:
+        //                                                           InvoiceModels
+        //                                                               .length,
+        //                                                       itemBuilder:
+        //                                                           (BuildContext
+        //                                                                   context,
+        //                                                               int index) {
+        //                                                         return Column(
+        //                                                           children: [
+        //                                                             Material(
+        //                                                               // color:
+        //                                                               //(InvoiceModels[index].btype ==
+        //                                                               //             null ||
+        //                                                               //         InvoiceModels[index].btype.toString() ==
+        //                                                               //             '')
+        //                                                               //     ? Colors
+        //                                                               //         .red[
+        //                                                               //             50]!
+        //                                                               //         .withOpacity(
+        //                                                               //             0.4)
+        //                                                               //     : AppbackgroundColor
+        //                                                               //         .Sub_Abg_Colors,
+        //                                                               child:
+        //                                                                   Container(
+        //                                                                 decoration:
+        //                                                                     BoxDecoration(
+        //                                                                   color: (InvoiceModels[index].date == null)
+        //                                                                       ? null
+        //                                                                       : (DateTime.parse('${InvoiceModels[index].date} 23:59:58').isBefore(DateTime.now()))
+        //                                                                           ? Colors.deepOrange[200]!.withOpacity(0.3)
+        //                                                                           : null,
+        //                                                                   border:
+        //                                                                       Border(
+        //                                                                     bottom: BorderSide(
+        //                                                                       color: Colors.black12,
+        //                                                                       width: 1,
+        //                                                                     ),
+        //                                                                   ),
+        //                                                                 ),
+        //                                                                 child: ListTile(
+        //                                                                     // onTap:
+        //                                                                     //     () async {
+        //                                                                     //   setState(() {
+        //                                                                     //     tappedIndex_ =
+        //                                                                     //         '${index}';
+        //                                                                     //   });
+        //                                                                     // },
+        //                                                                     title: Container(
+        //                                                                   child:
+        //                                                                       Row(
+        //                                                                     mainAxisAlignment: MainAxisAlignment.center,
+        //                                                                     children: [
+        //                                                                       (InvoiceModels[index].date == null || DateTime.parse('${InvoiceModels[index].date} 23:59:58').isBefore(DateTime.now()))
+        //                                                                           ? SizedBox(
+        //                                                                               width: 25,
+        //                                                                               child: Padding(
+        //                                                                                 padding: const EdgeInsets.all(0.0),
+        //                                                                                 child: PopupMenuButton(
+        //                                                                                   onOpened: () {},
+        //                                                                                   child: Center(
+        //                                                                                     child: InkWell(
+        //                                                                                       child: Center(
+        //                                                                                           child: Icon(
+        //                                                                                         Icons.lock_clock,
+        //                                                                                         size: 18,
+        //                                                                                         color: Colors.blueGrey,
+        //                                                                                       )),
+        //                                                                                     ),
+        //                                                                                   ),
+        //                                                                                   itemBuilder: (BuildContext context) => [
+        //                                                                                     PopupMenuItem(
+        //                                                                                         child: Text(
+        //                                                                                       (InvoiceModels[index].date == null) ? '' : '${InvoiceModels[index].docno} : เลยวันครบกำหนดชำระมาแล้ว ${DateTime.now().difference(DateTime.parse(InvoiceModels[index].date!)).inDays} วัน',
+        //                                                                                       overflow: TextOverflow.ellipsis,
+        //                                                                                       maxLines: 2,
+        //                                                                                       style: const TextStyle(
+        //                                                                                           color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                                                                                           //fontWeight: FontWeight.bold,
+        //                                                                                           fontFamily: Font_.Fonts_T),
+        //                                                                                     )),
+        //                                                                                   ],
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             )
+        //                                                                           : SizedBox(width: 25),
+        //                                                                       (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '')
+        //                                                                           ? Padding(
+        //                                                                               padding: const EdgeInsets.all(4.0),
+        //                                                                               child: Container(
+        //                                                                                 width: 60,
+        //                                                                               ),
+        //                                                                             )
+        //                                                                           : Padding(
+        //                                                                               padding: const EdgeInsets.all(4.0),
+        //                                                                               child: InkWell(
+        //                                                                                 onTap: () async {
+        //                                                                                   setState(() {
+        //                                                                                     invoice_select_delete.clear();
+        //                                                                                   });
+        //                                                                                   if (invoice_select.length >= 50) {
+        //                                                                                     setState(() {
+        //                                                                                       invoice_select.remove('${InvoiceModels[index].docno}');
+        //                                                                                     });
+        //                                                                                     Dialog_notimax(50);
+        //                                                                                   } else {
+        //                                                                                     setState(() {
+        //                                                                                       if (invoice_select.contains('${InvoiceModels[index].docno}') == true) {
+        //                                                                                         invoice_select.remove('${InvoiceModels[index].docno}');
+        //                                                                                       } else {
+        //                                                                                         invoice_select.add('${InvoiceModels[index].docno}');
+        //                                                                                       }
+        //                                                                                     });
+        //                                                                                   }
+        //                                                                                 },
+        //                                                                                 child: Container(
+        //                                                                                   decoration: BoxDecoration(
+        //                                                                                     color: Colors.blueGrey[50]!.withOpacity(0.5),
+        //                                                                                     borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        //                                                                                     border: Border.all(color: Colors.grey, width: 1),
+        //                                                                                   ),
+        //                                                                                   width: 60,
+        //                                                                                   padding: const EdgeInsets.all(2),
+        //                                                                                   child: Row(
+        //                                                                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //                                                                                     children: [
+        //                                                                                       (invoice_select.contains('${InvoiceModels[index].docno}') == true) ? const Icon(Icons.check_box, color: AppBarColors.ABar_Colors) : const Icon(Icons.check_box_outline_blank, color: Colors.grey),
 
-          //                                                                                       ///invoice_loade_Success
-          //                                                                                       Icon(
-          //                                                                                         Icons.download,
-          //                                                                                         color: (invoice_loade_Success.contains('${InvoiceModels[index].docno}') == true) ? Colors.orange[600] : null,
-          //                                                                                       )
-          //                                                                                     ],
-          //                                                                                   ),
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                       if (where_ac4_1("0") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: Row(children: [
-          //                                                                             Copy_Text(context, '${InvoiceModels[index].cid}'),
-          //                                                                              Expanded(
-          //                                                                               child: Padding(
-          //                                                                                 padding: const EdgeInsets.all(0.0),
-          //                                                                                 child: Tooltip(
-          //                                                                                   richMessage: TextSpan(
-          //                                                                                     text: '${InvoiceModels[index].cid}',
-          //                                                                                     style: const TextStyle(
-          //                                                                                       color: HomeScreen_Color.Colors_Text1_,
-          //                                                                                       fontWeight: FontWeight.bold,
-          //                                                                                       fontFamily: FontWeight_.Fonts_T,
-          //                                                                                       //fontSize: 10.0
-          //                                                                                     ),
-          //                                                                                   ),
-          //                                                                                   decoration: BoxDecoration(
-          //                                                                                     borderRadius: BorderRadius.circular(5),
-          //                                                                                     color: Colors.grey[200],
-          //                                                                                   ),
-          //                                                                                   child: AutoSizeText(
-          //                                                                                     minFontSize: 10,
-          //                                                                                     maxFontSize: 14,
-          //                                                                                     maxLines: 1,
-          //                                                                                     '${InvoiceModels[index].cid}',
-          //                                                                                     textAlign: TextAlign.start,
-          //                                                                                     overflow: TextOverflow.ellipsis,
-          //                                                                                     style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
-          //                                                                                   ),
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             ),
-          //                                                                           ]),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("1") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: Row(
-          //                                                                             mainAxisAlignment: MainAxisAlignment.start,
-          //                                                                             children: [
-          //                                                                               Copy_Text(context, '${InvoiceModels[index].docno}'),
-          //                                                                               // InkWell(
-          //                                                                               //     onTap: () async {
-          //                                                                               //       Future.delayed(const Duration(milliseconds: 500), () {
-          //                                                                               //         Clipboard.setData(ClipboardData(text: '${InvoiceModels[index].docno}'));
-          //                                                                               //         ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                               //           SnackBar(
-          //                                                                               //               content: Row(
-          //                                                                               //             children: [
-          //                                                                               //               Icon(
-          //                                                                               //                 Icons.content_copy,
-          //                                                                               //                 color: Colors.white,
-          //                                                                               //               ),
-          //                                                                               //               SizedBox(width: 8.0),
-          //                                                                               //               Text('Copy :${InvoiceModels[index].docno}', style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T)),
-          //                                                                               //             ],
-          //                                                                               //           )),
-          //                                                                               //         );
-          //                                                                               //       });
-          //                                                                               //     },
-          //                                                                               //     child: Icon(
-          //                                                                               //       Icons.content_copy,
-          //                                                                               //       size: 18,
-          //                                                                               //     )),
-          //                                                                               Expanded(
-          //                                                                                 child: AutoSizeText(
-          //                                                                                   minFontSize: 10,
-          //                                                                                   maxFontSize: 16,
-          //                                                                                   maxLines: 1,
-          //                                                                                   (InvoiceModels[index].docno == null) ? '' : '${InvoiceModels[index].docno}',
-          //                                                                                   textAlign: TextAlign.start,
-          //                                                                                   overflow: TextOverflow.ellipsis,
-          //                                                                                   style: TextStyle(
-          //                                                                                     color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                                     // fontWeight: FontWeight.bold,
-          //                                                                                     fontFamily: Font_.Fonts_T,
-          //                                                                                     //fontSize: 10.0
-          //                                                                                   ),
-          //                                                                                 ),
-          //                                                                               ),
-          //                                                                             ],
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       // Expanded(
-          //                                                                       //   flex: 2,
-          //                                                                       //   child: AutoSizeText(
-          //                                                                       //     minFontSize: 10,
-          //                                                                       //     maxFontSize: 25,
-          //                                                                       //     maxLines: 1,
-          //                                                                       //     '${InvoiceModels[index].docno}',
-          //                                                                       //     textAlign: TextAlign.start,
-          //                                                                       //     overflow: TextOverflow.ellipsis,
-          //                                                                       //     style: TextStyle(
-          //                                                                       //       color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                       //       // fontWeight: FontWeight.bold,
-          //                                                                       //       fontFamily: Font_.Fonts_T,
-          //                                                                       //       //fontSize: 10.0
-          //                                                                       //     ),
-          //                                                                       //   ),
-          //                                                                       // ),
-          //                                                                       if (where_ac4_1("2") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].daterec == null || InvoiceModels[index].daterec.toString() == '') ? '' : '${DateFormat('dd-MM').format(DateTime.parse('${InvoiceModels[index].daterec}'))}-${DateTime.parse('${InvoiceModels[index].daterec}').year + 0}',
-          //                                                                             //'${DateFormat('dd-MM-yyyy').format(DateTime.parse('${InvoiceModels[index].daterec}'))}',
-          //                                                                             textAlign: TextAlign.center,
+        //                                                                                       ///invoice_loade_Success
+        //                                                                                       Icon(
+        //                                                                                         Icons.download,
+        //                                                                                         color: (invoice_loade_Success.contains('${InvoiceModels[index].docno}') == true) ? Colors.orange[600] : null,
+        //                                                                                       )
+        //                                                                                     ],
+        //                                                                                   ),
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                       if (where_ac4_1("0") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: Row(children: [
+        //                                                                             Copy_Text(context, '${InvoiceModels[index].cid}'),
+        //                                                                              Expanded(
+        //                                                                               child: Padding(
+        //                                                                                 padding: const EdgeInsets.all(0.0),
+        //                                                                                 child: Tooltip(
+        //                                                                                   richMessage: TextSpan(
+        //                                                                                     text: '${InvoiceModels[index].cid}',
+        //                                                                                     style: const TextStyle(
+        //                                                                                       color: HomeScreen_Color.Colors_Text1_,
+        //                                                                                       fontWeight: FontWeight.bold,
+        //                                                                                       fontFamily: FontWeight_.Fonts_T,
+        //                                                                                       //fontSize: 10.0
+        //                                                                                     ),
+        //                                                                                   ),
+        //                                                                                   decoration: BoxDecoration(
+        //                                                                                     borderRadius: BorderRadius.circular(5),
+        //                                                                                     color: Colors.grey[200],
+        //                                                                                   ),
+        //                                                                                   child: AutoSizeText(
+        //                                                                                     minFontSize: 10,
+        //                                                                                     maxFontSize: 14,
+        //                                                                                     maxLines: 1,
+        //                                                                                     '${InvoiceModels[index].cid}',
+        //                                                                                     textAlign: TextAlign.start,
+        //                                                                                     overflow: TextOverflow.ellipsis,
+        //                                                                                     style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+        //                                                                                   ),
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             ),
+        //                                                                           ]),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("1") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: Row(
+        //                                                                             mainAxisAlignment: MainAxisAlignment.start,
+        //                                                                             children: [
+        //                                                                               Copy_Text(context, '${InvoiceModels[index].docno}'),
+        //                                                                               // InkWell(
+        //                                                                               //     onTap: () async {
+        //                                                                               //       Future.delayed(const Duration(milliseconds: 500), () {
+        //                                                                               //         Clipboard.setData(ClipboardData(text: '${InvoiceModels[index].docno}'));
+        //                                                                               //         ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                               //           SnackBar(
+        //                                                                               //               content: Row(
+        //                                                                               //             children: [
+        //                                                                               //               Icon(
+        //                                                                               //                 Icons.content_copy,
+        //                                                                               //                 color: Colors.white,
+        //                                                                               //               ),
+        //                                                                               //               SizedBox(width: 8.0),
+        //                                                                               //               Text('Copy :${InvoiceModels[index].docno}', style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T)),
+        //                                                                               //             ],
+        //                                                                               //           )),
+        //                                                                               //         );
+        //                                                                               //       });
+        //                                                                               //     },
+        //                                                                               //     child: Icon(
+        //                                                                               //       Icons.content_copy,
+        //                                                                               //       size: 18,
+        //                                                                               //     )),
+        //                                                                               Expanded(
+        //                                                                                 child: AutoSizeText(
+        //                                                                                   minFontSize: 10,
+        //                                                                                   maxFontSize: 16,
+        //                                                                                   maxLines: 1,
+        //                                                                                   (InvoiceModels[index].docno == null) ? '' : '${InvoiceModels[index].docno}',
+        //                                                                                   textAlign: TextAlign.start,
+        //                                                                                   overflow: TextOverflow.ellipsis,
+        //                                                                                   style: TextStyle(
+        //                                                                                     color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                                     // fontWeight: FontWeight.bold,
+        //                                                                                     fontFamily: Font_.Fonts_T,
+        //                                                                                     //fontSize: 10.0
+        //                                                                                   ),
+        //                                                                                 ),
+        //                                                                               ),
+        //                                                                             ],
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       // Expanded(
+        //                                                                       //   flex: 2,
+        //                                                                       //   child: AutoSizeText(
+        //                                                                       //     minFontSize: 10,
+        //                                                                       //     maxFontSize: 25,
+        //                                                                       //     maxLines: 1,
+        //                                                                       //     '${InvoiceModels[index].docno}',
+        //                                                                       //     textAlign: TextAlign.start,
+        //                                                                       //     overflow: TextOverflow.ellipsis,
+        //                                                                       //     style: TextStyle(
+        //                                                                       //       color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                       //       // fontWeight: FontWeight.bold,
+        //                                                                       //       fontFamily: Font_.Fonts_T,
+        //                                                                       //       //fontSize: 10.0
+        //                                                                       //     ),
+        //                                                                       //   ),
+        //                                                                       // ),
+        //                                                                       if (where_ac4_1("2") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].daterec == null || InvoiceModels[index].daterec.toString() == '') ? '' : '${DateFormat('dd-MM').format(DateTime.parse('${InvoiceModels[index].daterec}'))}-${DateTime.parse('${InvoiceModels[index].daterec}').year + 0}',
+        //                                                                             //'${DateFormat('dd-MM-yyyy').format(DateTime.parse('${InvoiceModels[index].daterec}'))}',
+        //                                                                             textAlign: TextAlign.center,
 
-          //                                                                             overflow: TextOverflow.ellipsis,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight: FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                               // fontSize: 12.0
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("3") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].date == null || InvoiceModels[index].date.toString() == '') ? '' : '${DateFormat('dd-MM').format(DateTime.parse('${InvoiceModels[index].date}'))}-${DateTime.parse('${InvoiceModels[index].date}').year + 0}',
-          //                                                                             //'${DateFormat('dd-MM-yyyy').format(DateTime.parse('${InvoiceModels[index].daterec}'))}',
-          //                                                                             textAlign: TextAlign.center,
+        //                                                                             overflow: TextOverflow.ellipsis,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight: FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                               // fontSize: 12.0
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("3") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].date == null || InvoiceModels[index].date.toString() == '') ? '' : '${DateFormat('dd-MM').format(DateTime.parse('${InvoiceModels[index].date}'))}-${DateTime.parse('${InvoiceModels[index].date}').year + 0}',
+        //                                                                             //'${DateFormat('dd-MM-yyyy').format(DateTime.parse('${InvoiceModels[index].daterec}'))}',
+        //                                                                             textAlign: TextAlign.center,
 
-          //                                                                             overflow: TextOverflow.ellipsis,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight: FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                               // fontSize: 12.0
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("4") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].scname == null) ? '' : '${InvoiceModels[index].scname}',
-          //                                                                             // '${transMeterModels[index].ovalue}',
-          //                                                                             textAlign: TextAlign.start,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight: FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                               //fontSize: 12.0
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("5") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1, (InvoiceModels[index].cname == null) ? '' : '${InvoiceModels[index].cname}',
-          //                                                                             // '${transMeterModels[index].ovalue}',
-          //                                                                             textAlign: TextAlign.start,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight: FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                               //fontSize: 12.0
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       // Expanded(
-          //                                                                       //   flex: 1,
-          //                                                                       //   child: AutoSizeText(
-          //                                                                       //     minFontSize: 10,
-          //                                                                       //     maxFontSize: 25,
-          //                                                                       //     maxLines: 1,
-          //                                                                       //     '${InvoiceModels[index].zn}',
-          //                                                                       //     //'${transMeterModels[index].qty}',
-          //                                                                       //     textAlign: TextAlign.start,
-          //                                                                       //     style: TextStyle(
-          //                                                                       //       color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                       //       // fontWeight:
-          //                                                                       //       //     FontWeight.bold,
-          //                                                                       //       fontFamily: Font_.Fonts_T,
-          //                                                                       //     ),
-          //                                                                       //   ),
-          //                                                                       // ),
-          //                                                                       if (where_ac4_1("6") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].zn == null) ? '' : '${InvoiceModels[index].zn}',
-          //                                                                             //'${transMeterModels[index].qty}',
-          //                                                                             textAlign: TextAlign.start,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("7") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].ln == null) ? '' : '${InvoiceModels[index].ln}',
-          //                                                                             //'${transMeterModels[index].qty}',
-          //                                                                             textAlign: TextAlign.start,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("8") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '')
-          //                                                                               ? Container(
-          //                                                                                   width: 40,
-          //                                                                                   height: 30,
-          //                                                                                   color: Colors.red[100],
-          //                                                                                 )
-          //                                                                               : AutoSizeText(
-          //                                                                                   minFontSize: 10,
-          //                                                                                   maxFontSize: 16,
-          //                                                                                   maxLines: 1,
-          //                                                                                   InvoiceModels[index].btype == null ? '' : '${InvoiceModels[index].btype}',
-          //                                                                                   //'${transMeterModels[index].qty}',
-          //                                                                                   textAlign: TextAlign.center,
-          //                                                                                   style: const TextStyle(
-          //                                                                                     color: ManageScreen_Color.Colors_Text2_,
-          //                                                                                     // fontWeight:
-          //                                                                                     //     FontWeight.bold,
-          //                                                                                     fontFamily: Font_.Fonts_T,
-          //                                                                                   ),
-          //                                                                                 ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("9") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].amt_dis == null || InvoiceModels[index].amt_dis.toString() == '') ? '0.00' : '${nFormat.format(double.parse(InvoiceModels[index].amt_dis.toString()))}',
-          //                                                                             // '${nFormat.format(double.parse(InvoiceModels[index].total_bill.toString()) - double.parse(InvoiceModels[index].total_dis.toString()))}',
-          //                                                                             textAlign: TextAlign.end,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("10") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             //'${InvoiceModels[index].total_bill}',
-          //                                                                             (InvoiceModels[index].total_bill == null || InvoiceModels[index].total_bill.toString() == '') ? '0.00' : '${nFormat.format(double.parse(InvoiceModels[index].total_bill.toString()))}',
-          //                                                                             textAlign: TextAlign.end,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("11") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].total_dis == null || InvoiceModels[index].total_dis.toString() == '') ? '0.00' : '${nFormat.format(double.parse(InvoiceModels[index].total_dis.toString()))}',
-          //                                                                             textAlign: TextAlign.end,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("12") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].refapi == null || InvoiceModels[index].refapi.toString() == '') ? '' : '${InvoiceModels[index].refapi}',
-          //                                                                             textAlign: TextAlign.end,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].refapi == null || InvoiceModels[index].refapi.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("13") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].ref1 == null || InvoiceModels[index].ref1.toString() == '') ? '' : '${InvoiceModels[index].ref1}',
-          //                                                                             textAlign: TextAlign.end,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].ref1 == null || InvoiceModels[index].ref1.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       if (where_ac4_1("14") == false)
-          //                                                                         Expanded(
-          //                                                                           flex: 1,
-          //                                                                           child: AutoSizeText(
-          //                                                                             minFontSize: 10,
-          //                                                                             maxFontSize: 16,
-          //                                                                             maxLines: 1,
-          //                                                                             (InvoiceModels[index].ref2 == null || InvoiceModels[index].ref2.toString() == '') ? '' : '${InvoiceModels[index].ref2}',
-          //                                                                             textAlign: TextAlign.end,
-          //                                                                             style: TextStyle(
-          //                                                                               color: (InvoiceModels[index].ref2 == null || InvoiceModels[index].ref2.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
-          //                                                                               // fontWeight:
-          //                                                                               //     FontWeight.bold,
-          //                                                                               fontFamily: Font_.Fonts_T,
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       Padding(
-          //                                                                         padding: const EdgeInsets.all(4.0),
-          //                                                                         child: InkWell(
-          //                                                                           onTap: () async {
-          //                                                                             setState(() {
-          //                                                                               invoice_select.clear();
-          //                                                                             });
-          //                                                                             if (invoice_select_delete.length >= 50) {
-          //                                                                               setState(() {
-          //                                                                                 invoice_select_delete.remove('${InvoiceModels[index].docno}');
-          //                                                                               });
-          //                                                                               Dialog_notimax(50);
-          //                                                                             } else {
-          //                                                                               setState(() {
-          //                                                                                 if (invoice_select_delete.contains('${InvoiceModels[index].docno}') == true) {
-          //                                                                                   invoice_select_delete.remove('${InvoiceModels[index].docno}');
-          //                                                                                 } else {
-          //                                                                                   invoice_select_delete.add('${InvoiceModels[index].docno}');
-          //                                                                                 }
-          //                                                                               });
-          //                                                                             }
-          //                                                                           },
-          //                                                                           child: Container(
-          //                                                                             decoration: BoxDecoration(
-          //                                                                               color: Colors.blueGrey[50]!.withOpacity(0.5),
-          //                                                                               borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-          //                                                                               border: Border.all(color: Colors.grey, width: 1),
-          //                                                                             ),
-          //                                                                             width: 70,
-          //                                                                             padding: const EdgeInsets.all(2),
-          //                                                                             child: Row(
-          //                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //                                                                               children: [
-          //                                                                                 (invoice_select_delete.contains('${InvoiceModels[index].docno}') == true) ? Icon(Icons.check_box, color: Colors.red[300]) : const Icon(Icons.check_box_outline_blank, color: Colors.grey),
+        //                                                                             overflow: TextOverflow.ellipsis,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight: FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                               // fontSize: 12.0
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("4") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].scname == null) ? '' : '${InvoiceModels[index].scname}',
+        //                                                                             // '${transMeterModels[index].ovalue}',
+        //                                                                             textAlign: TextAlign.start,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight: FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                               //fontSize: 12.0
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("5") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1, (InvoiceModels[index].cname == null) ? '' : '${InvoiceModels[index].cname}',
+        //                                                                             // '${transMeterModels[index].ovalue}',
+        //                                                                             textAlign: TextAlign.start,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight: FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                               //fontSize: 12.0
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       // Expanded(
+        //                                                                       //   flex: 1,
+        //                                                                       //   child: AutoSizeText(
+        //                                                                       //     minFontSize: 10,
+        //                                                                       //     maxFontSize: 25,
+        //                                                                       //     maxLines: 1,
+        //                                                                       //     '${InvoiceModels[index].zn}',
+        //                                                                       //     //'${transMeterModels[index].qty}',
+        //                                                                       //     textAlign: TextAlign.start,
+        //                                                                       //     style: TextStyle(
+        //                                                                       //       color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                       //       // fontWeight:
+        //                                                                       //       //     FontWeight.bold,
+        //                                                                       //       fontFamily: Font_.Fonts_T,
+        //                                                                       //     ),
+        //                                                                       //   ),
+        //                                                                       // ),
+        //                                                                       if (where_ac4_1("6") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].zn == null) ? '' : '${InvoiceModels[index].zn}',
+        //                                                                             //'${transMeterModels[index].qty}',
+        //                                                                             textAlign: TextAlign.start,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("7") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].ln == null) ? '' : '${InvoiceModels[index].ln}',
+        //                                                                             //'${transMeterModels[index].qty}',
+        //                                                                             textAlign: TextAlign.start,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("8") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '')
+        //                                                                               ? Container(
+        //                                                                                   width: 40,
+        //                                                                                   height: 30,
+        //                                                                                   color: Colors.red[100],
+        //                                                                                 )
+        //                                                                               : AutoSizeText(
+        //                                                                                   minFontSize: 10,
+        //                                                                                   maxFontSize: 16,
+        //                                                                                   maxLines: 1,
+        //                                                                                   InvoiceModels[index].btype == null ? '' : '${InvoiceModels[index].btype}',
+        //                                                                                   //'${transMeterModels[index].qty}',
+        //                                                                                   textAlign: TextAlign.center,
+        //                                                                                   style: const TextStyle(
+        //                                                                                     color: ManageScreen_Color.Colors_Text2_,
+        //                                                                                     // fontWeight:
+        //                                                                                     //     FontWeight.bold,
+        //                                                                                     fontFamily: Font_.Fonts_T,
+        //                                                                                   ),
+        //                                                                                 ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("9") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].amt_dis == null || InvoiceModels[index].amt_dis.toString() == '') ? '0.00' : '${nFormat.format(double.parse(InvoiceModels[index].amt_dis.toString()))}',
+        //                                                                             // '${nFormat.format(double.parse(InvoiceModels[index].total_bill.toString()) - double.parse(InvoiceModels[index].total_dis.toString()))}',
+        //                                                                             textAlign: TextAlign.end,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("10") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             //'${InvoiceModels[index].total_bill}',
+        //                                                                             (InvoiceModels[index].total_bill == null || InvoiceModels[index].total_bill.toString() == '') ? '0.00' : '${nFormat.format(double.parse(InvoiceModels[index].total_bill.toString()))}',
+        //                                                                             textAlign: TextAlign.end,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("11") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].total_dis == null || InvoiceModels[index].total_dis.toString() == '') ? '0.00' : '${nFormat.format(double.parse(InvoiceModels[index].total_dis.toString()))}',
+        //                                                                             textAlign: TextAlign.end,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].btype == null || InvoiceModels[index].btype.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("12") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].refapi == null || InvoiceModels[index].refapi.toString() == '') ? '' : '${InvoiceModels[index].refapi}',
+        //                                                                             textAlign: TextAlign.end,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].refapi == null || InvoiceModels[index].refapi.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("13") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].ref1 == null || InvoiceModels[index].ref1.toString() == '') ? '' : '${InvoiceModels[index].ref1}',
+        //                                                                             textAlign: TextAlign.end,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].ref1 == null || InvoiceModels[index].ref1.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       if (where_ac4_1("14") == false)
+        //                                                                         Expanded(
+        //                                                                           flex: 1,
+        //                                                                           child: AutoSizeText(
+        //                                                                             minFontSize: 10,
+        //                                                                             maxFontSize: 16,
+        //                                                                             maxLines: 1,
+        //                                                                             (InvoiceModels[index].ref2 == null || InvoiceModels[index].ref2.toString() == '') ? '' : '${InvoiceModels[index].ref2}',
+        //                                                                             textAlign: TextAlign.end,
+        //                                                                             style: TextStyle(
+        //                                                                               color: (InvoiceModels[index].ref2 == null || InvoiceModels[index].ref2.toString() == '') ? Colors.red : ManageScreen_Color.Colors_Text2_,
+        //                                                                               // fontWeight:
+        //                                                                               //     FontWeight.bold,
+        //                                                                               fontFamily: Font_.Fonts_T,
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       Padding(
+        //                                                                         padding: const EdgeInsets.all(4.0),
+        //                                                                         child: InkWell(
+        //                                                                           onTap: () async {
+        //                                                                             setState(() {
+        //                                                                               invoice_select.clear();
+        //                                                                             });
+        //                                                                             if (invoice_select_delete.length >= 50) {
+        //                                                                               setState(() {
+        //                                                                                 invoice_select_delete.remove('${InvoiceModels[index].docno}');
+        //                                                                               });
+        //                                                                               Dialog_notimax(50);
+        //                                                                             } else {
+        //                                                                               setState(() {
+        //                                                                                 if (invoice_select_delete.contains('${InvoiceModels[index].docno}') == true) {
+        //                                                                                   invoice_select_delete.remove('${InvoiceModels[index].docno}');
+        //                                                                                 } else {
+        //                                                                                   invoice_select_delete.add('${InvoiceModels[index].docno}');
+        //                                                                                 }
+        //                                                                               });
+        //                                                                             }
+        //                                                                           },
+        //                                                                           child: Container(
+        //                                                                             decoration: BoxDecoration(
+        //                                                                               color: Colors.blueGrey[50]!.withOpacity(0.5),
+        //                                                                               borderRadius: const BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        //                                                                               border: Border.all(color: Colors.grey, width: 1),
+        //                                                                             ),
+        //                                                                             width: 70,
+        //                                                                             padding: const EdgeInsets.all(2),
+        //                                                                             child: Row(
+        //                                                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        //                                                                               children: [
+        //                                                                                 (invoice_select_delete.contains('${InvoiceModels[index].docno}') == true) ? Icon(Icons.check_box, color: Colors.red[300]) : const Icon(Icons.check_box_outline_blank, color: Colors.grey),
 
-          //                                                                                 ///invoice_loade_Success
-          //                                                                                 Icon(
-          //                                                                                   Icons.delete,
-          //                                                                                   color: (invoice_loade_Success_delete.contains('${InvoiceModels[index].docno}') == true) ? Colors.red[600] : null,
-          //                                                                                 )
-          //                                                                               ],
-          //                                                                             ),
-          //                                                                           ),
-          //                                                                         ),
-          //                                                                       ),
-          //                                                                       Padding(
-          //                                                                         padding: const EdgeInsets.all(4.0),
-          //                                                                         child: InkWell(
-          //                                                                           onTap: () async {
-          //                                                                             setState(() {
-          //                                                                               bneme_check = InvoiceModels[index].ptname;
-          //                                                                               bno_check = InvoiceModels[index].bno;
-          //                                                                               bser_check = InvoiceModels[index].ptser;
-          //                                                                             });
-          //                                                                             red_Trans_selectPay(index).then((value) {
-          //                                                                               _showMyDialog_pay(index);
-          //                                                                             });
-          //                                                                           },
-          //                                                                           child: Container(
-          //                                                                               width: 60,
-          //                                                                               decoration: const BoxDecoration(
-          //                                                                                 color: Colors.green,
-          //                                                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-          //                                                                               ),
-          //                                                                               padding: const EdgeInsets.all(2.0),
-          //                                                                               child: Translate.TranslateAndSetText('อนุมัติ', AccountScreen_Color.Colors_Text1_, TextAlign.center, null, Font_.Fonts_T, 14, 1)
+        //                                                                                 ///invoice_loade_Success
+        //                                                                                 Icon(
+        //                                                                                   Icons.delete,
+        //                                                                                   color: (invoice_loade_Success_delete.contains('${InvoiceModels[index].docno}') == true) ? Colors.red[600] : null,
+        //                                                                                 )
+        //                                                                               ],
+        //                                                                             ),
+        //                                                                           ),
+        //                                                                         ),
+        //                                                                       ),
+        //                                                                       Padding(
+        //                                                                         padding: const EdgeInsets.all(4.0),
+        //                                                                         child: InkWell(
+        //                                                                           onTap: () async {
+        //                                                                             setState(() {
+        //                                                                               bneme_check = InvoiceModels[index].ptname;
+        //                                                                               bno_check = InvoiceModels[index].bno;
+        //                                                                               bser_check = InvoiceModels[index].ptser;
+        //                                                                             });
+        //                                                                             red_Trans_selectPay(index).then((value) {
+        //                                                                               _showMyDialog_pay(index);
+        //                                                                             });
+        //                                                                           },
+        //                                                                           child: Container(
+        //                                                                               width: 60,
+        //                                                                               decoration: const BoxDecoration(
+        //                                                                                 color: Colors.green,
+        //                                                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        //                                                                               ),
+        //                                                                               padding: const EdgeInsets.all(2.0),
+        //                                                                               child: Translate.TranslateAndSetText('อนุมัติ', AccountScreen_Color.Colors_Text1_, TextAlign.center, null, Font_.Fonts_T, 14, 1)
 
-          //                                                                               //  const AutoSizeText(
-          //                                                                               //   minFontSize: 10,
-          //                                                                               //   maxFontSize: 25,
-          //                                                                               //   maxLines: 1,
-          //                                                                               //   'อนุมัติ',
-          //                                                                               //   textAlign: TextAlign.center,
-          //                                                                               //   overflow: TextOverflow.ellipsis,
-          //                                                                               //   style: TextStyle(
-          //                                                                               //       color: PeopleChaoScreen_Color.Colors_Text2_,
-          //                                                                               //       // color: Colors.white,
-          //                                                                               //       //fontWeight: FontWeight.bold,
-          //                                                                               //       fontFamily: Font_.Fonts_T),
-          //                                                                               // ),
-          //                                                                               ),
-          //                                                                         ),
-          //                                                                       ),
-          //                                                                       // if (rtser.toString() == '50' || rtser.toString() == '72' || rtser.toString() == '92' || rtser.toString() == '93' || rtser.toString() == '94')
-          //                                                                       // Expanded(
-          //                                                                       //   flex: 1,
-          //                                                                       //   child: Row(
-          //                                                                       //     mainAxisAlignment: MainAxisAlignment.end,
-          //                                                                       //     children: [
-          //                                                                       //       Padding(
-          //                                                                       //         padding: const EdgeInsets.all(4.0),
-          //                                                                       //         child: InkWell(
-          //                                                                       //           onTap: () async {
-          //                                                                       //             setState(() {
-          //                                                                       //               bneme_check = InvoiceModels[index].ptname;
-          //                                                                       //               bno_check = InvoiceModels[index].bno;
-          //                                                                       //               bser_check = InvoiceModels[index].ptser;
-          //                                                                       //             });
-          //                                                                       //             red_Trans_selectPay(index).then((value) {
-          //                                                                       //               _showMyDialog_pay(index);
-          //                                                                       //             });
-          //                                                                       //           },
-          //                                                                       //           child: Container(
-          //                                                                       //             width: 60,
-          //                                                                       //             decoration: const BoxDecoration(
-          //                                                                       //               color: Colors.green,
-          //                                                                       //               borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-          //                                                                       //             ),
-          //                                                                       //             padding: const EdgeInsets.all(2.0),
-          //                                                                       //             child: const AutoSizeText(
-          //                                                                       //               minFontSize: 10,
-          //                                                                       //               maxFontSize: 25,
-          //                                                                       //               maxLines: 1,
-          //                                                                       //               'อนุมัติ',
-          //                                                                       //               textAlign: TextAlign.center,
-          //                                                                       //               overflow: TextOverflow.ellipsis,
-          //                                                                       //               style: TextStyle(
-          //                                                                       //                    color: PeopleChaoScreen_Color.Colors_Text2_,
-          //                                                                       //                   // color: Colors.white,
-          //                                                                       //                   //fontWeight: FontWeight.bold,
-          //                                                                       //                   fontFamily: Font_.Fonts_T),
-          //                                                                       //             ),
-          //                                                                       //           ),
-          //                                                                       //         ),
-          //                                                                       //       ),
-          //                                                                       //     ],
-          //                                                                       //   ),
-          //                                                                       // ),
-          //                                                                       Padding(
-          //                                                                         padding: const EdgeInsets.all(4.0),
-          //                                                                         child: InkWell(
-          //                                                                           onTap: () async {
-          //                                                                             List newValuePDFimg = [];
-          //                                                                             for (int index = 0; index < 1; index++) {
-          //                                                                               if (renTalModels[0].imglogo!.trim() == '') {
-          //                                                                                 // newValuePDFimg.add(
-          //                                                                                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
-          //                                                                               } else {
-          //                                                                                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
-          //                                                                               }
-          //                                                                             }
-          //                                                                             var ciddoc = InvoiceModels[index].cid;
-          //                                                                             var qutser = '1';
-          //                                                                             var tser = InvoiceModels[index].total_dis;
-          //                                                                             var docno = InvoiceModels[index].docno;
+        //                                                                               //  const AutoSizeText(
+        //                                                                               //   minFontSize: 10,
+        //                                                                               //   maxFontSize: 25,
+        //                                                                               //   maxLines: 1,
+        //                                                                               //   'อนุมัติ',
+        //                                                                               //   textAlign: TextAlign.center,
+        //                                                                               //   overflow: TextOverflow.ellipsis,
+        //                                                                               //   style: TextStyle(
+        //                                                                               //       color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                                                                               //       // color: Colors.white,
+        //                                                                               //       //fontWeight: FontWeight.bold,
+        //                                                                               //       fontFamily: Font_.Fonts_T),
+        //                                                                               // ),
+        //                                                                               ),
+        //                                                                         ),
+        //                                                                       ),
+        //                                                                       // if (rtser.toString() == '50' || rtser.toString() == '72' || rtser.toString() == '92' || rtser.toString() == '93' || rtser.toString() == '94')
+        //                                                                       // Expanded(
+        //                                                                       //   flex: 1,
+        //                                                                       //   child: Row(
+        //                                                                       //     mainAxisAlignment: MainAxisAlignment.end,
+        //                                                                       //     children: [
+        //                                                                       //       Padding(
+        //                                                                       //         padding: const EdgeInsets.all(4.0),
+        //                                                                       //         child: InkWell(
+        //                                                                       //           onTap: () async {
+        //                                                                       //             setState(() {
+        //                                                                       //               bneme_check = InvoiceModels[index].ptname;
+        //                                                                       //               bno_check = InvoiceModels[index].bno;
+        //                                                                       //               bser_check = InvoiceModels[index].ptser;
+        //                                                                       //             });
+        //                                                                       //             red_Trans_selectPay(index).then((value) {
+        //                                                                       //               _showMyDialog_pay(index);
+        //                                                                       //             });
+        //                                                                       //           },
+        //                                                                       //           child: Container(
+        //                                                                       //             width: 60,
+        //                                                                       //             decoration: const BoxDecoration(
+        //                                                                       //               color: Colors.green,
+        //                                                                       //               borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        //                                                                       //             ),
+        //                                                                       //             padding: const EdgeInsets.all(2.0),
+        //                                                                       //             child: const AutoSizeText(
+        //                                                                       //               minFontSize: 10,
+        //                                                                       //               maxFontSize: 25,
+        //                                                                       //               maxLines: 1,
+        //                                                                       //               'อนุมัติ',
+        //                                                                       //               textAlign: TextAlign.center,
+        //                                                                       //               overflow: TextOverflow.ellipsis,
+        //                                                                       //               style: TextStyle(
+        //                                                                       //                    color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                                                                       //                   // color: Colors.white,
+        //                                                                       //                   //fontWeight: FontWeight.bold,
+        //                                                                       //                   fontFamily: Font_.Fonts_T),
+        //                                                                       //             ),
+        //                                                                       //           ),
+        //                                                                       //         ),
+        //                                                                       //       ),
+        //                                                                       //     ],
+        //                                                                       //   ),
+        //                                                                       // ),
+        //                                                                       Padding(
+        //                                                                         padding: const EdgeInsets.all(4.0),
+        //                                                                         child: InkWell(
+        //                                                                           onTap: () async {
+        //                                                                             List newValuePDFimg = [];
+        //                                                                             for (int index = 0; index < 1; index++) {
+        //                                                                               if (renTalModels[0].imglogo!.trim() == '') {
+        //                                                                                 // newValuePDFimg.add(
+        //                                                                                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
+        //                                                                               } else {
+        //                                                                                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
+        //                                                                               }
+        //                                                                             }
+        //                                                                             var ciddoc = InvoiceModels[index].cid;
+        //                                                                             var qutser = '1';
+        //                                                                             var tser = InvoiceModels[index].total_dis;
+        //                                                                             var docno = InvoiceModels[index].docno;
 
-          //                                                                             setState(() {
-          //                                                                               payment_Ptser1 = InvoiceModels[index].ptser;
-          //                                                                               payment_Ptname1 = InvoiceModels[index].ptname;
-          //                                                                               payment_Bno1 = InvoiceModels[index].bno;
+        //                                                                             setState(() {
+        //                                                                               payment_Ptser1 = InvoiceModels[index].ptser;
+        //                                                                               payment_Ptname1 = InvoiceModels[index].ptname;
+        //                                                                               payment_Bno1 = InvoiceModels[index].bno;
 
-          //                                                                               Datex_invoice = InvoiceModels[index].daterec;
+        //                                                                               Datex_invoice = InvoiceModels[index].daterec;
 
-          //                                                                               payment_type1 = InvoiceModels[index].btype;
-          //                                                                               payment_bank1 = InvoiceModels[index].bank;
-          //                                                                             });
-          //                                                                             red_Trans_select(index, ciddoc, qutser, tser, docno, '0');
-          //                                                                             // red_Trans_select(index, ciddoc, qutser, tser, docno);
-          //                                                                           },
-          //                                                                           child: Container(
-          //                                                                               width: 80,
-          //                                                                               decoration: const BoxDecoration(
-          //                                                                                 color: Colors.blue,
-          //                                                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-          //                                                                               ),
-          //                                                                               padding: const EdgeInsets.all(2.0),
-          //                                                                               child: Translate.TranslateAndSetText('เรียกดู', AccountScreen_Color.Colors_Text1_, TextAlign.center, null, Font_.Fonts_T, 14, 1)
-          //                                                                               // const AutoSizeText(
-          //                                                                               //   minFontSize: 10,
-          //                                                                               //   maxFontSize: 25,
-          //                                                                               //   maxLines: 1,
-          //                                                                               //   'เรียกดู',
-          //                                                                               //   textAlign: TextAlign.center,
-          //                                                                               //   overflow: TextOverflow.ellipsis,
-          //                                                                               //   style: TextStyle(
-          //                                                                               //       color: PeopleChaoScreen_Color.Colors_Text2_,
-          //                                                                               //       //fontWeight: FontWeight.bold,
-          //                                                                               //       fontFamily: Font_.Fonts_T),
-          //                                                                               // ),
-          //                                                                               ),
-          //                                                                         ),
-          //                                                                       ),
-          //                                                                       Padding(
-          //                                                                         padding: const EdgeInsets.all(4.0),
-          //                                                                         child: InvoiceModels[index].ser_noti != null
-          //                                                                             ? CircleAvatar(
-          //                                                                                 radius: 16,
-          //                                                                                 backgroundColor: Colors.yellow.shade900.withOpacity(0.3),
-          //                                                                                 child: IconButton(
-          //                                                                                   onPressed: () async {
-          //                                                                                     PanaraConfirmDialog.showAnimatedGrow(
-          //                                                                                       context,
-          //                                                                                       title: "Line Notification",
-          //                                                                                       message: "แจ้งเตือนชำระค่าบริการผ่านไลน์",
-          //                                                                                       confirmButtonText: "Confirm",
-          //                                                                                       cancelButtonText: "Cancel",
-          //                                                                                       onTapConfirm: () async {
-          //                                                                                         if (InvoiceModels[index].ser_noti != null) {
-          //                                                                                           var serregis = InvoiceModels[index].ser_noti;
-          //                                                                                           var incid = InvoiceModels[index].cid;
-          //                                                                                           var indocno = InvoiceModels[index].docno;
-          //                                                                                           var insum = nFormat.format(double.parse(InvoiceModels[index].total_dis!));
-          //                                                                                           SharedPreferences preferences = await SharedPreferences.getInstance();
-          //                                                                                           var ren = preferences.getString('renTalSer');
-          //                                                                                           String url = '${MyConstant().domain}/sent_line_noti.php?isAdd=true&ren=$ren&serregis=$serregis&incid=$incid&indocno=$indocno&insum=$insum';
-          //                                                                                           renTal_name = preferences.getString('renTalName');
-          //                                                                                           try {
-          //                                                                                             var response = await http.get(Uri.parse(url));
+        //                                                                               payment_type1 = InvoiceModels[index].btype;
+        //                                                                               payment_bank1 = InvoiceModels[index].bank;
+        //                                                                             });
+        //                                                                             red_Trans_select(index, ciddoc, qutser, tser, docno, '0');
+        //                                                                             // red_Trans_select(index, ciddoc, qutser, tser, docno);
+        //                                                                           },
+        //                                                                           child: Container(
+        //                                                                               width: 80,
+        //                                                                               decoration: const BoxDecoration(
+        //                                                                                 color: Colors.blue,
+        //                                                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        //                                                                               ),
+        //                                                                               padding: const EdgeInsets.all(2.0),
+        //                                                                               child: Translate.TranslateAndSetText('เรียกดู', AccountScreen_Color.Colors_Text1_, TextAlign.center, null, Font_.Fonts_T, 14, 1)
+        //                                                                               // const AutoSizeText(
+        //                                                                               //   minFontSize: 10,
+        //                                                                               //   maxFontSize: 25,
+        //                                                                               //   maxLines: 1,
+        //                                                                               //   'เรียกดู',
+        //                                                                               //   textAlign: TextAlign.center,
+        //                                                                               //   overflow: TextOverflow.ellipsis,
+        //                                                                               //   style: TextStyle(
+        //                                                                               //       color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                                                                               //       //fontWeight: FontWeight.bold,
+        //                                                                               //       fontFamily: Font_.Fonts_T),
+        //                                                                               // ),
+        //                                                                               ),
+        //                                                                         ),
+        //                                                                       ),
+        //                                                                       Padding(
+        //                                                                         padding: const EdgeInsets.all(4.0),
+        //                                                                         child: InvoiceModels[index].ser_noti != null
+        //                                                                             ? CircleAvatar(
+        //                                                                                 radius: 16,
+        //                                                                                 backgroundColor: Colors.yellow.shade900.withOpacity(0.3),
+        //                                                                                 child: IconButton(
+        //                                                                                   onPressed: () async {
+        //                                                                                     PanaraConfirmDialog.showAnimatedGrow(
+        //                                                                                       context,
+        //                                                                                       title: "Line Notification",
+        //                                                                                       message: "แจ้งเตือนชำระค่าบริการผ่านไลน์",
+        //                                                                                       confirmButtonText: "Confirm",
+        //                                                                                       cancelButtonText: "Cancel",
+        //                                                                                       onTapConfirm: () async {
+        //                                                                                         if (InvoiceModels[index].ser_noti != null) {
+        //                                                                                           var serregis = InvoiceModels[index].ser_noti;
+        //                                                                                           var incid = InvoiceModels[index].cid;
+        //                                                                                           var indocno = InvoiceModels[index].docno;
+        //                                                                                           var insum = nFormat.format(double.parse(InvoiceModels[index].total_dis!));
+        //                                                                                           SharedPreferences preferences = await SharedPreferences.getInstance();
+        //                                                                                           var ren = preferences.getString('renTalSer');
+        //                                                                                           String url = '${MyConstant().domain}/sent_line_noti.php?isAdd=true&ren=$ren&serregis=$serregis&incid=$incid&indocno=$indocno&insum=$insum';
+        //                                                                                           renTal_name = preferences.getString('renTalName');
+        //                                                                                           try {
+        //                                                                                             var response = await http.get(Uri.parse(url));
 
-          //                                                                                             var result = json.decode(response.body);
+        //                                                                                             var result = json.decode(response.body);
 
-          //                                                                                             if (result.toString() == 'Line Successfully') {
-          //                                                                                               //print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
-          //                                                                                               ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                                                 SnackBar(
-          //                                                                                                   content: Translate.TranslateAndSetText('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)', Colors.white, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-          //                                                                                                   // Text(
-          //                                                                                                   //   'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)',
-          //                                                                                                   //   style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                                                   // ),
-          //                                                                                                 ),
-          //                                                                                               );
-          //                                                                                             } else {
-          //                                                                                               // print('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
-          //                                                                                               ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                                                 SnackBar(
-          //                                                                                                   content: Translate.TranslateAndSetText('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)', Colors.white, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-          //                                                                                                   // Text(
-          //                                                                                                   //   'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)',
-          //                                                                                                   //   style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                                                   // ),
-          //                                                                                                 ),
-          //                                                                                               );
-          //                                                                                             }
-          //                                                                                           } catch (e) {
-          //                                                                                             print('Error-Dis(read_GC_rental) : ${e}');
-          //                                                                                           }
-          //                                                                                         }
-          //                                                                                         Navigator.pop(context);
-          //                                                                                       },
-          //                                                                                       onTapCancel: () {
-          //                                                                                         Navigator.pop(context);
-          //                                                                                       },
-          //                                                                                       panaraDialogType: PanaraDialogType.success,
-          //                                                                                     );
-          //                                                                                   },
-          //                                                                                   icon: Center(
-          //                                                                                     child: Icon(
-          //                                                                                       Icons.notifications_none,
-          //                                                                                       color: Colors.yellow.shade900,
-          //                                                                                       size: 18,
-          //                                                                                     ),
-          //                                                                                   ),
-          //                                                                                 ),
-          //                                                                               )
-          //                                                                             : SizedBox(
-          //                                                                                 width: 33,
-          //                                                                               ),
-          //                                                                       ),
-          //                                                                       // Expanded(
-          //                                                                       //   flex: 1,
-          //                                                                       //   child: Row(
-          //                                                                       //     mainAxisAlignment: MainAxisAlignment.end,
-          //                                                                       //     children: [
-          //                                                                       //       Padding(
-          //                                                                       //         padding: const EdgeInsets.all(4.0),
-          //                                                                       //         child: InkWell(
-          //                                                                       //           onTap: () async {
-          //                                                                       //             List newValuePDFimg = [];
-          //                                                                       //             for (int index = 0; index < 1; index++) {
-          //                                                                       //               if (renTalModels[0].imglogo!.trim() == '') {
-          //                                                                       //                 // newValuePDFimg.add(
-          //                                                                       //                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
-          //                                                                       //               } else {
-          //                                                                       //                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
-          //                                                                       //               }
-          //                                                                       //             }
-          //                                                                       //             var ciddoc = InvoiceModels[index].cid;
-          //                                                                       //             var qutser = '1';
-          //                                                                       //             var tser = InvoiceModels[index].total_dis;
-          //                                                                       //             var docno = InvoiceModels[index].docno;
+        //                                                                                             if (result.toString() == 'Line Successfully') {
+        //                                                                                               //print('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+        //                                                                                               ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                                                 SnackBar(
+        //                                                                                                   content: Translate.TranslateAndSetText('Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)', Colors.white, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+        //                                                                                                   // Text(
+        //                                                                                                   //   'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)',
+        //                                                                                                   //   style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                                                   // ),
+        //                                                                                                 ),
+        //                                                                                               );
+        //                                                                                             } else {
+        //                                                                                               // print('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
+        //                                                                                               ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                                                 SnackBar(
+        //                                                                                                   content: Translate.TranslateAndSetText('Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)', Colors.white, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+        //                                                                                                   // Text(
+        //                                                                                                   //   'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)',
+        //                                                                                                   //   style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                                                   // ),
+        //                                                                                                 ),
+        //                                                                                               );
+        //                                                                                             }
+        //                                                                                           } catch (e) {
+        //                                                                                             print('Error-Dis(read_GC_rental) : ${e}');
+        //                                                                                           }
+        //                                                                                         }
+        //                                                                                         Navigator.pop(context);
+        //                                                                                       },
+        //                                                                                       onTapCancel: () {
+        //                                                                                         Navigator.pop(context);
+        //                                                                                       },
+        //                                                                                       panaraDialogType: PanaraDialogType.success,
+        //                                                                                     );
+        //                                                                                   },
+        //                                                                                   icon: Center(
+        //                                                                                     child: Icon(
+        //                                                                                       Icons.notifications_none,
+        //                                                                                       color: Colors.yellow.shade900,
+        //                                                                                       size: 18,
+        //                                                                                     ),
+        //                                                                                   ),
+        //                                                                                 ),
+        //                                                                               )
+        //                                                                             : SizedBox(
+        //                                                                                 width: 33,
+        //                                                                               ),
+        //                                                                       ),
+        //                                                                       // Expanded(
+        //                                                                       //   flex: 1,
+        //                                                                       //   child: Row(
+        //                                                                       //     mainAxisAlignment: MainAxisAlignment.end,
+        //                                                                       //     children: [
+        //                                                                       //       Padding(
+        //                                                                       //         padding: const EdgeInsets.all(4.0),
+        //                                                                       //         child: InkWell(
+        //                                                                       //           onTap: () async {
+        //                                                                       //             List newValuePDFimg = [];
+        //                                                                       //             for (int index = 0; index < 1; index++) {
+        //                                                                       //               if (renTalModels[0].imglogo!.trim() == '') {
+        //                                                                       //                 // newValuePDFimg.add(
+        //                                                                       //                 //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
+        //                                                                       //               } else {
+        //                                                                       //                 newValuePDFimg.add('${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
+        //                                                                       //               }
+        //                                                                       //             }
+        //                                                                       //             var ciddoc = InvoiceModels[index].cid;
+        //                                                                       //             var qutser = '1';
+        //                                                                       //             var tser = InvoiceModels[index].total_dis;
+        //                                                                       //             var docno = InvoiceModels[index].docno;
 
-          //                                                                       //             setState(() {
-          //                                                                       //               payment_Ptser1 = InvoiceModels[index].ptser;
-          //                                                                       //               payment_Ptname1 = InvoiceModels[index].ptname;
-          //                                                                       //               payment_Bno1 = InvoiceModels[index].bno;
+        //                                                                       //             setState(() {
+        //                                                                       //               payment_Ptser1 = InvoiceModels[index].ptser;
+        //                                                                       //               payment_Ptname1 = InvoiceModels[index].ptname;
+        //                                                                       //               payment_Bno1 = InvoiceModels[index].bno;
 
-          //                                                                       //               Datex_invoice = InvoiceModels[index].daterec;
+        //                                                                       //               Datex_invoice = InvoiceModels[index].daterec;
 
-          //                                                                       //               payment_type1 = InvoiceModels[index].btype;
-          //                                                                       //               payment_bank1 = InvoiceModels[index].bank;
-          //                                                                       //             });
-          //                                                                       //                     red_Trans_select(index, ciddoc, qutser, tser, docno, '0');
-          //                                                                       //             // red_Trans_select(index, ciddoc, qutser, tser, docno);
-          //                                                                       //           },
-          //                                                                       //           child: Container(
-          //                                                                       //             width: 80,
-          //                                                                       //             decoration: const BoxDecoration(
-          //                                                                       //               color: Colors.blue,
-          //                                                                       //               borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-          //                                                                       //             ),
-          //                                                                       //             padding: const EdgeInsets.all(2.0),
-          //                                                                       //             child: const AutoSizeText(
-          //                                                                       //               minFontSize: 10,
-          //                                                                       //               maxFontSize: 25,
-          //                                                                       //               maxLines: 1,
-          //                                                                       //               'เรียกดู',
-          //                                                                       //               textAlign: TextAlign.center,
-          //                                                                       //               overflow: TextOverflow.ellipsis,
-          //                                                                       //               style: TextStyle(
-          //                                                                       //                   color: PeopleChaoScreen_Color.Colors_Text2_,
-          //                                                                       //                   //fontWeight: FontWeight.bold,
-          //                                                                       //                   fontFamily: Font_.Fonts_T),
-          //                                                                       //             ),
-          //                                                                       //           ),
-          //                                                                       //         ),
-          //                                                                       //       ),
-          //                                                                       //     ],
-          //                                                                       //   ),
-          //                                                                       // ),
-          //                                                                       // Expanded(
-          //                                                                       //   flex: 1,
-          //                                                                       //   child: Row(
-          //                                                                       //     mainAxisAlignment: MainAxisAlignment.center,
-          //                                                                       //     children: [
-          //                                                                       //       Padding(
-          //                                                                       //         padding: const EdgeInsets.all(4.0),
-          //                                                                       //         child: InvoiceModels[index].ser_noti != null
-          //                                                                       //             ? IconButton(
-          //                                                                       //                 onPressed: () async {
-          //                                                                       //                   var serregis = _InvoiceModels[index].ser_noti;
-          //                                                                       //                   var incid = _InvoiceModels[index].cid;
-          //                                                                       //                   var indocno = _InvoiceModels[index].docno;
-          //                                                                       //                   var insum = _InvoiceModels[index].total_dis;
-          //                                                                       //                   SharedPreferences preferences = await SharedPreferences.getInstance();
-          //                                                                       //                   var ren = preferences.getString('renTalSer');
-          //                                                                       //                   String url = '${MyConstant().domain}/sent_line_noti.php?isAdd=true&ren=$ren&serregis=$serregis&incid=$incid&indocno=$indocno&insum=$insum';
-          //                                                                       //                   renTal_name = preferences.getString('renTalName');
-          //                                                                       //                   try {
-          //                                                                       //                     var response = await http.get(Uri.parse(url));
+        //                                                                       //               payment_type1 = InvoiceModels[index].btype;
+        //                                                                       //               payment_bank1 = InvoiceModels[index].bank;
+        //                                                                       //             });
+        //                                                                       //                     red_Trans_select(index, ciddoc, qutser, tser, docno, '0');
+        //                                                                       //             // red_Trans_select(index, ciddoc, qutser, tser, docno);
+        //                                                                       //           },
+        //                                                                       //           child: Container(
+        //                                                                       //             width: 80,
+        //                                                                       //             decoration: const BoxDecoration(
+        //                                                                       //               color: Colors.blue,
+        //                                                                       //               borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+        //                                                                       //             ),
+        //                                                                       //             padding: const EdgeInsets.all(2.0),
+        //                                                                       //             child: const AutoSizeText(
+        //                                                                       //               minFontSize: 10,
+        //                                                                       //               maxFontSize: 25,
+        //                                                                       //               maxLines: 1,
+        //                                                                       //               'เรียกดู',
+        //                                                                       //               textAlign: TextAlign.center,
+        //                                                                       //               overflow: TextOverflow.ellipsis,
+        //                                                                       //               style: TextStyle(
+        //                                                                       //                   color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                                                                       //                   //fontWeight: FontWeight.bold,
+        //                                                                       //                   fontFamily: Font_.Fonts_T),
+        //                                                                       //             ),
+        //                                                                       //           ),
+        //                                                                       //         ),
+        //                                                                       //       ),
+        //                                                                       //     ],
+        //                                                                       //   ),
+        //                                                                       // ),
+        //                                                                       // Expanded(
+        //                                                                       //   flex: 1,
+        //                                                                       //   child: Row(
+        //                                                                       //     mainAxisAlignment: MainAxisAlignment.center,
+        //                                                                       //     children: [
+        //                                                                       //       Padding(
+        //                                                                       //         padding: const EdgeInsets.all(4.0),
+        //                                                                       //         child: InvoiceModels[index].ser_noti != null
+        //                                                                       //             ? IconButton(
+        //                                                                       //                 onPressed: () async {
+        //                                                                       //                   var serregis = _InvoiceModels[index].ser_noti;
+        //                                                                       //                   var incid = _InvoiceModels[index].cid;
+        //                                                                       //                   var indocno = _InvoiceModels[index].docno;
+        //                                                                       //                   var insum = _InvoiceModels[index].total_dis;
+        //                                                                       //                   SharedPreferences preferences = await SharedPreferences.getInstance();
+        //                                                                       //                   var ren = preferences.getString('renTalSer');
+        //                                                                       //                   String url = '${MyConstant().domain}/sent_line_noti.php?isAdd=true&ren=$ren&serregis=$serregis&incid=$incid&indocno=$indocno&insum=$insum';
+        //                                                                       //                   renTal_name = preferences.getString('renTalName');
+        //                                                                       //                   try {
+        //                                                                       //                     var response = await http.get(Uri.parse(url));
 
-          //                                                                       //                     var result = json.decode(response.body);
+        //                                                                       //                     var result = json.decode(response.body);
 
-          //                                                                       //                     if (result.toString() == 'Line Successfully') {
-          //                                                                       //                       print('Line Successfully');
-          //                                                                       //                       ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                       //                         SnackBar(
-          //                                                                       //                           content: Text(
-          //                                                                       //                             'Line Successfully',
-          //                                                                       //                             style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                       //                           ),
-          //                                                                       //                         ),
-          //                                                                       //                       );
-          //                                                                       //                     } else {
-          //                                                                       //                       print('Line No Successfully');
-          //                                                                       //                       ScaffoldMessenger.of(context).showSnackBar(
-          //                                                                       //                         SnackBar(
-          //                                                                       //                           content: Text(
-          //                                                                       //                             'Line No Successfully',
-          //                                                                       //                             style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-          //                                                                       //                           ),
-          //                                                                       //                         ),
-          //                                                                       //                       );
-          //                                                                       //                     }
-          //                                                                       //                   } catch (e) {
-          //                                                                       //                     print('Error-Dis(read_GC_rental) : ${e}');
-          //                                                                       //                   }
-          //                                                                       //                 },
-          //                                                                       //                 icon: Icon(
-          //                                                                       //                   Icons.notifications_none,
-          //                                                                       //                   color: Colors.yellow.shade900,
-          //                                                                       //                 ),
-          //                                                                       //               )
-          //                                                                       //             : SizedBox(),
-          //                                                                       //       ),
-          //                                                                       //     ],
-          //                                                                       //   ),
-          //                                                                       // ),
-          //                                                                     ],
-          //                                                                   ),
-          //                                                                 )),
-          //                                                               ),
-          //                                                             ),
-          //                                                             if (index + 1 ==
-          //                                                                     InvoiceModels
-          //                                                                         .length &&
-          //                                                                 InvoiceModels.length !=
-          //                                                                     0)
-          //                                                               Padding(
-          //                                                                 padding:
-          //                                                                     const EdgeInsets.all(8.0),
-          //                                                                 child:
-          //                                                                     Row(
-          //                                                                   children: [
-          //                                                                     const AutoSizeText(
-          //                                                                       minFontSize: 10,
-          //                                                                       maxFontSize: 25,
-          //                                                                       maxLines: 1,
-          //                                                                       '<<- End ',
-          //                                                                       textAlign: TextAlign.center,
-          //                                                                       style: TextStyle(color: tappedIndex_Color.End_Colors, fontFamily: Font_.Fonts_T),
-          //                                                                     ),
-          //                                                                     Expanded(
-          //                                                                       child: Container(
-          //                                                                         decoration: BoxDecoration(
-          //                                                                           // color: Colors
-          //                                                                           //     .orange,
-          //                                                                           border: Border.all(color: tappedIndex_Color.End_Colors, width: 1),
-          //                                                                         ),
-          //                                                                         height: 1,
-          //                                                                       ),
-          //                                                                     ),
-          //                                                                     const AutoSizeText(
-          //                                                                       minFontSize: 10,
-          //                                                                       maxFontSize: 25,
-          //                                                                       maxLines: 1,
-          //                                                                       ' End ->>',
-          //                                                                       textAlign: TextAlign.center,
-          //                                                                       style: TextStyle(color: tappedIndex_Color.End_Colors, fontFamily: Font_.Fonts_T),
-          //                                                                     ),
-          //                                                                   ],
-          //                                                                 ),
-          //                                                               ),
-          //                                                           ],
-          //                                                         );
-          //                                                       })),
-          //                                         ],
-          //                                       ),
-          //                                     ),
-          //                                   ],
-          //                                 ),
-          //                               ),
-          //                             ),
-          //                             Container(
-          //                                 width: (Responsive.isDesktop(context))
-          //                                     ? MediaQuery.of(context)
-          //                                             .size
-          //                                             .width *
-          //                                         0.85
-          //                                     : MediaQuery.of(context)
-          //                                         .size
-          //                                         .width,
-          //                                 decoration: const BoxDecoration(
-          //                                   color: AppbackgroundColor
-          //                                       .Sub_Abg_Colors,
-          //                                   borderRadius: BorderRadius.only(
-          //                                       topLeft: Radius.circular(0),
-          //                                       topRight: Radius.circular(0),
-          //                                       bottomLeft: Radius.circular(10),
-          //                                       bottomRight:
-          //                                           Radius.circular(10)),
-          //                                 ),
-          //                                 child: Row(
-          //                                   mainAxisAlignment:
-          //                                       MainAxisAlignment.spaceBetween,
-          //                                   children: [
-          //                                     Align(
-          //                                       alignment: Alignment.centerLeft,
-          //                                       child: Row(
-          //                                         children: [
-          //                                           Padding(
-          //                                             padding:
-          //                                                 const EdgeInsets.all(
-          //                                                     8.0),
-          //                                             child: InkWell(
-          //                                               onTap: () {
-          //                                                 _scrollController2
-          //                                                     .animateTo(
-          //                                                   0,
-          //                                                   duration:
-          //                                                       const Duration(
-          //                                                           seconds: 1),
-          //                                                   curve:
-          //                                                       Curves.easeOut,
-          //                                                 );
-          //                                               },
-          //                                               child: Container(
-          //                                                   decoration:
-          //                                                       BoxDecoration(
-          //                                                     // color: AppbackgroundColor
-          //                                                     //     .TiTile_Colors,
-          //                                                     borderRadius: const BorderRadius
-          //                                                             .only(
-          //                                                         topLeft: Radius
-          //                                                             .circular(
-          //                                                                 6),
-          //                                                         topRight: Radius
-          //                                                             .circular(
-          //                                                                 6),
-          //                                                         bottomLeft: Radius
-          //                                                             .circular(
-          //                                                                 6),
-          //                                                         bottomRight: Radius
-          //                                                             .circular(
-          //                                                                 8)),
-          //                                                     border: Border.all(
-          //                                                         color: Colors
-          //                                                             .grey,
-          //                                                         width: 1),
-          //                                                   ),
-          //                                                   padding:
-          //                                                       const EdgeInsets
-          //                                                           .all(3.0),
-          //                                                   child: const Text(
-          //                                                     'Top',
-          //                                                     style: TextStyle(
-          //                                                       color:
-          //                                                           Colors.grey,
-          //                                                       fontSize: 10.0,
-          //                                                       fontWeight:
-          //                                                           FontWeight
-          //                                                               .bold,
-          //                                                     ),
-          //                                                   )),
-          //                                             ),
-          //                                           ),
-          //                                           InkWell(
-          //                                             onTap: () {
-          //                                               if (_scrollController2
-          //                                                   .hasClients) {
-          //                                                 final position =
-          //                                                     _scrollController2
-          //                                                         .position
-          //                                                         .maxScrollExtent;
-          //                                                 _scrollController2
-          //                                                     .animateTo(
-          //                                                   position,
-          //                                                   duration:
-          //                                                       const Duration(
-          //                                                           seconds: 1),
-          //                                                   curve:
-          //                                                       Curves.easeOut,
-          //                                                 );
-          //                                               }
-          //                                             },
-          //                                             child: Container(
-          //                                                 decoration:
-          //                                                     BoxDecoration(
-          //                                                   // color: AppbackgroundColor
-          //                                                   //     .TiTile_Colors,
-          //                                                   borderRadius: const BorderRadius
-          //                                                           .only(
-          //                                                       topLeft: Radius
-          //                                                           .circular(
-          //                                                               6),
-          //                                                       topRight: Radius
-          //                                                           .circular(
-          //                                                               6),
-          //                                                       bottomLeft: Radius
-          //                                                           .circular(
-          //                                                               6),
-          //                                                       bottomRight:
-          //                                                           Radius
-          //                                                               .circular(
-          //                                                                   6)),
-          //                                                   border: Border.all(
-          //                                                       color:
-          //                                                           Colors.grey,
-          //                                                       width: 1),
-          //                                                 ),
-          //                                                 padding:
-          //                                                     const EdgeInsets
-          //                                                         .all(3.0),
-          //                                                 child: const Text(
-          //                                                   'Down',
-          //                                                   style: TextStyle(
-          //                                                     color:
-          //                                                         Colors.grey,
-          //                                                     fontSize: 10.0,
-          //                                                     fontWeight:
-          //                                                         FontWeight
-          //                                                             .bold,
-          //                                                   ),
-          //                                                 )),
-          //                                           ),
-          //                                         ],
-          //                                       ),
-          //                                     ),
-          //                                     Align(
-          //                                       alignment:
-          //                                           Alignment.centerRight,
-          //                                       child: Row(
-          //                                         children: [
-          //                                           InkWell(
-          //                                             onTap: _moveUp2,
-          //                                             child: const Padding(
-          //                                                 padding:
-          //                                                     EdgeInsets.all(
-          //                                                         8.0),
-          //                                                 child: Align(
-          //                                                   alignment: Alignment
-          //                                                       .centerLeft,
-          //                                                   child: Icon(
-          //                                                     Icons
-          //                                                         .arrow_upward,
-          //                                                     color:
-          //                                                         Colors.grey,
-          //                                                   ),
-          //                                                 )),
-          //                                           ),
-          //                                           Container(
-          //                                               decoration:
-          //                                                   BoxDecoration(
-          //                                                 // color: AppbackgroundColor
-          //                                                 //     .TiTile_Colors,
-          //                                                 borderRadius: const BorderRadius
-          //                                                         .only(
-          //                                                     topLeft: Radius
-          //                                                         .circular(6),
-          //                                                     topRight: Radius
-          //                                                         .circular(6),
-          //                                                     bottomLeft: Radius
-          //                                                         .circular(6),
-          //                                                     bottomRight:
-          //                                                         Radius
-          //                                                             .circular(
-          //                                                                 6)),
-          //                                                 border: Border.all(
-          //                                                     color:
-          //                                                         Colors.grey,
-          //                                                     width: 1),
-          //                                               ),
-          //                                               padding:
-          //                                                   const EdgeInsets
-          //                                                       .all(3.0),
-          //                                               child: const Text(
-          //                                                 'Scroll',
-          //                                                 style: TextStyle(
-          //                                                   color: Colors.grey,
-          //                                                   fontSize: 10.0,
-          //                                                   fontWeight:
-          //                                                       FontWeight.bold,
-          //                                                 ),
-          //                                               )),
-          //                                           InkWell(
-          //                                             onTap: _moveDown2,
-          //                                             child: const Padding(
-          //                                                 padding:
-          //                                                     EdgeInsets.all(
-          //                                                         8.0),
-          //                                                 child: Align(
-          //                                                   alignment: Alignment
-          //                                                       .centerRight,
-          //                                                   child: Icon(
-          //                                                     Icons
-          //                                                         .arrow_downward,
-          //                                                     color:
-          //                                                         Colors.grey,
-          //                                                   ),
-          //                                                 )),
-          //                                           ),
-          //                                         ],
-          //                                       ),
-          //                                     )
-          //                                   ],
-          //                                 )),
-          //                           ],
-          //                         )),
-          //                   ],
-          //                 ),
-          //               ),
-          //               const SizedBox(
-          //                 height: 20,
-          //               )
-          //             ],
-          //           ),
-          //         ),
+        //                                                                       //                     if (result.toString() == 'Line Successfully') {
+        //                                                                       //                       print('Line Successfully');
+        //                                                                       //                       ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                       //                         SnackBar(
+        //                                                                       //                           content: Text(
+        //                                                                       //                             'Line Successfully',
+        //                                                                       //                             style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                       //                           ),
+        //                                                                       //                         ),
+        //                                                                       //                       );
+        //                                                                       //                     } else {
+        //                                                                       //                       print('Line No Successfully');
+        //                                                                       //                       ScaffoldMessenger.of(context).showSnackBar(
+        //                                                                       //                         SnackBar(
+        //                                                                       //                           content: Text(
+        //                                                                       //                             'Line No Successfully',
+        //                                                                       //                             style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
+        //                                                                       //                           ),
+        //                                                                       //                         ),
+        //                                                                       //                       );
+        //                                                                       //                     }
+        //                                                                       //                   } catch (e) {
+        //                                                                       //                     print('Error-Dis(read_GC_rental) : ${e}');
+        //                                                                       //                   }
+        //                                                                       //                 },
+        //                                                                       //                 icon: Icon(
+        //                                                                       //                   Icons.notifications_none,
+        //                                                                       //                   color: Colors.yellow.shade900,
+        //                                                                       //                 ),
+        //                                                                       //               )
+        //                                                                       //             : SizedBox(),
+        //                                                                       //       ),
+        //                                                                       //     ],
+        //                                                                       //   ),
+        //                                                                       // ),
+        //                                                                     ],
+        //                                                                   ),
+        //                                                                 )),
+        //                                                               ),
+        //                                                             ),
+        //                                                             if (index + 1 ==
+        //                                                                     InvoiceModels
+        //                                                                         .length &&
+        //                                                                 InvoiceModels.length !=
+        //                                                                     0)
+        //                                                               Padding(
+        //                                                                 padding:
+        //                                                                     const EdgeInsets.all(8.0),
+        //                                                                 child:
+        //                                                                     Row(
+        //                                                                   children: [
+        //                                                                     const AutoSizeText(
+        //                                                                       minFontSize: 10,
+        //                                                                       maxFontSize: 25,
+        //                                                                       maxLines: 1,
+        //                                                                       '<<- End ',
+        //                                                                       textAlign: TextAlign.center,
+        //                                                                       style: TextStyle(color: tappedIndex_Color.End_Colors, fontFamily: Font_.Fonts_T),
+        //                                                                     ),
+        //                                                                     Expanded(
+        //                                                                       child: Container(
+        //                                                                         decoration: BoxDecoration(
+        //                                                                           // color: Colors
+        //                                                                           //     .orange,
+        //                                                                           border: Border.all(color: tappedIndex_Color.End_Colors, width: 1),
+        //                                                                         ),
+        //                                                                         height: 1,
+        //                                                                       ),
+        //                                                                     ),
+        //                                                                     const AutoSizeText(
+        //                                                                       minFontSize: 10,
+        //                                                                       maxFontSize: 25,
+        //                                                                       maxLines: 1,
+        //                                                                       ' End ->>',
+        //                                                                       textAlign: TextAlign.center,
+        //                                                                       style: TextStyle(color: tappedIndex_Color.End_Colors, fontFamily: Font_.Fonts_T),
+        //                                                                     ),
+        //                                                                   ],
+        //                                                                 ),
+        //                                                               ),
+        //                                                           ],
+        //                                                         );
+        //                                                       })),
+        //                                         ],
+        //                                       ),
+        //                                     ),
+        //                                   ],
+        //                                 ),
+        //                               ),
+        //                             ),
+        //                             Container(
+        //                                 width: (Responsive.isDesktop(context))
+        //                                     ? MediaQuery.of(context)
+        //                                             .size
+        //                                             .width *
+        //                                         0.85
+        //                                     : MediaQuery.of(context)
+        //                                         .size
+        //                                         .width,
+        //                                 decoration: const BoxDecoration(
+        //                                   color: AppbackgroundColor
+        //                                       .Sub_Abg_Colors,
+        //                                   borderRadius: BorderRadius.only(
+        //                                       topLeft: Radius.circular(0),
+        //                                       topRight: Radius.circular(0),
+        //                                       bottomLeft: Radius.circular(10),
+        //                                       bottomRight:
+        //                                           Radius.circular(10)),
+        //                                 ),
+        //                                 child: Row(
+        //                                   mainAxisAlignment:
+        //                                       MainAxisAlignment.spaceBetween,
+        //                                   children: [
+        //                                     Align(
+        //                                       alignment: Alignment.centerLeft,
+        //                                       child: Row(
+        //                                         children: [
+        //                                           Padding(
+        //                                             padding:
+        //                                                 const EdgeInsets.all(
+        //                                                     8.0),
+        //                                             child: InkWell(
+        //                                               onTap: () {
+        //                                                 _scrollController2
+        //                                                     .animateTo(
+        //                                                   0,
+        //                                                   duration:
+        //                                                       const Duration(
+        //                                                           seconds: 1),
+        //                                                   curve:
+        //                                                       Curves.easeOut,
+        //                                                 );
+        //                                               },
+        //                                               child: Container(
+        //                                                   decoration:
+        //                                                       BoxDecoration(
+        //                                                     // color: AppbackgroundColor
+        //                                                     //     .TiTile_Colors,
+        //                                                     borderRadius: const BorderRadius
+        //                                                             .only(
+        //                                                         topLeft: Radius
+        //                                                             .circular(
+        //                                                                 6),
+        //                                                         topRight: Radius
+        //                                                             .circular(
+        //                                                                 6),
+        //                                                         bottomLeft: Radius
+        //                                                             .circular(
+        //                                                                 6),
+        //                                                         bottomRight: Radius
+        //                                                             .circular(
+        //                                                                 8)),
+        //                                                     border: Border.all(
+        //                                                         color: Colors
+        //                                                             .grey,
+        //                                                         width: 1),
+        //                                                   ),
+        //                                                   padding:
+        //                                                       const EdgeInsets
+        //                                                           .all(3.0),
+        //                                                   child: const Text(
+        //                                                     'Top',
+        //                                                     style: TextStyle(
+        //                                                       color:
+        //                                                           Colors.grey,
+        //                                                       fontSize: 10.0,
+        //                                                       fontWeight:
+        //                                                           FontWeight
+        //                                                               .bold,
+        //                                                     ),
+        //                                                   )),
+        //                                             ),
+        //                                           ),
+        //                                           InkWell(
+        //                                             onTap: () {
+        //                                               if (_scrollController2
+        //                                                   .hasClients) {
+        //                                                 final position =
+        //                                                     _scrollController2
+        //                                                         .position
+        //                                                         .maxScrollExtent;
+        //                                                 _scrollController2
+        //                                                     .animateTo(
+        //                                                   position,
+        //                                                   duration:
+        //                                                       const Duration(
+        //                                                           seconds: 1),
+        //                                                   curve:
+        //                                                       Curves.easeOut,
+        //                                                 );
+        //                                               }
+        //                                             },
+        //                                             child: Container(
+        //                                                 decoration:
+        //                                                     BoxDecoration(
+        //                                                   // color: AppbackgroundColor
+        //                                                   //     .TiTile_Colors,
+        //                                                   borderRadius: const BorderRadius
+        //                                                           .only(
+        //                                                       topLeft: Radius
+        //                                                           .circular(
+        //                                                               6),
+        //                                                       topRight: Radius
+        //                                                           .circular(
+        //                                                               6),
+        //                                                       bottomLeft: Radius
+        //                                                           .circular(
+        //                                                               6),
+        //                                                       bottomRight:
+        //                                                           Radius
+        //                                                               .circular(
+        //                                                                   6)),
+        //                                                   border: Border.all(
+        //                                                       color:
+        //                                                           Colors.grey,
+        //                                                       width: 1),
+        //                                                 ),
+        //                                                 padding:
+        //                                                     const EdgeInsets
+        //                                                         .all(3.0),
+        //                                                 child: const Text(
+        //                                                   'Down',
+        //                                                   style: TextStyle(
+        //                                                     color:
+        //                                                         Colors.grey,
+        //                                                     fontSize: 10.0,
+        //                                                     fontWeight:
+        //                                                         FontWeight
+        //                                                             .bold,
+        //                                                   ),
+        //                                                 )),
+        //                                           ),
+        //                                         ],
+        //                                       ),
+        //                                     ),
+        //                                     Align(
+        //                                       alignment:
+        //                                           Alignment.centerRight,
+        //                                       child: Row(
+        //                                         children: [
+        //                                           InkWell(
+        //                                             onTap: _moveUp2,
+        //                                             child: const Padding(
+        //                                                 padding:
+        //                                                     EdgeInsets.all(
+        //                                                         8.0),
+        //                                                 child: Align(
+        //                                                   alignment: Alignment
+        //                                                       .centerLeft,
+        //                                                   child: Icon(
+        //                                                     Icons
+        //                                                         .arrow_upward,
+        //                                                     color:
+        //                                                         Colors.grey,
+        //                                                   ),
+        //                                                 )),
+        //                                           ),
+        //                                           Container(
+        //                                               decoration:
+        //                                                   BoxDecoration(
+        //                                                 // color: AppbackgroundColor
+        //                                                 //     .TiTile_Colors,
+        //                                                 borderRadius: const BorderRadius
+        //                                                         .only(
+        //                                                     topLeft: Radius
+        //                                                         .circular(6),
+        //                                                     topRight: Radius
+        //                                                         .circular(6),
+        //                                                     bottomLeft: Radius
+        //                                                         .circular(6),
+        //                                                     bottomRight:
+        //                                                         Radius
+        //                                                             .circular(
+        //                                                                 6)),
+        //                                                 border: Border.all(
+        //                                                     color:
+        //                                                         Colors.grey,
+        //                                                     width: 1),
+        //                                               ),
+        //                                               padding:
+        //                                                   const EdgeInsets
+        //                                                       .all(3.0),
+        //                                               child: const Text(
+        //                                                 'Scroll',
+        //                                                 style: TextStyle(
+        //                                                   color: Colors.grey,
+        //                                                   fontSize: 10.0,
+        //                                                   fontWeight:
+        //                                                       FontWeight.bold,
+        //                                                 ),
+        //                                               )),
+        //                                           InkWell(
+        //                                             onTap: _moveDown2,
+        //                                             child: const Padding(
+        //                                                 padding:
+        //                                                     EdgeInsets.all(
+        //                                                         8.0),
+        //                                                 child: Align(
+        //                                                   alignment: Alignment
+        //                                                       .centerRight,
+        //                                                   child: Icon(
+        //                                                     Icons
+        //                                                         .arrow_downward,
+        //                                                     color:
+        //                                                         Colors.grey,
+        //                                                   ),
+        //                                                 )),
+        //                                           ),
+        //                                         ],
+        //                                       ),
+        //                                     )
+        //                                   ],
+        //                                 )),
+        //                           ],
+        //                         )),
+        //                   ],
+        //                 ),
+        //               ),
+        //               const SizedBox(
+        //                 height: 20,
+        //               )
+        //             ],
+        //           ),
+        //         ),
       ],
     );
   }
@@ -6778,7 +6778,7 @@ class _BillingScreenState extends State<BillingScreen> {
         }
       } else {}
     } catch (e) {
-      print('Error-Dis(read_GC_rental) : ${e}');
+      // print('Error-Dis(read_GC_rental) : ${e}');
     }
     // print('name>>>>>  $renname');
   }
@@ -8979,8 +8979,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                                       );
                                                     }
                                                   } catch (e) {
-                                                    print(
-                                                        'Error-Dis(read_GC_rental) : ${e}');
+                                                    // print(
+                                                    //     'Error-Dis(read_GC_rental) : ${e}');
                                                   }
                                                 }
                                                 Navigator.pop(context);
@@ -9100,14 +9100,14 @@ class _BillingScreenState extends State<BillingScreen> {
                                 var result = json.decode(response.body);
 
                                 if (result.toString() == 'Line Successfully') {
-                                  print(
-                                      'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
+                                  // print(
+                                  //     'Line Notify Successful (ส่งแจ้งเตือนทางไลน์ สำเร็จ)');
                                 } else {
-                                  print(
-                                      'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
+                                  // print(
+                                  //     'Line Notify Unsuccessful (ส่งแจ้งเตือนทางไลน์ ไม่สำเร็จ กรุณาทำรายการใหม่)');
                                 }
                               } catch (e) {
-                                print('Error-Dis(read_GC_rental) : ${e}');
+                                // print('Error-Dis(read_GC_rental) : ${e}');
                               }
                               Navigator.pop(context);
                             },
@@ -10145,7 +10145,7 @@ class _BillingScreenState extends State<BillingScreen> {
     String url =
         '${MyConstant().domain}/UPC_Invoice_history.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&numinvoice=$numinvoice&remark=$because';
     try {
-      print('numinvoice 2 $numinvoice');
+      // print('numinvoice 2 $numinvoice');
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);

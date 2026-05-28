@@ -103,6 +103,7 @@ class TransFineModel {
   String? amt_con;
   String? img;
   String? ucost;
+  String? vser;
 
   TransFineModel(
       {this.ser,
@@ -205,7 +206,8 @@ class TransFineModel {
       this.qty_con,
       this.img,
       this.amt_con,
-      this.ucost});
+      this.ucost,
+      this.vser});
 
   TransFineModel.fromJson(Map<String, dynamic> json) {
     ser = json['ser'];
@@ -309,7 +311,8 @@ class TransFineModel {
     qty_con = json['qty_con'];
     amt_con = json['amt_con'];
     img = json['img'];
-    ucost= json['ucost'];
+    ucost = json['ucost'];
+    vser = json['vser'];
   }
 
   Map<String, dynamic> toJson() {
@@ -415,7 +418,9 @@ class TransFineModel {
     data['qty_con'] = this.qty_con;
     data['amt_con'] = this.amt_con;
     data['img'] = this.img;
-       data['ucost'] = this.ucost;
+    data['ucost'] = this.ucost;
+    data['vser'] = this.vser;
+
     return data;
   }
 }

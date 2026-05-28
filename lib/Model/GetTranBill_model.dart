@@ -15,9 +15,16 @@ class TransBillModel {
   String? nwht;
   String? wht;
   String? vtype;
+  String? wtype;
   String? vser;
   String? meter;
-  String? refno; String? ser_con;
+  String? refno;
+  String? ser_con;
+  String? refnox;
+  String? namex;
+  String? befor_duedate;
+  String? befor_date;
+  String? befor_total;
 
   TransBillModel({
     this.ser,
@@ -36,10 +43,16 @@ class TransBillModel {
     this.nwht,
     this.wht,
     this.vtype,
+    this.wtype,
     this.vser,
     this.meter,
     this.refno,
     this.ser_con,
+    this.refnox,
+    this.namex,
+    this.befor_duedate,
+    this.befor_date,
+    this.befor_total,
   });
 
   TransBillModel.fromJson(Map<String, dynamic> json) {
@@ -59,10 +72,16 @@ class TransBillModel {
     nwht = json['nwht'];
     wht = json['wht'];
     vtype = json['vtype'];
+    wtype = json['wtype'];
     vser = json['vser'];
     meter = json['meter'];
     refno = json['refno'];
     ser_con = json['ser_con'];
+    refnox = json['refnox'];
+    namex = json['namex'];
+    befor_duedate = json['befor_duedate'];
+    befor_date = json['befor_date'];
+    befor_total = json['befor_total'];
   }
 
   Map<String, dynamic> toJson() {
@@ -83,10 +102,16 @@ class TransBillModel {
     data['nwht'] = this.nwht;
     data['wht'] = this.wht;
     data['vtype'] = this.vtype;
+    data['wtype'] = this.wtype;
     data['vser'] = this.vser;
-    data['meter'] = this.meter;   data['refno'] = this.refno;
-     data['ser_con'] = this.ser_con;
-    
+    data['meter'] = this.meter;
+    data['refno'] = this.refno;
+    data['ser_con'] = this.ser_con;
+    data['refnox'] = this.refnox;
+    data['namex'] = this.namex;
+    data['befor_duedate'] = this.befor_duedate;
+    data['befor_date'] = this.befor_date;
+    data['befor_total'] = this.befor_total;
 
     return data;
   }

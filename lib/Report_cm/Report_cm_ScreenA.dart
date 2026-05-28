@@ -24,7 +24,7 @@ import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import '../Account/Account_Screen.dart';
+import '../Account/Ac_Sub/Account_Screen.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
 import '../Constant/Myconstant.dart';
@@ -162,7 +162,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
     var ren = preferences.getString('renTalSer');
     var zone = preferences.getString('zoneSer');
 
-    // print('ren >>>>>> $ren');
+    // //print('ren >>>>>> $ren');
 
     String url =
         '${MyConstant().domain}/GC_Bank_Paytype.php?isAdd=true&ren=$ren';
@@ -171,7 +171,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           PayMentModel payMentModel = PayMentModel.fromJson(map);
@@ -198,7 +198,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       // Map<String, dynamic> map = Map();
       // map['ser'] = '0';
       // map['rser'] = '0';
@@ -252,7 +252,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           ExpModel expModel = ExpModel.fromJson(map);
@@ -296,7 +296,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -343,7 +343,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
         }
       } else {}
     } catch (e) {}
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
 ////////////-----------------------(วันที่รายงานประจำวัน)
@@ -412,7 +412,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           TransReBillModelRECM transReBillModel =
@@ -422,7 +422,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
           });
         }
 
-        // print('result ${_TransReBillModels.length}');
+        // //print('result ${_TransReBillModels.length}');
 
         TransReBillModels = List.generate(_TransReBillModels.length, (_) => []);
 
@@ -458,7 +458,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
         var response = await http.get(Uri.parse(url));
 
         var result = json.decode(response.body);
-        // print(result);
+        // //print(result);
         if (result.toString() != 'null') {
           for (var map in result) {
             TransReBillHistoryModel _TransReBillHistoryModel =
@@ -522,7 +522,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
 
     var ren = preferences.getString('renTalSer');
 
-    // print('zone>>>>>>zone>>>>>$Value_Chang_Zone_Ser_');
+    // //print('zone>>>>>>zone>>>>>$Value_Chang_Zone_Ser_');
 
     String url =
         '${MyConstant().domain}/GC_tenant_Cm.php?isAdd=true&ren=$ren&zone=$Value_Chang_Zone_Ser_';
@@ -531,7 +531,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantModel teNantModel = TeNantModel.fromJson(map);
@@ -799,7 +799,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
                                             zoneModels_report[selectedIndex]
                                                 .ser!;
                                       });
-                                      // print(
+                                      // //print(
                                       //     'Selected Index: $Value_Chang_Zone_Daily  //${Value_Chang_Zone_Ser_Daily}');
                                     },
                                     onMenuStateChange: (isOpen) {
@@ -895,7 +895,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
                               //       Value_Chang_Zone_Ser_Daily =
                               //           zoneModels_report[selectedIndex].ser!;
                               //     });
-                              //     // print(
+                              //     // //print(
                               //     //     'Selected Index: $Value_Chang_Zone_Daily  //${Value_Chang_Zone_Ser_Daily}');
                               //   },
                               // ),
@@ -1037,7 +1037,7 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
                             //                           indexsum1]
                             //                       .total_dis!);
 
-                            //   print(
+                            //   //print(
                             //       '${indexsum1 + 1} : ${_TransReBillModels[indexsum1].total_bill}');
                             // }
 
@@ -2705,10 +2705,10 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
                                     Value_Chang_Zone_Ser_ =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $Value_Chang_Zone_  //${Value_Chang_Zone_Ser_}');
 
-                                  // print('Selected Value: $value');
+                                  // //print('Selected Value: $value');
                                 },
                                 onMenuStateChange: (isOpen) {
                                   if (!isOpen) {
@@ -2801,10 +2801,10 @@ class _Report_cm_ScreenAState extends State<Report_cm_ScreenA> {
                           //       Value_Chang_Zone_Ser_ =
                           //           zoneModels_report[selectedIndex].ser!;
                           //     });
-                          //     // print(
+                          //     // //print(
                           //     //     'Selected Index: $Value_Chang_Zone_  //${Value_Chang_Zone_Ser_}');
 
-                          //     // print('Selected Value: $value');
+                          //     // //print('Selected Value: $value');
                           //   },
                           // ),
                         ),

@@ -27,7 +27,7 @@ String formatDate(String? dateStr,
         return DateFormat('yyyy-MM-dd').format(date);
     }
   } catch (e) {
-    print('❌ FormatDate : $e');
+    //print('❌ FormatDate : $e');
     return '-';
   }
 }

@@ -20,13 +20,14 @@ Future<dynamic> handleSave(
 ) async {
   try {
     final signature = key.currentState;
-    if (signature == null) return;
+    if (signature == null) return null; // return null for an empty state
 
     final image = await signature.toImage();
     final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
     if (byteData == null) {
       print('❌ ไม่สามารถแปลงลายเซ็นเป็นรูปภาพได้');
-      return;
+      // **Option 1: Return a specific non-null error response here too**
+      return http.Response('{"message": "Conversion failed"}', 400);
     }
 
     final pngBytes = byteData.buffer.asUint8List();
@@ -34,43 +35,53 @@ Future<dynamic> handleSave(
 
     switch (type) {
       case SignatureActionType.preview:
-        print('👀 Preview mode: (ยังไม่รองรับ)');
-        return null;
-
       case SignatureActionType.saveToFile:
+        // ✅ Implement ดาวน์โหลดไฟล์ลายเซ็น
         if (kIsWeb) {
-          final blob = html.Blob([pngBytes]);
+          // Web: สร้าง Blob และดาวน์โหลดผ่าน anchor
+          final blob = html.Blob([pngBytes], 'image/png');
           final url = html.Url.createObjectUrlFromBlob(blob);
           final anchor = html.AnchorElement(href: url)
-            ..setAttribute('download', 'signature.png')
+            ..setAttribute('download',
+                'signature_${DateTime.now().millisecondsSinceEpoch}.png')
             ..click();
           html.Url.revokeObjectUrl(url);
-          print('🌐 Web: เริ่มดาวน์โหลดลายเซ็น');
+          print('✅ ดาวน์โหลดไฟล์ลายเซ็นสำเร็จ (Web)');
         } else {
+          // Mobile/Desktop: บันทึกลง documents directory
           final dir = await getApplicationDocumentsDirectory();
-          final file = File('${dir.path}/signature.png');
+          final fileName =
+              'signature_${DateTime.now().millisecondsSinceEpoch}.png';
+          final file = File('${dir.path}/$fileName');
           await file.writeAsBytes(pngBytes);
-          print('💾 Mobile/Desktop: บันทึกไฟล์ที่: ${file.path}');
+          print('✅ บันทึกไฟล์ลายเซ็นสำเร็จ: ${file.path}');
         }
         return null;
 
       case SignatureActionType.upload_user:
         final response = await uploadSignature_user(uuid, docId, pngBytes);
         return response;
+
       case SignatureActionType.upload_admin:
         final response = await uploadSignature_amin(pngBytes);
         return response;
     }
   } catch (e) {
     print('🚫 เกิดข้อผิดพลาดใน handleSave: $e');
-    return null;
+
+    // -------------------------------------------------------------------
+    // 🔥 CRITICAL FIX: Instead of returning null, return a dummy HTTP
+    // Response object with a server error status code (500).
+    // This prevents the NoSuchMethodError in the calling function.
+    // -------------------------------------------------------------------
+    return http.Response('{"error": "Network or internal upload failed"}', 500);
   }
 }
 
 // Future<http.Response> uploadSignature(Uint8List pngBytes) async {
 //   final uri =
 //       Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid/attachments');
-//   print(uri);
+//   //print(uri);
 
 //   var request = http.MultipartRequest('POST', uri)
 //     ..headers.addAll({
@@ -87,10 +98,10 @@ Future<dynamic> handleSave(
 //   final response = await http.Response.fromStream(streamedResponse);
 
 //   if (response.statusCode == 200) {
-//     print('✅ Web อัปโหลดสำเร็จ: ${response.body}');
+//     //print('✅ Web อัปโหลดสำเร็จ: ${response.body}');
 //   } else {
-//     print('❌ Web อัปโหลดล้มเหลว: ${response.statusCode}');
-//     print('📄 ตอบกลับ: ${response.body}');
+//     //print('❌ Web อัปโหลดล้มเหลว: ${response.statusCode}');
+//     //print('📄 ตอบกลับ: ${response.body}');
 //   }
 
 //   return response;
@@ -100,14 +111,11 @@ Future<http.Response> uploadSignature_user(
   // final uri = Uri.parse('http://your-api/upload');
   final uri =
       Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid/attachments');
-  print('$uri');
-  print('ID : $docId');
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
+  //print('$uri');
+  //print('ID : $docId');
   var request = http.MultipartRequest('POST', uri)
-    ..headers.addAll({
-      'Accept': 'application/json',
-      'Authorization':
-          'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
-    })
+    ..headers.addAll(headers)
     ..fields['document_id'] = '$docId'
     ..files.add(
       http.MultipartFile.fromBytes('file', pngBytes, filename: 'sign.png'),
@@ -140,6 +148,7 @@ class ReusableSignaturePad extends StatelessWidget {
   final VoidCallback? onUp;
   final VoidCallback? onSave;
   final VoidCallback? onClear;
+  final VoidCallback? onLoad; // โหลดลายเซ็นจากระบบ
   final double? height;
   final double? width;
 
@@ -149,6 +158,7 @@ class ReusableSignaturePad extends StatelessWidget {
     this.onUp,
     this.onSave,
     this.onClear,
+    this.onLoad,
     this.height,
     this.width,
   });
@@ -220,7 +230,8 @@ class ReusableSignaturePad extends StatelessWidget {
                   TextButton(
                     onPressed: onClear,
                     child: const AutoSizeText(
-                      'เคลียร์',
+                      'ยกเลิก',
+                      // 'เคลียร์',
                       minFontSize: 12,
                       maxFontSize: 16,
                       maxLines: 1,
@@ -246,9 +257,9 @@ class ReusableSignaturePad extends StatelessWidget {
 //   final bytes = await data?.toByteData(format: ui.ImageByteFormat.png);
 //   if (bytes != null) {
 //     // ทำอะไรกับ bytes เช่น บันทึกไฟล์ อัปโหลด ฯลฯ
-//     print('✅ บันทึกลายเซ็นสำเร็จ ขนาด: ${bytes.lengthInBytes}');
+//     //print('✅ บันทึกลายเซ็นสำเร็จ ขนาด: ${bytes.lengthInBytes}');
 //   } else {
-//     print('❌ ไม่สามารถแปลงลายเซ็นเป็นรูปภาพได้');
+//     //print('❌ ไม่สามารถแปลงลายเซ็นเป็นรูปภาพได้');
 //   }
 // }
 
@@ -256,5 +267,5 @@ class ReusableSignaturePad extends StatelessWidget {
 //   final dir = await getApplicationDocumentsDirectory();
 //   final file = File('${dir.path}/signature.png');
 //   await file.writeAsBytes(pngBytes);
-//   print('📁 บันทึกลายเซ็นไว้ที่: ${file.path}');
+//   //print('📁 บันทึกลายเซ็นไว้ที่: ${file.path}');
 // }

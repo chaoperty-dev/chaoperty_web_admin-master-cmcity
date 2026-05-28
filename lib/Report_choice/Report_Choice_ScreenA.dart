@@ -506,7 +506,7 @@ class _Report_Choice_ScreenAState extends State<Report_Choice_ScreenA> {
     // print('zone>>>>>>zone>>>>>$zone');
     String url =
         '${MyConstant().domain}/GC_tenant_Renew_AllReport_Choice.php?isAdd=true&ren=$ren&zser=$zone&month_s=$Mon_PeopleRenew_Mon&year_s=$YE_PeopleRenew_Mon&type_date=$Status_ser_date';
-    print(url);
+     //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -529,7 +529,7 @@ class _Report_Choice_ScreenAState extends State<Report_Choice_ScreenA> {
     setState(() {
       Await_Status_Report3 = 1;
     });
-    print('result ${teNantModels_Renew.length}');
+    // print('result ${teNantModels_Renew.length}');
   }
 
 ////////////----------------------------------------------------->(รายงาน ข้อมูลผู้เช่า(ยกเลิกสัญญา))
@@ -652,7 +652,7 @@ class _Report_Choice_ScreenAState extends State<Report_Choice_ScreenA> {
         YE_GetPakan_Mon = DateFormat('yyyy').format(selectedDate);
         // lastDay();
       });
-      print('Selected month: ${Mon_GetPakan_Mon}, Year: ${YE_GetPakan_Mon}');
+      // print('Selected month: ${Mon_GetPakan_Mon}, Year: ${YE_GetPakan_Mon}');
     }
   }
 
@@ -666,8 +666,8 @@ class _Report_Choice_ScreenAState extends State<Report_Choice_ScreenA> {
         Mon_GetBackPakan_Mon = DateFormat('MM').format(selectedDate);
         YE_GetBackPakan_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_GetBackPakan_Mon}, Year: ${YE_GetBackPakan_Mon}');
+      // print(
+      //     'Selected month: ${Mon_GetBackPakan_Mon}, Year: ${YE_GetBackPakan_Mon}');
     }
   }
 
@@ -681,8 +681,8 @@ class _Report_Choice_ScreenAState extends State<Report_Choice_ScreenA> {
         Mon_PeopleRenew_Mon = DateFormat('MM').format(selectedDate);
         YE_PeopleRenew_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_PeopleRenew_Mon}, Year: ${YE_PeopleRenew_Mon}');
+      // print(
+      //     'Selected month: ${Mon_PeopleRenew_Mon}, Year: ${YE_PeopleRenew_Mon}');
     }
   }
 
@@ -696,8 +696,8 @@ class _Report_Choice_ScreenAState extends State<Report_Choice_ScreenA> {
         Mon_PeopleCancel_Mon = DateFormat('MM').format(selectedDate);
         YE_PeopleCancel_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_PeopleCancel_Mon}, Year: ${YE_PeopleCancel_Mon}');
+     //  print(
+     //      'Selected month: ${Mon_PeopleCancel_Mon}, Year: ${YE_PeopleCancel_Mon}');
     }
   }
 

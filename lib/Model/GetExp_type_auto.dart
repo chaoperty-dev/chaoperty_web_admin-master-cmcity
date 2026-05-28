@@ -5,6 +5,7 @@ class ExpAutoModel {
   String? exptser;
   String? expname;
   String? st;
+  String? sunit;
   String? unit;
   String? unitser;
   String? sday;
@@ -30,6 +31,7 @@ class ExpAutoModel {
       this.exptser,
       this.expname,
       this.st,
+      this.sunit,
       this.unit,
       this.unitser,
       this.sday,
@@ -56,6 +58,7 @@ class ExpAutoModel {
     expname = json['expname'];
     st = json['st'];
     unitser = json['unitser'];
+    sunit = json['sunit'];
     unit = json['unit'];
     sday = json['sday'];
     vat = json['vat'];
@@ -83,6 +86,7 @@ class ExpAutoModel {
     data['expname'] = this.expname;
     data['st'] = this.st;
     data['unitser'] = this.unitser;
+    data['sunit'] = this.sunit;
     data['unit'] = this.unit;
     data['sdate'] = this.sday;
     data['vat'] = this.vat;

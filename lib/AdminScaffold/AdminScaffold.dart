@@ -1,6 +1,10 @@
 // ignore_for_file: unused_import, unused_local_variable, unnecessary_null_comparison, unused_field, override_on_non_overriding_member, prefer_const_constructors, unnecessary_import, implementation_imports, prefer_const_constructors_in_immutables, non_constant_identifier_names, avoid_init_to_null, prefer_void_to_null, unnecessary_brace_in_string_interps, avoid_print, empty_catches, sized_box_for_whitespace, use_build_context_synchronously, file_names, curly_braces_in_flow_control_structures
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
+import 'dart:ui';
+import 'package:chaoperty/ChiangMai_Municipality/unity/show_dialog_cmm.dart';
+import 'package:flutter/foundation.dart';
 import 'package:get_ip_address/get_ip_address.dart';
 import 'package:marquee/marquee.dart';
 import 'package:device_marketing_names/device_marketing_names.dart';
@@ -10,24 +14,35 @@ import 'package:flutter/material.dart';
 import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:flutter_admin_scaffold/admin_scaffold.dart';
-import 'package:iconsax/iconsax.dart';
+// import 'package:iconsax/iconsax.dart';
 import 'package:intl/intl.dart';
+import 'package:panara_dialogs/panara_dialogs.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:side_sheet/side_sheet.dart';
 // import 'package:timer_builder/timer_builder.dart';
-
-import '../Account/Account_Screen.dart';
+import 'dart:math' as math;
+import '../Account/Ac_Sub/Account_Screen.dart';
 import '../Account/Play_column.dart';
 import '../Beam/Beam_api_check_Pay.dart';
 import '../Bureau_Registration/Bureau_Screen.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
+import '../ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
+import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
+import '../ChiangMai_Municipality/List_CMM/Register_CMM/chiangMaiBackground2.dart';
 import '../ChiangMai_Municipality/cignaturepad_cmm.dart';
+import '../ChiangMai_Municipality/manage_personalInformation_cmm.dart';
 import '../ChiangMai_Municipality/request_contract_cmm.dart';
 import '../ChiangMai_Municipality/request_examiner1_cmm.dart';
 import '../ChiangMai_Municipality/request_examiner2_cmm.dart';
+import '../ChiangMai_Municipality/unity/API_admin_signature.dart';
+import '../ChiangMai_Municipality/unity/SecurePrefs_helper.dart';
 import '../Constant/Myconstant.dart';
 import '../Bureau_Registration/Customer_Screen.dart';
+import '../Home/Home2.dart';
 import '../Home/Home_Screen.dart';
+import '../Home/dashboardHtml.dart';
+import '../Home/home_screen2.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Manage/Manage_Screen.dart';
 import '../Manage/Repairs_Screen.dart';
@@ -50,22 +65,33 @@ import '../Responsive/responsive.dart';
 import '../Setting/Access_Rights.dart';
 import '../Setting/SettingScreen.dart';
 import '../Setting/SettingScreen_user.dart';
+import '../Setting/User_Information.dart';
 import '../Setting/ttt.dart';
 import '../Setting_NainaService/Web_view_NainaSetting.dart';
 import '../Style/Translate.dart';
 import '../Style/colors.dart';
 import '../Style/view_pagenow.dart';
+import '../Style/test_print_name.dart';
+import '../Constant/api_cache.dart';
+import '../main.dart';
 import 'Chat_Screen.dart';
+import 'dart:html' as html;
+import '../Model/MasterData_Model.dart';
 
 class AdminScafScreen extends StatefulWidget {
+  // final route_getdata;
   // const AdminScafScreen({super.key});
 
   @override
   State<AdminScafScreen> createState() => _AdminScafScreenState();
   final String? route;
+  final String? route_getdata;
+  final int? ser_title;
   AdminScafScreen({
     super.key,
     this.route,
+    this.route_getdata,
+    this.ser_title,
   });
 }
 
@@ -119,51 +145,426 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
   late int _counter;
   late Timer _timer;
   bool? isDark_Mode;
+  bool isSidebarOpen = true;
+
+  /// แคช API 60 วินาที (1 นาที) — ป้องกันดึงซ้ำตอนรีเฟรช/rebuild
+  final _apiCache = ApiCache(ttl: const Duration(seconds: 60));
+
+  List<RenTalModel> rentalSetring = [];
+  dynamic incPasscode = [];
+  List<UserModel> gcUser = [];
+  List<UserModel> connectedUser = [];
 ///////////------------------------------------------->
   @override
   void initState() {
     super.initState();
-    checkPreferance();
-    read_GC_rental();
-    signInThread();
+    initializeData();
+  }
+
+  Future<void> initializeData() async {
+    await checkPreferance();
+    await readMasterData();
+    signInThreadMain();
     Value_Route = widget.route!;
     alert = DateTime.now().add(Duration(seconds: 300));
     readTime();
-    read_GC_areak();
     initPlugin();
-    changLogin();
+    if (kIsWeb) {
+      // ดัน state ปัจจุบันเข้าไป
+      html.window.history.pushState(null, '', html.window.location.href);
+      // ดักปุ่ม back ของเบราว์เซอร์
+      html.window.onPopState.listen((_) {
+        html.window.history.pushState(null, '', html.window.location.href);
+      });
+    }
   }
+
+  void _restoreMasterFromCache(dynamic cached) {
+    if (cached == null) return;
+    final masterData = MasterDataModel.fromJson(cached);
+
+    setState(() {
+      rentalSetring = masterData.rentalSetring;
+      incPasscode = masterData.incPasscode;
+      gcUser = masterData.gcUser;
+      connectedUser = masterData.connectedUser;
+
+      if (rentalSetring.isNotEmpty) {
+        RenTalModel renTalModel = rentalSetring[0];
+        renTalModels = [renTalModel];
+        renTal_name = renTalModel.pn?.trim();
+        time_check = renTalModel.time_check;
+        renTal_Email = renTalModel.bill_email;
+        foder = renTalModel.dbn;
+        rtname = renTalModel.rtname;
+        type = renTalModel.type;
+        typex = renTalModel.typex;
+        renname = renTalModel.pn?.trim();
+        pkqty = int.tryParse(renTalModel.pkqty ?? "0");
+        pkuser = int.tryParse(renTalModel.pkuser ?? "0");
+        pkname = renTalModel.pk?.trim();
+        img_ = renTalModel.img;
+        img_logo = renTalModel.imglogo;
+        pkldate = renTalModel.pkldate;
+        data_update = renTalModel.data_update;
+
+        if (renTalModel.colors_ren != null &&
+            renTalModel.colors_ren!.isNotEmpty) {
+          try {
+            AppBarColors.hexColor = Color(int.parse(renTalModel.colors_ren!));
+          } catch (_) {}
+        }
+        if (renTalModel.colors_subren != null &&
+            renTalModel.colors_subren!.isNotEmpty) {
+          try {
+            AppBarColors.ABar_Colors_tab =
+                Color(int.parse(renTalModel.colors_subren!));
+          } catch (_) {}
+        }
+      }
+
+      if (incPasscode != null &&
+          incPasscode is List &&
+          incPasscode.isNotEmpty) {
+        var firstPass = incPasscode[0];
+        if (firstPass != null && firstPass['passcode'] != null) {
+          passcode = firstPass['passcode'].toString();
+        }
+      }
+
+      if (gcUser.isNotEmpty) {
+        UserModel user = gcUser[0];
+        system_datex_ = user.system_datex;
+        showst_update_ = user.showst_update;
+        if (user.user_id != null) {
+          renTal_lavel = int.tryParse(user.user_id!) ?? 0;
+        }
+      }
+
+      userModels_chat.clear();
+      userModels.clear();
+      for (var user in connectedUser) {
+        userModels_chat.add(user);
+        if (user.connected != null) {
+          try {
+            DateTime connectedTime = DateTime.parse(user.connected!);
+            if (DateTime.now().difference(connectedTime).inMinutes <= 15) {
+              userModels.add(user);
+            }
+          } catch (_) {}
+        }
+      }
+      if (connectedUser.isNotEmpty) {
+        read_data_davtext = connectedUser[0].dev_text ?? "";
+      }
+    });
+  }
+
+  Future<void> readMasterData() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    var renTalSer = preferences.getString('renTalSer');
+    var email_address = preferences.getString('email');
+    var rental_email = preferences.getString('renTalEmail');
+
+    final cacheKey = 'readMasterData_$renTalSer';
+
+    if (_apiCache.isValid(cacheKey)) {
+      final cached = _apiCache.get(cacheKey);
+      if (cached != null) {
+        _restoreMasterFromCache(cached);
+        return;
+      }
+    }
+
+    final url = Uri.parse('${MyConstant().domain}/GC_admin_scaffold.php');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'ren': renTalSer.toString(),
+          'email': email_address.toString(),
+          'emailrental': rental_email.toString(),
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        _apiCache.set(cacheKey, result);
+
+        final masterData = MasterDataModel.fromJson(result);
+
+        setState(() {
+          rentalSetring = masterData.rentalSetring;
+          incPasscode = masterData.incPasscode;
+          gcUser = masterData.gcUser;
+          connectedUser = masterData.connectedUser;
+
+          if (rentalSetring.isNotEmpty) {
+            RenTalModel renTalModel = rentalSetring[0];
+            renTalModels = [renTalModel];
+
+            Auto_cancel = preferences.getString('Auto_cancel');
+            ren_ser = renTalSer?.trim().toString();
+            preferences.setString('renTalName', renTalModel.pn?.trim() ?? "");
+            preferences.setString(
+                'renTalEmail', renTalModel.bill_email?.trim() ?? "");
+            preferences.setString(
+                'renTal_Language', renTalModel.lan_guage?.trim() ?? "");
+
+            renTal_name = renTalModel.pn?.trim();
+            time_check = renTalModel.time_check;
+            renTal_Email = renTalModel.bill_email;
+            foder = renTalModel.dbn;
+            rtname = renTalModel.rtname;
+            type = renTalModel.type;
+            typex = renTalModel.typex;
+            renname = renTalModel.pn?.trim();
+            pkqty = int.tryParse(renTalModel.pkqty ?? "0");
+            pkuser = int.tryParse(renTalModel.pkuser ?? "0");
+            pkname = renTalModel.pk?.trim();
+            img_ = renTalModel.img;
+            img_logo = renTalModel.imglogo;
+            preferences.setString(
+              'renTal_logo',
+              '${MyConstant().domain}/files/${renTalModel.dbn}/logo/${renTalModel.imglogo}',
+            );
+            pkldate = renTalModel.pkldate;
+            data_update = renTalModel.data_update;
+
+            if (renTalModel.colors_ren != null &&
+                renTalModel.colors_ren != 'null' &&
+                renTalModel.colors_ren!.isNotEmpty) {
+              try {
+                String colorStr = renTalModel.colors_ren!;
+                if (colorStr.startsWith('0x')) {
+                  AppBarColors.hexColor = Color(int.parse(colorStr));
+                } else {
+                  AppBarColors.hexColor = Color(int.parse(colorStr));
+                }
+              } catch (e) {
+                print("Error parsing hexColor: $e");
+              }
+            }
+
+            if (renTalModel.colors_subren != null &&
+                renTalModel.colors_subren != 'null' &&
+                renTalModel.colors_subren!.isNotEmpty) {
+              try {
+                String colorStr = renTalModel.colors_subren!;
+                if (colorStr.startsWith('0x')) {
+                  AppBarColors.ABar_Colors_tab = Color(int.parse(colorStr));
+                } else {
+                  AppBarColors.ABar_Colors_tab = Color(int.parse(colorStr));
+                }
+              } catch (e) {
+                print("Error parsing ABar_Colors_tab: $e");
+              }
+            }
+          }
+
+          if (incPasscode != null &&
+              incPasscode is List &&
+              incPasscode.isNotEmpty) {
+            var firstPass = incPasscode[0];
+            if (firstPass != null && firstPass['passcode'] != null) {
+              passcode = firstPass['passcode'].toString();
+            }
+          }
+
+          if (gcUser.isNotEmpty) {
+            UserModel user = gcUser[0];
+            system_datex_ = user.system_datex;
+            showst_update_ = user.showst_update;
+
+            if (user.user_id != null) {
+              renTal_lavel = int.tryParse(user.user_id!) ?? 0;
+            }
+
+            if (showst_update_ == '0') {
+              System_New_Update();
+            }
+          }
+
+          userModels_chat.clear();
+          userModels.clear();
+          for (var user in connectedUser) {
+            userModels_chat.add(user);
+            if (user.connected != null) {
+              DateTime connectedTime = DateTime.parse(user.connected!);
+              DateTime currentTime = DateTime.now();
+              if (currentTime.difference(connectedTime).inMinutes <= 15) {
+                userModels.add(user);
+              }
+            }
+          }
+
+          if (connectedUser.isNotEmpty) {
+            read_data_davtext = connectedUser[0].dev_text ?? "";
+          }
+        });
+      } else {
+        print('API Error: ${response.body}');
+      }
+    } catch (e) {
+      print('readMasterData error: $e');
+    }
+  }
+  // Future<void> readMasterData() async {
+
+  //   if (_apiCache.isValid('readMasterData')) {
+  //     final cached = _apiCache.get('readMasterData');
+  //     if (cached != null) {
+  //       _restoreMasterFromCache(cached);
+  //       return;
+  //     }
+  //   }
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var renTalSer = preferences.getString('renTalSer');
+  //   var email_address = preferences.getString('email');
+  //   var rental_email = preferences.getString('renTalEmail');
+
+  //   final url = Uri.parse('${MyConstant().domain}/GC_admin_scaffold.php');
+
+  //   try {
+  //     final response = await http.post(
+  //       url,
+  //       headers: {'Content-Type': 'application/json'},
+  //       body: jsonEncode({
+  //         'ren': renTalSer.toString(),
+  //         'email': email_address.toString(),
+  //         'emailrental': rental_email.toString(),
+  //       }),
+  //     );
+
+  //     if (response.statusCode == 200) {
+  //       final result = json.decode(response.body);
+  //       _apiCache.set('readMasterData', result);
+  //       final masterData = MasterDataModel.fromJson(result);
+
+  //       setState(() {
+  //         rentalSetring = masterData.rentalSetring;
+  //         incPasscode = masterData.incPasscode;
+  //         gcUser = masterData.gcUser;
+  //         connectedUser = masterData.connectedUser;
+
+  //         // Process rental settings (from read_GC_rental)
+  //         if (rentalSetring.isNotEmpty) {
+  //           RenTalModel renTalModel = rentalSetring[0];
+  //           renTalModels = [
+  //             renTalModel
+  //           ]; // Keep old list for compatibility if needed
+
+  //           Auto_cancel = preferences.getString('Auto_cancel');
+  //           ren_ser = renTalSer?.trim().toString();
+  //           preferences.setString('renTalName', renTalModel.pn?.trim() ?? "");
+  //           preferences.setString(
+  //               'renTalEmail', renTalModel.bill_email?.trim() ?? "");
+  //           preferences.setString(
+  //               'renTal_Language', renTalModel.lan_guage?.trim() ?? "");
+
+  //           renTal_name = renTalModel.pn?.trim();
+  //           time_check = renTalModel.time_check;
+  //           renTal_Email = renTalModel.bill_email;
+  //           foder = renTalModel.dbn;
+  //           rtname = renTalModel.rtname;
+  //           type = renTalModel.type;
+  //           typex = renTalModel.typex;
+  //           renname = renTalModel.pn?.trim();
+  //           pkqty = int.tryParse(renTalModel.pkqty ?? "0");
+  //           pkuser = int.tryParse(renTalModel.pkuser ?? "0");
+  //           pkname = renTalModel.pk?.trim();
+  //           img_ = renTalModel.img;
+  //           img_logo = renTalModel.imglogo;
+  //           preferences.setString('renTal_logo',
+  //               '${MyConstant().domain}/files/${renTalModel.dbn}/logo/${renTalModel.imglogo}');
+  //           pkldate = renTalModel.pkldate;
+  //           data_update = renTalModel.data_update;
+
+  //           if (renTalModel.colors_ren != null &&
+  //               renTalModel.colors_ren != 'null' &&
+  //               renTalModel.colors_ren!.isNotEmpty) {
+  //             try {
+  //               String colorStr = renTalModel.colors_ren!;
+  //               if (colorStr.startsWith('0x')) {
+  //                 AppBarColors.hexColor = Color(int.parse(colorStr));
+  //               } else {
+  //                 AppBarColors.hexColor = Color(int.parse(colorStr));
+  //               }
+  //             } catch (e) {
+  //               print("Error parsing hexColor: $e");
+  //             }
+  //           }
+  //           if (renTalModel.colors_subren != null &&
+  //               renTalModel.colors_subren != 'null' &&
+  //               renTalModel.colors_subren!.isNotEmpty) {
+  //             try {
+  //               String colorStr = renTalModel.colors_subren!;
+  //               if (colorStr.startsWith('0x')) {
+  //                 AppBarColors.ABar_Colors_tab = Color(int.parse(colorStr));
+  //               } else {
+  //                 AppBarColors.ABar_Colors_tab = Color(int.parse(colorStr));
+  //               }
+  //             } catch (e) {
+  //               print("Error parsing ABar_Colors_tab: $e");
+  //             }
+  //           }
+  //         }
+
+  //         // Process passcode (from passcode_in)
+  //         if (incPasscode != null &&
+  //             incPasscode is List &&
+  //             incPasscode.isNotEmpty) {
+  //           var firstPass = incPasscode[0];
+  //           if (firstPass != null && firstPass['passcode'] != null) {
+  //             passcode = firstPass['passcode'].toString();
+  //           }
+  //         }
+
+  //         // Process GC User (from System_User)
+  //         if (gcUser.isNotEmpty) {
+  //           UserModel user = gcUser[0];
+  //           system_datex_ = user.system_datex;
+  //           showst_update_ = user.showst_update;
+
+  //           // Update renTal_lavel from user data if available
+  //           if (user.user_id != null) {
+  //             renTal_lavel = int.tryParse(user.user_id!) ?? 0;
+  //           }
+
+  //           if (showst_update_ == '0') {
+  //             System_New_Update();
+  //           }
+  //         }
+
+  //         // Process Connected Users (from Check_connected)
+  //         userModels_chat.clear();
+  //         userModels.clear();
+  //         for (var user in connectedUser) {
+  //           userModels_chat.add(user);
+  //           if (user.connected != null) {
+  //             DateTime connectedTime = DateTime.parse(user.connected!);
+  //             DateTime currentTime = DateTime.now();
+  //             if (currentTime.difference(connectedTime).inMinutes <= 15) {
+  //               userModels.add(user);
+  //             }
+  //           }
+  //         }
+  //         if (connectedUser.isNotEmpty) {
+  //           read_data_davtext = connectedUser[0].dev_text ?? "";
+  //         }
+  //       });
+  //     } else {
+  //       print('API Error: ${response.body}');
+  //     }
+  //   } catch (e) {
+  //     print('readMasterData error: $e');
+  //   }
+  // }
 
   String? system_datex_;
   String? showst_update_;
-
-  Future<Null> System_User() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var email_ = preferences.getString('email');
-    String url = '${MyConstant().domain}/GC_user.php?isAdd=true&email=$email_';
-
-    try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      // print(result);
-      if (result != null) {
-        for (var map in result) {
-          UserModel userModel = UserModel.fromJson(map);
-
-          setState(() {
-            system_datex_ = userModel.system_datex!;
-            showst_update_ = userModel.showst_update!;
-          });
-        }
-      } else {}
-    } catch (e) {}
-    // print('userModel  --------- >${system_datex_}');
-    // print('userModel  --------- >${showst_update_}');
-    if (showst_update_ == '0') {
-      System_New_Update();
-    }
-  }
 
   Future<Null> System_New_Update() async {
     String accept_ = showst_update_!;
@@ -244,7 +645,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                         children: [
                           Row(
                             children: [
-                              InkWell(
+                              GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       accept_ = '0';
@@ -274,7 +675,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                           ),
                           Row(
                             children: [
-                              InkWell(
+                              GestureDetector(
                                 onTap: () {
                                   setState(() {
                                     accept_ = '1';
@@ -310,7 +711,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                           children: [
                             Row(
                               children: [
-                                InkWell(
+                                GestureDetector(
                                     onTap: () {
                                       setState(() {
                                         accept_ = '0';
@@ -340,7 +741,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                             ),
                             Row(
                               children: [
-                                InkWell(
+                                GestureDetector(
                                   onTap: () {
                                     setState(() {
                                       accept_ = '1';
@@ -639,112 +1040,90 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
     );
   }
 
-  Future<Null> changLogin() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var email = preferences.getString('email');
-    if (email != 'dzentric.com@gmail.com') {
-      Timer.periodic(const Duration(seconds: 35), (timer) {
-        changLoginOut(timer);
-      });
-    }
-  }
+  // Future<Null> changLogin() async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var email = preferences.getString('email');
+  //   if (email != 'dzentric.com@gmail.com') {
+  //     Timer.periodic(const Duration(seconds: 35), (timer) {
+  //       changLoginOut(timer);
+  //     });
+  //   }
+  // }
 
-  Future<Null> changLoginOut(timer) async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    var user = preferences.getString('ser');
-    var login = preferences.getString('login');
-    var ipAddress = IpAddress(type: RequestType.json);
+  // Future<Null> changLoginOut(timer) async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //   var user = preferences.getString('ser');
+  //   var login = preferences.getString('login');
+  //   var ipAddress = IpAddress(type: RequestType.json);
 
-    /// Get the IpAddress based on requestType.
-    dynamic data = await ipAddress.getIpAddress();
-    // print(data.toString());
+  //   /// Get the IpAddress based on requestType.
+  //   dynamic data = await ipAddress.getIpAddress();
+  //   // print(data.toString());
 
-    var data0 = data.toString().substring(5, data.toString().length - 1).trim();
-    // print(data0.toString());
+  //   var data0 = data.toString().substring(5, data.toString().length - 1).trim();
+  //   // print(data0.toString());
 
-    String url =
-        '${MyConstant().domain}/changLoginOut.php?isAdd=true&user=$user&iplogin=$data0';
-    // print(url.toString());
+  //   String url =
+  //       '${MyConstant().domain}/changLoginOut.php?isAdd=true&user=$user&iplogin=$data0';
+  //   // print(url.toString());
 
-    // print('>>>>> login $login');
-    try {
-      var response = await http.get(Uri.parse(url));
+  //   // print('>>>>> login $login');
+  //   try {
+  //     var response = await http.get(Uri.parse(url));
 
-      var result = json.decode(response.body);
-      print('---------------->');
-      print('changLoginOut >$login>$user>');
-      // print('changLoginOut>$login>$user>>${result.toString()}');
-      Auto_Recheck_pay_Beam_Checkout();
-      if (result.toString() != login) {
-        deall_Trans_select();
-        SharedPreferences preferences = await SharedPreferences.getInstance();
-        preferences.clear();
-        routToService(SignInScreen());
-        timer.cancel();
-      }
-    } catch (e) {}
-  }
-
-  //////////////----------------------------------------->
-  Future<Null> Auto_Recheck_pay_Beam_Checkout() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    String url = '${MyConstant().domain}/GC_payMent.php?isAdd=true&ren=$ren';
-    var Pay_Ke;
-    try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      // print(result);
-      if (result.toString() != 'null') {
-        for (var map in result) {
-          PayMentModel _PayMentModel = PayMentModel.fromJson(map);
-
-          var paykey = _PayMentModel.key_b;
-          setState(() {
-            Pay_Ke = paykey.toString();
-          });
-        }
-        // Future.delayed(Duration(seconds: 100), () async {});
-
-        // read_CheckBeamAll(ren, Pay_Ke);
-        if (Pay_Ke == null ||
-            Pay_Ke.toString() == '' ||
-            Pay_Ke.toString() == 'null') {
-        } else {
-          read_CheckBeamAll(ren, Pay_Ke);
-        }
-        // RecheckAuto(ren, Pay_Ke);
-      }
-    } catch (e) {}
-  }
+  //     var result = json.decode(response.body);
+  //     // print('---------------->');
+  //     // print('changLoginOut >$login>$user>');
+  //     // print('changLoginOut>$login>$user>>${result.toString()}');
+  //     // Auto_Recheck_pay_Beam_Checkout();
+  //     if (result.toString() != login) {
+  //       deall_Trans_select();
+  //       SharedPreferences preferences = await SharedPreferences.getInstance();
+  //       preferences.clear();
+  //       routToService(LoginPage());
+  //       timer.cancel();
+  //     }
+  //   } catch (e) {}
+  // }
 
   //////////////----------------------------------------->
-  Future<Null> passcode_in() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    var user = preferences.getString('ser');
+  // Future<Null> Auto_Recheck_pay_Beam_Checkout() async {
+  //   if (_apiCache.isValid('Auto_Recheck_pay_Beam_Checkout')) return null;
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //   String url = '${MyConstant().domain}/GC_payMent.php?isAdd=true&ren=$ren';
+  //   var Pay_Ke;
+  //   try {
+  //     var response = await http.get(Uri.parse(url));
 
-    String url =
-        '${MyConstant().domain}/Inc_passcode.php?isAdd=true&ren=$ren&user=$user';
-    try {
-      var response = await http.get(Uri.parse(url));
+  //     var result = json.decode(response.body);
+  //     // print(result);
+  //     if (result.toString() != 'null') {
+  //       for (var map in result) {
+  //         PayMentModel _PayMentModel = PayMentModel.fromJson(map);
 
-      var result = json.decode(response.body);
-      // print(result);
-      if (result.toString() != 'false') {
-        // print('Inc_passcode>>>>true');
-        setState(() {
-          passcode = result.toString();
-        });
-      } else {
-        // print('Inc_passcode>>>>false $result');
-      }
-    } catch (e) {
-      // print('rrrrrrrrrrrrrr $e');
-    }
-  }
+  //         var paykey = _PayMentModel.key_b;
+  //         setState(() {
+  //           Pay_Ke = paykey.toString();
+  //         });
+  //       }
+  //       // Future.delayed(Duration(seconds: 100), () async {});
+
+  //       // read_CheckBeamAll(ren, Pay_Ke);
+  //       if (Pay_Ke == null ||
+  //           Pay_Ke.toString() == '' ||
+  //           Pay_Ke.toString() == 'null') {
+  //       } else {
+  //         read_CheckBeamAll(ren, Pay_Ke);
+  //       }
+  //       // RecheckAuto(ren, Pay_Ke);
+  //     }
+  //     _apiCache.set('Auto_Recheck_pay_Beam_Checkout');
+  //   } catch (e) {}
+  // }
+
+  //////////////----------------------------------------->
 
   Future<Null> deall_Trans_select() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -790,325 +1169,160 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
   }
 
   String? connected_Minutes;
+  Timer? _sessionTimer;
+  bool _checking = false;
+  bool _dialogShowing = false;
+
   void startTimer() {
-    Check_connected();
+    // ยิงเช็คครั้งแรก
     upConnected();
 
-    // Create a timer that runs the read_connected function every 1 minute
-    Timer.periodic(Duration(seconds: 120), (timer) {
-      Check_connected();
+    // ตั้ง timer ทุก 30 วิ
+    _sessionTimer?.cancel();
+    _sessionTimer = Timer.periodic(const Duration(seconds: 120), (timer) {
       upConnected();
     });
   }
 
-  Future<void> upConnected() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    var user = preferences.getString('ser');
-    DateTime currentTime = DateTime.now();
-    String formattedDateTime =
-        DateFormat('yyyy-MM-dd HH:mm:ss').format(currentTime);
-    // print('$ren-----$user ----- ${formattedDateTime}');
-    String url =
-        '${MyConstant().domain}/UP_Connected_User.php?isAdd=true&seruser=$user&value=$formattedDateTime';
-    try {
-      var response = await http.get(Uri.parse(url));
+  Future<bool> upConnected() async {
+    final String checkTokenUrl = '${MyConstant().domain_v1}/admin/me';
+    final token =
+        await SecurePrefs.getDecrypted(SecurePrefsType.authAccessToken);
 
-      // if (response.statusCode == 200) {
-      //   // Check if the response status code is OK (200)
-      //   print('Success: ${response.body}');
-      // } else {
-      //   // Handle other response status codes if needed
-      //   print('HTTP Error: ${response.statusCode}');
-      // }
-    } catch (e) {
-      // print('Error: $e');
+    if (token == null || token.isEmpty) {
+      //  debugPrint('🔒 No stored token found');
+      return false;
     }
-  }
 
-  String read_data_davtext = '';
-  Future<Null> Check_connected() async {
-    if (userModels.isNotEmpty) {
-      userModels.clear();
-      userModels_chat.clear();
-    }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    String url =
-        '${MyConstant().domain}/Connected_User.php?isAdd=true&ren=$ren&emailrental=$renTal_Email';
-    int indexfor = 0;
+    final headers = await MyHeaders.build();
+    headers.putIfAbsent('Authorization', () => 'Bearer $token');
+
+    if (_checking) return false; // กันยิงซ้อน
+    _checking = true;
+
+    final client = http.Client();
     try {
-      var response = await http.get(Uri.parse(url));
+      final resp = await client
+          .get(Uri.parse(checkTokenUrl), headers: headers)
+          .timeout(const Duration(seconds: 12));
 
-      var result = json.decode(response.body);
-      // print(result);
-      if (result != null) {
-        for (var map in result) {
-          UserModel userModel = UserModel.fromJson(map);
-          String connected_ = '${userModel.connected}';
+      if (resp.statusCode == 200) {
+        //debugPrint('✅ Token valid, auto-login success');
+        _checking = false;
+        return true;
+      }
 
-          DateTime connectedTime = DateTime.parse(connected_);
+      // 401/403: หมดอายุ
+      if (resp.statusCode == 401 || resp.statusCode == 403) {
+        if (!context.mounted || _dialogShowing) return false;
+        _dialogShowing = true;
+        PanaraInfoDialog.showAnimatedGrow(
+          context,
+          title: "Oops",
+          message: "เซสชันหมดอายุ กรุณาออกแล้วเข้าระบบใหม่",
+          buttonText: "รับทราบ",
+          onTapDismiss: () async {
+            AuthService.logout();
+            if (context.mounted) Navigator.pop(context);
+            SharedPreferences preferences =
+                await SharedPreferences.getInstance();
+            preferences.clear();
 
-          DateTime currentTime = DateTime.now();
-
-          Duration difference = currentTime.difference(connectedTime);
-
-          int minutesPassed = difference.inMinutes;
-          setState(() {
-            userModels_chat.add(userModel);
-          });
-          if (minutesPassed > 15) {
-          } else {
-            setState(() {
-              userModels.add(userModel);
+            MaterialPageRoute route = MaterialPageRoute(
+              builder: (context) => LoginPage(),
+            );
+            Navigator.pushAndRemoveUntil(context, route, (route) {
+              return false;
             });
-          }
-          if (indexfor == 0) {
-            read_data_davtext = '${userModel.dev_text}';
-          }
-          indexfor++;
-        }
-      } else {}
-    } catch (e) {}
-    // print('name>>>>>  $renname');
-  }
+            // await AuthService.logout();
+            // if (context.mounted) Navigator.pop(context);
+            _dialogShowing = false;
+          },
+          panaraDialogType: PanaraDialogType.error,
+          barrierDismissible: false,
+        );
+        _checking = false;
+        return false;
+      }
 
-  Future<Null> read_GC_areak() async {
-    if (areakModels.isNotEmpty) {
-      areakModels.clear();
+      // อื่น ๆ
+      String msg = 'ไม่สามารถตรวจสอบเซสชันได้ (${resp.statusCode})';
+      try {
+        final body = jsonDecode(resp.body);
+        if (body is Map && body['message'] is String) msg = body['message'];
+      } catch (_) {}
+
+      if (context.mounted && !_dialogShowing) {
+        _dialogShowing = true;
+        PanaraInfoDialog.showAnimatedGrow(
+          context,
+          title: "เกิดข้อผิดพลาด",
+          message: msg,
+          buttonText: "ปิด",
+          onTapDismiss: () {
+            if (context.mounted) Navigator.pop(context);
+            _dialogShowing = false;
+          },
+          panaraDialogType: PanaraDialogType.warning,
+          barrierDismissible: true,
+        );
+      }
+      _checking = false;
+      return false;
+    } on TimeoutException {
+      // debugPrint('⏳ Token check timed out');
+      if (context.mounted && !_dialogShowing) {
+        _dialogShowing = true;
+        PanaraInfoDialog.showAnimatedGrow(
+          context,
+          title: "เครือข่ายช้า",
+          message: "การตรวจสอบเซสชันหมดเวลา ลองใหม่อีกครั้ง",
+          buttonText: "ปิด",
+          onTapDismiss: () {
+            if (context.mounted) Navigator.pop(context);
+            _dialogShowing = false;
+          },
+          panaraDialogType: PanaraDialogType.warning,
+          barrierDismissible: true,
+        );
+      }
+      _checking = false;
+      return false;
+    } catch (e) {
+      // debugPrint('❌ Token check error: $e');
+      _checking = false;
+      return false;
+    } finally {
+      client.close();
     }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    String url = '${MyConstant().domain}/In_c_areak.php?isAdd=true&ren=$ren';
-
-    try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      // print(result);
-      if (result != null) {
-        for (var map in result) {
-          AreakModel areakModel = AreakModel.fromJson(map);
-
-          setState(() {
-            areakModels.add(areakModel);
-          });
-        }
-      } else {}
-    } catch (e) {}
-    // print('name>>>>>  $renname');
   }
 
-  Future<Null> read_GC_rental() async {
-    if (renTalModels.isNotEmpty) {
-      renTalModels.clear();
-    }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    String url =
-        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
-
-    try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      // print('GC_rental_setring>> $result');
-
-      if (result != null) {
-        for (var map in result) {
-          RenTalModel renTalModel = RenTalModel.fromJson(map);
-          var rtnamex = renTalModel.rtname;
-          var typexs = renTalModel.type;
-          var typexx = renTalModel.typex;
-          var name = renTalModel.pn!.trim();
-          var pkqtyx = int.parse(renTalModel.pkqty!);
-          var pkuserx = int.parse(renTalModel.pkuser!);
-          var pkx = renTalModel.pk!.trim();
-          var foderx = renTalModel.dbn;
-          var img = renTalModel.img;
-          var imglogo = renTalModel.imglogo;
-          var pksdatex = renTalModel.pksdate;
-          var pkldatex = renTalModel.pkldate;
-          var data_updatex = renTalModel.data_update;
-          setState(() {
-            Auto_cancel = preferences.getString('Auto_cancel');
-            ren_ser = ren!.trim().toString();
-            preferences.setString(
-                'renTalName', renTalModel.pn!.trim().toString());
-            preferences.setString(
-                'renTalEmail', renTalModel.bill_email!.trim().toString());
-            preferences.setString(
-                'renTal_Language', renTalModel.lan_guage!.trim().toString());
-
-            renTal_name = preferences.getString('renTalName');
-            time_check = renTalModel.time_check;
-            renTal_Email = renTalModel.bill_email.toString();
-            foder = foderx;
-            rtname = rtnamex;
-            type = typexs;
-            typex = typexx;
-            renname = name;
-            pkqty = pkqtyx;
-            pkuser = pkuserx;
-            pkname = pkx;
-            img_ = img;
-            img_logo = imglogo;
-            preferences.setString('renTal_logo',
-                '${MyConstant().domain}/files/$foder/logo/$imglogo');
-            pkldate = pkldatex;
-            data_update = data_updatex;
-            renTalModels.add(renTalModel);
-          });
-        }
-        if (renTalModels.isNotEmpty) {
-          dynamic colorsren = renTalModels[0].colors_ren.toString();
-          dynamic colorsren_sub = renTalModels[0].colors_subren;
-          dynamic colors_light = renTalModels[0].colors_light;
-          dynamic colors_dark = renTalModels[0].colors_dark;
-          if (colorsren is String) {
-            if (renTalModels[0].colors_ren.toString() != '' &&
-                renTalModels[0].colors_ren != null &&
-                renTalModels[0].colors_ren.toString() != 'null') {
-              setState(
-                  () => AppBarColors.hexColor = Color(int.parse(colorsren)));
-            }
-            if (renTalModels[0].colors_subren.toString() != '' &&
-                renTalModels[0].colors_subren != null &&
-                renTalModels[0].colors_subren.toString() != 'null') {
-              setState(() => AppBarColors.ABar_Colors_tab =
-                  Color(int.parse(colorsren_sub)));
-            }
-
-            if (renTalModels[0].colors_light.toString() != '' &&
-                renTalModels[0].colors_light != null &&
-                renTalModels[0].colors_light.toString() != 'null') {
-              bool isDarkMode = preferences.getBool('isDarkMode') ?? false;
-              setState(() {
-                isDark_Mode = isDarkMode;
-              });
-              isDark_Mode == false
-                  ? setState(() => AppbackgroundColor.TiTile_Colors =
-                      Color(int.parse(colors_light)))
-                  : setState(() => AppbackgroundColor.TiTile_Colors =
-                      Color(int.parse(colors_dark)));
-            } else {
-              var Color_App_Bar = 0xFF102456;
-              var Color_Side_Bar = 0xFF8BB63B;
-              var Color_Light_Mode = 0xFFD9D9B7;
-              var Color_Dark_Mode = 0xff9ba2cb;
-              setState(() {
-                preferences.setBool('isDarkMode', false);
-              });
-              String url1 =
-                  '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${Color_App_Bar}&colors_type=1&ser_ren=${ren}&ser_tap=0';
-              String url2 =
-                  '${MyConstant().domain}/UP_ColorsRen.php?isAdd=true&colors_ren=${Color_Side_Bar}&colors_type=1&ser_ren=${ren}&ser_tap=1';
-              String url3 =
-                  '${MyConstant().domain}/UP_ColorsRen_Mode.php?isAdd=true&colors_ren=${Color_Light_Mode}&colors_type=1&ser_ren=${ren}&ser_tap=2';
-              String url4 =
-                  '${MyConstant().domain}/UP_ColorsRen_Mode.php?isAdd=true&colors_ren=${Color_Dark_Mode}&colors_type=1&ser_ren=${ren}&ser_tap=3';
-              var response1 = await http.get(Uri.parse(url1));
-              var response2 = await http.get(Uri.parse(url2));
-              var response3 = await http.get(Uri.parse(url3));
-              var response4 = await http.get(Uri.parse(url4));
-              String? _route = preferences.getString('route');
-              MaterialPageRoute materialPageRoute = MaterialPageRoute(
-                  builder: (BuildContext context) =>
-                      AdminScafScreen(route: _route));
-              Navigator.pushAndRemoveUntil(
-                  context, materialPageRoute, (route) => false);
-            }
-
-            // print('Color(int.parse(colorsren))');
-            // print(Color(int.parse(colorsren)));
-            // print(pickerColor);
-          } else {
-            // Handle the case where colorsren is not a String
-          }
-        }
-      } else {}
-    } catch (e) {}
-  }
-  // Future<Null> read_GC_rental() async {
-  //   if (renTalModels.isNotEmpty) {
-  //     renTalModels.clear();
-  //   }
+  // Future<void> upConnected() async {
   //   SharedPreferences preferences = await SharedPreferences.getInstance();
   //   var ren = preferences.getString('renTalSer');
-  //   String url =
-  //       '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
-
+  //   var user = preferences.getString('ser');
+  //   DateTime currentTime = DateTime.now();
+  //   String formattedDateTime =
+  //       DateFormat('yyyy-MM-dd HH:mm:ss').format(currentTime);
+  //   // print('$ren-----$user ----- ${formattedDateTime}');
+  //   // String url =
+  //   //     '${MyConstant().domain}/UP_Connected_User.php?isAdd=true&seruser=$user&value=$formattedDateTime';
   //   try {
-  //     var response = await http.get(Uri.parse(url));
+  //     // var response = await http.get(Uri.parse(url));
 
-  //     var result = json.decode(response.body);
-  //     print('GC_rental_setring>> $result');
-
-  //     if (result != null) {
-  //       for (var map in result) {
-  //         RenTalModel renTalModel = RenTalModel.fromJson(map);
-  //         var rtnamex = renTalModel.rtname;
-  //         var typexs = renTalModel.type;
-  //         var typexx = renTalModel.typex;
-  //         var name = renTalModel.pn!.trim();
-  //         var pkqtyx = int.parse(renTalModel.pkqty!);
-  //         var pkuserx = int.parse(renTalModel.pkuser!);
-  //         var pkx = renTalModel.pk!.trim();
-  //         var foderx = renTalModel.dbn;
-  //         var img = renTalModel.img;
-  //         var imglogo = renTalModel.imglogo;
-  //         var pksdatex = renTalModel.pksdate;
-  //         var pkldatex = renTalModel.pkldate;
-  //         var data_updatex = renTalModel.data_update;
-  //         setState(() {
-  //           preferences.setString(
-  //               'renTalName', renTalModel.pn!.trim().toString());
-  //           preferences.setString(
-  //               'renTalEmail', renTalModel.bill_email!.trim().toString());
-  //           renTal_name = preferences.getString('renTalName');
-  //           renTal_Email = renTalModel.bill_email.toString();
-  //           foder = foderx;
-  //           rtname = rtnamex;
-  //           type = typexs;
-  //           typex = typexx;
-  //           renname = name;
-  //           pkqty = pkqtyx;
-  //           pkuser = pkuserx;
-  //           pkname = pkx;
-  //           img_ = img;
-  //           img_logo = imglogo;
-  //           pkldate = pkldatex;
-  //           data_update = data_updatex;
-  //           renTalModels.add(renTalModel);
-  //         });
-  //       }
-  //       if (renTalModels.isNotEmpty) {
-  //         dynamic colorsren = renTalModels[0].colors_ren;
-  //         dynamic colorsren_sub = renTalModels[0].colors_subren;
-  //         if (colorsren is String) {
-  //           if (renTalModels[0].colors_ren.toString() != '' &&
-  //               renTalModels[0].colors_ren != null &&
-  //               renTalModels[0].colors_ren.toString() != 'null') {
-  //             setState(
-  //                 () => AppBarColors.hexColor = Color(int.parse(colorsren)));
-  //           }
-  //           if (renTalModels[0].colors_subren.toString() != '' &&
-  //               renTalModels[0].colors_subren != null &&
-  //               renTalModels[0].colors_subren.toString() != 'null') {
-  //             setState(() => AppBarColors.ABar_Colors_tab =
-  //                 Color(int.parse(colorsren_sub)));
-  //           }
-
-  //           // print('Color(int.parse(colorsren))');
-  //           // print(Color(int.parse(colorsren)));
-  //           // print(pickerColor);
-  //         } else {
-  //           // Handle the case where colorsren is not a String
-  //         }
-  //       }
-  //     } else {}
-  //   } catch (e) {}
+  //     // if (response.statusCode == 200) {
+  //     //   // Check if the response status code is OK (200)
+  //     //   print('Success: ${response.body}');
+  //     // } else {
+  //     //   // Handle other response status codes if needed
+  //     //   print('HTTP Error: ${response.statusCode}');
+  //     // }
+  //   } catch (e) {
+  //     // print('Error: $e');
+  //   }
   // }
+
+  String read_data_davtext = '';
 
   Future<Null> readTime() async {
     var now = DateTime.now();
@@ -1133,9 +1347,9 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
 
           // preferences.setInt('timeoutper', 100);
 
-          timeoutper == -5
-              ? -5
-              : alert = DateTime.now().add(Duration(seconds: timeoutper!));
+          if (timeoutper != null && timeoutper != -5) {
+            alert = DateTime.now().add(Duration(seconds: timeoutper ?? 300));
+          }
           preferences.setInt('timeoutper', -5);
         });
       }
@@ -1189,103 +1403,302 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
     return "${f((d.inHours) % 24)}:${f((d.inMinutes) % 60)}:${f(d.inSeconds % 60)} \t\t";
   }
 
-  Future<Null> signInThread() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-
-    String? _seruser = preferences.getString('ser');
-    String url =
-        '${MyConstant().domain}/GC_userHome.php?isAdd=true&ser=$_seruser';
-
-    try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-      // print(result);
-      for (var map in result) {
-        UserModel userModel = UserModel.fromJson(map);
-        setState(() {
-          position_user = userModel.position;
-          fname_user = userModel.fname;
-          lname_user = userModel.lname;
-          email_user = userModel.email;
-          ser_user = userModel.ser;
-          utype_user = userModel.utype;
-          permission_user = userModel.permission;
-        });
-      }
-      setState(() {
-        read_GC_permission();
-      });
-    } catch (e) {}
+  Future<Null> signInThreadMain() async {
+    signInThreadCMM();
+    // (renTal_user.toString() == '50' || renTal_user.toString() == '139')
+    //     ? signInThreadCMM()
+    //     : signInThread();
   }
+
+  Future<Null> signInThreadCMM() async {
+    //print('signInThreadCMM');
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    final userStr =
+        await SecurePrefs.getDecrypted(SecurePrefsType.authUserObject);
+    String? _seruser = preferences.getString('ser');
+
+    if (userStr != null) {
+      try {
+        setState(() {
+          position_user = preferences.getString('position');
+          fname_user = preferences.getString('fname');
+          lname_user = preferences.getString('lname');
+          email_user = preferences.getString('email');
+          ser_user = preferences.getString('ser');
+          utype_user = '';
+          permission_user = preferences.getString('permission');
+        });
+      } catch (e) {}
+    }
+    setState(() {
+      read_GC_permission();
+    });
+  }
+
+  // ❌ Dead code — signInThreadMain() เรียก signInThreadCMM() เท่านั้น ไม่เคยเรียก signInThread()
+  // Future<Null> signInThread() async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //
+  //   String? _seruser = preferences.getString('ser');
+  //   String url =
+  //       '${MyConstant().domain}/GC_userHome.php?isAdd=true&ser=$_seruser';
+  //
+  //   try {
+  //     var response = await http.get(Uri.parse(url));
+  //
+  //     var result = json.decode(response.body);
+  //     // print(result);
+  //     for (var map in result) {
+  //       UserModel userModel = UserModel.fromJson(map);
+  //       setState(() {
+  //         position_user = userModel.position;
+  //         fname_user = userModel.fname;
+  //         lname_user = userModel.lname;
+  //         email_user = userModel.email;
+  //         ser_user = userModel.ser;
+  //         utype_user = userModel.utype;
+  //         permission_user = userModel.permission;
+  //       });
+  //     }
+  //     setState(() {
+  //       read_GC_permission();
+  //     });
+  //   } catch (e) {}
+  // }
 
 /////----------------------------------->
   List<String> translate_menu = [];
   String more_menu = 'อื่นๆ';
 /////----------------------------------->
   Future<Null> read_GC_permission() async {
+    String cacheKey = 'read_GC_permission_all';
+
+    if (permission_user != '0') {
+      final preferences = await SharedPreferences.getInstance();
+      final permission_userx = preferences.getString('permission') ?? '';
+
+      List<String> permissions = permission_userx
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+
+      String ser = permissions.join(',');
+      cacheKey = 'read_GC_permission_$ser';
+    }
+
+    if (_apiCache.isValid(cacheKey)) {
+      final cached = _apiCache.get(cacheKey);
+      if (cached != null) {
+        if (perMissionModels.isNotEmpty) {
+          translate_menu.clear();
+          perMissionModels.clear();
+        }
+
+        for (var map in cached) {
+          PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
+          perMissionModels.add(perMissionModel);
+          translate_menu.add(await translateText('${perMissionModel.perm}'));
+        }
+
+        more_menu = await translateText('อื่นๆ');
+
+        setState(() {
+          perMissioncount = perMissionModels.length;
+        });
+        return null;
+      }
+    }
+
     startTimer();
-    if (perMissionModels.length != 0) {
+
+    if (perMissionModels.isNotEmpty) {
       translate_menu.clear();
       perMissionModels.clear();
     }
-    if (permission_user == '0') {
-      String url =
-          (renTal_user.toString() == '50' || renTal_user.toString() == '139')
-              ? '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true'
-              : '${MyConstant().domain}/GC_permissionAll.php?isAdd=true';
 
-      try {
-        var response = await http.get(Uri.parse(url));
+    try {
+      String url = '';
 
-        var result = json.decode(response.body);
-        // print(result);
-        for (var map in result) {
-          PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
-          setState(() {
-            perMissionModels.add(perMissionModel);
-          });
-          translate_menu.add(await translateText('${perMissionModel.perm}'));
-        }
-        var more_menu2 = await translateText('อื่นๆ');
-        setState(() {
-          more_menu = more_menu2;
-        });
-      } catch (e) {}
-    } else {
-      List<String> permissions = (permission_user!.split(','));
-      for (var i = 0; i < permissions.length; i++) {
-        var permission = permissions[i];
-        String url = (renTal_user.toString() == '50' ||
-                renTal_user.toString() == '139')
-            ? '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true&ser=$permission'
-            : '${MyConstant().domain}/GC_permission.php?isAdd=true&ser=$permission';
+      if (permission_user == '0') {
+        url = '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true';
+      } else {
+        final preferences = await SharedPreferences.getInstance();
+        final permission_userx = preferences.getString('permission') ?? '';
 
-        try {
-          var response = await http.get(Uri.parse(url));
+        List<String> permissions = permission_userx
+            .split(',')
+            .map((e) => e.trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
 
-          var result = json.decode(response.body);
-          // print(result);
-          for (var map in result) {
-            PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
-            setState(() {
-              perMissionModels.add(perMissionModel);
-            });
-            translate_menu.add(await translateText('${perMissionModel.perm}'));
-          }
-          var more_menu2 = await translateText('อื่นๆ');
-          setState(() {
-            more_menu = more_menu2;
-          });
-        } catch (e) {}
+        String ser = permissions.join(',');
+
+        url =
+            '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true&ser=$ser';
       }
-    }
-    setState(() {
-      perMissioncount = perMissionModels.length;
-    });
 
-    // print('perMissionModels  == > ${perMissionModels.length}');
+      var response = await http.get(Uri.parse(url));
+      var result = json.decode(response.body);
+
+      _apiCache.set(cacheKey, result);
+
+      for (var map in result) {
+        PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
+        perMissionModels.add(perMissionModel);
+
+        translate_menu.add(await translateText('${perMissionModel.perm}'));
+      }
+
+      more_menu = await translateText('อื่นๆ');
+
+      setState(() {
+        perMissioncount = perMissionModels.length;
+      });
+    } catch (e) {
+      print('read_GC_permission error: $e');
+    }
+
+    return null;
   }
+  // Future<Null> read_GC_permission() async {
+  //   if (_apiCache.isValid('read_GC_permission')) {
+  //     final cached = _apiCache.get('read_GC_permission');
+  //     if (cached != null) {
+  //       if (perMissionModels.isNotEmpty) {
+  //         translate_menu.clear();
+  //         perMissionModels.clear();
+  //       }
+  //       for (var map in cached) {
+  //         PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
+  //         perMissionModels.add(perMissionModel);
+  //         translate_menu.add(await translateText('${perMissionModel.perm}'));
+  //       }
+  //       more_menu = await translateText('อื่นๆ');
+  //       setState(() {
+  //         perMissioncount = perMissionModels.length;
+  //       });
+  //       return null;
+  //     }
+  //   }
+
+  //   startTimer();
+
+  //   if (perMissionModels.isNotEmpty) {
+  //     translate_menu.clear();
+  //     perMissionModels.clear();
+  //   }
+
+  //   try {
+  //     String url = '';
+
+  //     if (permission_user == '0') {
+  //       url = '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true';
+  //     } else {
+  //       final preferences = await SharedPreferences.getInstance();
+  //       final permission_userx = preferences.getString('permission') ?? '';
+
+  //       List<String> permissions = permission_userx
+  //           .split(',')
+  //           .map((e) => e.trim())
+  //           .where((e) => e.isNotEmpty)
+  //           .toList();
+
+  //       // รวมส่งครั้งเดียว เช่น ser=1,2,3,4
+  //       String ser = permissions.join(',');
+
+  //       url =
+  //           '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true&ser=$ser';
+  //     }
+
+  //     var response = await http.get(Uri.parse(url));
+  //     var result = json.decode(response.body);
+  //     _apiCache.set('read_GC_permission', result);
+
+  //     for (var map in result) {
+  //       PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
+  //       perMissionModels.add(perMissionModel);
+
+  //       translate_menu.add(await translateText('${perMissionModel.perm}'));
+  //     }
+
+  //     more_menu = await translateText('อื่นๆ');
+
+  //     setState(() {
+  //       perMissioncount = perMissionModels.length;
+  //     });
+  //   } catch (e) {
+  //     print('read_GC_permission error: $e');
+  //   }
+
+  //   return null;
+  // }
+
+  // Future<Null> read_GC_permission() async {
+  //   if (_apiCache.isValid('read_GC_permission')) return null;
+  //   startTimer();
+  //   if (perMissionModels.length != 0) {
+  //     translate_menu.clear();
+  //     perMissionModels.clear();
+  //   }
+  //   if (permission_user == '0') {
+  //     String url = '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true';
+
+  //     try {
+  //       var response = await http.get(Uri.parse(url));
+
+  //       var result = json.decode(response.body);
+  //       // print(result);
+  //       for (var map in result) {
+  //         PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
+  //         setState(() {
+  //           perMissionModels.add(perMissionModel);
+  //         });
+  //         translate_menu.add(await translateText('${perMissionModel.perm}'));
+  //       }
+  //       var more_menu2 = await translateText('อื่นๆ');
+  //       setState(() {
+  //         more_menu = more_menu2;
+  //       });
+  //     } catch (e) {}
+  //   } else {
+  //     final preferences = await SharedPreferences.getInstance();
+  //     final permission_userx = preferences.getString('permission');
+  //     List<String> permissions =
+  //         (renTal_user.toString() == '50' || renTal_user.toString() == '139')
+  //             ? (permission_userx!.split(','))
+  //             : (permission_userx!.split(','));
+  //     for (var i = 0; i < permissions.length; i++) {
+  //       var permission = permissions[i];
+  //       String url =
+  //           '${MyConstant().domain}/GC_permission_cmm.php?isAdd=true&ser=$permission';
+
+  //       try {
+  //         var response = await http.get(Uri.parse(url));
+
+  //         var result = json.decode(response.body);
+  //         // print(result);
+  //         for (var map in result) {
+  //           PerMissionModel perMissionModel = PerMissionModel.fromJson(map);
+  //           setState(() {
+  //             perMissionModels.add(perMissionModel);
+  //           });
+  //           translate_menu.add(await translateText('${perMissionModel.perm}'));
+  //         }
+  //         var more_menu2 = await translateText('อื่นๆ');
+  //         setState(() {
+  //           more_menu = more_menu2;
+  //         });
+  //       } catch (e) {}
+  //     }
+  //   }
+  //   setState(() {
+  //     perMissioncount = perMissionModels.length;
+  //   });
+  //   _apiCache.set('read_GC_permission');
+
+  //   // print('perMissionModels  == > ${perMissionModels.length}');
+  // }
 
   Future<Null> checkPreferance() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -1297,13 +1710,15 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
         setState(() {
           preferences.setString('renTalSer', rser.toString());
           renTal_user = preferences.getString('renTalSer');
-          renTal_lavel = int.parse(preferences.getString('lavel').toString());
+          renTal_lavel =
+              int.tryParse(preferences.getString('lavel') ?? '0') ?? 0;
         });
       } else {
         setState(() {
           renTal_user = preferences.getString('renTalSer');
           renTal_name = preferences.getString('renTalName');
-          renTal_lavel = int.parse(preferences.getString('lavel').toString());
+          renTal_lavel =
+              int.tryParse(preferences.getString('lavel') ?? '0') ?? 0;
         });
       }
     } else {
@@ -1311,25 +1726,24 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
         setState(() {
           renTal_user = preferences.getString('renTalSer');
           renTal_name = preferences.getString('renTalName');
-          renTal_lavel = int.parse(preferences.getString('lavel').toString());
+          renTal_lavel =
+              int.tryParse(preferences.getString('lavel') ?? '0') ?? 0;
         });
       } else {
         setState(() {
           preferences.setString('renTalSer', rser.toString());
           renTal_user = preferences.getString('renTalSer');
-          renTal_lavel = int.parse(preferences.getString('lavel').toString());
+          renTal_lavel =
+              int.tryParse(preferences.getString('lavel') ?? '0') ?? 0;
         });
       }
     }
 
-    print('renTal_lavel>>> $renTal_lavel');
+    //print('renTal_lavel>>> $renTal_lavel');
     setState(() {
-      passcode_in();
-
-      //   renTal_user = preferences.getString('renTalSer');
-      //   renTal_name = preferences.getString('renTalName');
+      // passcode_in call removed
     });
-    System_User();
+    // System_User call removed
   }
 
   // List MenuList_ = [
@@ -1441,7 +1855,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
             //         ),
             //       );
             //     }),
-            InkWell(
+            GestureDetector(
               child: Container(
                 width: 150,
                 decoration: const BoxDecoration(
@@ -1551,7 +1965,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                     )),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
+                  child: GestureDetector(
                     child: Container(
                       width: 250,
                       decoration: const BoxDecoration(
@@ -1601,7 +2015,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
+                  child: GestureDetector(
                     child: Container(
                       width: 250,
                       decoration: const BoxDecoration(
@@ -1661,7 +2075,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                 if (type_dev.toString() == '0')
                   Padding(
                     padding: const EdgeInsets.all(8.0),
-                    child: InkWell(
+                    child: GestureDetector(
                       child: Container(
                         width: 250,
                         decoration: const BoxDecoration(
@@ -1719,7 +2133,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
             ),
           ),
           actions: <Widget>[
-            InkWell(
+            GestureDetector(
               child: Container(
                 width: 100,
                 decoration: const BoxDecoration(
@@ -1777,9 +2191,9 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
       // print(
       //     '$position_user, $fname_user, $lname_user,$email_user, $utype_user, $permission_user');
       setState(() {
-        if (passcode == null) {
-          passcode_in();
-        }
+        // if (passcode == null) {
+        //   passcode_in(); // ❌ ดึงซ้ำทุกรอบ build → ย้ายไปเรียกใน checkPreferance() แล้ว
+        // }
 
         serBody_modile_wiget = 0;
       });
@@ -1788,14 +2202,35 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
         child: const CircularProgressIndicator(),
       );
     }
-
-    return (Responsive.isDesktop(context)) ? adminweb() : adminmobile();
+    return WillPopScope(
+      onWillPop: () async => false, // ❌ กด back ไม่ทำงาน
+      child: Scaffold(
+        // appBar: AppBar(
+        //   automaticallyImplyLeading: false, // ❌ ซ่อนปุ่ม back บน AppBar
+        //   title: const Text("Home"),
+        // ),
+        body: (Responsive.isDesktop(context)) ? adminweb() : adminmobile(),
+      ),
+    );
+    // return (Responsive.isDesktop(context)) ? adminweb() : adminmobile();
   }
 
   AdminScaffold adminweb() {
     return AdminScaffold(
       backgroundColor: AppbackgroundColor.Abg_Colors,
+      leadingIcon: IconButton(
+        // icon: Icon(isSidebarOpen ? Icons.menu : Icons.menu),
+        tooltip: isSidebarOpen ? 'ซ่อนเมนู' : 'แสดงเมนู',
+        // onPressed:
+        //     _toggleSidebar, // สลับค่า isSidebarOpen แล้ว setState + (ถ้าเก็บ prefs ก็เซฟ)
+        icon: Icon(!context.watch<SidebarController>().isOpen
+            ? Icons.menu_open
+            : Icons.menu),
+        onPressed: () => context.read<SidebarController>().toggle(),
+      ),
       appBar: AppBar(
+        excludeHeaderSemantics: false,
+        automaticallyImplyLeading: false,
         iconTheme: const IconThemeData(color: Colors.white),
         foregroundColor: Colors.black,
         titleSpacing: 00.0,
@@ -1807,6 +2242,10 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
             bottomRight: Radius.circular(0),
             bottomLeft: Radius.circular(0),
           ),
+        ),
+        leading: IconButton(
+          icon: Icon(isSidebarOpen ? Icons.menu_open : Icons.menu_open),
+          onPressed: () => context.read<SidebarController>().toggle(),
         ),
         title: Align(
           alignment: Alignment.centerLeft,
@@ -1820,7 +2259,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       if (Responsive.isDesktop(context))
                         (img_logo == null || img_logo.toString() == '')
                             ? SizedBox()
-                            : InkWell(
+                            : GestureDetector(
                                 child: CircleAvatar(
                                   radius: 20.0,
                                   backgroundImage: NetworkImage(
@@ -1841,7 +2280,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                   }
                                 },
                               ),
-                      InkWell(
+                      GestureDetector(
                         child: Text(
                           renTal_name == null ? ' ภาพรวม' : ' $renTal_name',
                           overflow: TextOverflow.ellipsis,
@@ -1918,127 +2357,127 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       ],
                     );
                   }),
-              StreamBuilder(
-                  stream: Stream.periodic(const Duration(seconds: 1)),
-                  builder: (context, snapshot) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        // color: Colors.white.withOpacity(0.7),
-                        // Colors.lightGreen[200],
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                        // border: Border.all(color: Colors.grey, width: 0.5),
-                      ),
-                      padding: const EdgeInsets.all(0.5),
-                      child: Container(
-                        width: 100,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: Icon(
-                                Icons.sunny,
-                                size: 15.0,
-                                color: (AppbackgroundColor.TiTile_Colors ==
-                                        Color.fromARGB(255, 203, 200, 219))
-                                    ? Colors.white
-                                    : Colors.orange,
-                              ),
-                            ),
-                            (isDark_Mode == true)
-                                ? InkWell(
-                                    onTap: () async {
-                                      SharedPreferences preferences =
-                                          await SharedPreferences.getInstance();
-                                      setState(() {
-                                        preferences.setBool(
-                                            'isDarkMode', false);
-                                      });
-                                      // print(preferences.getBool('isDarkMode'));
-                                      // print(isDark_Mode);
-                                      String? _route =
-                                          preferences.getString('route');
-                                      MaterialPageRoute materialPageRoute =
-                                          MaterialPageRoute(
-                                              builder: (BuildContext context) =>
-                                                  AdminScafScreen(
-                                                      route: _route));
-                                      Navigator.pushAndRemoveUntil(context,
-                                          materialPageRoute, (route) => false);
-                                      // changeColor();
-                                    },
-                                    child: Icon(
-                                      Icons.toggle_on,
-                                      color: Colors.yellow[100],
-                                      size: 35.0,
-                                    ),
-                                  )
-                                : InkWell(
-                                    onTap: () async {
-                                      SharedPreferences preferences =
-                                          await SharedPreferences.getInstance();
-                                      setState(() {
-                                        preferences.setBool('isDarkMode', true);
-                                      });
+              // StreamBuilder(
+              //     stream: Stream.periodic(const Duration(seconds: 1)),
+              //     builder: (context, snapshot) {
+              //       return Container(
+              //         decoration: BoxDecoration(
+              //           // color: Colors.white.withOpacity(0.7),
+              //           // Colors.lightGreen[200],
+              //           borderRadius: BorderRadius.only(
+              //               topLeft: Radius.circular(10),
+              //               topRight: Radius.circular(10),
+              //               bottomLeft: Radius.circular(10),
+              //               bottomRight: Radius.circular(10)),
+              //           // border: Border.all(color: Colors.grey, width: 0.5),
+              //         ),
+              //         padding: const EdgeInsets.all(0.5),
+              //         child: Container(
+              //           width: 100,
+              //           child: Row(
+              //             children: [
+              //               Expanded(
+              //                 flex: 1,
+              //                 child: Icon(
+              //                   Icons.sunny,
+              //                   size: 15.0,
+              //                   color: (AppbackgroundColor.TiTile_Colors ==
+              //                           Color.fromARGB(255, 203, 200, 219))
+              //                       ? Colors.white
+              //                       : Colors.orange,
+              //                 ),
+              //               ),
+              //               (isDark_Mode == true)
+              //                   ? InkWell(
+              //                       onTap: () async {
+              //                         SharedPreferences preferences =
+              //                             await SharedPreferences.getInstance();
+              //                         setState(() {
+              //                           preferences.setBool(
+              //                               'isDarkMode', false);
+              //                         });
+              //                         // print(preferences.getBool('isDarkMode'));
+              //                         // print(isDark_Mode);
+              //                         String? _route =
+              //                             preferences.getString('route');
+              //                         MaterialPageRoute materialPageRoute =
+              //                             MaterialPageRoute(
+              //                                 builder: (BuildContext context) =>
+              //                                     AdminScafScreen(
+              //                                         route: _route));
+              //                         Navigator.pushAndRemoveUntil(context,
+              //                             materialPageRoute, (route) => false);
+              //                         // changeColor();
+              //                       },
+              //                       child: Icon(
+              //                         Icons.toggle_on,
+              //                         color: Colors.yellow[100],
+              //                         size: 35.0,
+              //                       ),
+              //                     )
+              //                   : InkWell(
+              //                       onTap: () async {
+              //                         SharedPreferences preferences =
+              //                             await SharedPreferences.getInstance();
+              //                         setState(() {
+              //                           preferences.setBool('isDarkMode', true);
+              //                         });
 
-                                      print(preferences.getBool('isDarkMode'));
-                                      String? _route =
-                                          preferences.getString('route');
-                                      MaterialPageRoute materialPageRoute =
-                                          MaterialPageRoute(
-                                              builder: (BuildContext context) =>
-                                                  AdminScafScreen(
-                                                      route: _route));
-                                      Navigator.pushAndRemoveUntil(context,
-                                          materialPageRoute, (route) => false);
-                                      // changeColor();
-                                    },
-                                    child: Icon(
-                                      Icons.toggle_off,
-                                      color: Colors.orange[100],
-                                      size: 35.0,
-                                    ),
-                                  ),
-                            // (AppbackgroundColor.TiTile_Colors ==
-                            //         Color.fromARGB(255, 203, 200, 219))
-                            //     ? InkWell(
-                            //         onTap: () {
-                            //           changeColor();
-                            //         },
-                            //         child: Icon(
-                            //           Icons.toggle_on,
-                            //           color: Colors.yellow[100],
-                            //           size: 35.0,
-                            //         ),
-                            //       )
-                            //     : InkWell(
-                            //         onTap: () {
-                            //           changeColor();
-                            //         },
-                            //         child: Icon(
-                            //           Icons.toggle_off,
-                            //           color: Colors.orange[100],
-                            //           size: 35.0,
-                            //         ),
-                            //       ),
-                            Expanded(
-                                flex: 1,
-                                child: Icon(
-                                  Icons.bedtime,
-                                  size: 15.0,
-                                  color: (AppbackgroundColor.TiTile_Colors ==
-                                          Color(0xFFD9D9B7))
-                                      ? Colors.white
-                                      : Colors.yellow,
-                                )),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
+              //                         print(preferences.getBool('isDarkMode'));
+              //                         String? _route =
+              //                             preferences.getString('route');
+              //                         MaterialPageRoute materialPageRoute =
+              //                             MaterialPageRoute(
+              //                                 builder: (BuildContext context) =>
+              //                                     AdminScafScreen(
+              //                                         route: _route));
+              //                         Navigator.pushAndRemoveUntil(context,
+              //                             materialPageRoute, (route) => false);
+              //                         // changeColor();
+              //                       },
+              //                       child: Icon(
+              //                         Icons.toggle_off,
+              //                         color: Colors.orange[100],
+              //                         size: 35.0,
+              //                       ),
+              //                     ),
+              //               // (AppbackgroundColor.TiTile_Colors ==
+              //               //         Color.fromARGB(255, 203, 200, 219))
+              //               //     ? InkWell(
+              //               //         onTap: () {
+              //               //           changeColor();
+              //               //         },
+              //               //         child: Icon(
+              //               //           Icons.toggle_on,
+              //               //           color: Colors.yellow[100],
+              //               //           size: 35.0,
+              //               //         ),
+              //               //       )
+              //               //     : InkWell(
+              //               //         onTap: () {
+              //               //           changeColor();
+              //               //         },
+              //               //         child: Icon(
+              //               //           Icons.toggle_off,
+              //               //           color: Colors.orange[100],
+              //               //           size: 35.0,
+              //               //         ),
+              //               //       ),
+              //               Expanded(
+              //                   flex: 1,
+              //                   child: Icon(
+              //                     Icons.bedtime,
+              //                     size: 15.0,
+              //                     color: (AppbackgroundColor.TiTile_Colors ==
+              //                             Color(0xFFD9D9B7))
+              //                         ? Colors.white
+              //                         : Colors.yellow,
+              //                   )),
+              //             ],
+              //           ),
+              //         ),
+              //       );
+              //     }),
               if (pkldate != null)
                 if (datex.isAfter(DateTime.parse(pkldate == '0000-00-00'
                             ? '$data_update'
@@ -2047,7 +2486,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                     true)
                   Padding(
                     padding: const EdgeInsets.all(4.0),
-                    child: InkWell(
+                    child: GestureDetector(
                       onTap: () {
                         MaterialPageRoute route = MaterialPageRoute(
                           builder: (context) => SignInLicense(route: 'Yes'),
@@ -2076,7 +2515,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                           ser_user == '268'))
                   ? Padding(
                       padding: const EdgeInsets.all(8.0),
-                      child: InkWell(
+                      child: GestureDetector(
                         onTap: () {
                           _showMyDialogDev(0);
                         },
@@ -2097,7 +2536,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       ? SizedBox()
                       : Padding(
                           padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
+                          child: GestureDetector(
                             onTap: () {
                               _showMyDialogDev(1);
                             },
@@ -2134,731 +2573,744 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                 child: Row(
                   children: [
                     Padding(
-                      padding: EdgeInsets.fromLTRB(4, 1, 2, 1),
-                      child: InkWell(
-                        onTap: () async {
-                          SharedPreferences preferences =
-                              await SharedPreferences.getInstance();
-                          var Lang = preferences.getString('Language');
-                          List supportedLocales = [
-                            {
-                              "ser": "1",
-                              "code": "th",
-                              "ln": "ไทย",
-                              "url": "images/Thailand.png"
-                            },
-                            {
-                              "ser": "2",
-                              "code": "en",
-                              "ln": "English",
-                              "url": "images/English.png"
-                            },
-                            {
-                              "ser": "3",
-                              "code": "lo",
-                              "ln": "ລາວ",
-                              "url": "images/LAO.png"
-                            },
-                            {
-                              "ser": "4",
-                              "code": "ko",
-                              "ln": "Korea",
-                              "url": "images/Korea.png"
-                            },
-                            {
-                              "ser": "5",
-                              "code": "ja",
-                              "ln": "Japanese",
-                              "url": "images/Jpan.png"
-                            },
-                            {
-                              "ser": "6",
-                              "code": "zh-cn",
-                              "ln": "China",
-                              "url": "images/Chaina.png"
-                            },
-                          ];
-
-                          showDialog<String>(
-                            context: context,
-                            builder: (BuildContext context) => AlertDialog(
-                              backgroundColor:
-                                  Color.fromARGB(255, 247, 246, 246),
-                              titlePadding: const EdgeInsets.all(0.0),
-                              contentPadding: const EdgeInsets.all(10.0),
-                              actionsPadding: const EdgeInsets.all(6.0),
-                              shape: const RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(20.0))),
-                              title: Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  InkWell(
-                                    onTap: () async {
-                                      Navigator.pop(context);
-                                    },
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Icon(Icons.highlight_off,
-                                          size: 30, color: Colors.red[700]),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              content: SingleChildScrollView(
-                                child: ListBody(
-                                  children: <Widget>[
-                                    SizedBox(
-                                      height: 20,
-                                    ),
-                                    for (int index = 0;
-                                        index < supportedLocales.length;
-                                        index++)
-                                      Padding(
-                                        padding: const EdgeInsets.all(4.0),
-                                        child: ListTile(
-                                            onTap: () async {
-                                              SharedPreferences preferences =
-                                                  await SharedPreferences
-                                                      .getInstance();
-                                              setState(() {
-                                                preferences.setString(
-                                                    'Language',
-                                                    '${supportedLocales[index]['code']}');
-                                              });
-                                              Navigator.pop(context);
-
-                                              String? _route = preferences
-                                                  .getString('route');
-
-                                              MaterialPageRoute route =
-                                                  MaterialPageRoute(
-                                                builder: (context) =>
-                                                    AdminScafScreen(
-                                                        route: _route),
-                                              );
-                                              Navigator.pushAndRemoveUntil(
-                                                  context,
-                                                  route,
-                                                  (route) => false);
-                                            },
-                                            title: Container(
-                                              decoration: BoxDecoration(
-                                                color: Lang.toString() ==
-                                                        '${supportedLocales[index]['code']}'
-                                                    ? Colors.green[400]
-                                                    : Colors.white,
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  topRight: Radius.circular(10),
-                                                  bottomLeft:
-                                                      Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10),
-                                                ),
-                                                border: Border.all(
-                                                    color: Colors.grey,
-                                                    width: 0.5),
-                                                // border: Border(
-                                                //   bottom: BorderSide(
-                                                //     //                    <--- top side
-                                                //     width: 0.5,
-                                                //   ),
-                                                // )
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.all(4.0),
-                                              width: 270,
-                                              child: Row(
-                                                children: [
-                                                  // Icon(
-                                                  //   Iconsax.check,
-                                                  //   // color: getRandomColor(index)
-                                                  // ),
-                                                  CircleAvatar(
-                                                    radius: 15,
-                                                    backgroundImage: AssetImage(
-                                                        '${supportedLocales[index]['url']}'),
-                                                  ),
-                                                  Expanded(
-                                                    child: Padding(
-                                                      padding: const EdgeInsets
-                                                              .fromLTRB(
-                                                          10, 4, 4, 4),
-                                                      child: Text(
-                                                        '${supportedLocales[index]['ln']}',
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: const TextStyle(
-                                                            color: PeopleChaoScreen_Color
-                                                                .Colors_Text2_,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                            fontFamily:
-                                                                FontWeight_
-                                                                    .Fonts_T),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            )),
-                                      ),
-                                    SizedBox(
-                                      height: 20,
-                                    ),
-                                    Center(
-                                      child: Text(
-                                        '# Comming soon.. ',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                            color: Colors.red,
-                                            fontFamily: Font_.Fonts_T),
-                                      ),
-                                    ),
-                                    Center(
-                                      child: Text(
-                                        '(ขออภัยยังไม่สามารถใช้งานได้ ณ ขณะนี้)',
-                                        overflow: TextOverflow.ellipsis,
-                                        style: const TextStyle(
-                                            color: Colors.red,
-                                            fontFamily: Font_.Fonts_T),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: Colors.white60,
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(20),
-                                topRight: Radius.circular(20),
-                                bottomLeft: Radius.circular(20),
-                                bottomRight: Radius.circular(20)),
-                          ),
-                          padding: const EdgeInsets.all(4.0),
-                          child: Icon(
-                            Icons.g_translate,
-                            // Icons.translate,
-                            color: Colors.indigo[600],
-                            size: 20,
-                          ),
+                      padding: const EdgeInsets.all(4.0),
+                      child: Center(
+                        child: Icon(
+                          Icons.person_4_rounded,
+                          // Icons.translate,
+                          color: Colors.indigo[600],
+                          size: 20,
                         ),
                       ),
                     ),
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(4, 1, 0, 1),
-                      child: StreamBuilder(
-                          stream: Stream.periodic(const Duration(seconds: 4)),
-                          builder: (context, snapshot) {
-                            return ChatScreen(
-                                ser_user: ser_user,
-                                userModels_chat_: userModels_chat,
-                                userModels_: userModels);
-                          }),
-                    ),
-                    StreamBuilder(
-                        stream: Stream.periodic(const Duration(seconds: 0)),
-                        builder: (context, snapshot) {
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
-                            child: InkWell(
-                                onTap: renTal_name == null
-                                    ? null
-                                    : () async {
-                                        startTimer();
-                                        showDialog<String>(
-                                          context: context,
-                                          builder: (BuildContext context) =>
-                                              AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(20.0))),
-                                            title: Center(
-                                              child:
-                                                  Translate.TranslateAndSetText(
-                                                      'ผู้ใช้งานระบบขณะนี้ ',
-                                                      AdminScafScreen_Color
-                                                          .Colors_Text1_,
-                                                      TextAlign.center,
-                                                      FontWeight.bold,
-                                                      FontWeight_.Fonts_T,
-                                                      14,
-                                                      1),
-                                            ),
-                                            content: ScrollConfiguration(
-                                              behavior: ScrollConfiguration.of(
-                                                      context)
-                                                  .copyWith(dragDevices: {
-                                                PointerDeviceKind.touch,
-                                                PointerDeviceKind.mouse,
-                                              }),
-                                              child: SingleChildScrollView(
-                                                scrollDirection:
-                                                    Axis.horizontal,
-                                                dragStartBehavior:
-                                                    DragStartBehavior.start,
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      width: (Responsive
-                                                              .isDesktop(
-                                                                  context))
-                                                          ? MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .width *
-                                                              0.85
-                                                          : 800,
-                                                      child: StreamBuilder(
-                                                          stream:
-                                                              Stream.periodic(
-                                                                  const Duration(
-                                                                      seconds:
-                                                                          0)),
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            return Column(
-                                                              children: [
-                                                                Row(
-                                                                  children: [
-                                                                    Translate.TranslateAndSetText(
-                                                                        'ทั้งหมด : ${userModels.length} คน',
-                                                                        AdminScafScreen_Color
-                                                                            .Colors_Text1_,
-                                                                        TextAlign
-                                                                            .center,
-                                                                        FontWeight
-                                                                            .bold,
-                                                                        FontWeight_
-                                                                            .Fonts_T,
-                                                                        14,
-                                                                        1),
-                                                                  ],
-                                                                ),
-                                                                Container(
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    color: AppbackgroundColor
-                                                                        .TiTile_Colors,
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .only(
-                                                                      topLeft: Radius
-                                                                          .circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              0),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              0),
-                                                                    ),
-                                                                    // border: Border.all(
-                                                                    //     color: Colors.grey, width: 1),
-                                                                  ),
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                              .all(
-                                                                          8.0),
-                                                                  child: Row(
-                                                                    children: [
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          '...',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          'Email',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Translate.TranslateAndSetText(
-                                                                            'ชื่อ',
-                                                                            AdminScafScreen_Color.Colors_Text1_,
-                                                                            TextAlign.center,
-                                                                            FontWeight.bold,
-                                                                            FontWeight_.Fonts_T,
-                                                                            14,
-                                                                            1),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Translate.TranslateAndSetText(
-                                                                            'ตำแหน่ง',
-                                                                            AdminScafScreen_Color.Colors_Text1_,
-                                                                            TextAlign.center,
-                                                                            FontWeight.bold,
-                                                                            FontWeight_.Fonts_T,
-                                                                            14,
-                                                                            1),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Translate.TranslateAndSetText(
-                                                                            'เวลาอัพเดตล่าสุด',
-                                                                            AdminScafScreen_Color.Colors_Text1_,
-                                                                            TextAlign.center,
-                                                                            FontWeight.bold,
-                                                                            FontWeight_.Fonts_T,
-                                                                            14,
-                                                                            1),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                                Container(
-                                                                    height: MediaQuery.of(context)
-                                                                            .size
-                                                                            .height *
-                                                                        0.4,
-                                                                    width: (Responsive.isDesktop(
-                                                                            context))
-                                                                        ? MediaQuery.of(context).size.width *
-                                                                            0.85
-                                                                        : 800,
-                                                                    child: ListView.builder(
-                                                                        padding: const EdgeInsets.all(8),
-                                                                        itemCount: userModels.length,
-                                                                        itemBuilder: (BuildContext context, int index) {
-                                                                          String
-                                                                              email =
-                                                                              '${userModels[index].email}';
-                                                                          int emailLength =
-                                                                              email.length;
-                                                                          String
-                                                                              firstTwoCharacters =
-                                                                              email.substring(0, 2);
-                                                                          String
-                                                                              lastFourCharacters =
-                                                                              email.substring(emailLength - 4);
-                                                                          String
-                                                                              censoredEmail =
-                                                                              '$firstTwoCharacters${'*' * (emailLength - 6)}$lastFourCharacters';
 
-                                                                          String
-                                                                              connected_ =
-                                                                              '${userModels[index].connected}';
+                    // Padding(
+                    //   padding: EdgeInsets.fromLTRB(4, 1, 2, 1),
+                    //   child: InkWell(
+                    //     onTap: () async {
+                    //       SharedPreferences preferences =
+                    //           await SharedPreferences.getInstance();
+                    //       var Lang = preferences.getString('Language');
+                    //       List supportedLocales = [
+                    //         {
+                    //           "ser": "1",
+                    //           "code": "th",
+                    //           "ln": "ไทย",
+                    //           "url": "images/Thailand.png"
+                    //         },
+                    //         {
+                    //           "ser": "2",
+                    //           "code": "en",
+                    //           "ln": "English",
+                    //           "url": "images/English.png"
+                    //         },
+                    //         {
+                    //           "ser": "3",
+                    //           "code": "lo",
+                    //           "ln": "ລາວ",
+                    //           "url": "images/LAO.png"
+                    //         },
+                    //         {
+                    //           "ser": "4",
+                    //           "code": "ko",
+                    //           "ln": "Korea",
+                    //           "url": "images/Korea.png"
+                    //         },
+                    //         {
+                    //           "ser": "5",
+                    //           "code": "ja",
+                    //           "ln": "Japanese",
+                    //           "url": "images/Jpan.png"
+                    //         },
+                    //         {
+                    //           "ser": "6",
+                    //           "code": "zh-cn",
+                    //           "ln": "China",
+                    //           "url": "images/Chaina.png"
+                    //         },
+                    //       ];
 
-                                                                          DateTime
-                                                                              connectedTime =
-                                                                              DateTime.parse(connected_);
+                    //       showDialog<String>(
+                    //         context: context,
+                    //         builder: (BuildContext context) => AlertDialog(
+                    //           backgroundColor:
+                    //               Color.fromARGB(255, 247, 246, 246),
+                    //           titlePadding: const EdgeInsets.all(0.0),
+                    //           contentPadding: const EdgeInsets.all(10.0),
+                    //           actionsPadding: const EdgeInsets.all(6.0),
+                    //           shape: const RoundedRectangleBorder(
+                    //               borderRadius:
+                    //                   BorderRadius.all(Radius.circular(20.0))),
+                    //           title: Row(
+                    //             mainAxisAlignment: MainAxisAlignment.end,
+                    //             children: [
+                    //               InkWell(
+                    //                 onTap: () async {
+                    //                   Navigator.pop(context);
+                    //                 },
+                    //                 child: Padding(
+                    //                   padding: const EdgeInsets.all(4.0),
+                    //                   child: Icon(Icons.highlight_off,
+                    //                       size: 30, color: Colors.red[700]),
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ),
+                    //           content: SingleChildScrollView(
+                    //             child: ListBody(
+                    //               children: <Widget>[
+                    //                 SizedBox(
+                    //                   height: 20,
+                    //                 ),
+                    //                 for (int index = 0;
+                    //                     index < supportedLocales.length;
+                    //                     index++)
+                    //                   Padding(
+                    //                     padding: const EdgeInsets.all(4.0),
+                    //                     child: ListTile(
+                    //                         onTap: () async {
+                    //                           SharedPreferences preferences =
+                    //                               await SharedPreferences
+                    //                                   .getInstance();
+                    //                           setState(() {
+                    //                             preferences.setString(
+                    //                                 'Language',
+                    //                                 '${supportedLocales[index]['code']}');
+                    //                           });
+                    //                           Navigator.pop(context);
 
-                                                                          DateTime
-                                                                              currentTime =
-                                                                              DateTime.now();
+                    //                           String? _route = preferences
+                    //                               .getString('route');
 
-                                                                          Duration
-                                                                              difference =
-                                                                              currentTime.difference(connectedTime);
+                    //                           MaterialPageRoute route =
+                    //                               MaterialPageRoute(
+                    //                             builder: (context) =>
+                    //                                 AdminScafScreen(
+                    //                                     route: _route),
+                    //                           );
+                    //                           Navigator.pushAndRemoveUntil(
+                    //                               context,
+                    //                               route,
+                    //                               (route) => false);
+                    //                         },
+                    //                         title: Container(
+                    //                           decoration: BoxDecoration(
+                    //                             color: Lang.toString() ==
+                    //                                     '${supportedLocales[index]['code']}'
+                    //                                 ? Colors.green[400]
+                    //                                 : Colors.white,
+                    //                             borderRadius:
+                    //                                 const BorderRadius.only(
+                    //                               topLeft: Radius.circular(10),
+                    //                               topRight: Radius.circular(10),
+                    //                               bottomLeft:
+                    //                                   Radius.circular(10),
+                    //                               bottomRight:
+                    //                                   Radius.circular(10),
+                    //                             ),
+                    //                             border: Border.all(
+                    //                                 color: Colors.grey,
+                    //                                 width: 0.5),
+                    //                             // border: Border(
+                    //                             //   bottom: BorderSide(
+                    //                             //     //                    <--- top side
+                    //                             //     width: 0.5,
+                    //                             //   ),
+                    //                             // )
+                    //                           ),
+                    //                           padding:
+                    //                               const EdgeInsets.all(4.0),
+                    //                           width: 270,
+                    //                           child: Row(
+                    //                             children: [
+                    //                               // Icon(
+                    //                               //   Iconsax.check,
+                    //                               //   // color: getRandomColor(index)
+                    //                               // ),
+                    //                               CircleAvatar(
+                    //                                 radius: 15,
+                    //                                 backgroundImage: AssetImage(
+                    //                                     '${supportedLocales[index]['url']}'),
+                    //                               ),
+                    //                               Expanded(
+                    //                                 child: Padding(
+                    //                                   padding: const EdgeInsets
+                    //                                           .fromLTRB(
+                    //                                       10, 4, 4, 4),
+                    //                                   child: Text(
+                    //                                     '${supportedLocales[index]['ln']}',
+                    //                                     overflow: TextOverflow
+                    //                                         .ellipsis,
+                    //                                     style: const TextStyle(
+                    //                                         color: PeopleChaoScreen_Color
+                    //                                             .Colors_Text2_,
+                    //                                         fontWeight:
+                    //                                             FontWeight.bold,
+                    //                                         fontFamily:
+                    //                                             FontWeight_
+                    //                                                 .Fonts_T),
+                    //                                   ),
+                    //                                 ),
+                    //                               ),
+                    //                             ],
+                    //                           ),
+                    //                         )),
+                    //                   ),
+                    //                 SizedBox(
+                    //                   height: 20,
+                    //                 ),
+                    //                 Center(
+                    //                   child: Text(
+                    //                     '# Comming soon.. ',
+                    //                     overflow: TextOverflow.ellipsis,
+                    //                     style: const TextStyle(
+                    //                         color: Colors.red,
+                    //                         fontFamily: Font_.Fonts_T),
+                    //                   ),
+                    //                 ),
+                    //                 Center(
+                    //                   child: Text(
+                    //                     '(ขออภัยยังไม่สามารถใช้งานได้ ณ ขณะนี้)',
+                    //                     overflow: TextOverflow.ellipsis,
+                    //                     style: const TextStyle(
+                    //                         color: Colors.red,
+                    //                         fontFamily: Font_.Fonts_T),
+                    //                   ),
+                    //                 ),
+                    //               ],
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       );
+                    //     },
+                    //     child: Container(
+                    //       decoration: BoxDecoration(
+                    //         color: Colors.white60,
+                    //         borderRadius: BorderRadius.only(
+                    //             topLeft: Radius.circular(20),
+                    //             topRight: Radius.circular(20),
+                    //             bottomLeft: Radius.circular(20),
+                    //             bottomRight: Radius.circular(20)),
+                    //       ),
+                    //       padding: const EdgeInsets.all(4.0),
+                    //       child:
+                    // Icon(
+                    //         Icons.g_translate,
+                    //         // Icons.translate,
+                    //         color: Colors.indigo[600],
+                    //         size: 20,
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    // Padding(
+                    //   padding: EdgeInsets.fromLTRB(4, 1, 0, 1),
+                    //   child: StreamBuilder(
+                    //       stream: Stream.periodic(const Duration(seconds: 4)),
+                    //       builder: (context, snapshot) {
+                    //         return ChatScreen(
+                    //             ser_user: ser_user,
+                    //             userModels_chat_: userModels_chat,
+                    //             userModels_: userModels);
+                    //       }),
+                    // ),
+                    // StreamBuilder(
+                    //     stream: Stream.periodic(const Duration(seconds: 0)),
+                    //     builder: (context, snapshot) {
+                    //       return Padding(
+                    //         padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+                    //         child: InkWell(
+                    //             onTap: renTal_name == null
+                    //                 ? null
+                    //                 : () async {
+                    //                     startTimer();
+                    //                     showDialog<String>(
+                    //                       context: context,
+                    //                       builder: (BuildContext context) =>
+                    //                           AlertDialog(
+                    //                         shape: const RoundedRectangleBorder(
+                    //                             borderRadius: BorderRadius.all(
+                    //                                 Radius.circular(20.0))),
+                    //                         title: Center(
+                    //                           child:
+                    //                               Translate.TranslateAndSetText(
+                    //                                   'ผู้ใช้งานระบบขณะนี้ ',
+                    //                                   AdminScafScreen_Color
+                    //                                       .Colors_Text1_,
+                    //                                   TextAlign.center,
+                    //                                   FontWeight.bold,
+                    //                                   FontWeight_.Fonts_T,
+                    //                                   14,
+                    //                                   1),
+                    //                         ),
+                    //                         content: ScrollConfiguration(
+                    //                           behavior: ScrollConfiguration.of(
+                    //                                   context)
+                    //                               .copyWith(dragDevices: {
+                    //                             PointerDeviceKind.touch,
+                    //                             PointerDeviceKind.mouse,
+                    //                           }),
+                    //                           child: SingleChildScrollView(
+                    //                             scrollDirection:
+                    //                                 Axis.horizontal,
+                    //                             dragStartBehavior:
+                    //                                 DragStartBehavior.start,
+                    //                             child: Row(
+                    //                               children: [
+                    //                                 Container(
+                    //                                   width: (Responsive
+                    //                                           .isDesktop(
+                    //                                               context))
+                    //                                       ? MediaQuery.of(
+                    //                                                   context)
+                    //                                               .size
+                    //                                               .width *
+                    //                                           0.85
+                    //                                       : 800,
+                    //                                   child: StreamBuilder(
+                    //                                       stream:
+                    //                                           Stream.periodic(
+                    //                                               const Duration(
+                    //                                                   seconds:
+                    //                                                       0)),
+                    //                                       builder: (context,
+                    //                                           snapshot) {
+                    //                                         return Column(
+                    //                                           children: [
+                    //                                             Row(
+                    //                                               children: [
+                    //                                                 Translate.TranslateAndSetText(
+                    //                                                     'ทั้งหมด : ${userModels.length} คน',
+                    //                                                     AdminScafScreen_Color
+                    //                                                         .Colors_Text1_,
+                    //                                                     TextAlign
+                    //                                                         .center,
+                    //                                                     FontWeight
+                    //                                                         .bold,
+                    //                                                     FontWeight_
+                    //                                                         .Fonts_T,
+                    //                                                     14,
+                    //                                                     1),
+                    //                                               ],
+                    //                                             ),
+                    //                                             Container(
+                    //                                               decoration:
+                    //                                                   BoxDecoration(
+                    //                                                 color: AppbackgroundColor
+                    //                                                     .TiTile_Colors,
+                    //                                                 borderRadius:
+                    //                                                     BorderRadius
+                    //                                                         .only(
+                    //                                                   topLeft: Radius
+                    //                                                       .circular(
+                    //                                                           10),
+                    //                                                   topRight:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   bottomLeft:
+                    //                                                       Radius.circular(
+                    //                                                           0),
+                    //                                                   bottomRight:
+                    //                                                       Radius.circular(
+                    //                                                           0),
+                    //                                                 ),
+                    //                                                 // border: Border.all(
+                    //                                                 //     color: Colors.grey, width: 1),
+                    //                                               ),
+                    //                                               padding:
+                    //                                                   const EdgeInsets
+                    //                                                           .all(
+                    //                                                       8.0),
+                    //                                               child: Row(
+                    //                                                 children: [
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       '...',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       'Email',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child: Translate.TranslateAndSetText(
+                    //                                                         'ชื่อ',
+                    //                                                         AdminScafScreen_Color.Colors_Text1_,
+                    //                                                         TextAlign.center,
+                    //                                                         FontWeight.bold,
+                    //                                                         FontWeight_.Fonts_T,
+                    //                                                         14,
+                    //                                                         1),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child: Translate.TranslateAndSetText(
+                    //                                                         'ตำแหน่ง',
+                    //                                                         AdminScafScreen_Color.Colors_Text1_,
+                    //                                                         TextAlign.center,
+                    //                                                         FontWeight.bold,
+                    //                                                         FontWeight_.Fonts_T,
+                    //                                                         14,
+                    //                                                         1),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child: Translate.TranslateAndSetText(
+                    //                                                         'เวลาอัพเดตล่าสุด',
+                    //                                                         AdminScafScreen_Color.Colors_Text1_,
+                    //                                                         TextAlign.center,
+                    //                                                         FontWeight.bold,
+                    //                                                         FontWeight_.Fonts_T,
+                    //                                                         14,
+                    //                                                         1),
+                    //                                                   ),
+                    //                                                 ],
+                    //                                               ),
+                    //                                             ),
+                    //                                             Container(
+                    //                                                 height: MediaQuery.of(context)
+                    //                                                         .size
+                    //                                                         .height *
+                    //                                                     0.4,
+                    //                                                 width: (Responsive.isDesktop(
+                    //                                                         context))
+                    //                                                     ? MediaQuery.of(context).size.width *
+                    //                                                         0.85
+                    //                                                     : 800,
+                    //                                                 child: ListView.builder(
+                    //                                                     padding: const EdgeInsets.all(8),
+                    //                                                     itemCount: userModels.length,
+                    //                                                     itemBuilder: (BuildContext context, int index) {
+                    //                                                       String
+                    //                                                           email =
+                    //                                                           '${userModels[index].email}';
+                    //                                                       int emailLength =
+                    //                                                           email.length;
+                    //                                                       String
+                    //                                                           firstTwoCharacters =
+                    //                                                           email.substring(0, 2);
+                    //                                                       String
+                    //                                                           lastFourCharacters =
+                    //                                                           email.substring(emailLength - 4);
+                    //                                                       String
+                    //                                                           censoredEmail =
+                    //                                                           '$firstTwoCharacters${'*' * (emailLength - 6)}$lastFourCharacters';
 
-                                                                          int minutesPassed =
-                                                                              difference.inMinutes;
-                                                                          return Container(
-                                                                            padding:
-                                                                                const EdgeInsets.all(8),
-                                                                            child:
-                                                                                Row(
-                                                                              children: [
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    '${index + 1}',
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    '${censoredEmail} ',
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    '${userModels[index].fname} ${userModels[index].lname}',
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    '${userModels[index].position}',
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Row(
-                                                                                    children: [
-                                                                                      Expanded(flex: 1, child: Icon((minutesPassed > 1) ? Icons.motion_photos_off_rounded : Icons.motion_photos_on_rounded, color: (minutesPassed > 1) ? Colors.red : Colors.green)
-                                                                                          // Text(
-                                                                                          //   '🟢',
-                                                                                          //   maxLines: 2,
-                                                                                          //   textAlign: TextAlign.end,
-                                                                                          //   style: TextStyle(color: (minutesPassed > 1) ? Colors.red : Colors.green, fontFamily: Font_.Fonts_T),
-                                                                                          // )
-                                                                                          ),
-                                                                                      Expanded(
-                                                                                        flex: 2,
-                                                                                        child: Translate.TranslateAndSetText((minutesPassed > 1) ? 'ใช้งานเมื่อ $minutesPassed นาทีที่แล้ว' : ' ${userModels[index].connected}', AdminScafScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          );
-                                                                        })),
-                                                              ],
-                                                            );
-                                                          }),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            actions: <Widget>[
-                                              Column(
-                                                children: [
-                                                  const SizedBox(
-                                                    height: 5.0,
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: RichText(
-                                                        text: const TextSpan(
-                                                          text: '**หมายเหตุ : ',
-                                                          style: TextStyle(
-                                                              color: AdminScafScreen_Color
-                                                                  .Colors_Text1_,
-                                                              fontFamily:
-                                                                  FontWeight_
-                                                                      .Fonts_T),
-                                                          children: <TextSpan>[
-                                                            TextSpan(
-                                                              text: ' สีเขียว ',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .green,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text:
-                                                                  ' กำลังใช้งาน (ไม่เกิน 1 นาที) ,',
-                                                              style: TextStyle(
-                                                                  color: AdminScafScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text: ' สีแดง ',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .red,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text:
-                                                                  ' ใช้งานล่าสุด (ไม่เกิน 15 นาที)',
-                                                              style: TextStyle(
-                                                                  color: AdminScafScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const Divider(
-                                                    color: Colors.grey,
-                                                    height: 4.0,
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 5.0,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Container(
-                                                                width: 100,
-                                                                decoration:
-                                                                    const BoxDecoration(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  borderRadius: BorderRadius.only(
-                                                                      topLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              10)),
-                                                                ),
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                            .all(
-                                                                        8.0),
-                                                                child:
-                                                                    TextButton(
-                                                                  onPressed: () =>
-                                                                      Navigator.pop(
-                                                                          context,
-                                                                          'OK'),
-                                                                  child: Translate.TranslateAndSetText(
-                                                                      'ปิด',
-                                                                      Colors
-                                                                          .white,
-                                                                      TextAlign
-                                                                          .center,
-                                                                      FontWeight
-                                                                          .bold,
-                                                                      FontWeight_
-                                                                          .Fonts_T,
-                                                                      14,
-                                                                      1),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                child: Stack(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white54,
-                                          borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              topRight: Radius.circular(20),
-                                              bottomLeft: Radius.circular(20),
-                                              bottomRight: Radius.circular(20)),
-                                        ),
-                                        padding: const EdgeInsets.all(6.0),
-                                        child: Icon(
-                                          Icons.people,
-                                          color: Colors.red,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                        top: 0,
-                                        left: 0,
-                                        child: Container(
-                                          // decoration: const BoxDecoration(
-                                          //   color: Colors.white,
-                                          //   borderRadius: BorderRadius.only(
-                                          //       topLeft: Radius.circular(20),
-                                          //       topRight: Radius.circular(20),
-                                          //       bottomLeft: Radius.circular(20),
-                                          //       bottomRight: Radius.circular(20)),
-                                          // ),
-                                          padding: const EdgeInsets.all(2.0),
-                                          child: Text(
-                                            renTal_name == null
-                                                ? '0'
-                                                : '${userModels.length}',
-                                            // '${userModels.length}***/$connected_Minutes/$ser_user/$email_user',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.blue,
-                                                fontFamily:
-                                                    FontWeight_.Fonts_T),
-                                          ),
-                                        ))
-                                  ],
-                                )),
-                          );
-                        }),
+                    //                                                       String
+                    //                                                           connected_ =
+                    //                                                           '${userModels[index].connected}';
+
+                    //                                                       DateTime
+                    //                                                           connectedTime =
+                    //                                                           DateTime.parse(connected_);
+
+                    //                                                       DateTime
+                    //                                                           currentTime =
+                    //                                                           DateTime.now();
+
+                    //                                                       Duration
+                    //                                                           difference =
+                    //                                                           currentTime.difference(connectedTime);
+
+                    //                                                       int minutesPassed =
+                    //                                                           difference.inMinutes;
+                    //                                                       return Container(
+                    //                                                         padding:
+                    //                                                             const EdgeInsets.all(8),
+                    //                                                         child:
+                    //                                                             Row(
+                    //                                                           children: [
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 '${index + 1}',
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 '${censoredEmail} ',
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 '${userModels[index].fname} ${userModels[index].lname}',
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 '${userModels[index].position}',
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Row(
+                    //                                                                 children: [
+                    //                                                                   Expanded(flex: 1, child: Icon((minutesPassed > 1) ? Icons.motion_photos_off_rounded : Icons.motion_photos_on_rounded, color: (minutesPassed > 1) ? Colors.red : Colors.green)
+                    //                                                                       // Text(
+                    //                                                                       //   '🟢',
+                    //                                                                       //   maxLines: 2,
+                    //                                                                       //   textAlign: TextAlign.end,
+                    //                                                                       //   style: TextStyle(color: (minutesPassed > 1) ? Colors.red : Colors.green, fontFamily: Font_.Fonts_T),
+                    //                                                                       // )
+                    //                                                                       ),
+                    //                                                                   Expanded(
+                    //                                                                     flex: 2,
+                    //                                                                     child: Translate.TranslateAndSetText((minutesPassed > 1) ? 'ใช้งานเมื่อ $minutesPassed นาทีที่แล้ว' : ' ${userModels[index].connected}', AdminScafScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                    //                                                                   ),
+                    //                                                                 ],
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                           ],
+                    //                                                         ),
+                    //                                                       );
+                    //                                                     })),
+                    //                                           ],
+                    //                                         );
+                    //                                       }),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                           ),
+                    //                         ),
+                    //                         actions: <Widget>[
+                    //                           Column(
+                    //                             children: [
+                    //                               const SizedBox(
+                    //                                 height: 5.0,
+                    //                               ),
+                    //                               Align(
+                    //                                 alignment:
+                    //                                     Alignment.centerLeft,
+                    //                                 child: Padding(
+                    //                                   padding:
+                    //                                       const EdgeInsets.all(
+                    //                                           2.0),
+                    //                                   child: RichText(
+                    //                                     text: const TextSpan(
+                    //                                       text: '**หมายเหตุ : ',
+                    //                                       style: TextStyle(
+                    //                                           color: AdminScafScreen_Color
+                    //                                               .Colors_Text1_,
+                    //                                           fontFamily:
+                    //                                               FontWeight_
+                    //                                                   .Fonts_T),
+                    //                                       children: <TextSpan>[
+                    //                                         TextSpan(
+                    //                                           text: ' สีเขียว ',
+                    //                                           style: TextStyle(
+                    //                                               color: Colors
+                    //                                                   .green,
+                    //                                               fontFamily:
+                    //                                                   FontWeight_
+                    //                                                       .Fonts_T),
+                    //                                         ),
+                    //                                         TextSpan(
+                    //                                           text:
+                    //                                               ' กำลังใช้งาน (ไม่เกิน 1 นาที) ,',
+                    //                                           style: TextStyle(
+                    //                                               color: AdminScafScreen_Color
+                    //                                                   .Colors_Text1_,
+                    //                                               fontFamily: Font_
+                    //                                                   .Fonts_T),
+                    //                                         ),
+                    //                                         TextSpan(
+                    //                                           text: ' สีแดง ',
+                    //                                           style: TextStyle(
+                    //                                               color: Colors
+                    //                                                   .red,
+                    //                                               fontFamily:
+                    //                                                   FontWeight_
+                    //                                                       .Fonts_T),
+                    //                                         ),
+                    //                                         TextSpan(
+                    //                                           text:
+                    //                                               ' ใช้งานล่าสุด (ไม่เกิน 15 นาที)',
+                    //                                           style: TextStyle(
+                    //                                               color: AdminScafScreen_Color
+                    //                                                   .Colors_Text1_,
+                    //                                               fontFamily: Font_
+                    //                                                   .Fonts_T),
+                    //                                         ),
+                    //                                       ],
+                    //                                     ),
+                    //                                   ),
+                    //                                 ),
+                    //                               ),
+                    //                               const Divider(
+                    //                                 color: Colors.grey,
+                    //                                 height: 4.0,
+                    //                               ),
+                    //                               const SizedBox(
+                    //                                 height: 5.0,
+                    //                               ),
+                    //                               Padding(
+                    //                                 padding:
+                    //                                     const EdgeInsets.all(
+                    //                                         8.0),
+                    //                                 child: Row(
+                    //                                   mainAxisAlignment:
+                    //                                       MainAxisAlignment.end,
+                    //                                   children: [
+                    //                                     Padding(
+                    //                                       padding:
+                    //                                           const EdgeInsets
+                    //                                               .all(8.0),
+                    //                                       child: Row(
+                    //                                         mainAxisAlignment:
+                    //                                             MainAxisAlignment
+                    //                                                 .center,
+                    //                                         children: [
+                    //                                           Container(
+                    //                                             width: 100,
+                    //                                             decoration:
+                    //                                                 const BoxDecoration(
+                    //                                               color: Colors
+                    //                                                   .black,
+                    //                                               borderRadius: BorderRadius.only(
+                    //                                                   topLeft:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   topRight:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   bottomLeft:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   bottomRight:
+                    //                                                       Radius.circular(
+                    //                                                           10)),
+                    //                                             ),
+                    //                                             padding:
+                    //                                                 const EdgeInsets
+                    //                                                         .all(
+                    //                                                     8.0),
+                    //                                             child:
+                    //                                                 TextButton(
+                    //                                               onPressed: () =>
+                    //                                                   Navigator.pop(
+                    //                                                       context,
+                    //                                                       'OK'),
+                    //                                               child: Translate.TranslateAndSetText(
+                    //                                                   'ปิด',
+                    //                                                   Colors
+                    //                                                       .white,
+                    //                                                   TextAlign
+                    //                                                       .center,
+                    //                                                   FontWeight
+                    //                                                       .bold,
+                    //                                                   FontWeight_
+                    //                                                       .Fonts_T,
+                    //                                                   14,
+                    //                                                   1),
+                    //                                             ),
+                    //                                           ),
+                    //                                         ],
+                    //                                       ),
+                    //                                     ),
+                    //                                   ],
+                    //                                 ),
+                    //                               ),
+                    //                             ],
+                    //                           ),
+                    //                         ],
+                    //                       ),
+                    //                     );
+                    //                   },
+                    //             child: Stack(
+                    //               children: [
+                    //                 Padding(
+                    //                   padding: const EdgeInsets.all(4.0),
+                    //                   child: Container(
+                    //                     decoration: BoxDecoration(
+                    //                       color: Colors.white54,
+                    //                       borderRadius: BorderRadius.only(
+                    //                           topLeft: Radius.circular(20),
+                    //                           topRight: Radius.circular(20),
+                    //                           bottomLeft: Radius.circular(20),
+                    //                           bottomRight: Radius.circular(20)),
+                    //                     ),
+                    //                     padding: const EdgeInsets.all(6.0),
+                    //                     child: Icon(
+                    //                       Icons.people,
+                    //                       color: Colors.red,
+                    //                       size: 18,
+                    //                     ),
+                    //                   ),
+                    //                 ),
+                    //                 Positioned(
+                    //                     top: 0,
+                    //                     left: 0,
+                    //                     child: Container(
+                    //                       // decoration: const BoxDecoration(
+                    //                       //   color: Colors.white,
+                    //                       //   borderRadius: BorderRadius.only(
+                    //                       //       topLeft: Radius.circular(20),
+                    //                       //       topRight: Radius.circular(20),
+                    //                       //       bottomLeft: Radius.circular(20),
+                    //                       //       bottomRight: Radius.circular(20)),
+                    //                       // ),
+                    //                       padding: const EdgeInsets.all(2.0),
+                    //                       child: Text(
+                    //                         renTal_name == null
+                    //                             ? '0'
+                    //                             : '${userModels.length}',
+                    //                         // '${userModels.length}***/$connected_Minutes/$ser_user/$email_user',
+                    //                         style: TextStyle(
+                    //                             fontSize: 12,
+                    //                             color: Colors.blue,
+                    //                             fontFamily:
+                    //                                 FontWeight_.Fonts_T),
+                    //                       ),
+                    //                     ))
+                    //               ],
+                    //             )),
+                    //       );
+                    //     }),
                     Padding(
                       padding: EdgeInsets.all(4.0),
                       child: StreamBuilder(
@@ -2884,7 +3336,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                             bottomRight: Radius.circular(0)),
                       ),
                       padding: const EdgeInsets.all(2.0),
-                      child: InkWell(
+                      child: GestureDetector(
                         onTap: () {
                           showDialog<String>(
                             context: context,
@@ -2940,45 +3392,76 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                               padding:
                                                   const EdgeInsets.all(8.0),
                                               child: TextButton(
-                                                onPressed: () async {
-                                                  deall_Trans_select();
-                                                  SharedPreferences
-                                                      preferences =
-                                                      await SharedPreferences
-                                                          .getInstance();
-                                                  var ser = preferences
-                                                      .getString('ser');
-                                                  var on = '0';
-                                                  String url =
-                                                      '${MyConstant().domain}/U_user_onoff.php?isAdd=true&ser=$ser&on=$on';
+                                                onPressed: (renTal_user
+                                                                .toString() ==
+                                                            '50' ||
+                                                        renTal_user
+                                                                .toString() ==
+                                                            '139')
+                                                    ? () async {
+                                                        AuthService.logout();
+                                                        SharedPreferences
+                                                            preferences =
+                                                            await SharedPreferences
+                                                                .getInstance();
+                                                        preferences.clear();
 
-                                                  try {
-                                                    var response = await http
-                                                        .get(Uri.parse(url));
+                                                        MaterialPageRoute
+                                                            route =
+                                                            MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              LoginPage(),
+                                                        );
+                                                        Navigator
+                                                            .pushAndRemoveUntil(
+                                                                context, route,
+                                                                (route) {
+                                                          return false;
+                                                        });
+                                                      }
+                                                    : () async {
+                                                        deall_Trans_select();
+                                                        SharedPreferences
+                                                            preferences =
+                                                            await SharedPreferences
+                                                                .getInstance();
+                                                        var ser = preferences
+                                                            .getString('ser');
+                                                        var on = '0';
+                                                        String url =
+                                                            '${MyConstant().domain}/U_user_onoff.php?isAdd=true&ser=$ser&on=$on';
 
-                                                    var result = json
-                                                        .decode(response.body);
-                                                    // print(result);
-                                                    if (result.toString() ==
-                                                        'true') {
-                                                      SharedPreferences
-                                                          preferences =
-                                                          await SharedPreferences
-                                                              .getInstance();
-                                                      preferences.clear();
-                                                      routToService(
-                                                          SignInScreen());
-                                                    } else {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                '(ผิดพลาด)')),
-                                                      );
-                                                    }
-                                                  } catch (e) {}
-                                                },
+                                                        try {
+                                                          var response =
+                                                              await http.get(
+                                                                  Uri.parse(
+                                                                      url));
+
+                                                          var result = json
+                                                              .decode(response
+                                                                  .body);
+                                                          // print(result);
+                                                          if (result
+                                                                  .toString() ==
+                                                              'true') {
+                                                            SharedPreferences
+                                                                preferences =
+                                                                await SharedPreferences
+                                                                    .getInstance();
+                                                            preferences.clear();
+                                                            routToService(
+                                                                LoginPage());
+                                                          } else {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                              SnackBar(
+                                                                  content: Text(
+                                                                      '(ผิดพลาด)')),
+                                                            );
+                                                          }
+                                                        } catch (e) {}
+                                                      },
                                                 child: Translate
                                                     .TranslateAndSetText(
                                                         'ยืนยัน',
@@ -3052,50 +3535,6 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                         ),
                       ),
                     ),
-                    // TimerBuilder.scheduled([alert!], builder: (context) {
-                    //   // This function will be called once the alert time is reached
-                    //   var now = DateTime.now();
-                    //   var reached = now.compareTo(alert!) >= 0;
-                    //   // final textStyle = Theme.of(context).textTheme.title;
-                    //   return Center(
-                    //     child: Column(
-                    //       mainAxisAlignment: MainAxisAlignment.center,
-                    //       crossAxisAlignment: CrossAxisAlignment.center,
-                    //       children: <Widget>[
-                    //         // Icon(
-                    //         //   reached ? Icons.alarm_on : Icons.alarm,
-                    //         //   color: reached ? Colors.red : Colors.green,
-                    //         //   size: 48,
-                    //         // ),
-                    //         !reached
-                    //             ? TimerBuilder.periodic(Duration(seconds: 1),
-                    //                 alignment: Duration.zero,
-                    //                 builder: (context) {
-                    //                 // This function will be called every second until the alert time
-                    //                 var now = DateTime.now();
-                    //                 var remaining = alert!.difference(now);
-                    //                 return Text(
-                    //                   formatDuration(remaining),
-                    //                   // style: textStyle,
-                    //                 );
-                    //               })
-                    //             : Text(
-                    //                 "00:00:00 \t\t",
-                    //                 // style: textStyle
-                    //               ),
-                    //         // RaisedButton(
-                    //         //   child: Text("Reset"),
-                    //         //   onPressed: () {
-                    //         //     setState(() {
-                    //         //       alert =
-                    //         //           DateTime.now().add(Duration(seconds: 120));
-                    //         //     });
-                    //         //   },
-                    //         // ),
-                    //       ],
-                    //     ),
-                    //   );
-                    // }),
                   ],
                 ),
               ),
@@ -3105,1178 +3544,1167 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
         elevation: 0,
         backgroundColor: AppBarColors.hexColor,
       ),
-      sideBar: SideBar(
-        key: _keybar,
-        textStyle:
-            const TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T),
-        iconColor: Colors.white,
-        backgroundColor: AppBarColors.ABar_Colors_tab,
-        items: [
-          for (int i = 0; i < perMissionModels.length; i++)
-            if (int.parse(perMissionModels[i].ser!) <= 3)
-              AdminMenuItem(
-                title: '${translate_menu[i]}',
+      sideBar: (!context.watch<SidebarController>().isOpen)
+          ? null
+          : SideBar(
+              width: 250,
+              key: _keybar,
+              textStyle: const TextStyle(
+                  color: Colors.white, fontFamily: Font_.Fonts_T),
+              iconColor: Colors.white,
+              backgroundColor: AppBarColors.ABar_Colors_tab,
+              items: [
+                for (int i = 0; i < perMissionModels.length; i++)
+                  if (int.parse(perMissionModels[i].ser!) <= 3)
+                    AdminMenuItem(
+                      title: '${translate_menu[i]}',
 
-                ///'${translate_menu.length}${perMissionModels[i].perm!.trim()}',
-                route: '/${perMissionModels[i].perm!.trim()}',
-                icon: IconData(
-                  int.parse(
-                    '${perMissionModels[i].icon}',
-                  ),
-                  fontFamily: 'MaterialIcons',
-                ),
-              ),
-          AdminMenuItem(
-            title: '${more_menu}',
-            // icon: Icons.more_horiz,
-            icon: IconData(
-              int.parse(
-                '0xf8d9',
-              ),
-              fontFamily: 'MaterialIcons',
-            ),
-            children: [
-              for (int i = 0; i < perMissionModels.length; i++)
-                if (int.parse(perMissionModels[i].ser!) > 3)
-                  AdminMenuItem(
-                    title:
-                        '${translate_menu[i]}', // '${perMissionModels[i].perm!.trim()}',
-                    route: '/${perMissionModels[i].perm!.trim()}',
-                    icon: IconData(
-                      int.parse(
-                        '${perMissionModels[i].icon}',
+                      ///'${translate_menu.length}${perMissionModels[i].perm!.trim()}',
+                      route: '/${perMissionModels[i].perm!.trim()}',
+                      icon: IconData(
+                        int.parse(
+                          '${perMissionModels[i].icon}',
+                        ),
+                        fontFamily: 'MaterialIcons',
                       ),
-                      fontFamily: 'MaterialIcons',
                     ),
+                AdminMenuItem(
+                  title: '${more_menu}',
+                  // icon: Icons.more_horiz,
+                  icon: IconData(
+                    int.parse(
+                      '0xf8d9',
+                    ),
+                    fontFamily: 'MaterialIcons',
                   ),
-            ],
-          ),
-          // AdminMenuItem(
-          //   title: perMissionModels[i].perm!.trim(),
-          //   route: '/${perMissionModels[i].perm!.trim()}',
-          //   icon: IconData(
-          //     int.parse(
-          //       '${perMissionModels[i].icon}',
-          //     ),
-          //     fontFamily: 'MaterialIcons',
-          //   ),
-          // ),
-          // AdminMenuItem(
-          //   title: 'อื่นๆ',
-          //   // icon: Icons.more_horiz,
-          //   icon: IconData(
-          //     int.parse(
-          //       '0xf8d9',
-          //     ),
-          //     fontFamily: 'MaterialIcons',
-          //   ),
-          //   children: [
-          //     for (int i = 0; i < perMissionModels.length; i++)
-          //       if (int.parse(perMissionModels[i].ser!) > 3)
-          //         AdminMenuItem(
-          //           title: perMissionModels[i].perm!.trim(),
-          //           route: '/${perMissionModels[i].perm!.trim()}',
-          //           icon: IconData(
-          //             int.parse(
-          //               '${perMissionModels[i].icon}',
-          //             ),
-          //             fontFamily: 'MaterialIcons',
-          //           ),
-          //         ),
-          //   ],
-          // ),
-        ],
-        selectedRoute: '/',
-        onSelected: (item) async {
-          SharedPreferences preferences = await SharedPreferences.getInstance();
-          if (preferences.getString('zonesName').toString() == 'null') {
-            setState(() {
-              preferences.setString('zoneSer', '0');
-              preferences.setString('zonesName', 'ทั้งหมด');
-            });
-          }
-          for (int i = 0; i < perMissionModels.length; i++) {
-            if (item.route == '/${perMissionModels[i].perm!.trim()}') {
-              if (renTal_user != null) {
+                  children: [
+                    for (int i = 0; i < perMissionModels.length; i++)
+                      if (int.parse(perMissionModels[i].ser!) > 3)
+                        AdminMenuItem(
+                          title:
+                              '${translate_menu[i]}', // '${perMissionModels[i].perm!.trim()}',
+                          route: '/${perMissionModels[i].perm!.trim()}',
+                          icon: IconData(
+                            int.parse(
+                              '${perMissionModels[i].icon}',
+                            ),
+                            fontFamily: 'MaterialIcons',
+                          ),
+                        ),
+                  ],
+                ),
+              ],
+              selectedRoute: '/',
+              onSelected: (item) async {
                 SharedPreferences preferences =
                     await SharedPreferences.getInstance();
-                preferences.setString(
-                    'route', perMissionModels[i].perm!.trim().toString());
-                setState(() {
-                  preferences.setString('Ser_Typepay', '0');
-                  Value_Route = perMissionModels[i].perm!.trim();
-                  _keybar.currentState?.closeDrawer();
-                });
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Translate.TranslateAndSetText(
-                        'กรุณาเลือกสถานที่ของท่านเพื่อเรียกดูข้อมูล',
-                        Colors.black,
-                        TextAlign.center,
-                        FontWeight.bold,
-                        FontWeight_.Fonts_T,
-                        14,
-                        1),
-                  ),
-                );
-              }
-              read_GC_rentalColor();
-            }
-          }
-          // if (item.route == '/หน้าหลัก') {
-          //   setState(() {
-          //     Value_Route = 'หน้าหลัก';
-          //   });
-          //   // Navigator.push(context,
-          //   //     MaterialPageRoute(builder: (context) => const HomeScreen()));
-          //   print('1หน้าหลัก');
-          // } else if ((item.route == '/พื้นที่เช่า')) {
-          //   setState(() {
-          //     Value_Route = 'พื้นที่เช่า';
-          //   });
-          //   // Navigator.push(
-          //   //     context,
-          //   //     MaterialPageRoute(
-          //   //         builder: (context) => const ChaoAreaScreen()));
-          //   print('2พื้นที่เช่า');
-          // } else if ((item.route == '/ผู้เช่า')) {
-          //   setState(() {
-          //     Value_Route = 'ผู้เช่า';
-          //   });
-          //   // Navigator.push(
-          //   //     context,
-          //   //     MaterialPageRoute(
-          //   //         builder: (context) => const PeopleChaoScreen()));
-          //   print('3');
-          // } else if ((item.route == '/บัญชี')) {
-          //   setState(() {
-          //     Value_Route = 'บัญชี';
-          //   });
-          //   // Navigator.push(
-          //   //     context,
-          //   //     MaterialPageRoute(
-          //   //         builder: (context) => const AccountScreen()));
-          //   print('4บัญชี');
-          // } else if ((item.route == '/จัดการ')) {
-          //   setState(() {
-          //     Value_Route = 'จัดการ';
-          //   });
-          //   // Navigator.push(
-          //   //     context,
-          //   //     MaterialPageRoute(
-          //   //         builder: (context) => const ManageScreen()));
-          //   print('5');
-          // } else if ((item.route == '/รายงาน')) {
-          //   setState(() {
-          //     Value_Route = 'รายงาน';
-          //   });
-          //   // Navigator.push(
-          //   //     context,
-          //   //     MaterialPageRoute(
-          //   //         builder: (context) => const ReportScreen()));
-          //   print('6รายงาน');
-          // } else if ((item.route == '/ตั้งค่า')) {
-          //   setState(() {
-          //     Value_Route = 'ตั้งค่า';
-          //   });
-          //   // Navigator.push(
-          //   //     context,
-          //   //     MaterialPageRoute(
-          //   //         builder: (context) => const SettingScreen()));
-          //   print('7ตั้งค่า');
-          // }
-        },
-        header: Container(
-          color: AppBarColors.ABar_Colors_tab,
-          child: Column(
-            children: [
-              if (time_check.toString() != '0' && time_check != null)
-                if (Auto_cancel.toString() == 'Yes')
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
-                    child: InkWell(
-                      onTap: () async {
-                        SharedPreferences preferences =
-                            await SharedPreferences.getInstance();
-                        var ren = preferences.getString('renTalSer');
-                        String url =
-                            '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
+                if (preferences.getString('zonesName').toString() == 'null') {
+                  setState(() {
+                    preferences.setString('zoneSer', '0');
+                    preferences.setString('zonesName', 'ทั้งหมด');
+                  });
+                }
+                for (int i = 0; i < perMissionModels.length; i++) {
+                  if (item.route == '/${perMissionModels[i].perm!.trim()}') {
+                    if (renTal_user != null) {
+                      SharedPreferences preferences =
+                          await SharedPreferences.getInstance();
+                      preferences.setString(
+                          'route', perMissionModels[i].perm!.trim().toString());
+                      setState(() {
+                        preferences.setString('Ser_Typepay', '0');
+                        Value_Route = perMissionModels[i].perm!.trim();
+                        _keybar.currentState?.closeDrawer();
+                      });
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Translate.TranslateAndSetText(
+                              'กรุณาเลือกสถานที่ของท่านเพื่อเรียกดูข้อมูล',
+                              Colors.black,
+                              TextAlign.center,
+                              FontWeight.bold,
+                              FontWeight_.Fonts_T,
+                              14,
+                              1),
+                        ),
+                      );
+                    }
+                    // read_GC_rentalColor(); // ❌ ดึง GC_rental_setring.php ซ้ำทุกครั้งที่กดแท็บ → read_GC_rental() ดึงมาแล้วตอน initState
+                  }
+                }
+              },
+              header: Container(
+                color: AppBarColors.ABar_Colors_tab,
+                child: Column(
+                  children: [
+                    if (time_check.toString() != '0' && time_check != null)
+                      if (Auto_cancel.toString() == 'Yes')
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 0, 8, 2),
+                          child: GestureDetector(
+                            onTap: () async {
+                              SharedPreferences preferences =
+                                  await SharedPreferences.getInstance();
+                              var ren = preferences.getString('renTalSer');
+                              String url =
+                                  '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
-                        try {
-                          var response = await http.get(Uri.parse(url));
+                              try {
+                                var response = await http.get(Uri.parse(url));
 
-                          var result = json.decode(response.body);
-                          // print('GC_rental_setring>> $result');
+                                var result = json.decode(response.body);
+                                // print('GC_rental_setring>> $result');
 
-                          if (result != null) {
-                            for (var map in result) {
-                              RenTalModel renTalModel =
-                                  RenTalModel.fromJson(map);
-                              setState(() {
-                                time_check = renTalModel.time_check;
-                              });
-                            }
-                          }
-                          if (time_check == null ||
-                              time_check.toString() == '0') {
-                            String? _route = preferences.getString('route');
-                            MaterialPageRoute materialPageRoute =
-                                MaterialPageRoute(
-                                    builder: (BuildContext context) =>
-                                        AdminScafScreen(route: _route));
-                            Navigator.pushAndRemoveUntil(
-                                context, materialPageRoute, (route) => false);
-                          }
-                        } catch (e) {}
-                        String Formbe_c = (int.parse('${time_check}') < 60)
-                            ? 'รายการเกินกำหนด $time_check นาที'
-                            : (int.parse('${time_check}') == 60)
-                                ? 'รายการเกินกำหนด 1 ชั่วโมง'
-                                : (int.parse('${time_check}') == 90)
-                                    ? 'รายการเกินกำหนด 1.3 ชั่วโมง'
-                                    : (int.parse('${time_check}') == 120)
-                                        ? 'รายการเกินกำหนด 2 ชั่วโมง'
-                                        : (int.parse('${time_check}') == 1440)
-                                            ? 'รายการเกินกำหนด 1 วัน'
-                                            : (int.parse('${time_check}') ==
-                                                    2880)
-                                                ? 'รายการเกินกำหนด 2 วัน'
-                                                : 'รายการเกินกำหนด $time_check นาที';
-                        if (time_check != null && time_check.toString() != '0')
-                          showDialog<String>(
-                            context: context,
-                            builder: (BuildContext context) => AlertDialog(
-                              shape: const RoundedRectangleBorder(
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(20.0))),
-                              backgroundColor:
-                                  AppbackgroundColor.Sub_Abg_Colors,
-                              titlePadding: const EdgeInsets.all(4.0),
-                              contentPadding: const EdgeInsets.all(10.0),
-                              actionsPadding: const EdgeInsets.all(6.0),
-                              title: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      InkWell(
-                                        onTap: () {
-                                          Navigator.pop(context, 'OK');
-                                        },
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: Icon(Icons.highlight_off,
-                                              size: 30, color: Colors.red[700]),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  Icon(
-                                    Icons.lock_clock,
-                                    size: 30,
-                                    color: Colors.blueGrey,
-                                  ),
-                                  Translate.TranslateAndSetText(
-                                      '#หมายเหตุระบบกึ่ง Auto  :',
-                                      Colors.deepOrange,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                  Translate.TranslateAndSetText(
-                                      'ยกเลิกรายการชำระ/จอง(รอตรวจสอบ)',
-                                      AdminScafScreen_Color.Colors_Text1_,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                  Translate.TranslateAndSetText(
-                                      'เงื่อนไข $Formbe_c',
-                                      AdminScafScreen_Color.Colors_Text1_,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                  Translate.TranslateAndSetText(
-                                      'ล็อกเสียบ/พื้นที่สำรอง',
-                                      AdminScafScreen_Color.Colors_Text1_,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                  Translate.TranslateAndSetText(
-                                      '( รายการ ที่ไม่พบ/แนบ Slip )',
-                                      Colors.grey,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                  const Divider(),
-                                  Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(0, 4, 4, 4),
-                                    child: Container(
-                                      width: 150,
-                                      decoration: BoxDecoration(
-                                        color: Colors.deepOrange[100],
-                                        borderRadius: const BorderRadius.only(
-                                            topLeft: Radius.circular(8),
-                                            topRight: Radius.circular(8),
-                                            bottomLeft: Radius.circular(8),
-                                            bottomRight: Radius.circular(8)),
-                                        border: Border.all(
-                                            color: Colors.grey, width: 1),
-                                      ),
-                                      padding: EdgeInsets.all(2.0),
-                                      child: Row(
-                                        children: [
-                                          Padding(
-                                            padding: EdgeInsets.all(2.0),
-                                            child:
-                                                Translate.TranslateAndSetText(
-                                                    'Check Auto',
-                                                    Colors.deepOrange,
-                                                    TextAlign.center,
-                                                    FontWeight.bold,
-                                                    FontWeight_.Fonts_T,
-                                                    14,
-                                                    1),
-                                          ),
-                                          InkWell(
-                                            onTap: () async {
-                                              SharedPreferences preferences =
-                                                  await SharedPreferences
-                                                      .getInstance();
-                                              if (Auto_cancel.toString() ==
-                                                  'Yes') {
-                                                preferences.setString(
-                                                    'Auto_cancel', 'No');
-                                              } else {
-                                                preferences.setString(
-                                                    'Auto_cancel', 'Yes');
-                                              }
-                                              String? _route = preferences
-                                                  .getString('route');
-                                              MaterialPageRoute
-                                                  materialPageRoute =
-                                                  MaterialPageRoute(
-                                                      builder: (BuildContext
-                                                              context) =>
-                                                          AdminScafScreen(
-                                                              route: _route));
-                                              Navigator.pushAndRemoveUntil(
-                                                  context,
-                                                  materialPageRoute,
-                                                  (route) => false);
-                                            },
-                                            child: (Auto_cancel.toString() ==
-                                                    'Yes')
-                                                ? Icon(
-                                                    Icons.toggle_on,
-                                                    color: Colors.green,
-                                                    size: 25,
-                                                  )
-                                                : Icon(
-                                                    Icons.toggle_off,
-                                                    color: Colors.black87,
+                                if (result != null) {
+                                  for (var map in result) {
+                                    RenTalModel renTalModel =
+                                        RenTalModel.fromJson(map);
+                                    setState(() {
+                                      time_check = renTalModel.time_check;
+                                    });
+                                  }
+                                }
+                                if (time_check == null ||
+                                    time_check.toString() == '0') {
+                                  String? _route =
+                                      preferences.getString('route');
+                                  MaterialPageRoute materialPageRoute =
+                                      MaterialPageRoute(
+                                          builder: (BuildContext context) =>
+                                              AdminScafScreen(route: _route));
+                                  Navigator.pushAndRemoveUntil(context,
+                                      materialPageRoute, (route) => false);
+                                }
+                              } catch (e) {}
+                              String Formbe_c = (int.parse('${time_check}') <
+                                      60)
+                                  ? 'รายการเกินกำหนด $time_check นาที'
+                                  : (int.parse('${time_check}') == 60)
+                                      ? 'รายการเกินกำหนด 1 ชั่วโมง'
+                                      : (int.parse('${time_check}') == 90)
+                                          ? 'รายการเกินกำหนด 1.3 ชั่วโมง'
+                                          : (int.parse('${time_check}') == 120)
+                                              ? 'รายการเกินกำหนด 2 ชั่วโมง'
+                                              : (int.parse('${time_check}') ==
+                                                      1440)
+                                                  ? 'รายการเกินกำหนด 1 วัน'
+                                                  : (int.parse(
+                                                              '${time_check}') ==
+                                                          2880)
+                                                      ? 'รายการเกินกำหนด 2 วัน'
+                                                      : 'รายการเกินกำหนด $time_check นาที';
+                              if (time_check != null &&
+                                  time_check.toString() != '0')
+                                showDialog<String>(
+                                  context: context,
+                                  builder: (BuildContext context) =>
+                                      AlertDialog(
+                                    shape: const RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(20.0))),
+                                    backgroundColor:
+                                        AppbackgroundColor.Sub_Abg_Colors,
+                                    titlePadding: const EdgeInsets.all(4.0),
+                                    contentPadding: const EdgeInsets.all(10.0),
+                                    actionsPadding: const EdgeInsets.all(6.0),
+                                    title: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.end,
+                                          children: [
+                                            GestureDetector(
+                                              onTap: () {
+                                                Navigator.pop(context, 'OK');
+                                              },
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(4.0),
+                                                child: Icon(Icons.highlight_off,
                                                     size: 30,
-                                                  ),
+                                                    color: Colors.red[700]),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Icon(
+                                          Icons.lock_clock,
+                                          size: 30,
+                                          color: Colors.blueGrey,
+                                        ),
+                                        Translate.TranslateAndSetText(
+                                            '#หมายเหตุระบบกึ่ง Auto  :',
+                                            Colors.deepOrange,
+                                            TextAlign.center,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            14,
+                                            1),
+                                        Translate.TranslateAndSetText(
+                                            'ยกเลิกรายการชำระ/จอง(รอตรวจสอบ)',
+                                            AdminScafScreen_Color.Colors_Text1_,
+                                            TextAlign.center,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            14,
+                                            1),
+                                        Translate.TranslateAndSetText(
+                                            'เงื่อนไข $Formbe_c',
+                                            AdminScafScreen_Color.Colors_Text1_,
+                                            TextAlign.center,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            14,
+                                            1),
+                                        Translate.TranslateAndSetText(
+                                            'ล็อกเสียบ/พื้นที่สำรอง',
+                                            AdminScafScreen_Color.Colors_Text1_,
+                                            TextAlign.center,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            14,
+                                            1),
+                                        Translate.TranslateAndSetText(
+                                            '( รายการ ที่ไม่พบ/แนบ Slip )',
+                                            Colors.grey,
+                                            TextAlign.center,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            14,
+                                            1),
+                                        const Divider(),
+                                        Padding(
+                                          padding: const EdgeInsets.fromLTRB(
+                                              0, 4, 4, 4),
+                                          child: Container(
+                                            width: 150,
+                                            decoration: BoxDecoration(
+                                              color: Colors.deepOrange[100],
+                                              borderRadius:
+                                                  const BorderRadius.only(
+                                                      topLeft:
+                                                          Radius.circular(8),
+                                                      topRight:
+                                                          Radius.circular(8),
+                                                      bottomLeft:
+                                                          Radius.circular(8),
+                                                      bottomRight:
+                                                          Radius.circular(8)),
+                                              border: Border.all(
+                                                  color: Colors.grey, width: 1),
+                                            ),
+                                            padding: EdgeInsets.all(2.0),
+                                            child: Row(
+                                              children: [
+                                                Padding(
+                                                  padding: EdgeInsets.all(2.0),
+                                                  child: Translate
+                                                      .TranslateAndSetText(
+                                                          'Check Auto',
+                                                          Colors.deepOrange,
+                                                          TextAlign.center,
+                                                          FontWeight.bold,
+                                                          FontWeight_.Fonts_T,
+                                                          14,
+                                                          1),
+                                                ),
+                                                GestureDetector(
+                                                  onTap: () async {
+                                                    SharedPreferences
+                                                        preferences =
+                                                        await SharedPreferences
+                                                            .getInstance();
+                                                    if (Auto_cancel
+                                                            .toString() ==
+                                                        'Yes') {
+                                                      preferences.setString(
+                                                          'Auto_cancel', 'No');
+                                                    } else {
+                                                      preferences.setString(
+                                                          'Auto_cancel', 'Yes');
+                                                    }
+                                                    String? _route = preferences
+                                                        .getString('route');
+                                                    MaterialPageRoute
+                                                        materialPageRoute =
+                                                        MaterialPageRoute(
+                                                            builder: (BuildContext
+                                                                    context) =>
+                                                                AdminScafScreen(
+                                                                    route:
+                                                                        _route));
+                                                    Navigator
+                                                        .pushAndRemoveUntil(
+                                                            context,
+                                                            materialPageRoute,
+                                                            (route) => false);
+                                                  },
+                                                  child: (Auto_cancel
+                                                              .toString() ==
+                                                          'Yes')
+                                                      ? Icon(
+                                                          Icons.toggle_on,
+                                                          color: Colors.green,
+                                                          size: 25,
+                                                        )
+                                                      : Icon(
+                                                          Icons.toggle_off,
+                                                          color: Colors.black87,
+                                                          size: 30,
+                                                        ),
+                                                ),
+                                                // Icon(
+                                                //   Icons.toggle_on,
+                                                //   color: Colors
+                                                //       .green,
+                                                //   size: 25,
+                                                // ),
+                                              ],
+                                            ),
                                           ),
-                                          // Icon(
-                                          //   Icons.toggle_on,
-                                          //   color: Colors
-                                          //       .green,
-                                          //   size: 25,
-                                          // ),
-                                        ],
-                                      ),
+                                        ),
+                                        const Divider(),
+                                      ],
                                     ),
                                   ),
-                                  const Divider(),
-                                ],
+                                );
+                            },
+                            child: Container(
+                              height: 45,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: AppBarColors.hexColor.withOpacity(0.9),
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(0),
+                                    topRight: Radius.circular(0),
+                                    bottomLeft: Radius.circular(8),
+                                    bottomRight: Radius.circular(8)),
+                              ),
+                              child: Center(
+                                child: Timer_Countdown(context, time_check),
                               ),
                             ),
-                          );
-                      },
-                      child: Container(
-                        height: 45,
-                        width: double.infinity,
-                        decoration: BoxDecoration(
-                          color: AppBarColors.hexColor.withOpacity(0.9),
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(0),
-                              topRight: Radius.circular(0),
-                              bottomLeft: Radius.circular(8),
-                              bottomRight: Radius.circular(8)),
+                          ),
                         ),
-                        child: Center(
-                          child: Timer_Countdown(context, time_check),
+                    Container(
+                      padding: const EdgeInsets.all(4.0),
+                      decoration: BoxDecoration(
+                        color: AppBarColors.ABar_Colors_tab,
+                        borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(0),
+                            topRight: Radius.circular(0),
+                            bottomLeft: Radius.circular(0),
+                            bottomRight: Radius.circular(0)),
+                      ),
+                      child: const Image(
+                        image: AssetImage('images/chaoperty_dark.png'),
+                      ),
+                    ),
+                    // StreamBuilder(
+                    //     stream: Stream.periodic(const Duration(seconds: 1)),
+                    //     builder: (context, snapshot) {
+                    //       return Stack(
+                    //         children: [
+                    //           // if (datex.minute == 15 ||
+                    //           //     datex.minute == 30 ||
+                    //           //     datex.minute == 45 ||
+                    //           //     datex.minute == 00)
+                    //           Positioned.fill(
+                    //               child:
+                    //                   ChiangMaiBackground2()), // 👈 พื้นหลังวาดด้วย Canvas
+                    //           // Align(
+                    //           //   alignment: Alignment.center,
+                    //           //   child: Padding(
+                    //           //     padding: const EdgeInsets.all(2),
+                    //           //     child: ClipRRect(
+                    //           //       borderRadius: BorderRadius.circular(16),
+                    //           //       child: BackdropFilter(
+                    //           //         filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    //           //         child: Container(
+                    //           //           padding: const EdgeInsets.symmetric(
+                    //           //               horizontal: 12, vertical: 8),
+                    //           //           decoration: BoxDecoration(
+                    //           //             gradient: LinearGradient(
+                    //           //               colors: [
+                    //           //                 Colors.white.withOpacity(.30),
+                    //           //                 Colors.white.withOpacity(.12),
+                    //           //               ],
+                    //           //             ),
+                    //           //             border: Border.all(
+                    //           //                 color: Colors.white.withOpacity(.35),
+                    //           //                 width: 1),
+                    //           //             boxShadow: [
+                    //           //               BoxShadow(
+                    //           //                 color: Colors.black.withOpacity(.08),
+                    //           //                 blurRadius: 12,
+                    //           //                 offset: const Offset(0, 6),
+                    //           //               ),
+                    //           //             ],
+                    //           //             borderRadius: BorderRadius.circular(16),
+                    //           //           ),
+                    //           //           child: const Image(
+                    //           //             image: AssetImage('images/chaoperty_dark.png'),
+                    //           //             height: 36,
+                    //           //           ),
+                    //           //           //  Row(
+                    //           //           //   mainAxisSize: MainAxisSize.min,
+                    //           //           //   children: [
+                    //           //           //     const Image(
+                    //           //           //       image:
+                    //           //           //           AssetImage('images/chaoperty_dark.png'),
+                    //           //           //       height: 36,
+                    //           //           //     ),
+                    //           //           //     // const SizedBox(width: 10),
+                    //           //           //     // Text(
+                    //           //           //     //   'Chaoperty',
+                    //           //           //     //   style: TextStyle(
+                    //           //           //     //     color: Colors.black.withOpacity(.8),
+                    //           //           //     //     fontWeight: FontWeight.w800,
+                    //           //           //     //     fontSize: 16,
+                    //           //           //     //     fontFamily: Font_.Fonts_T,
+                    //           //           //     //   ),
+                    //           //           //     // ),
+                    //           //           //     // const SizedBox(width: 8),
+                    //           //           //     // _FloatingLanternDot(), // 🏮 ลูกเล่นเล็ก ๆ
+                    //           //           //   ],
+                    //           //           // ),
+                    //           //         ),
+                    //           //       ),
+                    //           //     ),
+                    //           //   ),
+                    //           // ),
+                    //           Container(
+                    //             // width: 200,
+                    //             decoration: BoxDecoration(
+                    //               // color: AppBarColors.ABar_Colors_tab,
+                    //               borderRadius: BorderRadius.only(
+                    //                   topLeft: Radius.circular(0),
+                    //                   topRight: Radius.circular(0),
+                    //                   bottomLeft: Radius.circular(0),
+                    //                   bottomRight: Radius.circular(0)),
+                    //             ),
+                    //             padding: const EdgeInsets.all(8.0),
+                    //             child: const Image(
+                    //               image:
+                    //                   AssetImage('images/chaoperty_dark.png'),
+                    //             ),
+                    //           ),
+                    //         ],
+                    //       );
+                    //     }),
+                    // Padding(
+                    //   padding: const EdgeInsets.all(8.0),
+                    //   child: Align(
+                    //     alignment: Alignment.center,
+                    //     child: Padding(
+                    //       padding: const EdgeInsets.all(2),
+                    //       child: InkWell(
+                    //         onTap: () async {
+                    //           setState(() {
+                    //             Value_Route = 'หน้าหลัก';
+                    //           });
+                    //           SharedPreferences preferences =
+                    //               await SharedPreferences.getInstance();
+                    //           preferences.setString('route', 'หน้าหลัก');
+                    //           var name = preferences.getString('fname');
+                    //           Insert_log.Insert_logs('หน้าหลัก', '$name>หน้าหลัก');
+                    //         },
+                    //         child: ClipRRect(
+                    //           borderRadius: BorderRadius.circular(16),
+                    //           child: BackdropFilter(
+                    //             filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                    //             child: Container(
+                    //               padding: const EdgeInsets.symmetric(
+                    //                   horizontal: 12, vertical: 8),
+                    //               decoration: BoxDecoration(
+                    //                 gradient: LinearGradient(
+                    //                   colors: [
+                    //                     Colors.white.withOpacity(.30),
+                    //                     Colors.white.withOpacity(.12),
+                    //                   ],
+                    //                 ),
+                    //                 border: Border.all(
+                    //                     color: Colors.white.withOpacity(.35), width: 1),
+                    //                 boxShadow: [
+                    //                   BoxShadow(
+                    //                     color: Colors.black.withOpacity(.08),
+                    //                     blurRadius: 12,
+                    //                     offset: const Offset(0, 6),
+                    //                   ),
+                    //                 ],
+                    //                 borderRadius: BorderRadius.circular(16),
+                    //               ),
+                    //               child: Center(
+                    //                 child: Translate.TranslateAndSetText(
+                    //                     'เมนูหลัก',
+                    //                     Colors.black.withOpacity(.8),
+                    //                     TextAlign.center,
+                    //                     FontWeight.bold,
+                    //                     FontWeight_.Fonts_T,
+                    //                     14,
+                    //                     1),
+                    //               ),
+                    //               //  Row(
+                    //               //   mainAxisSize: MainAxisSize.min,
+                    //               //   children: [
+                    //               //     const Image(
+                    //               //       image:
+                    //               //           AssetImage('images/chaoperty_dark.png'),
+                    //               //       height: 36,
+                    //               //     ),
+                    //               //     // const SizedBox(width: 10),
+                    //               //     // Text(
+                    //               //     //   'Chaoperty',
+                    //               //     //   style: TextStyle(
+                    //               //     //     color: Colors.black.withOpacity(.8),
+                    //               //     //     fontWeight: FontWeight.w800,
+                    //               //     //     fontSize: 16,
+                    //               //     //     fontFamily: Font_.Fonts_T,
+                    //               //     //   ),
+                    //               //     // ),
+                    //               //     // const SizedBox(width: 8),
+                    //               //     // _FloatingLanternDot(), // 🏮 ลูกเล่นเล็ก ๆ
+                    //               //   ],
+                    //               // ),
+                    //             ),
+                    //           ),
+                    //         ),
+                    //       ),
+                    //     ),
+                    //   ),
+                    // ),
+                    GestureDetector(
+                      onTap: () async {
+                        setState(() {
+                          Value_Route = 'หน้าหลัก';
+                        });
+                        SharedPreferences preferences =
+                            await SharedPreferences.getInstance();
+                        preferences.setString('route', 'หน้าหลัก');
+                        var name = preferences.getString('fname');
+                        Insert_log.Insert_logs('หน้าหลัก', '$name>หน้าหลัก');
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          height: 40,
+                          width: double.infinity,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(20),
+                                topRight: Radius.circular(20),
+                                bottomLeft: Radius.circular(20),
+                                bottomRight: Radius.circular(20)),
+                          ),
+                          child: Center(
+                            child: Translate.TranslateAndSetText(
+                                'เมนูหลัก ',
+                                Colors.black,
+                                TextAlign.center,
+                                FontWeight.bold,
+                                FontWeight_.Fonts_T,
+                                14,
+                                1),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              Container(
-                // width: 200,
-                decoration: BoxDecoration(
-                  color: AppBarColors.ABar_Colors_tab,
-                  borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(0),
-                      topRight: Radius.circular(0),
-                      bottomLeft: Radius.circular(0),
-                      bottomRight: Radius.circular(0)),
-                ),
-                padding: const EdgeInsets.all(8.0),
-                child: const Image(
-                  image: AssetImage('images/chaoperty_dark.png'),
+                  ],
                 ),
               ),
-              InkWell(
-                onTap: () async {
-                  setState(() {
-                    Value_Route = 'หน้าหลัก';
-                  });
-                  SharedPreferences preferences =
-                      await SharedPreferences.getInstance();
-                  preferences.setString('route', 'หน้าหลัก');
-                  var name = preferences.getString('fname');
-                  Insert_log.Insert_logs('หน้าหลัก', '$name>หน้าหลัก');
-                },
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Container(
-                    height: 40,
-                    width: double.infinity,
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(20),
-                          topRight: Radius.circular(20),
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20)),
+              footer: Container(
+                // height: 50,
+                width: double.infinity,
+                color: AppBarColors.ABar_Colors_tab,
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color(0xFFEDE7F6), // lavender pastel
+                        Color(0xFFD1C4E9), // soft purple gray
+                        Color(0xFFFFF8E1), // warm cream
+                      ],
                     ),
-                    child: Center(
-                      child: Translate.TranslateAndSetText(
-                          'เมนูหลัก',
-                          Colors.black,
-                          TextAlign.center,
-                          FontWeight.bold,
-                          FontWeight_.Fonts_T,
-                          14,
-                          1),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(5),
+                      topRight: Radius.circular(5),
+                      // bottomRight: Radius.circular(22),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(.12),
+                        blurRadius: 14,
+                        offset: const Offset(2, 6),
+                      ),
+                    ],
                   ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        footer: Container(
-          // height: 50,
-          width: double.infinity,
-          color: AppBarColors.ABar_Colors_tab,
-          child: Container(
-            // height: 40,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(5),
-                  topRight: Radius.circular(5),
-                  bottomLeft: Radius.circular(0),
-                  bottomRight: Radius.circular(0)),
-            ),
-            child: Column(
-              children: [
-                // (ren_ser.toString() == '114')
-                //     ? Padding(
-                //         padding: EdgeInsets.all(4.0),
-                //         child: InkWell(
-                //           onTap: () async {
-                //             Navigator.push(
-                //               context,
-                //               MaterialPageRoute(
-                //                 builder: (context) => WebView_NainaSetting(),
-                //               ),
-                //             );
-                //           },
-                //           child: Container(
-                //             decoration: BoxDecoration(
-                //               color: AppBarColors.hexColor.withOpacity(0.9),
-                //               borderRadius: BorderRadius.only(
-                //                   topLeft: Radius.circular(10),
-                //                   topRight: Radius.circular(10),
-                //                   bottomLeft: Radius.circular(10),
-                //                   bottomRight: Radius.circular(10)),
-                //             ),
-                //             padding: EdgeInsets.all(4.0),
-                //             child: Row(
-                //               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //               children: const [
-                //                 Icon(
-                //                   Icons.hotel,
-                //                   color: Colors.white,
-                //                 ),
-                //                 Text(
-                //                   'Nainaservice',
-                //                   maxLines: 1,
-                //                   overflow: TextOverflow.ellipsis,
-                //                   softWrap: false,
-                //                   textAlign: TextAlign.center,
-                //                   style: TextStyle(
-                //                       color: Colors.white,
-                //                       fontWeight: FontWeight.bold,
-                //                       fontFamily: Font_.Fonts_T,
-                //                       fontSize: 16.0),
-                //                 ),
-                //                 Text(
-                //                   '> >',
-                //                   maxLines: 1,
-                //                   overflow: TextOverflow.ellipsis,
-                //                   softWrap: false,
-                //                   textAlign: TextAlign.center,
-                //                   style: TextStyle(
-                //                       color: Colors.white,
-                //                       fontWeight: FontWeight.bold,
-                //                       fontFamily: Font_.Fonts_T,
-                //                       fontSize: 16.0),
-                //                 ),
-                //               ],
-                //             ),
-                //           ),
-                //         ),
-                //       )
-                //     :
-                renTal_lavel! <= 3
-                    ? SizedBox()
-                    : passcode == null
-                        ? SizedBox()
-                        : Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      '$passcode',
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      softWrap: false,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                          color: Colors.orange.shade900,
-                                          fontWeight: FontWeight.bold,
-                                          fontFamily: Font_.Fonts_T,
-                                          fontSize: 20.0),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: TextButton(
-                                      onPressed: () async {
-                                        print(userModels_chat.length);
-                                        startTimer();
-                                        showDialog<String>(
-                                          context: context,
-                                          builder: (BuildContext context) =>
-                                              AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(20.0))),
-                                            title: Center(
-                                              child:
-                                                  Translate.TranslateAndSetText(
-                                                      'Admin User',
-                                                      Colors.orange.shade900,
-                                                      TextAlign.center,
-                                                      FontWeight.bold,
-                                                      FontWeight_.Fonts_T,
-                                                      14,
-                                                      1),
-                                            ),
-                                            content: ScrollConfiguration(
-                                              behavior: ScrollConfiguration.of(
-                                                      context)
-                                                  .copyWith(dragDevices: {
-                                                PointerDeviceKind.touch,
-                                                PointerDeviceKind.mouse,
-                                              }),
-                                              child: SingleChildScrollView(
-                                                scrollDirection:
-                                                    Axis.horizontal,
-                                                dragStartBehavior:
-                                                    DragStartBehavior.start,
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      width: (Responsive
-                                                              .isDesktop(
-                                                                  context))
-                                                          ? MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .width *
-                                                              0.85
-                                                          : 800,
-                                                      child: StreamBuilder(
-                                                          stream:
-                                                              Stream.periodic(
-                                                                  const Duration(
-                                                                      seconds:
-                                                                          0)),
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            return Column(
-                                                              children: [
-                                                                Row(
-                                                                  children: [
-                                                                    Translate.TranslateAndSetText(
-                                                                        'ทั้งหมด : ${userModels_chat.length} คน',
-                                                                        AdminScafScreen_Color
-                                                                            .Colors_Text1_,
-                                                                        TextAlign
-                                                                            .center,
-                                                                        FontWeight
-                                                                            .bold,
-                                                                        FontWeight_
-                                                                            .Fonts_T,
-                                                                        14,
-                                                                        1),
-                                                                  ],
-                                                                ),
-                                                                Container(
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    color: AppbackgroundColor
-                                                                        .TiTile_Colors,
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .only(
-                                                                      topLeft: Radius
-                                                                          .circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              0),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              0),
-                                                                    ),
-                                                                    // border: Border.all(
-                                                                    //     color: Colors.grey, width: 1),
-                                                                  ),
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                              .all(
-                                                                          8.0),
-                                                                  child: Row(
-                                                                    children: [
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          '...',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          'Email',
-                                                                          textAlign:
-                                                                              TextAlign.start,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Translate.TranslateAndSetText(
-                                                                            'ชื่อ',
-                                                                            AdminScafScreen_Color.Colors_Text1_,
-                                                                            TextAlign.start,
-                                                                            FontWeight.bold,
-                                                                            FontWeight_.Fonts_T,
-                                                                            14,
-                                                                            1),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Translate.TranslateAndSetText(
-                                                                            'เวลาอัพเดตล่าสุด',
-                                                                            AdminScafScreen_Color.Colors_Text1_,
-                                                                            TextAlign.center,
-                                                                            FontWeight.bold,
-                                                                            FontWeight_.Fonts_T,
-                                                                            14,
-                                                                            1),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Translate.TranslateAndSetText(
-                                                                            'Logout',
-                                                                            AdminScafScreen_Color.Colors_Text1_,
-                                                                            TextAlign.center,
-                                                                            FontWeight.bold,
-                                                                            FontWeight_.Fonts_T,
-                                                                            14,
-                                                                            1),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                                Container(
-                                                                    height: MediaQuery.of(context)
-                                                                            .size
-                                                                            .height *
-                                                                        0.55,
-                                                                    width: (Responsive.isDesktop(
-                                                                            context))
-                                                                        ? MediaQuery.of(context).size.width *
-                                                                            0.85
-                                                                        : 800,
-                                                                    child: ListView.builder(
-                                                                        padding: const EdgeInsets.all(8),
-                                                                        itemCount: userModels_chat.length,
-                                                                        itemBuilder: (BuildContext context, int index) {
-                                                                          String
-                                                                              email =
-                                                                              '${userModels_chat[index].email}';
-                                                                          int emailLength =
-                                                                              email.length;
-                                                                          String
-                                                                              firstTwoCharacters =
-                                                                              email.substring(0, 2);
-                                                                          String
-                                                                              lastFourCharacters =
-                                                                              email.substring(emailLength - 4);
-                                                                          String
-                                                                              censoredEmail =
-                                                                              '$firstTwoCharacters${'*' * (emailLength - 6)}$lastFourCharacters';
-
-                                                                          String
-                                                                              connected_ =
-                                                                              '${userModels_chat[index].connected}';
-
-                                                                          DateTime
-                                                                              connectedTime =
-                                                                              DateTime.parse(connected_);
-
-                                                                          DateTime
-                                                                              currentTime =
-                                                                              DateTime.now();
-
-                                                                          Duration
-                                                                              difference =
-                                                                              currentTime.difference(connectedTime);
-
-                                                                          int minutesPassed =
-                                                                              difference.inMinutes;
-                                                                          return Container(
+                  // height: 40,
+                  // decoration: const BoxDecoration(
+                  //   color: Colors.white,
+                  //   borderRadius: BorderRadius.only(
+                  //       topLeft: Radius.circular(5),
+                  //       topRight: Radius.circular(5),
+                  //       bottomLeft: Radius.circular(0),
+                  //       bottomRight: Radius.circular(0)),
+                  // ),
+                  child: Column(
+                    children: [
+                      renTal_lavel! <= 3
+                          ? SizedBox()
+                          : passcode == null
+                              ? SizedBox()
+                              : Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          child: Text(
+                                            '$passcode',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            softWrap: false,
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
+                                                color: Colors.orange.shade900,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: Font_.Fonts_T,
+                                                fontSize: 20.0),
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: TextButton(
+                                            onPressed: () async {
+                                              //  print(userModels_chat.length);
+                                              startTimer();
+                                              showDialog<String>(
+                                                context: context,
+                                                builder:
+                                                    (BuildContext context) =>
+                                                        AlertDialog(
+                                                  shape:
+                                                      const RoundedRectangleBorder(
+                                                          borderRadius:
+                                                              BorderRadius.all(
+                                                                  Radius.circular(
+                                                                      20.0))),
+                                                  title: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'Admin User',
+                                                            Colors.orange
+                                                                .shade900,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            14,
+                                                            1),
+                                                  ),
+                                                  content: ScrollConfiguration(
+                                                    behavior:
+                                                        ScrollConfiguration.of(
+                                                                context)
+                                                            .copyWith(
+                                                                dragDevices: {
+                                                          PointerDeviceKind
+                                                              .touch,
+                                                          PointerDeviceKind
+                                                              .mouse,
+                                                        }),
+                                                    child:
+                                                        SingleChildScrollView(
+                                                      scrollDirection:
+                                                          Axis.horizontal,
+                                                      dragStartBehavior:
+                                                          DragStartBehavior
+                                                              .start,
+                                                      child: Row(
+                                                        children: [
+                                                          Container(
+                                                            width: (Responsive
+                                                                    .isDesktop(
+                                                                        context))
+                                                                ? MediaQuery.of(
+                                                                            context)
+                                                                        .size
+                                                                        .width *
+                                                                    0.85
+                                                                : 800,
+                                                            child:
+                                                                StreamBuilder(
+                                                                    stream: Stream.periodic(const Duration(
+                                                                        seconds:
+                                                                            0)),
+                                                                    builder:
+                                                                        (context,
+                                                                            snapshot) {
+                                                                      return Column(
+                                                                        children: [
+                                                                          Row(
+                                                                            children: [
+                                                                              Translate.TranslateAndSetText('ทั้งหมด : ${userModels_chat.length} คน', AdminScafScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                            ],
+                                                                          ),
+                                                                          Container(
+                                                                            decoration:
+                                                                                BoxDecoration(
+                                                                              color: AppbackgroundColor.TiTile_Colors,
+                                                                              borderRadius: BorderRadius.only(
+                                                                                topLeft: Radius.circular(10),
+                                                                                topRight: Radius.circular(10),
+                                                                                bottomLeft: Radius.circular(0),
+                                                                                bottomRight: Radius.circular(0),
+                                                                              ),
+                                                                              // border: Border.all(
+                                                                              //     color: Colors.grey, width: 1),
+                                                                            ),
                                                                             padding:
-                                                                                const EdgeInsets.all(8),
+                                                                                const EdgeInsets.all(8.0),
                                                                             child:
-                                                                                Column(
-                                                                              children: [
                                                                                 Row(
-                                                                                  children: [
-                                                                                    Expanded(
-                                                                                      flex: 1,
-                                                                                      child: Text(
-                                                                                        '${index + 1}',
-                                                                                        textAlign: TextAlign.center,
-                                                                                        maxLines: 1,
-                                                                                        style: TextStyle(
-                                                                                            color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                    ),
-                                                                                    Expanded(
-                                                                                      flex: 1,
-                                                                                      child: Text(
-                                                                                        '${censoredEmail} ',
-                                                                                        textAlign: TextAlign.start,
-                                                                                        maxLines: 2,
-                                                                                        style: TextStyle(
-                                                                                            color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                    ),
-                                                                                    Expanded(
-                                                                                      flex: 1,
-                                                                                      child: Text(
-                                                                                        textAlign: TextAlign.start,
-                                                                                        maxLines: 2,
-                                                                                        '${userModels_chat[index].fname} ${userModels_chat[index].lname}',
-                                                                                        style: TextStyle(
-                                                                                            color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                            // fontWeight: FontWeight.bold,
-                                                                                            fontFamily: Font_.Fonts_T),
-                                                                                      ),
-                                                                                    ),
-                                                                                    // Expanded(
-                                                                                    //   flex: 1,
-                                                                                    //   child: Text(
-                                                                                    //     '${userModels_chat[index].position}',
-                                                                                    //     textAlign: TextAlign.end,
-                                                                                    //     maxLines: 2,
-                                                                                    //     style: TextStyle(
-                                                                                    //         color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                    //         // fontWeight: FontWeight.bold,
-                                                                                    //         fontFamily: Font_.Fonts_T),
-                                                                                    //   ),
-                                                                                    // ),
+                                                                              children: [
+                                                                                Expanded(
+                                                                                  flex: 1,
+                                                                                  child: Text(
+                                                                                    '...',
+                                                                                    textAlign: TextAlign.center,
+                                                                                    style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                  ),
+                                                                                ),
+                                                                                Expanded(
+                                                                                  flex: 1,
+                                                                                  child: Text(
+                                                                                    'Email',
+                                                                                    textAlign: TextAlign.start,
+                                                                                    style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                  ),
+                                                                                ),
+                                                                                Expanded(
+                                                                                  flex: 1,
+                                                                                  child: Translate.TranslateAndSetText('ชื่อ', AdminScafScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                ),
+                                                                                Expanded(
+                                                                                  flex: 1,
+                                                                                  child: Translate.TranslateAndSetText('เวลาอัพเดตล่าสุด', AdminScafScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                ),
+                                                                                Expanded(
+                                                                                  flex: 1,
+                                                                                  child: Translate.TranslateAndSetText('Logout', AdminScafScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                ),
+                                                                              ],
+                                                                            ),
+                                                                          ),
+                                                                          Container(
+                                                                              height: MediaQuery.of(context).size.height * 0.55,
+                                                                              width: (Responsive.isDesktop(context)) ? MediaQuery.of(context).size.width * 0.85 : 800,
+                                                                              child: ListView.builder(
+                                                                                  padding: const EdgeInsets.all(8),
+                                                                                  itemCount: userModels_chat.length,
+                                                                                  itemBuilder: (BuildContext context, int index) {
+                                                                                    String email = '${userModels_chat[index].email}';
+                                                                                    int emailLength = email.length;
+                                                                                    String firstTwoCharacters = email.substring(0, 2);
+                                                                                    String lastFourCharacters = email.substring(emailLength - 4);
+                                                                                    String censoredEmail = '$firstTwoCharacters${'*' * (emailLength - 6)}$lastFourCharacters';
 
-                                                                                    // Expanded(
-                                                                                    //   flex: 2,
-                                                                                    //   child: Row(
-                                                                                    //     children: [
-                                                                                    //       Expanded(flex: 1, child: Icon((minutesPassed > 1) ? Icons.motion_photos_off_rounded : Icons.motion_photos_on_rounded, color: (minutesPassed > 1) ? Colors.red : Colors.green)
-                                                                                    //           // Text(
-                                                                                    //           //   '🟢',
-                                                                                    //           //   maxLines: 2,
-                                                                                    //           //   textAlign: TextAlign.end,
-                                                                                    //           //   style: TextStyle(color: (minutesPassed > 1) ? Colors.red : Colors.green, fontFamily: Font_.Fonts_T),
-                                                                                    //           // )
-                                                                                    //           ),
-                                                                                    Expanded(
-                                                                                      flex: 1,
-                                                                                      child: Translate.TranslateAndSetText(
-                                                                                          (minutesPassed > 60)
-                                                                                              ? 'ไม่ได้ใช้งานมากกว่า 1 ช.ม.'
-                                                                                              : (minutesPassed > 1)
-                                                                                                  ? 'ใช้งานเมื่อ $minutesPassed นาทีที่แล้ว'
-                                                                                                  : ' ${userModels_chat[index].connected}',
-                                                                                          (minutesPassed > 60) ? Colors.red : AdminScafScreen_Color.Colors_Text1_,
-                                                                                          TextAlign.center,
-                                                                                          FontWeight.bold,
-                                                                                          FontWeight_.Fonts_T,
-                                                                                          14,
-                                                                                          1),
-                                                                                    ),
-                                                                                    //     ],
-                                                                                    //   ),
-                                                                                    // ),
-                                                                                    // Expanded(
-                                                                                    //   flex: 4,
-                                                                                    //   child: Text(
-                                                                                    //     '${userModels_chat[index].syslog}',
-                                                                                    //     textAlign: TextAlign.start,
-                                                                                    //     maxLines: 2,
-                                                                                    //     style: TextStyle(
-                                                                                    //         color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                    //         // fontWeight: FontWeight.bold,
-                                                                                    //         fontFamily: Font_.Fonts_T),
-                                                                                    //   ),
-                                                                                    // ),
-                                                                                    Expanded(
-                                                                                      flex: 1,
-                                                                                      child: TextButton(
-                                                                                        onPressed: () {
-                                                                                          showDialog<String>(
-                                                                                            context: context,
-                                                                                            builder: (BuildContext context) => AlertDialog(
-                                                                                              shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20.0))),
-                                                                                              title: Row(
-                                                                                                children: [
-                                                                                                  Expanded(
-                                                                                                    child: Center(
-                                                                                                      child: Text(
-                                                                                                        'รหัสผ่านการทำรายการ', // Navigator.pop(context, 'OK');
-                                                                                                        style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
-                                                                                                      ),
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                  Expanded(
-                                                                                                    child: Row(
-                                                                                                      mainAxisAlignment: MainAxisAlignment.end,
-                                                                                                      children: [
-                                                                                                        IconButton(
-                                                                                                            onPressed: () {
-                                                                                                              setState(() {
-                                                                                                                Formpasslok_.clear();
-                                                                                                              });
-                                                                                                              Navigator.pop(context);
-                                                                                                            },
-                                                                                                            icon: Icon(Icons.close, color: Colors.black)),
-                                                                                                      ],
-                                                                                                    ),
-                                                                                                  ),
-                                                                                                ],
+                                                                                    String connected_ = '${userModels_chat[index].connected}';
+
+                                                                                    DateTime connectedTime = DateTime.parse(connected_);
+
+                                                                                    DateTime currentTime = DateTime.now();
+
+                                                                                    Duration difference = currentTime.difference(connectedTime);
+
+                                                                                    int minutesPassed = difference.inMinutes;
+                                                                                    return Container(
+                                                                                      padding: const EdgeInsets.all(8),
+                                                                                      child: Column(
+                                                                                        children: [
+                                                                                          Row(
+                                                                                            children: [
+                                                                                              Expanded(
+                                                                                                flex: 1,
+                                                                                                child: Text(
+                                                                                                  '${index + 1}',
+                                                                                                  textAlign: TextAlign.center,
+                                                                                                  maxLines: 1,
+                                                                                                  style: TextStyle(
+                                                                                                      color: AdminScafScreen_Color.Colors_Text1_,
+                                                                                                      // fontWeight: FontWeight.bold,
+                                                                                                      fontFamily: Font_.Fonts_T),
+                                                                                                ),
                                                                                               ),
-                                                                                              actions: <Widget>[
-                                                                                                Form(
-                                                                                                  key: _formKey,
-                                                                                                  child: Column(
-                                                                                                    children: [
-                                                                                                      Padding(
-                                                                                                        padding: EdgeInsets.all(8.0),
-                                                                                                        child: TextFormField(
-                                                                                                          keyboardType: TextInputType.number,
-                                                                                                          controller: Formpasslok_,
-                                                                                                          obscureText: true,
-                                                                                                          validator: (value) {
-                                                                                                            if (value == null || value.isEmpty) {
-                                                                                                              return 'ใส่ข้อมูลให้ครบถ้วน ';
-                                                                                                            }
-                                                                                                            // if (int.parse(value.toString()) < 13) {
-                                                                                                            //   return '< 13';
-                                                                                                            // }
-                                                                                                            return null;
-                                                                                                          },
-                                                                                                          onFieldSubmitted: (value) async {
-                                                                                                            if (_formKey.currentState!.validate()) {
-                                                                                                              SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                                                              var ren = preferences.getString('renTalSer');
-                                                                                                              var user = preferences.getString('ser');
-                                                                                                              print('value>>>>$value');
-                                                                                                              String url = '${MyConstant().domain}/GC_Passcode.php?isAdd=true&puser=$value&ren=$ren';
+                                                                                              Expanded(
+                                                                                                flex: 1,
+                                                                                                child: Text(
+                                                                                                  '${censoredEmail} ',
+                                                                                                  textAlign: TextAlign.start,
+                                                                                                  maxLines: 2,
+                                                                                                  style: TextStyle(
+                                                                                                      color: AdminScafScreen_Color.Colors_Text1_,
+                                                                                                      // fontWeight: FontWeight.bold,
+                                                                                                      fontFamily: Font_.Fonts_T),
+                                                                                                ),
+                                                                                              ),
+                                                                                              Expanded(
+                                                                                                flex: 1,
+                                                                                                child: Text(
+                                                                                                  textAlign: TextAlign.start,
+                                                                                                  maxLines: 2,
+                                                                                                  '${userModels_chat[index].fname} ${userModels_chat[index].lname}',
+                                                                                                  style: TextStyle(
+                                                                                                      color: AdminScafScreen_Color.Colors_Text1_,
+                                                                                                      // fontWeight: FontWeight.bold,
+                                                                                                      fontFamily: Font_.Fonts_T),
+                                                                                                ),
+                                                                                              ),
+                                                                                              // Expanded(
+                                                                                              //   flex: 1,
+                                                                                              //   child: Text(
+                                                                                              //     '${userModels_chat[index].position}',
+                                                                                              //     textAlign: TextAlign.end,
+                                                                                              //     maxLines: 2,
+                                                                                              //     style: TextStyle(
+                                                                                              //         color: AdminScafScreen_Color.Colors_Text1_,
+                                                                                              //         // fontWeight: FontWeight.bold,
+                                                                                              //         fontFamily: Font_.Fonts_T),
+                                                                                              //   ),
+                                                                                              // ),
 
-                                                                                                              try {
-                                                                                                                var response = await http.get(Uri.parse(url));
-
-                                                                                                                var result = json.decode(response.body);
-                                                                                                                print(result);
-                                                                                                                if (result.toString() == 'true') {
-                                                                                                                  de_Trans_item(index);
-                                                                                                                } else {
-                                                                                                                  setState(() {
-                                                                                                                    Formpasslok_.clear();
-                                                                                                                  });
-                                                                                                                  ScaffoldMessenger.of(context).showSnackBar(
-                                                                                                                    SnackBar(content: Text('Password ผิดพลาด กรุณาลองใหม่!', style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
-                                                                                                                  );
-                                                                                                                  // Navigator.pop(context, 'OK');
-                                                                                                                  Navigator.pop(context, 'OK');
-                                                                                                                }
-                                                                                                              } catch (e) {}
-                                                                                                            }
-                                                                                                          },
-
-                                                                                                          // maxLength: 13,
-                                                                                                          cursorColor: Colors.green,
-                                                                                                          decoration: InputDecoration(
-                                                                                                              fillColor: Colors.white.withOpacity(0.3),
-                                                                                                              filled: true,
-                                                                                                              // prefixIcon: const Icon(Icons.water,
-                                                                                                              //     color: Colors.blue),
-                                                                                                              // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                                                              focusedBorder: const OutlineInputBorder(
-                                                                                                                borderRadius: BorderRadius.only(
-                                                                                                                  topRight: Radius.circular(15),
-                                                                                                                  topLeft: Radius.circular(15),
-                                                                                                                  bottomRight: Radius.circular(15),
-                                                                                                                  bottomLeft: Radius.circular(15),
-                                                                                                                ),
-                                                                                                                borderSide: BorderSide(
-                                                                                                                  width: 1,
-                                                                                                                  color: Colors.black,
-                                                                                                                ),
-                                                                                                              ),
-                                                                                                              enabledBorder: const OutlineInputBorder(
-                                                                                                                borderRadius: BorderRadius.only(
-                                                                                                                  topRight: Radius.circular(15),
-                                                                                                                  topLeft: Radius.circular(15),
-                                                                                                                  bottomRight: Radius.circular(15),
-                                                                                                                  bottomLeft: Radius.circular(15),
-                                                                                                                ),
-                                                                                                                borderSide: BorderSide(
-                                                                                                                  width: 1,
-                                                                                                                  color: Colors.grey,
-                                                                                                                ),
-                                                                                                              ),
-                                                                                                              labelText: 'Password',
-                                                                                                              labelStyle: const TextStyle(
-                                                                                                                color: ManageScreen_Color.Colors_Text2_,
-                                                                                                                // fontWeight:
-                                                                                                                //     FontWeight.bold,
-                                                                                                                fontFamily: Font_.Fonts_T,
-                                                                                                              )),
-                                                                                                          // inputFormatters: <TextInputFormatter>[
-                                                                                                          //   // for below version 2 use this
-                                                                                                          //   FilteringTextInputFormatter.allow(
-                                                                                                          //       RegExp(r'[0-9]')),
-                                                                                                          //   // for version 2 and greater youcan also use this
-                                                                                                          //   FilteringTextInputFormatter.digitsOnly
-                                                                                                          // ],
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                      Padding(
-                                                                                                        padding: const EdgeInsets.all(8.0),
-                                                                                                        child: Row(
-                                                                                                          mainAxisAlignment: MainAxisAlignment.center,
+                                                                                              // Expanded(
+                                                                                              //   flex: 2,
+                                                                                              //   child: Row(
+                                                                                              //     children: [
+                                                                                              //       Expanded(flex: 1, child: Icon((minutesPassed > 1) ? Icons.motion_photos_off_rounded : Icons.motion_photos_on_rounded, color: (minutesPassed > 1) ? Colors.red : Colors.green)
+                                                                                              //           // Text(
+                                                                                              //           //   '🟢',
+                                                                                              //           //   maxLines: 2,
+                                                                                              //           //   textAlign: TextAlign.end,
+                                                                                              //           //   style: TextStyle(color: (minutesPassed > 1) ? Colors.red : Colors.green, fontFamily: Font_.Fonts_T),
+                                                                                              //           // )
+                                                                                              //           ),
+                                                                                              Expanded(
+                                                                                                flex: 1,
+                                                                                                child: Translate.TranslateAndSetText(
+                                                                                                    (minutesPassed > 60)
+                                                                                                        ? 'ไม่ได้ใช้งานมากกว่า 1 ช.ม.'
+                                                                                                        : (minutesPassed > 1)
+                                                                                                            ? 'ใช้งานเมื่อ $minutesPassed นาทีที่แล้ว'
+                                                                                                            : ' ${userModels_chat[index].connected}',
+                                                                                                    (minutesPassed > 60) ? Colors.red : AdminScafScreen_Color.Colors_Text1_,
+                                                                                                    TextAlign.center,
+                                                                                                    FontWeight.bold,
+                                                                                                    FontWeight_.Fonts_T,
+                                                                                                    14,
+                                                                                                    1),
+                                                                                              ),
+                                                                                              //     ],
+                                                                                              //   ),
+                                                                                              // ),
+                                                                                              // Expanded(
+                                                                                              //   flex: 4,
+                                                                                              //   child: Text(
+                                                                                              //     '${userModels_chat[index].syslog}',
+                                                                                              //     textAlign: TextAlign.start,
+                                                                                              //     maxLines: 2,
+                                                                                              //     style: TextStyle(
+                                                                                              //         color: AdminScafScreen_Color.Colors_Text1_,
+                                                                                              //         // fontWeight: FontWeight.bold,
+                                                                                              //         fontFamily: Font_.Fonts_T),
+                                                                                              //   ),
+                                                                                              // ),
+                                                                                              Expanded(
+                                                                                                flex: 1,
+                                                                                                child: TextButton(
+                                                                                                  onPressed: () {
+                                                                                                    showDialog<String>(
+                                                                                                      context: context,
+                                                                                                      builder: (BuildContext context) => AlertDialog(
+                                                                                                        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20.0))),
+                                                                                                        title: Row(
                                                                                                           children: [
-                                                                                                            Container(
-                                                                                                              width: 150,
-                                                                                                              decoration: const BoxDecoration(
-                                                                                                                color: Colors.black,
-                                                                                                                borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                                            Expanded(
+                                                                                                              child: Center(
+                                                                                                                child: Text(
+                                                                                                                  'รหัสผ่านการทำรายการ', // Navigator.pop(context, 'OK');
+                                                                                                                  style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                                                ),
                                                                                                               ),
-                                                                                                              padding: const EdgeInsets.all(8.0),
-                                                                                                              child: TextButton(
-                                                                                                                onPressed: () async {
-                                                                                                                  if (_formKey.currentState!.validate()) {
-                                                                                                                    SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                                                                    var ren = preferences.getString('renTalSer');
-                                                                                                                    var user = preferences.getString('ser');
-                                                                                                                    var vel = Formpasslok_.text.trim();
-                                                                                                                    print('vel>>>>$vel');
-                                                                                                                    String url = '${MyConstant().domain}/GC_Passcode.php?isAdd=true&puser=$vel&ren=$ren';
-
-                                                                                                                    try {
-                                                                                                                      var response = await http.get(Uri.parse(url));
-
-                                                                                                                      var result = json.decode(response.body);
-                                                                                                                      print(result);
-                                                                                                                      if (result.toString() == 'true') {
-                                                                                                                        de_Trans_item(index);
-                                                                                                                      } else {
+                                                                                                            ),
+                                                                                                            Expanded(
+                                                                                                              child: Row(
+                                                                                                                mainAxisAlignment: MainAxisAlignment.end,
+                                                                                                                children: [
+                                                                                                                  IconButton(
+                                                                                                                      onPressed: () {
                                                                                                                         setState(() {
                                                                                                                           Formpasslok_.clear();
                                                                                                                         });
-                                                                                                                        ScaffoldMessenger.of(context).showSnackBar(
-                                                                                                                          SnackBar(content: Text('Password ผิดพลาด กรุณาลองใหม่!', style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
-                                                                                                                        );
-                                                                                                                        Navigator.pop(context, 'OK');
-                                                                                                                        // Navigator.pop(context, 'OK');
-                                                                                                                      }
-                                                                                                                    } catch (e) {}
-                                                                                                                  }
-                                                                                                                },
-                                                                                                                child: const Text(
-                                                                                                                  'Submit',
-                                                                                                                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
-                                                                                                                ),
+                                                                                                                        Navigator.pop(context);
+                                                                                                                      },
+                                                                                                                      icon: Icon(Icons.close, color: Colors.black)),
+                                                                                                                ],
                                                                                                               ),
                                                                                                             ),
                                                                                                           ],
                                                                                                         ),
+                                                                                                        actions: <Widget>[
+                                                                                                          Form(
+                                                                                                            key: _formKey,
+                                                                                                            child: Column(
+                                                                                                              children: [
+                                                                                                                Padding(
+                                                                                                                  padding: EdgeInsets.all(8.0),
+                                                                                                                  child: TextFormField(
+                                                                                                                    keyboardType: TextInputType.number,
+                                                                                                                    controller: Formpasslok_,
+                                                                                                                    obscureText: true,
+                                                                                                                    validator: (value) {
+                                                                                                                      if (value == null || value.isEmpty) {
+                                                                                                                        return 'ใส่ข้อมูลให้ครบถ้วน ';
+                                                                                                                      }
+                                                                                                                      // if (int.parse(value.toString()) < 13) {
+                                                                                                                      //   return '< 13';
+                                                                                                                      // }
+                                                                                                                      return null;
+                                                                                                                    },
+                                                                                                                    onFieldSubmitted: (value) async {
+                                                                                                                      if (_formKey.currentState!.validate()) {
+                                                                                                                        SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                                                        var ren = preferences.getString('renTalSer');
+                                                                                                                        var user = preferences.getString('ser');
+                                                                                                                        //print('value>>>>$value');
+                                                                                                                        String url = '${MyConstant().domain}/GC_Passcode.php?isAdd=true&puser=$value&ren=$ren';
+
+                                                                                                                        try {
+                                                                                                                          var response = await http.get(Uri.parse(url));
+
+                                                                                                                          var result = json.decode(response.body);
+                                                                                                                          //print(result);
+                                                                                                                          if (result.toString() == 'true') {
+                                                                                                                            de_Trans_item(index);
+                                                                                                                          } else {
+                                                                                                                            setState(() {
+                                                                                                                              Formpasslok_.clear();
+                                                                                                                            });
+                                                                                                                            ScaffoldMessenger.of(context).showSnackBar(
+                                                                                                                              SnackBar(content: Text('Password ผิดพลาด กรุณาลองใหม่!', style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
+                                                                                                                            );
+                                                                                                                            // Navigator.pop(context, 'OK');
+                                                                                                                            Navigator.pop(context, 'OK');
+                                                                                                                          }
+                                                                                                                        } catch (e) {}
+                                                                                                                      }
+                                                                                                                    },
+
+                                                                                                                    // maxLength: 13,
+                                                                                                                    cursorColor: Colors.green,
+                                                                                                                    decoration: InputDecoration(
+                                                                                                                        fillColor: Colors.white.withOpacity(0.3),
+                                                                                                                        filled: true,
+                                                                                                                        // prefixIcon: const Icon(Icons.water,
+                                                                                                                        //     color: Colors.blue),
+                                                                                                                        // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                                                                        focusedBorder: const OutlineInputBorder(
+                                                                                                                          borderRadius: BorderRadius.only(
+                                                                                                                            topRight: Radius.circular(15),
+                                                                                                                            topLeft: Radius.circular(15),
+                                                                                                                            bottomRight: Radius.circular(15),
+                                                                                                                            bottomLeft: Radius.circular(15),
+                                                                                                                          ),
+                                                                                                                          borderSide: BorderSide(
+                                                                                                                            width: 1,
+                                                                                                                            color: Colors.black,
+                                                                                                                          ),
+                                                                                                                        ),
+                                                                                                                        enabledBorder: const OutlineInputBorder(
+                                                                                                                          borderRadius: BorderRadius.only(
+                                                                                                                            topRight: Radius.circular(15),
+                                                                                                                            topLeft: Radius.circular(15),
+                                                                                                                            bottomRight: Radius.circular(15),
+                                                                                                                            bottomLeft: Radius.circular(15),
+                                                                                                                          ),
+                                                                                                                          borderSide: BorderSide(
+                                                                                                                            width: 1,
+                                                                                                                            color: Colors.grey,
+                                                                                                                          ),
+                                                                                                                        ),
+                                                                                                                        labelText: 'Password',
+                                                                                                                        labelStyle: const TextStyle(
+                                                                                                                          color: ManageScreen_Color.Colors_Text2_,
+                                                                                                                          // fontWeight:
+                                                                                                                          //     FontWeight.bold,
+                                                                                                                          fontFamily: Font_.Fonts_T,
+                                                                                                                        )),
+                                                                                                                    // inputFormatters: <TextInputFormatter>[
+                                                                                                                    //   // for below version 2 use this
+                                                                                                                    //   FilteringTextInputFormatter.allow(
+                                                                                                                    //       RegExp(r'[0-9]')),
+                                                                                                                    //   // for version 2 and greater youcan also use this
+                                                                                                                    //   FilteringTextInputFormatter.digitsOnly
+                                                                                                                    // ],
+                                                                                                                  ),
+                                                                                                                ),
+                                                                                                                Padding(
+                                                                                                                  padding: const EdgeInsets.all(8.0),
+                                                                                                                  child: Row(
+                                                                                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                                                                                    children: [
+                                                                                                                      Container(
+                                                                                                                        width: 150,
+                                                                                                                        decoration: const BoxDecoration(
+                                                                                                                          color: Colors.black,
+                                                                                                                          borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                                                        ),
+                                                                                                                        padding: const EdgeInsets.all(8.0),
+                                                                                                                        child: TextButton(
+                                                                                                                          onPressed: () async {
+                                                                                                                            if (_formKey.currentState!.validate()) {
+                                                                                                                              SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                                                              var ren = preferences.getString('renTalSer');
+                                                                                                                              var user = preferences.getString('ser');
+                                                                                                                              var vel = Formpasslok_.text.trim();
+                                                                                                                              //  print('vel>>>>$vel');
+                                                                                                                              String url = '${MyConstant().domain}/GC_Passcode.php?isAdd=true&puser=$vel&ren=$ren';
+
+                                                                                                                              try {
+                                                                                                                                var response = await http.get(Uri.parse(url));
+
+                                                                                                                                var result = json.decode(response.body);
+                                                                                                                                //  print(result);
+                                                                                                                                if (result.toString() == 'true') {
+                                                                                                                                  de_Trans_item(index);
+                                                                                                                                } else {
+                                                                                                                                  setState(() {
+                                                                                                                                    Formpasslok_.clear();
+                                                                                                                                  });
+                                                                                                                                  ScaffoldMessenger.of(context).showSnackBar(
+                                                                                                                                    SnackBar(content: Text('Password ผิดพลาด กรุณาลองใหม่!', style: TextStyle(color: Colors.white, fontFamily: Font_.Fonts_T))),
+                                                                                                                                  );
+                                                                                                                                  Navigator.pop(context, 'OK');
+                                                                                                                                  // Navigator.pop(context, 'OK');
+                                                                                                                                }
+                                                                                                                              } catch (e) {}
+                                                                                                                            }
+                                                                                                                          },
+                                                                                                                          child: const Text(
+                                                                                                                            'Submit',
+                                                                                                                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T),
+                                                                                                                          ),
+                                                                                                                        ),
+                                                                                                                      ),
+                                                                                                                    ],
+                                                                                                                  ),
+                                                                                                                ),
+                                                                                                              ],
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ],
                                                                                                       ),
-                                                                                                    ],
+                                                                                                    );
+                                                                                                  },
+                                                                                                  child: Text(
+                                                                                                    'Logout',
+                                                                                                    style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: Font_.Fonts_T),
                                                                                                   ),
                                                                                                 ),
-                                                                                              ],
-                                                                                            ),
-                                                                                          );
-                                                                                        },
-                                                                                        child: Text(
-                                                                                          'Logout',
-                                                                                          style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: Font_.Fonts_T),
-                                                                                        ),
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
+                                                                                          Divider(),
+                                                                                        ],
                                                                                       ),
-                                                                                    ),
-                                                                                  ],
-                                                                                ),
-                                                                                Divider(),
-                                                                              ],
-                                                                            ),
-                                                                          );
-                                                                        })),
-                                                              ],
-                                                            );
-                                                          }),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            actions: <Widget>[
-                                              Column(
-                                                children: [
-                                                  const SizedBox(
-                                                    height: 5.0,
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: RichText(
-                                                        text: const TextSpan(
-                                                          text: '**หมายเหตุ : ',
-                                                          style: TextStyle(
-                                                              color: AdminScafScreen_Color
-                                                                  .Colors_Text1_,
-                                                              fontFamily:
-                                                                  FontWeight_
-                                                                      .Fonts_T),
-                                                          children: <TextSpan>[
-                                                            TextSpan(
-                                                              text: ' สีเขียว ',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .green,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text:
-                                                                  ' กำลังใช้งาน (ไม่เกิน 1 นาที) ,',
-                                                              style: TextStyle(
-                                                                  color: AdminScafScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text: ' สีแดง ',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .red,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text:
-                                                                  ' ใช้งานล่าสุด (ไม่เกิน 15 นาที)',
-                                                              style: TextStyle(
-                                                                  color: AdminScafScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                          ],
-                                                        ),
+                                                                                    );
+                                                                                  })),
+                                                                        ],
+                                                                      );
+                                                                    }),
+                                                          ),
+                                                        ],
                                                       ),
                                                     ),
                                                   ),
-                                                  const Divider(
-                                                    color: Colors.grey,
-                                                    height: 4.0,
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 5.0,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
+                                                  actions: <Widget>[
+                                                    Column(
                                                       children: [
+                                                        const SizedBox(
+                                                          height: 5.0,
+                                                        ),
+                                                        Align(
+                                                          alignment: Alignment
+                                                              .centerLeft,
+                                                          child: Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2.0),
+                                                            child: RichText(
+                                                              text:
+                                                                  const TextSpan(
+                                                                text:
+                                                                    '**หมายเหตุ : ',
+                                                                style: TextStyle(
+                                                                    color: AdminScafScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T),
+                                                                children: <TextSpan>[
+                                                                  TextSpan(
+                                                                    text:
+                                                                        ' สีเขียว ',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .green,
+                                                                        fontFamily:
+                                                                            FontWeight_.Fonts_T),
+                                                                  ),
+                                                                  TextSpan(
+                                                                    text:
+                                                                        ' กำลังใช้งาน (ไม่เกิน 1 นาที) ,',
+                                                                    style: TextStyle(
+                                                                        color: AdminScafScreen_Color
+                                                                            .Colors_Text1_,
+                                                                        fontFamily:
+                                                                            Font_.Fonts_T),
+                                                                  ),
+                                                                  TextSpan(
+                                                                    text:
+                                                                        ' สีแดง ',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .red,
+                                                                        fontFamily:
+                                                                            FontWeight_.Fonts_T),
+                                                                  ),
+                                                                  TextSpan(
+                                                                    text:
+                                                                        ' ใช้งานล่าสุด (ไม่เกิน 15 นาที)',
+                                                                    style: TextStyle(
+                                                                        color: AdminScafScreen_Color
+                                                                            .Colors_Text1_,
+                                                                        fontFamily:
+                                                                            Font_.Fonts_T),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        const Divider(
+                                                          color: Colors.grey,
+                                                          height: 4.0,
+                                                        ),
+                                                        const SizedBox(
+                                                          height: 5.0,
+                                                        ),
                                                         Padding(
                                                           padding:
                                                               const EdgeInsets
@@ -4284,50 +4712,51 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                           child: Row(
                                                             mainAxisAlignment:
                                                                 MainAxisAlignment
-                                                                    .center,
+                                                                    .end,
                                                             children: [
-                                                              Container(
-                                                                width: 100,
-                                                                decoration:
-                                                                    const BoxDecoration(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  borderRadius: BorderRadius.only(
-                                                                      topLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              10)),
-                                                                ),
+                                                              Padding(
                                                                 padding:
                                                                     const EdgeInsets
                                                                             .all(
                                                                         8.0),
-                                                                child:
-                                                                    TextButton(
-                                                                  onPressed: () =>
-                                                                      Navigator.pop(
-                                                                          context,
-                                                                          'OK'),
-                                                                  child: Translate.TranslateAndSetText(
-                                                                      'ปิด',
-                                                                      Colors
-                                                                          .white,
-                                                                      TextAlign
+                                                                child: Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
                                                                           .center,
-                                                                      FontWeight
-                                                                          .bold,
-                                                                      FontWeight_
-                                                                          .Fonts_T,
-                                                                      14,
-                                                                      1),
+                                                                  children: [
+                                                                    Container(
+                                                                      width:
+                                                                          100,
+                                                                      decoration:
+                                                                          const BoxDecoration(
+                                                                        color: Colors
+                                                                            .black,
+                                                                        borderRadius: BorderRadius.only(
+                                                                            topLeft:
+                                                                                Radius.circular(10),
+                                                                            topRight: Radius.circular(10),
+                                                                            bottomLeft: Radius.circular(10),
+                                                                            bottomRight: Radius.circular(10)),
+                                                                      ),
+                                                                      padding:
+                                                                          const EdgeInsets.all(
+                                                                              8.0),
+                                                                      child:
+                                                                          TextButton(
+                                                                        onPressed: () => Navigator.pop(
+                                                                            context,
+                                                                            'OK'),
+                                                                        child: Translate.TranslateAndSetText(
+                                                                            'ปิด',
+                                                                            Colors.white,
+                                                                            TextAlign.center,
+                                                                            FontWeight.bold,
+                                                                            FontWeight_.Fonts_T,
+                                                                            14,
+                                                                            1),
+                                                                      ),
+                                                                    ),
+                                                                  ],
                                                                 ),
                                                               ),
                                                             ],
@@ -4335,59 +4764,65 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                         ),
                                                       ],
                                                     ),
-                                                  ),
-                                                ],
+                                                  ],
+                                                ),
+                                              );
+                                            },
+                                            child: Text(
+                                              "Admin User",
+                                              style: TextStyle(
+                                                color: Colors.orange.shade900,
+                                                fontFamily: Font_.Fonts_T,
+                                                fontWeight: FontWeight.bold,
                                               ),
-                                            ],
+                                            ),
                                           ),
-                                        );
-                                      },
-                                      child: Text(
-                                        "Admin User",
-                                        style: TextStyle(
-                                          color: Colors.orange.shade900,
-                                          fontFamily: Font_.Fonts_T,
-                                          fontWeight: FontWeight.bold,
                                         ),
-                                      ),
+                                      ],
                                     ),
                                   ),
-                                ],
-                              ),
-                            ),
+                                ),
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(8.0),
+                          child: Text(
+                            '© 2023  Dzentric Co.,Ltd. All Rights Reserved',
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: AdminScafScreen_Color.Colors_Text2_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: Font_.Fonts_T,
+                                fontSize: 10.0),
                           ),
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Text(
-                      '© 2023  Dzentric Co.,Ltd. All Rights Reserved',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      softWrap: false,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                          color: AdminScafScreen_Color.Colors_Text2_,
-                          // fontWeight: FontWeight.bold,
-                          fontFamily: Font_.Fonts_T,
-                          fontSize: 10.0),
-                    ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             ),
-          ),
-        ),
-      ),
       body: (Value_Route == 'หน้าหลัก')
-          ? const HomeScreen()
+          ? const HomeScreen2()
           : (Value_Route == 'พื้นที่เช่า')
               ? ChaoAreaScreen()
               : (Value_Route == 'ใบอนุญาต')
-                  ? RequestContract_CMM() //ChaoAreaScreen()
+                  ? RequestContract_CMM(
+                      route_getdata: widget.route_getdata ?? "",
+                      ser_title: widget.ser_title,
+                    )
                   : (Value_Route == 'RequestExaminer1_CMM')
-                      ? const RequestExaminer1_CMM()
+                      ? const RequestExaminer1_CMM(
+                          viewver: false,
+                          plugin: false,
+                        )
                       : (Value_Route == 'RequestExaminer2_CMM')
-                          ? const RequestExaminer2_CMM()
+                          ? const RequestExaminer2_CMM(
+                              viewver: false,
+                              plugin: false,
+                            )
                           : (Value_Route == 'SignaturePad_CMM')
                               ? const SignaturePad_CMM()
                               : (Value_Route == 'ผู้เช่า')
@@ -4404,8 +4839,11 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                       ? const SettingScreen()
                                                       : (Value_Route ==
                                                               'จัดการข้อมูลส่วนตัว')
-                                                          ? const SettingUserScreen()
-                                                          : const SettingUserScreen(),
+                                                          ? ManagePersonalInformation_CMM() //USerInformation()
+                                                          : (Value_Route ==
+                                                                  'TestPrintNamePage')
+                                                              ? TestPrintNamePage()
+                                                              : const SettingUserScreen(),
       // body: (Value_Route == 'หน้าหลัก')
       //     ? const HomeScreen()
       //     : (Value_Route == 'พื้นที่เช่า')
@@ -4477,7 +4915,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
           Navigator.pop(context);
           Formpasslok_.clear();
         });
-        print('rrrrrrrrrrrrrr');
+        // print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -4510,7 +4948,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       if (Responsive.isDesktop(context))
                         (img_logo == null || img_logo.toString() == '')
                             ? SizedBox()
-                            : InkWell(
+                            : GestureDetector(
                                 child: CircleAvatar(
                                   radius: 20.0,
                                   backgroundImage: NetworkImage(
@@ -4531,7 +4969,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                   }
                                 },
                               ),
-                      InkWell(
+                      GestureDetector(
                         child: Text(
                           renTal_name == null ? ' ภาพรวม' : ' $renTal_name',
                           overflow: TextOverflow.ellipsis,
@@ -4562,127 +5000,127 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
         actions: [
           Row(
             children: [
-              StreamBuilder(
-                  stream: Stream.periodic(const Duration(seconds: 1)),
-                  builder: (context, snapshot) {
-                    return Container(
-                      decoration: BoxDecoration(
-                        // color: Colors.white.withOpacity(0.7),
-                        // Colors.lightGreen[200],
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(10),
-                            topRight: Radius.circular(10),
-                            bottomLeft: Radius.circular(10),
-                            bottomRight: Radius.circular(10)),
-                        // border: Border.all(color: Colors.grey, width: 0.5),
-                      ),
-                      padding: const EdgeInsets.all(0.5),
-                      child: Container(
-                        width: 100,
-                        child: Row(
-                          children: [
-                            Expanded(
-                              flex: 1,
-                              child: Icon(
-                                Icons.sunny,
-                                size: 15.0,
-                                color: (AppbackgroundColor.TiTile_Colors ==
-                                        Color.fromARGB(255, 203, 200, 219))
-                                    ? Colors.white
-                                    : Colors.orange,
-                              ),
-                            ),
-                            (isDark_Mode == true)
-                                ? InkWell(
-                                    onTap: () async {
-                                      SharedPreferences preferences =
-                                          await SharedPreferences.getInstance();
-                                      setState(() {
-                                        preferences.setBool(
-                                            'isDarkMode', false);
-                                      });
-                                      // print(preferences.getBool('isDarkMode'));
-                                      // print(isDark_Mode);
-                                      String? _route =
-                                          preferences.getString('route');
-                                      MaterialPageRoute materialPageRoute =
-                                          MaterialPageRoute(
-                                              builder: (BuildContext context) =>
-                                                  AdminScafScreen(
-                                                      route: _route));
-                                      Navigator.pushAndRemoveUntil(context,
-                                          materialPageRoute, (route) => false);
-                                      // changeColor();
-                                    },
-                                    child: Icon(
-                                      Icons.toggle_on,
-                                      color: Colors.yellow[100],
-                                      size: 35.0,
-                                    ),
-                                  )
-                                : InkWell(
-                                    onTap: () async {
-                                      SharedPreferences preferences =
-                                          await SharedPreferences.getInstance();
-                                      setState(() {
-                                        preferences.setBool('isDarkMode', true);
-                                      });
+              // StreamBuilder(
+              //     stream: Stream.periodic(const Duration(seconds: 1)),
+              //     builder: (context, snapshot) {
+              //       return Container(
+              //         decoration: BoxDecoration(
+              //           // color: Colors.white.withOpacity(0.7),
+              //           // Colors.lightGreen[200],
+              //           borderRadius: BorderRadius.only(
+              //               topLeft: Radius.circular(10),
+              //               topRight: Radius.circular(10),
+              //               bottomLeft: Radius.circular(10),
+              //               bottomRight: Radius.circular(10)),
+              //           // border: Border.all(color: Colors.grey, width: 0.5),
+              //         ),
+              //         padding: const EdgeInsets.all(0.5),
+              //         child: Container(
+              //           width: 100,
+              //           child: Row(
+              //             children: [
+              //               Expanded(
+              //                 flex: 1,
+              //                 child: Icon(
+              //                   Icons.sunny,
+              //                   size: 15.0,
+              //                   color: (AppbackgroundColor.TiTile_Colors ==
+              //                           Color.fromARGB(255, 203, 200, 219))
+              //                       ? Colors.white
+              //                       : Colors.orange,
+              //                 ),
+              //               ),
+              //               (isDark_Mode == true)
+              //                   ? InkWell(
+              //                       onTap: () async {
+              //                         SharedPreferences preferences =
+              //                             await SharedPreferences.getInstance();
+              //                         setState(() {
+              //                           preferences.setBool(
+              //                               'isDarkMode', false);
+              //                         });
+              //                         // print(preferences.getBool('isDarkMode'));
+              //                         // print(isDark_Mode);
+              //                         String? _route =
+              //                             preferences.getString('route');
+              //                         MaterialPageRoute materialPageRoute =
+              //                             MaterialPageRoute(
+              //                                 builder: (BuildContext context) =>
+              //                                     AdminScafScreen(
+              //                                         route: _route));
+              //                         Navigator.pushAndRemoveUntil(context,
+              //                             materialPageRoute, (route) => false);
+              //                         // changeColor();
+              //                       },
+              //                       child: Icon(
+              //                         Icons.toggle_on,
+              //                         color: Colors.yellow[100],
+              //                         size: 35.0,
+              //                       ),
+              //                     )
+              //                   : InkWell(
+              //                       onTap: () async {
+              //                         SharedPreferences preferences =
+              //                             await SharedPreferences.getInstance();
+              //                         setState(() {
+              //                           preferences.setBool('isDarkMode', true);
+              //                         });
 
-                                      // print(preferences.getBool('isDarkMode'));
-                                      String? _route =
-                                          preferences.getString('route');
-                                      MaterialPageRoute materialPageRoute =
-                                          MaterialPageRoute(
-                                              builder: (BuildContext context) =>
-                                                  AdminScafScreen(
-                                                      route: _route));
-                                      Navigator.pushAndRemoveUntil(context,
-                                          materialPageRoute, (route) => false);
-                                      // changeColor();
-                                    },
-                                    child: Icon(
-                                      Icons.toggle_off,
-                                      color: Colors.orange[100],
-                                      size: 35.0,
-                                    ),
-                                  ),
-                            // (AppbackgroundColor.TiTile_Colors ==
-                            //         Color.fromARGB(255, 203, 200, 219))
-                            //     ? InkWell(
-                            //         onTap: () {
-                            //           changeColor();
-                            //         },
-                            //         child: Icon(
-                            //           Icons.toggle_on,
-                            //           color: Colors.yellow[100],
-                            //           size: 35.0,
-                            //         ),
-                            //       )
-                            //     : InkWell(
-                            //         onTap: () {
-                            //           changeColor();
-                            //         },
-                            //         child: Icon(
-                            //           Icons.toggle_off,
-                            //           color: Colors.orange[100],
-                            //           size: 35.0,
-                            //         ),
-                            //       ),
-                            Expanded(
-                                flex: 1,
-                                child: Icon(
-                                  Icons.bedtime,
-                                  size: 15.0,
-                                  color: (AppbackgroundColor.TiTile_Colors ==
-                                          Color(0xFFD9D9B7))
-                                      ? Colors.white
-                                      : Colors.yellow,
-                                )),
-                          ],
-                        ),
-                      ),
-                    );
-                  }),
+              //                         // print(preferences.getBool('isDarkMode'));
+              //                         String? _route =
+              //                             preferences.getString('route');
+              //                         MaterialPageRoute materialPageRoute =
+              //                             MaterialPageRoute(
+              //                                 builder: (BuildContext context) =>
+              //                                     AdminScafScreen(
+              //                                         route: _route));
+              //                         Navigator.pushAndRemoveUntil(context,
+              //                             materialPageRoute, (route) => false);
+              //                         // changeColor();
+              //                       },
+              //                       child: Icon(
+              //                         Icons.toggle_off,
+              //                         color: Colors.orange[100],
+              //                         size: 35.0,
+              //                       ),
+              //                     ),
+              //               // (AppbackgroundColor.TiTile_Colors ==
+              //               //         Color.fromARGB(255, 203, 200, 219))
+              //               //     ? InkWell(
+              //               //         onTap: () {
+              //               //           changeColor();
+              //               //         },
+              //               //         child: Icon(
+              //               //           Icons.toggle_on,
+              //               //           color: Colors.yellow[100],
+              //               //           size: 35.0,
+              //               //         ),
+              //               //       )
+              //               //     : InkWell(
+              //               //         onTap: () {
+              //               //           changeColor();
+              //               //         },
+              //               //         child: Icon(
+              //               //           Icons.toggle_off,
+              //               //           color: Colors.orange[100],
+              //               //           size: 35.0,
+              //               //         ),
+              //               //       ),
+              //               Expanded(
+              //                   flex: 1,
+              //                   child: Icon(
+              //                     Icons.bedtime,
+              //                     size: 15.0,
+              //                     color: (AppbackgroundColor.TiTile_Colors ==
+              //                             Color(0xFFD9D9B7))
+              //                         ? Colors.white
+              //                         : Colors.yellow,
+              //                   )),
+              //             ],
+              //           ),
+              //         ),
+              //       );
+              //     }),
               // StreamBuilder(
               //     stream: Stream.periodic(const Duration(seconds: 1)),
               //     builder: (context, snapshot) {
@@ -4794,7 +5232,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       ser_user == '37'))
                 Padding(
                   padding: const EdgeInsets.all(4.0),
-                  child: InkWell(
+                  child: GestureDetector(
                     onTap: () {
                       _showMyDialogDev(0);
                     },
@@ -4823,521 +5261,521 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                 padding: const EdgeInsets.all(0.5),
                 child: Row(
                   children: [
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(4, 1, 0, 1),
-                      child: StreamBuilder(
-                          stream: Stream.periodic(const Duration(seconds: 0)),
-                          builder: (context, snapshot) {
-                            return ChatScreen(
-                                ser_user: ser_user,
-                                userModels_chat_: userModels_chat,
-                                userModels_: userModels);
-                          }),
-                    ),
-                    StreamBuilder(
-                        stream: Stream.periodic(const Duration(seconds: 0)),
-                        builder: (context, snapshot) {
-                          return Padding(
-                            padding: const EdgeInsets.fromLTRB(4, 8, 0, 8),
-                            child: InkWell(
-                                onTap: renTal_name == null
-                                    ? null
-                                    : () async {
-                                        startTimer();
-                                        showDialog<String>(
-                                          context: context,
-                                          builder: (BuildContext context) =>
-                                              AlertDialog(
-                                            shape: const RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.all(
-                                                    Radius.circular(20.0))),
-                                            title: Center(
-                                                child: Text(
-                                              'ผู้ใช้งานระบบขณะนี้ $deviceNames',
-                                              style: TextStyle(
-                                                  color: AdminScafScreen_Color
-                                                      .Colors_Text1_,
-                                                  fontWeight: FontWeight.bold,
-                                                  fontFamily:
-                                                      FontWeight_.Fonts_T),
-                                            )),
-                                            content: ScrollConfiguration(
-                                              behavior: ScrollConfiguration.of(
-                                                      context)
-                                                  .copyWith(dragDevices: {
-                                                PointerDeviceKind.touch,
-                                                PointerDeviceKind.mouse,
-                                              }),
-                                              child: SingleChildScrollView(
-                                                scrollDirection:
-                                                    Axis.horizontal,
-                                                dragStartBehavior:
-                                                    DragStartBehavior.start,
-                                                child: Row(
-                                                  children: [
-                                                    Container(
-                                                      width: (Responsive
-                                                              .isDesktop(
-                                                                  context))
-                                                          ? MediaQuery.of(
-                                                                      context)
-                                                                  .size
-                                                                  .width *
-                                                              0.85
-                                                          : 800,
-                                                      child: StreamBuilder(
-                                                          stream:
-                                                              Stream.periodic(
-                                                                  const Duration(
-                                                                      seconds:
-                                                                          0)),
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            return Column(
-                                                              children: [
-                                                                Row(
-                                                                  children: [
-                                                                    Text(
-                                                                      'ทั้งหมด : ${userModels.length} คน',
-                                                                      style: TextStyle(
-                                                                          color: AdminScafScreen_Color
-                                                                              .Colors_Text1_,
-                                                                          fontWeight: FontWeight
-                                                                              .bold,
-                                                                          fontFamily:
-                                                                              FontWeight_.Fonts_T),
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                                Container(
-                                                                  decoration:
-                                                                      BoxDecoration(
-                                                                    color: AppbackgroundColor
-                                                                        .TiTile_Colors,
-                                                                    borderRadius:
-                                                                        BorderRadius
-                                                                            .only(
-                                                                      topLeft: Radius
-                                                                          .circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              0),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              0),
-                                                                    ),
-                                                                    // border: Border.all(
-                                                                    //     color: Colors.grey, width: 1),
-                                                                  ),
-                                                                  padding:
-                                                                      const EdgeInsets
-                                                                              .all(
-                                                                          8.0),
-                                                                  child: Row(
-                                                                    children: const [
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          '...',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          'Email',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          'ชื่อ',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          'ตำแหน่ง',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Text(
-                                                                          'เวลาอัพเดตล่าสุด',
-                                                                          textAlign:
-                                                                              TextAlign.center,
-                                                                          style: TextStyle(
-                                                                              color: AdminScafScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T),
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                                Container(
-                                                                    height: MediaQuery.of(context)
-                                                                            .size
-                                                                            .height *
-                                                                        0.4,
-                                                                    width: (Responsive.isDesktop(
-                                                                            context))
-                                                                        ? MediaQuery.of(context).size.width *
-                                                                            0.85
-                                                                        : 800,
-                                                                    child: ListView.builder(
-                                                                        padding: const EdgeInsets.all(8),
-                                                                        itemCount: userModels.length,
-                                                                        itemBuilder: (BuildContext context, int index) {
-                                                                          String
-                                                                              email =
-                                                                              '${userModels[index].email}';
-                                                                          int emailLength =
-                                                                              email.length;
-                                                                          String
-                                                                              firstTwoCharacters =
-                                                                              email.substring(0, 2);
-                                                                          String
-                                                                              lastFourCharacters =
-                                                                              email.substring(emailLength - 4);
-                                                                          String
-                                                                              censoredEmail =
-                                                                              '$firstTwoCharacters${'*' * (emailLength - 6)}$lastFourCharacters';
+                    // Padding(
+                    //   padding: EdgeInsets.fromLTRB(4, 1, 0, 1),
+                    //   child: StreamBuilder(
+                    //       stream: Stream.periodic(const Duration(seconds: 0)),
+                    //       builder: (context, snapshot) {
+                    //         return ChatScreen(
+                    //             ser_user: ser_user,
+                    //             userModels_chat_: userModels_chat,
+                    //             userModels_: userModels);
+                    //       }),
+                    // ),
+                    // StreamBuilder(
+                    //     stream: Stream.periodic(const Duration(seconds: 0)),
+                    //     builder: (context, snapshot) {
+                    //       return Padding(
+                    //         padding: const EdgeInsets.fromLTRB(4, 8, 0, 8),
+                    //         child: InkWell(
+                    //             onTap: renTal_name == null
+                    //                 ? null
+                    //                 : () async {
+                    //                     startTimer();
+                    //                     showDialog<String>(
+                    //                       context: context,
+                    //                       builder: (BuildContext context) =>
+                    //                           AlertDialog(
+                    //                         shape: const RoundedRectangleBorder(
+                    //                             borderRadius: BorderRadius.all(
+                    //                                 Radius.circular(20.0))),
+                    //                         title: Center(
+                    //                             child: Text(
+                    //                           'ผู้ใช้งานระบบขณะนี้ $deviceNames',
+                    //                           style: TextStyle(
+                    //                               color: AdminScafScreen_Color
+                    //                                   .Colors_Text1_,
+                    //                               fontWeight: FontWeight.bold,
+                    //                               fontFamily:
+                    //                                   FontWeight_.Fonts_T),
+                    //                         )),
+                    //                         content: ScrollConfiguration(
+                    //                           behavior: ScrollConfiguration.of(
+                    //                                   context)
+                    //                               .copyWith(dragDevices: {
+                    //                             PointerDeviceKind.touch,
+                    //                             PointerDeviceKind.mouse,
+                    //                           }),
+                    //                           child: SingleChildScrollView(
+                    //                             scrollDirection:
+                    //                                 Axis.horizontal,
+                    //                             dragStartBehavior:
+                    //                                 DragStartBehavior.start,
+                    //                             child: Row(
+                    //                               children: [
+                    //                                 Container(
+                    //                                   width: (Responsive
+                    //                                           .isDesktop(
+                    //                                               context))
+                    //                                       ? MediaQuery.of(
+                    //                                                   context)
+                    //                                               .size
+                    //                                               .width *
+                    //                                           0.85
+                    //                                       : 800,
+                    //                                   child: StreamBuilder(
+                    //                                       stream:
+                    //                                           Stream.periodic(
+                    //                                               const Duration(
+                    //                                                   seconds:
+                    //                                                       0)),
+                    //                                       builder: (context,
+                    //                                           snapshot) {
+                    //                                         return Column(
+                    //                                           children: [
+                    //                                             Row(
+                    //                                               children: [
+                    //                                                 Text(
+                    //                                                   'ทั้งหมด : ${userModels.length} คน',
+                    //                                                   style: TextStyle(
+                    //                                                       color: AdminScafScreen_Color
+                    //                                                           .Colors_Text1_,
+                    //                                                       fontWeight: FontWeight
+                    //                                                           .bold,
+                    //                                                       fontFamily:
+                    //                                                           FontWeight_.Fonts_T),
+                    //                                                 ),
+                    //                                               ],
+                    //                                             ),
+                    //                                             Container(
+                    //                                               decoration:
+                    //                                                   BoxDecoration(
+                    //                                                 color: AppbackgroundColor
+                    //                                                     .TiTile_Colors,
+                    //                                                 borderRadius:
+                    //                                                     BorderRadius
+                    //                                                         .only(
+                    //                                                   topLeft: Radius
+                    //                                                       .circular(
+                    //                                                           10),
+                    //                                                   topRight:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   bottomLeft:
+                    //                                                       Radius.circular(
+                    //                                                           0),
+                    //                                                   bottomRight:
+                    //                                                       Radius.circular(
+                    //                                                           0),
+                    //                                                 ),
+                    //                                                 // border: Border.all(
+                    //                                                 //     color: Colors.grey, width: 1),
+                    //                                               ),
+                    //                                               padding:
+                    //                                                   const EdgeInsets
+                    //                                                           .all(
+                    //                                                       8.0),
+                    //                                               child: Row(
+                    //                                                 children: const [
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       '...',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       'Email',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       'ชื่อ',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       'ตำแหน่ง',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                   Expanded(
+                    //                                                     flex: 1,
+                    //                                                     child:
+                    //                                                         Text(
+                    //                                                       'เวลาอัพเดตล่าสุด',
+                    //                                                       textAlign:
+                    //                                                           TextAlign.center,
+                    //                                                       style: TextStyle(
+                    //                                                           color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                           fontWeight: FontWeight.bold,
+                    //                                                           fontFamily: FontWeight_.Fonts_T),
+                    //                                                     ),
+                    //                                                   ),
+                    //                                                 ],
+                    //                                               ),
+                    //                                             ),
+                    //                                             Container(
+                    //                                                 height: MediaQuery.of(context)
+                    //                                                         .size
+                    //                                                         .height *
+                    //                                                     0.4,
+                    //                                                 width: (Responsive.isDesktop(
+                    //                                                         context))
+                    //                                                     ? MediaQuery.of(context).size.width *
+                    //                                                         0.85
+                    //                                                     : 800,
+                    //                                                 child: ListView.builder(
+                    //                                                     padding: const EdgeInsets.all(8),
+                    //                                                     itemCount: userModels.length,
+                    //                                                     itemBuilder: (BuildContext context, int index) {
+                    //                                                       String
+                    //                                                           email =
+                    //                                                           '${userModels[index].email}';
+                    //                                                       int emailLength =
+                    //                                                           email.length;
+                    //                                                       String
+                    //                                                           firstTwoCharacters =
+                    //                                                           email.substring(0, 2);
+                    //                                                       String
+                    //                                                           lastFourCharacters =
+                    //                                                           email.substring(emailLength - 4);
+                    //                                                       String
+                    //                                                           censoredEmail =
+                    //                                                           '$firstTwoCharacters${'*' * (emailLength - 6)}$lastFourCharacters';
 
-                                                                          String
-                                                                              connected_ =
-                                                                              '${userModels[index].connected}';
+                    //                                                       String
+                    //                                                           connected_ =
+                    //                                                           '${userModels[index].connected}';
 
-                                                                          DateTime
-                                                                              connectedTime =
-                                                                              DateTime.parse(connected_);
+                    //                                                       DateTime
+                    //                                                           connectedTime =
+                    //                                                           DateTime.parse(connected_);
 
-                                                                          DateTime
-                                                                              currentTime =
-                                                                              DateTime.now();
+                    //                                                       DateTime
+                    //                                                           currentTime =
+                    //                                                           DateTime.now();
 
-                                                                          Duration
-                                                                              difference =
-                                                                              currentTime.difference(connectedTime);
+                    //                                                       Duration
+                    //                                                           difference =
+                    //                                                           currentTime.difference(connectedTime);
 
-                                                                          int minutesPassed =
-                                                                              difference.inMinutes;
-                                                                          return Container(
-                                                                            padding:
-                                                                                const EdgeInsets.all(8),
-                                                                            child:
-                                                                                Row(
-                                                                              children: [
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    '${index + 1}',
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    '${censoredEmail} ',
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    '${userModels[index].fname} ${userModels[index].lname}',
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Text(
-                                                                                    '${userModels[index].position}',
-                                                                                    textAlign: TextAlign.center,
-                                                                                    maxLines: 2,
-                                                                                    style: TextStyle(
-                                                                                        color: AdminScafScreen_Color.Colors_Text1_,
-                                                                                        // fontWeight: FontWeight.bold,
-                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                  ),
-                                                                                ),
-                                                                                Expanded(
-                                                                                  flex: 1,
-                                                                                  child: Row(
-                                                                                    children: [
-                                                                                      Expanded(flex: 1, child: Icon((minutesPassed > 1) ? Icons.motion_photos_off_rounded : Icons.motion_photos_on_rounded, color: (minutesPassed > 1) ? Colors.red : Colors.green)
-                                                                                          // Text(
-                                                                                          //   '🟢',
-                                                                                          //   maxLines: 2,
-                                                                                          //   textAlign: TextAlign.end,
-                                                                                          //   style: TextStyle(color: (minutesPassed > 1) ? Colors.red : Colors.green, fontFamily: Font_.Fonts_T),
-                                                                                          // )
-                                                                                          ),
-                                                                                      Expanded(
-                                                                                        flex: 2,
-                                                                                        child: Text(
-                                                                                          (minutesPassed > 1) ? 'ใช้งานเมื่อ $minutesPassed นาทีที่แล้ว' : ' ${userModels[index].connected}',
-                                                                                          textAlign: TextAlign.center,
-                                                                                          maxLines: 2,
-                                                                                          style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontFamily: Font_.Fonts_T),
-                                                                                        ),
-                                                                                      ),
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          );
-                                                                        })),
-                                                              ],
-                                                            );
-                                                          }),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                            actions: <Widget>[
-                                              Column(
-                                                children: [
-                                                  const SizedBox(
-                                                    height: 5.0,
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              2.0),
-                                                      child: RichText(
-                                                        text: const TextSpan(
-                                                          text: '**หมายเหตุ : ',
-                                                          style: TextStyle(
-                                                              color: AdminScafScreen_Color
-                                                                  .Colors_Text1_,
-                                                              fontFamily:
-                                                                  FontWeight_
-                                                                      .Fonts_T),
-                                                          children: <TextSpan>[
-                                                            TextSpan(
-                                                              text: ' สีเขียว ',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .green,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text:
-                                                                  ' กำลังใช้งาน (ไม่เกิน 1 นาที) ,',
-                                                              style: TextStyle(
-                                                                  color: AdminScafScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text: ' สีแดง ',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .red,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            ),
-                                                            TextSpan(
-                                                              text:
-                                                                  ' ใช้งานล่าสุด (ไม่เกิน 15 นาที)',
-                                                              style: TextStyle(
-                                                                  color: AdminScafScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontFamily: Font_
-                                                                      .Fonts_T),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  const Divider(
-                                                    color: Colors.grey,
-                                                    height: 4.0,
-                                                  ),
-                                                  const SizedBox(
-                                                    height: 5.0,
-                                                  ),
-                                                  Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .center,
-                                                            children: [
-                                                              Container(
-                                                                width: 100,
-                                                                decoration:
-                                                                    const BoxDecoration(
-                                                                  color: Colors
-                                                                      .black,
-                                                                  borderRadius: BorderRadius.only(
-                                                                      topLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              10)),
-                                                                ),
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                            .all(
-                                                                        8.0),
-                                                                child:
-                                                                    TextButton(
-                                                                  onPressed: () =>
-                                                                      Navigator.pop(
-                                                                          context,
-                                                                          'OK'),
-                                                                  child:
-                                                                      const Text(
-                                                                    'ปิด',
-                                                                    style: TextStyle(
-                                                                        color: Colors
-                                                                            .white,
-                                                                        fontWeight:
-                                                                            FontWeight
-                                                                                .bold,
-                                                                        fontFamily:
-                                                                            FontWeight_.Fonts_T),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        );
-                                      },
-                                child: Stack(
-                                  children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(2.0),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color: Colors.white54,
-                                          borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(20),
-                                              topRight: Radius.circular(20),
-                                              bottomLeft: Radius.circular(20),
-                                              bottomRight: Radius.circular(20)),
-                                        ),
-                                        padding: const EdgeInsets.all(6.0),
-                                        child: Icon(
-                                          Icons.people,
-                                          color: Colors.red,
-                                          size: 18,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                        top: 0,
-                                        left: 0,
-                                        child: Container(
-                                          // decoration: const BoxDecoration(
-                                          //   color: Colors.white,
-                                          //   borderRadius: BorderRadius.only(
-                                          //       topLeft: Radius.circular(20),
-                                          //       topRight: Radius.circular(20),
-                                          //       bottomLeft: Radius.circular(20),
-                                          //       bottomRight: Radius.circular(20)),
-                                          // ),
-                                          padding: const EdgeInsets.all(2.0),
-                                          child: Text(
-                                            renTal_name == null
-                                                ? '0'
-                                                : '${userModels.length}',
-                                            // '${userModels.length}***/$connected_Minutes/$ser_user/$email_user',
-                                            style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.blue,
-                                                fontFamily:
-                                                    FontWeight_.Fonts_T),
-                                          ),
-                                        ))
-                                  ],
-                                )),
-                          );
-                        }),
+                    //                                                       int minutesPassed =
+                    //                                                           difference.inMinutes;
+                    //                                                       return Container(
+                    //                                                         padding:
+                    //                                                             const EdgeInsets.all(8),
+                    //                                                         child:
+                    //                                                             Row(
+                    //                                                           children: [
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 '${index + 1}',
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 '${censoredEmail} ',
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 '${userModels[index].fname} ${userModels[index].lname}',
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Text(
+                    //                                                                 '${userModels[index].position}',
+                    //                                                                 textAlign: TextAlign.center,
+                    //                                                                 maxLines: 2,
+                    //                                                                 style: TextStyle(
+                    //                                                                     color: AdminScafScreen_Color.Colors_Text1_,
+                    //                                                                     // fontWeight: FontWeight.bold,
+                    //                                                                     fontFamily: Font_.Fonts_T),
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                             Expanded(
+                    //                                                               flex: 1,
+                    //                                                               child: Row(
+                    //                                                                 children: [
+                    //                                                                   Expanded(flex: 1, child: Icon((minutesPassed > 1) ? Icons.motion_photos_off_rounded : Icons.motion_photos_on_rounded, color: (minutesPassed > 1) ? Colors.red : Colors.green)
+                    //                                                                       // Text(
+                    //                                                                       //   '🟢',
+                    //                                                                       //   maxLines: 2,
+                    //                                                                       //   textAlign: TextAlign.end,
+                    //                                                                       //   style: TextStyle(color: (minutesPassed > 1) ? Colors.red : Colors.green, fontFamily: Font_.Fonts_T),
+                    //                                                                       // )
+                    //                                                                       ),
+                    //                                                                   Expanded(
+                    //                                                                     flex: 2,
+                    //                                                                     child: Text(
+                    //                                                                       (minutesPassed > 1) ? 'ใช้งานเมื่อ $minutesPassed นาทีที่แล้ว' : ' ${userModels[index].connected}',
+                    //                                                                       textAlign: TextAlign.center,
+                    //                                                                       maxLines: 2,
+                    //                                                                       style: TextStyle(color: AdminScafScreen_Color.Colors_Text1_, fontFamily: Font_.Fonts_T),
+                    //                                                                     ),
+                    //                                                                   ),
+                    //                                                                 ],
+                    //                                                               ),
+                    //                                                             ),
+                    //                                                           ],
+                    //                                                         ),
+                    //                                                       );
+                    //                                                     })),
+                    //                                           ],
+                    //                                         );
+                    //                                       }),
+                    //                                 ),
+                    //                               ],
+                    //                             ),
+                    //                           ),
+                    //                         ),
+                    //                         actions: <Widget>[
+                    //                           Column(
+                    //                             children: [
+                    //                               const SizedBox(
+                    //                                 height: 5.0,
+                    //                               ),
+                    //                               Align(
+                    //                                 alignment:
+                    //                                     Alignment.centerLeft,
+                    //                                 child: Padding(
+                    //                                   padding:
+                    //                                       const EdgeInsets.all(
+                    //                                           2.0),
+                    //                                   child: RichText(
+                    //                                     text: const TextSpan(
+                    //                                       text: '**หมายเหตุ : ',
+                    //                                       style: TextStyle(
+                    //                                           color: AdminScafScreen_Color
+                    //                                               .Colors_Text1_,
+                    //                                           fontFamily:
+                    //                                               FontWeight_
+                    //                                                   .Fonts_T),
+                    //                                       children: <TextSpan>[
+                    //                                         TextSpan(
+                    //                                           text: ' สีเขียว ',
+                    //                                           style: TextStyle(
+                    //                                               color: Colors
+                    //                                                   .green,
+                    //                                               fontFamily:
+                    //                                                   FontWeight_
+                    //                                                       .Fonts_T),
+                    //                                         ),
+                    //                                         TextSpan(
+                    //                                           text:
+                    //                                               ' กำลังใช้งาน (ไม่เกิน 1 นาที) ,',
+                    //                                           style: TextStyle(
+                    //                                               color: AdminScafScreen_Color
+                    //                                                   .Colors_Text1_,
+                    //                                               fontFamily: Font_
+                    //                                                   .Fonts_T),
+                    //                                         ),
+                    //                                         TextSpan(
+                    //                                           text: ' สีแดง ',
+                    //                                           style: TextStyle(
+                    //                                               color: Colors
+                    //                                                   .red,
+                    //                                               fontFamily:
+                    //                                                   FontWeight_
+                    //                                                       .Fonts_T),
+                    //                                         ),
+                    //                                         TextSpan(
+                    //                                           text:
+                    //                                               ' ใช้งานล่าสุด (ไม่เกิน 15 นาที)',
+                    //                                           style: TextStyle(
+                    //                                               color: AdminScafScreen_Color
+                    //                                                   .Colors_Text1_,
+                    //                                               fontFamily: Font_
+                    //                                                   .Fonts_T),
+                    //                                         ),
+                    //                                       ],
+                    //                                     ),
+                    //                                   ),
+                    //                                 ),
+                    //                               ),
+                    //                               const Divider(
+                    //                                 color: Colors.grey,
+                    //                                 height: 4.0,
+                    //                               ),
+                    //                               const SizedBox(
+                    //                                 height: 5.0,
+                    //                               ),
+                    //                               Padding(
+                    //                                 padding:
+                    //                                     const EdgeInsets.all(
+                    //                                         8.0),
+                    //                                 child: Row(
+                    //                                   mainAxisAlignment:
+                    //                                       MainAxisAlignment.end,
+                    //                                   children: [
+                    //                                     Padding(
+                    //                                       padding:
+                    //                                           const EdgeInsets
+                    //                                               .all(8.0),
+                    //                                       child: Row(
+                    //                                         mainAxisAlignment:
+                    //                                             MainAxisAlignment
+                    //                                                 .center,
+                    //                                         children: [
+                    //                                           Container(
+                    //                                             width: 100,
+                    //                                             decoration:
+                    //                                                 const BoxDecoration(
+                    //                                               color: Colors
+                    //                                                   .black,
+                    //                                               borderRadius: BorderRadius.only(
+                    //                                                   topLeft:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   topRight:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   bottomLeft:
+                    //                                                       Radius.circular(
+                    //                                                           10),
+                    //                                                   bottomRight:
+                    //                                                       Radius.circular(
+                    //                                                           10)),
+                    //                                             ),
+                    //                                             padding:
+                    //                                                 const EdgeInsets
+                    //                                                         .all(
+                    //                                                     8.0),
+                    //                                             child:
+                    //                                                 TextButton(
+                    //                                               onPressed: () =>
+                    //                                                   Navigator.pop(
+                    //                                                       context,
+                    //                                                       'OK'),
+                    //                                               child:
+                    //                                                   const Text(
+                    //                                                 'ปิด',
+                    //                                                 style: TextStyle(
+                    //                                                     color: Colors
+                    //                                                         .white,
+                    //                                                     fontWeight:
+                    //                                                         FontWeight
+                    //                                                             .bold,
+                    //                                                     fontFamily:
+                    //                                                         FontWeight_.Fonts_T),
+                    //                                               ),
+                    //                                             ),
+                    //                                           ),
+                    //                                         ],
+                    //                                       ),
+                    //                                     ),
+                    //                                   ],
+                    //                                 ),
+                    //                               ),
+                    //                             ],
+                    //                           ),
+                    //                         ],
+                    //                       ),
+                    //                     );
+                    //                   },
+                    //             child: Stack(
+                    //               children: [
+                    //                 Padding(
+                    //                   padding: const EdgeInsets.all(2.0),
+                    //                   child: Container(
+                    //                     decoration: BoxDecoration(
+                    //                       color: Colors.white54,
+                    //                       borderRadius: BorderRadius.only(
+                    //                           topLeft: Radius.circular(20),
+                    //                           topRight: Radius.circular(20),
+                    //                           bottomLeft: Radius.circular(20),
+                    //                           bottomRight: Radius.circular(20)),
+                    //                     ),
+                    //                     padding: const EdgeInsets.all(6.0),
+                    //                     child: Icon(
+                    //                       Icons.people,
+                    //                       color: Colors.red,
+                    //                       size: 18,
+                    //                     ),
+                    //                   ),
+                    //                 ),
+                    //                 Positioned(
+                    //                     top: 0,
+                    //                     left: 0,
+                    //                     child: Container(
+                    //                       // decoration: const BoxDecoration(
+                    //                       //   color: Colors.white,
+                    //                       //   borderRadius: BorderRadius.only(
+                    //                       //       topLeft: Radius.circular(20),
+                    //                       //       topRight: Radius.circular(20),
+                    //                       //       bottomLeft: Radius.circular(20),
+                    //                       //       bottomRight: Radius.circular(20)),
+                    //                       // ),
+                    //                       padding: const EdgeInsets.all(2.0),
+                    //                       child: Text(
+                    //                         renTal_name == null
+                    //                             ? '0'
+                    //                             : '${userModels.length}',
+                    //                         // '${userModels.length}***/$connected_Minutes/$ser_user/$email_user',
+                    //                         style: TextStyle(
+                    //                             fontSize: 12,
+                    //                             color: Colors.blue,
+                    //                             fontFamily:
+                    //                                 FontWeight_.Fonts_T),
+                    //                       ),
+                    //                     ))
+                    //               ],
+                    //             )),
+                    //       );
+                    //     }),
                     Padding(
                       padding: EdgeInsets.all(4.0),
                       child: StreamBuilder(
@@ -5363,7 +5801,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                             bottomRight: Radius.circular(0)),
                       ),
                       padding: const EdgeInsets.all(2.0),
-                      child: InkWell(
+                      child: GestureDetector(
                         onTap: () {
                           showDialog<String>(
                             context: context,
@@ -5419,45 +5857,76 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                               padding:
                                                   const EdgeInsets.all(8.0),
                                               child: TextButton(
-                                                onPressed: () async {
-                                                  deall_Trans_select();
-                                                  SharedPreferences
-                                                      preferences =
-                                                      await SharedPreferences
-                                                          .getInstance();
-                                                  var ser = preferences
-                                                      .getString('ser');
-                                                  var on = '0';
-                                                  String url =
-                                                      '${MyConstant().domain}/U_user_onoff.php?isAdd=true&ser=$ser&on=$on';
+                                                onPressed: (renTal_user
+                                                                .toString() ==
+                                                            '50' ||
+                                                        renTal_user
+                                                                .toString() ==
+                                                            '139')
+                                                    ? () async {
+                                                        AuthService.logout();
+                                                        SharedPreferences
+                                                            preferences =
+                                                            await SharedPreferences
+                                                                .getInstance();
+                                                        preferences.clear();
 
-                                                  try {
-                                                    var response = await http
-                                                        .get(Uri.parse(url));
+                                                        MaterialPageRoute
+                                                            route =
+                                                            MaterialPageRoute(
+                                                          builder: (context) =>
+                                                              LoginPage(),
+                                                        );
+                                                        Navigator
+                                                            .pushAndRemoveUntil(
+                                                                context, route,
+                                                                (route) {
+                                                          return false;
+                                                        });
+                                                      }
+                                                    : () async {
+                                                        deall_Trans_select();
+                                                        SharedPreferences
+                                                            preferences =
+                                                            await SharedPreferences
+                                                                .getInstance();
+                                                        var ser = preferences
+                                                            .getString('ser');
+                                                        var on = '0';
+                                                        String url =
+                                                            '${MyConstant().domain}/U_user_onoff.php?isAdd=true&ser=$ser&on=$on';
 
-                                                    var result = json
-                                                        .decode(response.body);
-                                                    // print(result);
-                                                    if (result.toString() ==
-                                                        'true') {
-                                                      SharedPreferences
-                                                          preferences =
-                                                          await SharedPreferences
-                                                              .getInstance();
-                                                      preferences.clear();
-                                                      routToService(
-                                                          SignInScreen());
-                                                    } else {
-                                                      ScaffoldMessenger.of(
-                                                              context)
-                                                          .showSnackBar(
-                                                        SnackBar(
-                                                            content: Text(
-                                                                '(ผิดพลาด)')),
-                                                      );
-                                                    }
-                                                  } catch (e) {}
-                                                },
+                                                        try {
+                                                          var response =
+                                                              await http.get(
+                                                                  Uri.parse(
+                                                                      url));
+
+                                                          var result = json
+                                                              .decode(response
+                                                                  .body);
+                                                          // print(result);
+                                                          if (result
+                                                                  .toString() ==
+                                                              'true') {
+                                                            SharedPreferences
+                                                                preferences =
+                                                                await SharedPreferences
+                                                                    .getInstance();
+                                                            preferences.clear();
+                                                            routToService(
+                                                                LoginPage());
+                                                          } else {
+                                                            ScaffoldMessenger
+                                                                    .of(context)
+                                                                .showSnackBar(
+                                                              SnackBar(
+                                                                  content: Text(
+                                                                      '(ผิดพลาด)')),
+                                                            );
+                                                          }
+                                                        } catch (e) {}
+                                                      },
                                                 child: Translate
                                                     .TranslateAndSetText(
                                                         'ยืนยัน',
@@ -5585,7 +6054,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
             ],
           ),
         ],
-        selectedRoute: '/',
+        selectedRoute: '/$Value_Route',
         onSelected: (item) async {
           SharedPreferences preferences = await SharedPreferences.getInstance();
           if (preferences.getString('zonesName').toString() == 'null') {
@@ -5621,7 +6090,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                   ),
                 );
               }
-              read_GC_rentalColor();
+              // read_GC_rentalColor(); // ❌ ดึง GC_rental_setring.php ซ้ำทุกครั้งที่กดแท็บ → read_GC_rental() ดึงมาแล้วตอน initState
             }
           }
           // print(Value_Route);
@@ -5644,7 +6113,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                   image: AssetImage('images/chaoperty_dark.png'),
                 ),
               ),
-              InkWell(
+              GestureDetector(
                 onTap: () async {
                   setState(() {
                     Value_Route = 'หน้าหลัก';
@@ -5804,7 +6273,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                   child: Padding(
                     padding: EdgeInsets.all(8.0),
                     child: Text(
-                      '© 2023  Dzentric Co.,Ltd. All Rights Reserved',
+                      '© 2026  Dzentric Co.,Ltd. All Rights Reserved',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       softWrap: false,
@@ -5823,24 +6292,46 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
         ),
       ),
       body: (Value_Route == 'หน้าหลัก')
-          ? const HomeScreen()
+          ? const HomeScreen2()
+
+          //  const HomeScreen()
           : (Value_Route == 'พื้นที่เช่า')
-              ? const ChaoAreaScreen()
-              : (Value_Route == 'ผู้เช่า')
-                  ? const PeopleChaoScreen()
-                  : (Value_Route == 'บัญชี')
-                      ? const AccountScreen()
-                      : (Value_Route == 'จัดการ')
-                          ? const ManageScreen()
-                          : (Value_Route == 'รายงาน')
-                              ? ReportScreen()
-                              : (Value_Route == 'ทะเบียน')
-                                  ? const BureauScreen()
-                                  : (Value_Route == 'ตั้งค่า')
-                                      ? const SettingScreen()
-                                      : (Value_Route == 'จัดการข้อมูลส่วนตัว')
-                                          ? const SettingUserScreen()
-                                          : const SettingUserScreen(),
+              ? ChaoAreaScreen()
+              : (Value_Route == 'ใบอนุญาต')
+                  ? RequestContract_CMM(
+                      route_getdata:
+                          widget.route_getdata ?? "") //ChaoAreaScreen()
+                  : (Value_Route == 'RequestExaminer1_CMM')
+                      ? const RequestExaminer1_CMM(
+                          viewver: false,
+                          plugin: false,
+                        )
+                      : (Value_Route == 'RequestExaminer2_CMM')
+                          ? const RequestExaminer2_CMM(
+                              viewver: false,
+                              plugin: false,
+                            )
+                          : (Value_Route == 'SignaturePad_CMM')
+                              ? const SignaturePad_CMM()
+                              : (Value_Route == 'ผู้เช่า')
+                                  ? const PeopleChaoScreen()
+                                  : (Value_Route == 'บัญชี')
+                                      ? const AccountScreen()
+                                      : (Value_Route == 'จัดการ')
+                                          ? const ManageScreen()
+                                          : (Value_Route == 'รายงาน')
+                                              ? ReportScreen()
+                                              : (Value_Route == 'ทะเบียน')
+                                                  ? const BureauScreen()
+                                                  : (Value_Route == 'ตั้งค่า')
+                                                      ? const SettingScreen()
+                                                      : (Value_Route ==
+                                                              'จัดการข้อมูลส่วนตัว')
+                                                          ? ManagePersonalInformation_CMM() //USerInformation()
+                                                          : (Value_Route ==
+                                                                  'TestPrintNamePage')
+                                                              ? TestPrintNamePage()
+                                                              : const SettingUserScreen(),
       // body: (Value_Route == 'หน้าหลัก')
       //     ? const HomeScreen()
       //     : (Value_Route == 'พื้นที่เช่า')
@@ -5885,28 +6376,29 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
 
   /////////------------------------------------------->
 
-  Future<Null> read_GC_rentalColor() async {
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-
-    String url =
-        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
-
-    try {
-      var response = await http.get(Uri.parse(url));
-
-      var result = json.decode(response.body);
-
-      if (result != null) {
-        for (var map in result) {
-          RenTalModel renTalModels = RenTalModel.fromJson(map);
-          dynamic colorsren = renTalModels.colors_ren;
-          dynamic colorsren_sub = renTalModels.colors_subren;
-          New_Appbar_color(colorsren, colorsren_sub);
-        }
-      } else {}
-    } catch (e) {}
-  }
+  // ❌ ดึง API ซ้ำกับ read_GC_rental() (ใช้ GC_rental_setring.php เหมือนกัน)
+  // Future<Null> read_GC_rentalColor() async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //
+  //   String url =
+  //       '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
+  //
+  //   try {
+  //     var response = await http.get(Uri.parse(url));
+  //
+  //     var result = json.decode(response.body);
+  //
+  //     if (result != null) {
+  //       for (var map in result) {
+  //         RenTalModel renTalModels = RenTalModel.fromJson(map);
+  //         dynamic colorsren = renTalModels.colors_ren;
+  //         dynamic colorsren_sub = renTalModels.colors_subren;
+  //         New_Appbar_color(colorsren, colorsren_sub);
+  //       }
+  //     } else {}
+  //   } catch (e) {}
+  // }
 
 /////////------------------------------------------->
   Future<Null> New_Appbar_color(colors_ren, colorsren_sub) async {
@@ -5947,4 +6439,40 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
   }
 
 /////////------------------------------------------->
+}
+
+class _FloatingLanternDot extends StatelessWidget {
+  const _FloatingLanternDot({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(seconds: 3),
+      curve: Curves.easeInOut,
+      builder: (context, t, _) {
+        // ใช้ math.sin() แทน sinSync
+        final dy = math.sin(t * 2 * math.pi) * 2.0;
+
+        return Transform.translate(
+          offset: Offset(0, -dy),
+          child: Container(
+            width: 8,
+            height: 12,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFC76D),
+              borderRadius: BorderRadius.circular(3),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFFE08A).withOpacity(.55),
+                  blurRadius: 10,
+                  spreadRadius: 1,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }

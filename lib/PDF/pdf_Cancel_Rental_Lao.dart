@@ -12,6 +12,7 @@ import 'dart:math' as math;
 import '../CRC_16_Prompay/generate_qrcode.dart';
 import '../ChaoArea/ChaoAreaRenew_Screen.dart';
 import '../Constant/Myconstant.dart';
+import '../Man_PDF/Preview_PDF/PreviewPdfgen_Billsplay.dart';
 import '../PeopleChao/Bills_.dart';
 import '../PeopleChao/Pays_.dart';
 import '../Style/ThaiBaht.dart';
@@ -72,11 +73,12 @@ class PdfgeCancel_Rental_Lao {
     DateTime date = DateTime.now();
     // var formatter = new DateFormat.MMMMd('th_TH');
     // String thaiDate = formatter.format(date);
-    final thaiDate = DateTime.parse(cc_date.toString());
+    final thaiDate =
+        DateTime.tryParse(cc_date?.toString() ?? '') ?? DateTime.now();
     final formatter = DateFormat('d MMMM', 'th_TH');
     final formattedDate = formatter.format(thaiDate);
     //////--------------->พ.ศ.
-    DateTime dateTime = DateTime.parse(cc_date.toString());
+    DateTime dateTime = thaiDate;
     int newYear = dateTime.year + 0;
     //////--------------------------------------------->
     var nFormat = NumberFormat("#,##0", "en_US");
@@ -87,7 +89,11 @@ class PdfgeCancel_Rental_Lao {
     List netImage_QR = [];
 
     for (int i = 0; i < newValuePDFimg.length; i++) {
-      netImage.add(await networkImage('${newValuePDFimg[i]}'));
+      try {
+        netImage.add(await networkImage('${newValuePDFimg[i]}'));
+      } catch (e) {
+        // skip image if download fails
+      }
     }
 
 ////////////////------------------------------->

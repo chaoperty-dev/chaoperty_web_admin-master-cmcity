@@ -80,7 +80,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
     int serren = 0;
 
     try {
-      print('try : 1');
+      //print('try : 1');
 
       int index = url.indexOf('userren=');
 
@@ -89,7 +89,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
 
         await preferences.clear(); // ต้องใช้ await
 
-        print('try : 2');
+        //print('try : 2');
 
         index += 'userren='.length;
 
@@ -99,7 +99,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
         }
 
         String userren = url.substring(index, endIndex);
-        print('userren: $userren');
+        //print('userren: $userren');
         setState(() {
           ser_user = 'userren: $userren';
         });
@@ -107,10 +107,10 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
         serren = int.tryParse(userren) ?? 0;
         await preferences.setString('renTalSer', serren.toString());
 
-        print('try : 3 => serren: $serren');
+        //print('try : 3 => serren: $serren');
       }
     } catch (e) {
-      print('catch_Line_IoginAuto : $e');
+      //print('catch_Line_IoginAuto : $e');
     }
     await checkPreferance();
     await read_GC_rental();
@@ -138,7 +138,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           UserModel userModel = UserModel.fromJson(map);
@@ -167,7 +167,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      //print(result);
+      ////print(result);
       Map<String, dynamic> map = Map();
       map['ser'] = '0';
       map['rser'] = '0';
@@ -227,7 +227,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
     //   renTal_lavel = int.parse(preferences.getString('lavel').toString());
     // });
 
-    print('textsearchstart>>>>  checkPreferance');
+    //print('textsearchstart>>>>  checkPreferance');
   }
 
   Future<Null> read_GC_rental() async {
@@ -244,7 +244,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      //  print(result);
+      //  //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -266,7 +266,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
         }
       } else {}
     } catch (e) {}
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
   //////////-------------------------------->
@@ -285,14 +285,14 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
 
     var ren = preferences.getString('renTalSer'); // ✅ ต้องดึงจาก preferences
     var zone = preferences.getString('zoneSer');
-    //print('zone >>>>>> $zone');
+    ////print('zone >>>>>> $zone');
 
     String url = zone == null
         ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
         : zone == '0'
             ? '${MyConstant().domain}/GC_areaAll.php?isAdd=true&ren=$ren&zone=$zone'
             : '${MyConstant().domain}/GC_area.php?isAdd=true&ren=$ren&zone=$zone';
-    print(url);
+    //print(url);
     try {
       // var response = await http.get(Uri.parse(url));
       final response = await dio.get(
@@ -301,7 +301,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
       );
       var result = response.data;
       // var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           AreaModel areaModel = AreaModel.fromJson(map);
@@ -320,7 +320,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
               var response = await http.get(Uri.parse(url));
 
               var result = json.decode(response.body);
-              // print(result);
+              // //print(result);
               if (result != null) {
                 for (var map in result) {
                   AreaQuotModel areaQuotModel = AreaQuotModel.fromJson(map);
@@ -332,7 +332,7 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
             } catch (e) {}
           }
         }
-        // print(
+        // //print(
         //     'areaQuotModels.length>>>>>>>> ${areaQuotModels.length} ${areaQuotModels.map((e) => '152' == e.ser ? e.docno : '0').toString()}');
         if (zone == null || zone == '0') {
           setState(() {
@@ -349,8 +349,8 @@ class _MyWidget_Test_limitState extends State<MyWidget_Test_limit> {
       }
     } on DioException catch (e) {
     } catch (e) {}
-    print('areaModels.length');
-    print(areaModels.length); // โหลดข้อมูลเสร็จ
+    //print('areaModels.length');
+    //print(areaModels.length); // โหลดข้อมูลเสร็จ
     setState(() {
       isLoading = false;
     });

@@ -133,10 +133,8 @@ class _WebViewX2PagebeamcheckState extends State<WebViewX2Pagebeamcheck> {
       onWebViewCreated: (controller) {
         webviewController = controller;
       },
-      onPageStarted: (src) =>
-          debugPrint('A new page has started loading: $src\n'),
-      onPageFinished: (src) =>
-          debugPrint('The page has finished loading: $src\n'),
+      onPageStarted: (src) => debugPrint('A new page has started loading:'),
+      onPageFinished: (src) => debugPrint('The page has finished loading: '),
       jsContent: const {
         EmbeddedJsContent(
           js: "function testPlatformIndependentMethod() { console.log('Hi from JS') }",
@@ -152,7 +150,7 @@ class _WebViewX2PagebeamcheckState extends State<WebViewX2Pagebeamcheck> {
         DartCallback(
           name: 'TestDartCallback',
           callBack: (msg) {
-            print(msg);
+            //  print(msg);
           },
         )
       },

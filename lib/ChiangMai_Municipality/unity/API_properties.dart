@@ -5,15 +5,21 @@ import '../../Constant/Myconstant.dart';
 import '../Model/Properties_Model.dart';
 
 Future<List<PropertiesModel>> read_GC_properties(
-    String? zser, String? aser) async {
+    String? zser, String? aser, String? length) async {
   SharedPreferences preferences = await SharedPreferences.getInstance();
   var ren = preferences.getString('renTalSer');
   var ser_user = preferences.getString('ser');
-
-  String url = '${MyConstant().domain_v1}/admin/requests/properties';
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
+  String url = (zser == null ||
+          zser.toString() == '' ||
+          zser.toString() == 'null' ||
+          zser.toString() == '0')
+      ? '${MyConstant().domain_v1}/admin/requests/properties?per_page=5000'
+      : '${MyConstant().domain_v1}/admin/requests/properties?per_page=1000&q=$zser';
   print(url);
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url), headers: headers);
+
     final jsonRes = json.decode(response.body);
 
     if (jsonRes != null && jsonRes['data'] is List) {
@@ -38,15 +44,15 @@ Future<List<PropertiesModel>> read_GC_properties(
 //   try {
 //     final response = await http.get(Uri.parse(url));
 //     final result = json.decode(response.body);
-//     print('🪵 StackTrace:\n$result');
+//     //print('🪵 StackTrace:\n$result');
 //     if (result != null && result is List) {
 //       return result
 //           .map<PropertiesModel>((json) => PropertiesModel.fromJson(json))
 //           .toList();
 //     }
 //   } catch (e, stackTrace) {
-//     print('❌ เกิดข้อผิดพลาดใน read_GC_properties: $e');
-//     print('🪵 StackTrace:\n$stackTrace');
+//     //print('❌ เกิดข้อผิดพลาดใน read_GC_properties: $e');
+//     //print('🪵 StackTrace:\n$stackTrace');
 //   }
 
 //   return [];
@@ -73,8 +79,8 @@ Future<List<PropertiesModel>> read_GC_properties(
 //           .toList();
 //     }
 //   } catch (e, stackTrace) {
-//     print('❌ เกิดข้อผิดพลาดใน read_GC_properties: $e');
-//     print('🪵 StackTrace:\n$stackTrace');
+//     //print('❌ เกิดข้อผิดพลาดใน read_GC_properties: $e');
+//     //print('🪵 StackTrace:\n$stackTrace');
 //   }
 
 //   return [];

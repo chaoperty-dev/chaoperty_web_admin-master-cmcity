@@ -8,6 +8,7 @@ import 'package:flutter/src/widgets/container.dart';
 import 'package:flutter/src/widgets/framework.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../Constant/Myconstant.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetPerMission_Model.dart';
@@ -108,6 +109,7 @@ class _USerInformationState extends State<USerInformation> {
       return false;
     });
   }
+
   Future<Null> ResetPass(context) async {
     String url =
         '${MyConstant().domain}/ResetPasswd.php?isAdd=true&ser_U=$ser_user&pass_U=$password_U&type=0';
@@ -131,12 +133,11 @@ class _USerInformationState extends State<USerInformation> {
         var result = json.decode(response.body);
 
         preferences.clear();
-        routToService(SignInScreen());
+        routToService(LoginPage());
       } else {}
     } catch (e) {}
     // Navigator.pop(context, 'OK');
   }
-
 
   Future<Null> Resetdata2(context) async {
     String url =
@@ -147,7 +148,7 @@ class _USerInformationState extends State<USerInformation> {
       var result = json.decode(response.body);
       Insert_log.Insert_logs('ตั้งค่า',
           'ข้อมูลผู้ใช้งาน>>แก้ไขข้อมูลผู้ใช้(*${email_user.toString()})');
-      print(result.toString());
+      // print(result.toString());
       signInThread();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -848,10 +849,10 @@ class _USerInformationState extends State<USerInformation> {
                                           onPressed: () async {
                                             if (_formKey2.currentState!
                                                 .validate()) {
-                                              print(fname_text.text);
-                                              print(lname_text.text);
-                                              print(email_text.text);
-                                              print(tel_text.text);
+                                              // print(fname_text.text);
+                                              // print(lname_text.text);
+                                              // print(email_text.text);
+                                              // print(tel_text.text);
                                               Resetdata2(context);
                                             }
                                           },
@@ -1483,8 +1484,8 @@ class _USerInformationState extends State<USerInformation> {
                                                       .toString();
                                                 });
                                                 /////---------------------------
-                                                print(
-                                                    'password Md5 $password_U');
+                                                // print(
+                                                //     'password Md5 $password_U');
                                                 /////---------------------------
                                                 setState(() {
                                                   Pasw1_text.clear();

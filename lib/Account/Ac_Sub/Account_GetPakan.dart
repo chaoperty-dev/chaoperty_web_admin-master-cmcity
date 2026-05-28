@@ -600,13 +600,13 @@ class _Account_GetPakanState extends State<Account_GetPakan> {
             7)
         ? (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.84
-            : 1200
+            : 1400
         : (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.84 +
                 ((ac10_1.where((item) => item["st"] == '1').toList().length -
                         7) *
                     30)
-            : 1200 +
+            : 1400 +
                 ((ac10_1.where((item) => item["st"] == '1').toList().length -
                         7) *
                     30);

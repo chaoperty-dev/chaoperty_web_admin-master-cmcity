@@ -27,5 +27,3 @@ String encryptTextMainkey(String plainText) {
   final encrypted = encrypter.encrypt(plainText, iv: _iv);
   return encrypted.base64;
 }
-
-

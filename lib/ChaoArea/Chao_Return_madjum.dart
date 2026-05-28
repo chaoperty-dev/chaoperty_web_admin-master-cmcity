@@ -213,7 +213,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
         }
       } else {}
     } catch (e) {}
-    print('name>>>>>  $renname');
+    // print('name>>>>>  $renname');
   }
 
   Future<Null> read_data() async {
@@ -494,7 +494,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
         );
       }
     } catch (e) {
-      print('rrrrrrrrrrrrrr $e');
+      //print('rrrrrrrrrrrrrr $e');
     }
   }
 
@@ -563,7 +563,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
+      // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
 
       if (result.toString() == 'true') {
         setState(() {
@@ -600,7 +600,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
+      // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
       sum_matjum = 0;
       if (result.toString() != 'true') {
         for (var map in result) {
@@ -642,7 +642,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
+      //print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
       sum_Matjum_KF = 0;
       if (result.toString() != 'true') {
         for (var map in result) {
@@ -698,7 +698,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
+      //  print('>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>--------------  $result');
       sum_Matjum_KF_RE = 0;
       if (result.toString() != 'true') {
         for (var map in result) {
@@ -713,8 +713,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
         }
       }
       setState(() {
-        print(
-            'sum_matjum >>> $sum_matjum sum_Matjum_KF_RE>>> $sum_Matjum_KF_RE');
+        // print(
+        //     'sum_matjum >>> $sum_matjum sum_Matjum_KF_RE>>> $sum_Matjum_KF_RE');
         if (sum_Matjum_KF_RE > sum_matjum) {
           sum_matjum = 0.00;
         } else {
@@ -1057,11 +1057,11 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
                                                             8.0),
                                                     child: TextButton(
                                                       onPressed: () async {
-                                                        print('Ser: ${Sercid}');
-                                                        print(
-                                                            'Cid: ${widget.Value_cid}');
-                                                        print(
-                                                            ' เหตุผล :${Formbecause_.text.toString()}');
+                                                        // print('Ser: ${Sercid}');
+                                                        // print(
+                                                        //     'Cid: ${widget.Value_cid}');
+                                                        // print(
+                                                        //     ' เหตุผล :${Formbecause_.text.toString()}');
                                                         String because_ =
                                                             '${Formbecause_.text.toString()}';
 
@@ -1156,8 +1156,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
                                                             var result = json
                                                                 .decode(response
                                                                     .body);
-                                                            print(
-                                                                'BBBBBBBBBBBBBBBB>>>> $result');
+                                                            // print(
+                                                            //     'BBBBBBBBBBBBBBBB>>>> $result');
                                                             if (result
                                                                     .toString() ==
                                                                 'true') {
@@ -1733,8 +1733,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
                                                 setState(() {
                                                   selectedValue = item.bno!;
                                                 });
-                                                print(
-                                                    '**/*/*   --- ${selectedValue}');
+                                                // print(
+                                                //     '**/*/*   --- ${selectedValue}');
                                               },
                                               value:
                                                   '${item.ser}:${item.ptname}',
@@ -1773,7 +1773,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
                                               ),
                                             )).toList(),
                                         onChanged: (value) async {
-                                          print(value);
+                                          // print(value);
                                           // Do something when changing the item if you want.
 
                                           var zones = value!.indexOf(':');
@@ -1804,8 +1804,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
                                                       .toString();
                                             }
                                           });
-                                          print(
-                                              'mmmmm ${rtnameSer.toString()} $rtnameName');
+                                          // print(
+                                          //     'mmmmm ${rtnameSer.toString()} $rtnameName');
                                         },
                                       ),
                                     ),
@@ -2619,7 +2619,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
                                                 setState(() {
                                                   Slip_status = '1';
                                                 });
-                                                print('$v1   $v2');
+                                                // print('$v1   $v2');
                                                 List newValuePDFimg = [];
                                                 for (int index = 0;
                                                     index < 1;
@@ -2690,7 +2690,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
     if ((sum_matjum - sum_ST) != 0.0) {
       if ((sum_matjum - sum_ST) > 0.0) {
         //คืนเงิน
-        print('คืนเงิน');
+        //  print('คืนเงิน');
         if (paymentName1 == null) {
           _showMyDialogPay_Error('กรุณาเลือกรูปแบบชำระ!');
         } else {
@@ -2711,7 +2711,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
           }
         }
       } else {
-        print('ชำระเพิ่ม');
+        // print('ชำระเพิ่ม');
         //ชำระเพิ่ม
         if (paymentName1 == null) {
           _showMyDialogPay_Error('กรุณาเลือกรูปแบบชำระ!');
@@ -2753,8 +2753,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
     var payment1 = Form_payment1.text.toString();
     var pSer1 = paymentSer1.toString();
 
-    print('in_Trans_invoice()///$fileName_Slip_');
-    print('in_Trans_invoice>>> $payment1  $bill');
+    // print('in_Trans_invoice()///$fileName_Slip_');
+    // print('in_Trans_invoice>>> $payment1  $bill');
 
     String url =
         '${MyConstant().domain}/In_tran_return_Ma.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&sumdis=$sumdis&sumdisp=$sumdisp&dateY=$dateY&dateY1=$dateY1&time=$time&payment1=$payment1&pSer1=$pSer1&bill=$bill&fileNameSlip=$fileName_Slip_';
@@ -2762,8 +2762,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(
-          ' fileName_Slip_///// $fileName_Slip_////////////*------> ${result.toString()} ');
+      // print(
+      //     ' fileName_Slip_///// $fileName_Slip_////////////*------> ${result.toString()} ');
       if (result.toString() != 'No') {
         for (var map in result) {
           CFinnancetransModel cFinnancetransModel =
@@ -2771,9 +2771,9 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
           setState(() {
             cFinn = cFinnancetransModel.docno;
           });
-          print('in_Trans_invoice///zzzzasaaa123454>>>>  $cFinn');
-          print(
-              'in_Trans_invoice///bnobnobnobno123454>>>>  ${cFinnancetransModel.bno}');
+          // print('in_Trans_invoice///zzzzasaaa123454>>>>  $cFinn');
+          // print(
+          //     'in_Trans_invoice///bnobnobnobno123454>>>>  ${cFinnancetransModel.bno}');
         }
 
         Insert_log.Insert_logs(
@@ -2789,17 +2789,17 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
           base64_Slip = null;
           // tableData00 = [];
         });
-        print('rrrrrrrrrrrrrr');
+        //   print('rrrrrrrrrrrrrr');
       }
     } catch (e) {
-      print('$e');
+      // print('$e');
     }
   }
 
   Future<Null> in_Trans_invoiceB(newValuePDFimg) async {
-    print('111111');
+    //  print('111111');
 
-    print('222');
+    //  print('222');
     String? fileName_Slip_ = fileName_Slip.toString().trim();
     ////////////////------------------------------------------------------>
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -2816,8 +2816,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
     var payment1 = Form_payment1.text.toString();
     var pSer1 = paymentSer1.toString();
 
-    print('in_Trans_invoice()///$fileName_Slip_');
-    print('in_Trans_invoice>>> $payment1  $bill');
+    // print('in_Trans_invoice()///$fileName_Slip_');
+    // print('in_Trans_invoice>>> $payment1  $bill');
 
     String url =
         '${MyConstant().domain}/In_tran_returnB_Ma.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&sumdis=$sumdis&sumdisp=$sumdisp&dateY=$dateY&dateY1=$dateY1&time=$time&payment1=$payment1&pSer1=$pSer1&bill=$bill&fileNameSlip=$fileName_Slip_';
@@ -2825,8 +2825,8 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(
-          ' fileName_Slip_///// $fileName_Slip_////////////*------> ${result.toString()} ');
+      // print(
+      //     ' fileName_Slip_///// $fileName_Slip_////////////*------> ${result.toString()} ');
       if (result.toString() != 'No') {
         for (var map in result) {
           CFinnancetransModel cFinnancetransModel =
@@ -2834,9 +2834,9 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
           setState(() {
             cFinn = cFinnancetransModel.docno;
           });
-          print('in_Trans_invoice///zzzzasaaa123454>>>>  $cFinn');
-          print(
-              'in_Trans_invoice///bnobnobnobno123454>>>>  ${cFinnancetransModel.bno}');
+          // print('in_Trans_invoice///zzzzasaaa123454>>>>  $cFinn');
+          // print(
+          //     'in_Trans_invoice///bnobnobnobno123454>>>>  ${cFinnancetransModel.bno}');
         }
 
         Insert_log.Insert_logs(
@@ -2852,10 +2852,10 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
           base64_Slip = null;
           // tableData00 = [];
         });
-        print('rrrrrrrrrrrrrr');
+        // print('rrrrrrrrrrrrrr');
       }
     } catch (e) {
-      print('$e');
+      // print('$e');
     }
   }
 
@@ -2883,18 +2883,18 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
       request.open('POST',
           '${MyConstant().domain}/File_uploadSlip.php?name=$fileName_Slip&Foder=$foder&Pathfoder=$Path_foder');
       request.send(formData);
-      print(formData);
+      // print(formData);
 
       // Handle the response
       await request.onLoad.first;
 
       if (request.status == 200) {
-        print('File uploaded successfully!');
+        // print('File uploaded successfully!');
       } else {
-        print('File upload failed with status code: ${request.status}');
+        // print('File upload failed with status code: ${request.status}');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      //  print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -2916,12 +2916,12 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
     await reader.onLoadEnd.first;
     String fileName_ = file.name;
     String extension = fileName_.split('.').last;
-    print('File name: $fileName_');
-    print('Extension: $extension');
+    // print('File name: $fileName_');
+    // print('Extension: $extension');
     setState(() {
       base64_Slip = base64Encode(reader.result as Uint8List);
     });
-    print(base64_Slip);
+    //  print(base64_Slip);
     setState(() {
       extension_ = extension;
       file_ = file;
@@ -3204,7 +3204,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
           text_add.clear();
           price_add.clear();
         });
-        print('rrrrrrrrrrrrrr');
+        //  print('rrrrrrrrrrrrrr');
       } else {
         setState(() {
           red_Trans_select2();
@@ -3214,7 +3214,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
         });
       }
     } catch (e) {
-      print('r $e');
+      //  print('r $e');
     }
   }
 
@@ -3302,7 +3302,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
     var tser = _TransModels[index].ser;
     var tdocno = _TransModels[index].docno;
 
-    print('tser >>.> $tser');
+    // print('tser >>.> $tser');
 
     String url =
         '${MyConstant().domain}/De_tran_select.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&tser=$tser&tdocno=$tdocno&user=$user';
@@ -3315,7 +3315,7 @@ class _ChaoReturnMadjumState extends State<ChaoReturnMadjum> {
         setState(() {
           red_Trans_select2();
         });
-        print('rrrrrrrrrrrrrr');
+        //  print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }

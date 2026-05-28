@@ -11,13 +11,18 @@ import 'unity_pdf_cmm/perviewpdf1_cmm.dart';
 import 'unity_pdf_cmm/unitypdf_cmm.dart';
 
 Future<dynamic> GeneratePDF_ApplicationForm2_CMM(
-    BuildContext context, int type) async {
-  final pdf = pw.Document();
+  BuildContext context,
+  int type,
+  dynamic dataDetail, String requestUuid, {
+  required pw.Font fontPrimary,
+  Uint8List? logoBytes, // จะใช้ก็ส่งมา ไม่งั้นไม่ต้อง
+}) async {
+  final pdf = pw.Document(); 
   final ttf = await font1();
   final ttf2 = await font2();
   // final imageLogo = pw.MemoryImage(logoFile.readAsBytesSync());
-  String name = 'นายสมชายสมชายสมชาย ใจดีใจดีใจดีใจดี';
-  String idCard = '1234567890123';
+  // String name = 'นายสมชายสมชายสมชาย ใจดีใจดีใจดีใจดี';
+  // String idCard = '1234567890123';
 
   pdf.addPage(
     pw.MultiPage(

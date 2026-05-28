@@ -26,9 +26,14 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/Preview_Agreement.dart';
+import '../../Model/GetC_Quot_Select_Model.dart';
 import '../../PeopleChao/Rental_Information.dart';
 import '../../Style/ThaiBaht.dart';
 import '../../Style/loadAndCacheImage.dart';
+
+import 'package:collection/collection.dart'; // ใช้สำหรับ groupBy
 
 class Pdfgen_Agreement3 {
 //////////---------------------------------------------------->
@@ -69,7 +74,8 @@ class Pdfgen_Agreement3 {
       FormName1,
       FormName2,
       FormName3,
-      FormName4) async {
+      FormName4,
+      renTalSer) async {
     ////
     //// ------------>(J Space Sansai)
     ///////
@@ -106,9 +112,49 @@ class Pdfgen_Agreement3 {
     // Uint8List data2 = base64Decode(base64Image_new2);
     // Uint8List data3 = base64Decode(base64Image_new3);
     // Uint8List data4 = base64Decode(base64Image_new4);
-    // for (int i = 0; i < newValuePDFimg.length; i++) {
-    //   netImage.add(await networkImage('${newValuePDFimg[i]}'));
+
+    List<QuotxSelectModel> quotx_ku = [];
+
+    var ren = renTalSer;
+    var ciddoc = Get_Value_cid;
+    var qutser = Get_Value_NameShop_index;
+
+    String url =
+        '${MyConstant().domain}/GC_quotconx_mont.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&type=KU';
+    print('GC_quot_conx>>>>aaa $url');
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      for (var map in result) {
+        QuotxSelectModel quotxSelectModel = QuotxSelectModel.fromJson(map);
+        quotx_ku.add(quotxSelectModel);
+      }
+    } catch (e) {}
+
+///////////////////////------------------------------------------------->
+
+// 1. กรองรายการที่ dtype ไม่เท่ากับ 'KU'
+    final nonKuModels =
+        quotxSelectModels2.where((element) => element.dtype != 'KU').toList();
+
+///////////////////////------------------------------------------------->
+
+    // // 1. กรองเฉพาะ dtype == 'KU'
+    // List<QuotxSelectModel> kuModels =
+    //     quotxSelectModels2.where((element) => element.dtype == 'KU').toList();
+
+    // // 2. สร้าง Map เพื่อ group by expname (ค่าน้ำ, ค่าไฟฟ้า)
+    // final Map<String, QuotxSelectModel> groupedByExpname = {};
+
+    // // 3. ดึงเฉพาะ 1 ตัวแทนของแต่ละ expname
+    // for (final item in kuModels) {
+    //   groupedByExpname[item.expname ?? ''] = item; // ถ้ามีชื่อซ้ำ จะเขียนทับ
     // }
+
+    // // 4. เอาออกมาเป็น List อีกครั้ง
+    // final quotxSelectModels3 = groupedByExpname.values.toList();
 
 ///////////////////////------------------------------------------------->
 
@@ -463,7 +509,7 @@ class Pdfgen_Agreement3 {
                     ],
                   ),
                 ),
-                for (int index = 0; index < quotxSelectModels2.length; index++)
+                for (int index = 0; index < nonKuModels.length; index++)
                   pw.Row(
                     children: [
                       pw.Expanded(
@@ -479,7 +525,7 @@ class Pdfgen_Agreement3 {
                           child: pw.Align(
                             alignment: pw.Alignment.centerLeft,
                             child: pw.Text(
-                              '${quotxSelectModels2[index].datex}',
+                              '${nonKuModels[index].datex}',
                               textAlign: pw.TextAlign.left,
                               maxLines: 2,
                               style: pw.TextStyle(
@@ -505,14 +551,11 @@ class Pdfgen_Agreement3 {
                           child: pw.Align(
                             alignment: pw.Alignment.centerLeft,
                             child: pw.Text(
-                              (quotxSelectModels2[index].etype.toString() ==
-                                          'D' &&
-                                      quotxSelectModels2[index]
-                                              .pay_pakan
-                                              .toString() ==
+                              (nonKuModels[index].etype.toString() == 'D' &&
+                                      nonKuModels[index].pay_pakan.toString() ==
                                           '1')
-                                  ? '${quotxSelectModels2[index].expname}(เดิม-ยกมา)'
-                                  : '${quotxSelectModels2[index].expname}',
+                                  ? '${nonKuModels[index].expname}(เดิม-ยกมา)'
+                                  : '${nonKuModels[index].expname}',
                               textAlign: pw.TextAlign.left,
                               style: pw.TextStyle(
                                 fontSize: font_Size,
@@ -536,7 +579,7 @@ class Pdfgen_Agreement3 {
                           ),
                           child: pw.Center(
                             child: pw.Text(
-                              '${quotxSelectModels2[index].qty}',
+                              '${nonKuModels[index].qty}',
                               textAlign: pw.TextAlign.left,
                               style: pw.TextStyle(
                                 fontSize: font_Size,
@@ -561,9 +604,9 @@ class Pdfgen_Agreement3 {
                           child: pw.Align(
                             alignment: pw.Alignment.centerRight,
                             child: pw.Text(
-                              (quotxSelectModels2[index].total == null)
+                              (nonKuModels[index].total == null)
                                   ? '0.00'
-                                  : '${nFormat.format(double.parse(quotxSelectModels2[index].total!))}',
+                                  : '${nFormat.format(double.parse(nonKuModels[index].total!))}',
                               textAlign: pw.TextAlign.left,
                               style: pw.TextStyle(
                                 fontSize: font_Size,
@@ -577,6 +620,477 @@ class Pdfgen_Agreement3 {
                       ),
                     ],
                   ),
+              ],
+            ),
+          ),
+          pw.SizedBox(height: 2 * PdfPageFormat.mm),
+        ];
+      },
+      footer: (context) {
+        return pw.Column(
+          mainAxisSize: pw.MainAxisSize.min,
+          children: [
+            pw.Align(
+              alignment: pw.Alignment.bottomRight,
+              child: pw.Text(
+                'หน้า ${context.pageNumber} / ${context.pagesCount} ',
+                textAlign: pw.TextAlign.left,
+                style: pw.TextStyle(
+                  fontSize: 10,
+                  font: ttf,
+                  color: Colors_pd,
+                  // fontWeight: pw.FontWeight.bold
+                ),
+              ),
+            )
+          ],
+        );
+      },
+    ));
+    ////////////////////////////--------------------------------> (add page)
+    pdf.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4.copyWith(
+        marginBottom: 18.00,
+        marginLeft: 18.00,
+        marginRight: 18.00,
+        marginTop: 18.00,
+      ),
+      header: (context) {
+        return pw.Column(
+          children: [
+            pw.Row(
+              children: [
+                pw.Container(
+                  height: 60,
+                  width: 60,
+                  decoration: pw.BoxDecoration(
+                    color: PdfColors.grey200,
+                    border: pw.Border.all(color: PdfColors.grey300),
+                  ),
+                  child: resizedLogo != null
+                      ? pw.Image(
+                          pw.MemoryImage(resizedLogo),
+                          height: 60,
+                          width: 60,
+                        )
+                      : pw.Center(
+                          child: pw.Text(
+                            '$bill_name ',
+                            maxLines: 1,
+                            style: pw.TextStyle(
+                              fontSize: 10,
+                              font: ttf,
+                              color: Colors_pd,
+                            ),
+                          ),
+                        ),
+                ),
+                // (netImage.isEmpty)
+                //     ? pw.Container(
+                //         height: 72,
+                //         width: 70,
+                //         color: PdfColors.grey200,
+                //         child: pw.Center(
+                //           child: pw.Text(
+                //             '$renTal_name ',
+                //             maxLines: 1,
+                //             style: pw.TextStyle(
+                //               fontSize: 10,
+                //               font: ttf,
+                //               color: Colors_pd,
+                //             ),
+                //           ),
+                //         ))
+
+                //     // pw.Image(
+                //     //     pw.MemoryImage(iconImage),
+                //     //     height: 72,
+                //     //     width: 70,
+                //     //   )
+                //     : pw.Image(
+                //         (netImage[0]),
+                //         height: 72,
+                //         width: 70,
+                //       ),
+                pw.SizedBox(width: 1 * PdfPageFormat.mm),
+                pw.Container(
+                  width: 280,
+                  child: pw.Column(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        '${bill_name.toString().trim()}',
+                        maxLines: 2,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          color: PdfColors.black,
+                          fontWeight: pw.FontWeight.bold,
+                          font: ttf,
+                        ),
+                      ),
+                      pw.Text(
+                        '${bill_addr.toString().trim()}',
+                        maxLines: 3,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          color: Colors_pd,
+                          font: ttf,
+                        ),
+                      ),
+                      pw.Text(
+                        'เลขประจำตัวผู้เสียภาษี : $bill_tax',
+                        maxLines: 2,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          font: ttf,
+                          color: Colors_pd,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                pw.Spacer(),
+                pw.Container(
+                  width: 180,
+                  child: pw.Column(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      if (TitleType_Default_Receipt_Name != null &&
+                          TitleType_Default_Receipt_Name.toString().trim() !=
+                              '')
+                        pw.Text(
+                          '[ $TitleType_Default_Receipt_Name ]',
+                          maxLines: 1,
+                          style: pw.TextStyle(
+                            fontSize: font_Size,
+                            font: ttf,
+                            color: PdfColors.grey400,
+                          ),
+                        ),
+                      // pw.Text(
+                      //   'ใบเสนอราคา',
+                      //   style: pw.TextStyle(
+                      //     fontSize: 12.00,
+                      //     fontWeight: pw.FontWeight.bold,
+                      //     font: ttf,
+                      //   ),
+                      // ),
+                      // pw.Text(
+                      //   'ที่อยู่,\n1/1-8 ถ.รัตนโกสินทร์ ต.ศรีภูมิ อ.เมือง จ.เชียงใหม่ 50200',
+                      //   textAlign: pw.TextAlign.right,
+                      //   style: pw.TextStyle(
+                      //       fontSize: 10.0, font: ttf, color: PdfColors.grey),
+                      // ),
+                      pw.Text(
+                        'โทรศัพท์ : $bill_tel',
+                        textAlign: pw.TextAlign.right,
+                        maxLines: 1,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          font: ttf,
+                          color: Colors_pd,
+                        ),
+                      ),
+                      pw.Text(
+                        'อีเมล : $bill_email',
+                        maxLines: 1,
+                        textAlign: pw.TextAlign.right,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          font: ttf,
+                          color: Colors_pd,
+                        ),
+                      ),
+                      // pw.Text(
+                      //   'เลขประจำตัวผู้เสียภาษี: $bill_tax',
+                      //   maxLines: 2,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      pw.Text(
+                        'วันที่ทำสัญญา :${Datex_text.text}',
+                        // 'วันที่ทำสัญญา :____/________/____',
+                        // '${DateFormat('ณ วันที่: d เดือน MMM ปี ', 'th').format(DateTime.now())}${DateTime.now().year + 543}',
+                        maxLines: 2,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          font: ttf,
+                          color: Colors_pd,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+            pw.Divider(height: 2),
+            pw.SizedBox(height: 2 * PdfPageFormat.mm),
+            pw.SizedBox(height: 5 * PdfPageFormat.mm),
+          ],
+        );
+      },
+      build: (context) {
+        return [
+          pw.Center(
+            child: pw.Column(
+              mainAxisAlignment: pw.MainAxisAlignment.center,
+              children: [
+                // pw.SizedBox(height: 5 * PdfPageFormat.mm),
+                pw.Container(
+                  height: 25,
+                  decoration: const pw.BoxDecoration(
+                    color: PdfColors.green100,
+                    border: pw.Border(
+                      bottom: pw.BorderSide(color: PdfColors.green900),
+                    ),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 3,
+                        child: pw.Container(
+                          child: pw.Align(
+                            alignment: pw.Alignment.centerLeft,
+                            child: pw.Text(
+                              'รายการ',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                fontWeight: pw.FontWeight.bold,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Container(
+                          child: pw.Align(
+                            alignment: pw.Alignment.center,
+                            child: pw.Text(
+                              'หน่วยละ',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                fontWeight: pw.FontWeight.bold,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Container(
+                          child: pw.Align(
+                            alignment: pw.Alignment.centerRight,
+                            child: pw.Text(
+                              'ประเภท',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                fontWeight: pw.FontWeight.bold,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                for (int index = 0; index < quotx_ku.length; index++)
+                  pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 3,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.white,
+                            border: const pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Align(
+                            alignment: pw.Alignment.centerLeft,
+                            child: pw.Text(
+                              (quotx_ku[index].etype.toString() == 'D' &&
+                                      quotx_ku[index].pay_pakan.toString() ==
+                                          '1')
+                                  ? '${quotx_ku[index].expname}(เดิม-ยกมา)'
+                                  : '${quotx_ku[index].expname}',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                // fontWeight: pw.FontWeight.bold,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.grey100,
+                            border: const pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              '${quotx_ku[index].pri}',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                // fontWeight: pw.FontWeight.bold,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.white,
+                            border: const pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Align(
+                            alignment: pw.Alignment.centerRight,
+                            child: pw.Text(
+                              '${quotx_ku[index].unit}',
+                              textAlign: pw.TextAlign.left,
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                // fontWeight: pw.FontWeight.bold,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                //         for (var serKey in groupedBySer.keys)
+                //           pw.Column(
+                //             children: [
+                //               // pw.Container(
+                //               //   child: pw.Text(
+                //               //     'Group: $serKey', // แสดงค่า ser ที่เป็นกลุ่ม
+                //               //     style: pw.TextStyle(
+                //               //       fontSize: font_Size,
+                //               //       font: ttf,
+                //               //       fontWeight: pw.FontWeight.bold,
+                //               //       color: Colors_pd,
+                //               //     ),
+                //               //   ),
+                //               // ),
+                //               for (var item in groupedBySer[serKey]!)
+                //                 pw.Row(
+                //                   children: [
+                //                     pw.Expanded(
+                //                       flex: 3,
+                //                       child: pw.Container(
+                //                         height: 25,
+                //                         decoration: const pw.BoxDecoration(
+                //                           color: PdfColors.white,
+                //                           border: pw.Border(
+                //                             bottom:
+                //                                 pw.BorderSide(color: PdfColors.grey300),
+                //                           ),
+                //                         ),
+                //                         child: pw.Align(
+                //                           alignment: pw.Alignment.centerLeft,
+                //                           child: pw.Text(
+                //                             (item.etype.toString() == 'D' &&
+                //                                     item.pay_pakan.toString() == '1')
+                //                                 ? '${item.expname}(เดิม-ยกมา)'
+                //                                 : '${item.expname}',
+                //                             textAlign: pw.TextAlign.left,
+                //                             style: pw.TextStyle(
+                //                               fontSize: font_Size,
+                //                               font: ttf,
+                //                               color: Colors_pd,
+                //                             ),
+                //                           ),
+                //                         ),
+                //                       ),
+                //                     ),
+                //                     pw.Expanded(
+                //                       flex: 1,
+                //                       child: pw.Container(
+                //                         height: 25,
+                //                         decoration: const pw.BoxDecoration(
+                //                           color: PdfColors.grey100,
+                //                           border: pw.Border(
+                //                             bottom:
+                //                                 pw.BorderSide(color: PdfColors.grey300),
+                //                           ),
+                //                         ),
+                //                         child: pw.Center(
+                //                           child: pw.Text(
+                //                             '${item.pri}',
+                //                             textAlign: pw.TextAlign.left,
+                //                             style: pw.TextStyle(
+                //                               fontSize: font_Size,
+                //                               font: ttf,
+                //                               color: Colors_pd,
+                //                             ),
+                //                           ),
+                //                         ),
+                //                       ),
+                //                     ),
+                //                     pw.Expanded(
+                //                       flex: 2,
+                //                       child: pw.Container(
+                //                         height: 25,
+                //                         decoration: const pw.BoxDecoration(
+                //                           color: PdfColors.white,
+                //                           border: pw.Border(
+                //                             bottom:
+                //                                 pw.BorderSide(color: PdfColors.grey300),
+                //                           ),
+                //                         ),
+                //                         child: pw.Align(
+                //                           alignment: pw.Alignment.centerRight,
+                //                           child: pw.Text(
+                //                             '${item.unit}',
+                //                             textAlign: pw.TextAlign.left,
+                //                             style: pw.TextStyle(
+                //                               fontSize: font_Size,
+                //                               font: ttf,
+                //                               color: Colors_pd,
+                //                             ),
+                //                           ),
+                //                         ),
+                //                       ),
+                //                     ),
+                //                   ],
+                //                 ),
+                //             ],
+                //           ),
               ],
             ),
           ),
@@ -1031,34 +1545,34 @@ class Pdfgen_Agreement3 {
             context: context,
             ////////////------------------->
             ///
-            Get_Value_NameShop_index: Get_Value_NameShop_index,
-            Get_Value_cid: Get_Value_cid,
-            verticalGroupValue: _verticalGroupValue,
-            Form_nameshop: Form_nameshop,
-            Form_typeshop: Form_typeshop,
-            Form_bussshop: Form_bussshop,
-            Form_bussscontact: Form_bussscontact,
-            Form_address: Form_address,
-            Form_tel: Form_tel,
-            Form_email: Form_email,
-            Form_tax: Form_tax,
-            Form_ln: Form_ln,
-            Form_zn: Form_zn,
-            Form_area: Form_area,
-            Form_qty: Form_qty,
-            Form_sdate: Form_sdate,
-            Form_ldate: Form_ldate,
-            Form_period: Form_period,
-            Form_rtname: Form_rtname,
-            quotxSelectModels: quotxSelectModels2,
-            TransModels: _TransModels,
-            renTal_name: renTal_name,
-            bill_addr: bill_addr,
-            bill_email: bill_email,
-            bill_tel: bill_tel,
-            bill_tax: bill_tax,
-            bill_name: bill_name,
-            newValuePDFimg: newValuePDFimg,
+            // Get_Value_NameShop_index: Get_Value_NameShop_index,
+            // Get_Value_cid: Get_Value_cid,
+            // verticalGroupValue: _verticalGroupValue,
+            // Form_nameshop: Form_nameshop,
+            // Form_typeshop: Form_typeshop,
+            // Form_bussshop: Form_bussshop,
+            // Form_bussscontact: Form_bussscontact,
+            // Form_address: Form_address,
+            // Form_tel: Form_tel,
+            // Form_email: Form_email,
+            // Form_tax: Form_tax,
+            // Form_ln: Form_ln,
+            // Form_zn: Form_zn,
+            // Form_area: Form_area,
+            // Form_qty: Form_qty,
+            // Form_sdate: Form_sdate,
+            // Form_ldate: Form_ldate,
+            // Form_period: Form_period,
+            // Form_rtname: Form_rtname,
+            // quotxSelectModels: quotxSelectModels2,
+            // TransModels: _TransModels,
+            // renTal_name: renTal_name,
+            // bill_addr: bill_addr,
+            // bill_email: bill_email,
+            // bill_tel: bill_tel,
+            // bill_tax: bill_tax,
+            // bill_name: bill_name,
+            // newValuePDFimg: newValuePDFimg,
           ),
         ));
   }

@@ -10,8 +10,10 @@ import 'package:http/http.dart' as http;
 import 'package:pdf/widgets.dart' as pw;
 
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../PeopleChao/Bills_.dart';
+import 'Preview_PDF/PreviewPdfgen_Bills_INV.dart';
 
 class Man_ChartReport_GeneratePDF {
   static void man_chartReport_GeneratePDF(
@@ -54,7 +56,7 @@ class Man_ChartReport_GeneratePDF {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
     renTal_name = preferences.getString('renTalName');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);

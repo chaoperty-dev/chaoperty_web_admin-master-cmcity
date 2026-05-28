@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../AdminScaffold/AdminScaffold.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetArea_Model.dart';
 import '../Model/GetContractx_Model.dart';
@@ -81,7 +82,7 @@ class _Move_AreaState extends State<Move_Area> {
         '${MyConstant().domain}/GC_tenantlook.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -137,7 +138,7 @@ class _Move_AreaState extends State<Move_Area> {
         '${MyConstant().domain}/GC_area.php?isAdd=true&ren=$ren&zone=$zone_contact';
     print(url);
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
 
@@ -1261,7 +1262,7 @@ class _Move_AreaState extends State<Move_Area> {
           '${MyConstant().domain}/move_area.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&move_area=$move_area&move_area_ln=$move_area_ln&move_area_ln_old=$move_area_ln_old&user=$user';
       print(url);
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         // print(result);
@@ -1282,7 +1283,7 @@ class _Move_AreaState extends State<Move_Area> {
         '${MyConstant().domain}/move_area_con.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&move_area=$move_area&move_area_ln=$move_area_ln&user=$user';
     // print(url);
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
       var result = json.decode(response.body);
       // print(result);
       if (result.toString() == 'true') {

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetFinnancetrans_Model.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../Model/GetUser_Model.dart';
@@ -139,7 +140,7 @@ class ManCredit_Note_PDF {
         '${MyConstant().domain}/GC_DataOnBillCredit_Note_PDF.php?isAdd=true&ren=$ren&ciddoc=$docnoinv';
     print('GC_Data_OnBill_PDF>>>> $url_1');
     try {
-      var response = await http.get(Uri.parse(url_1));
+      var response = await httpClient.get(Uri.parse(url_1));
       var result = json.decode(response.body);
 
       if (result.toString() != 'null') {
@@ -195,7 +196,7 @@ class ManCredit_Note_PDF {
     String url_paper_run =
         '${MyConstant().domain}/UP_Paper_Run.php?isAdd=true&ren=$ren&ciddoc=$docnoin&paper_run=${int.parse((paper_run == null) ? '0' : '$paper_run') + 1}';
     try {
-      var response = await http.get(Uri.parse(url_paper_run));
+      var response = await httpClient.get(Uri.parse(url_paper_run));
       var result = json.decode(response.body);
 
       if (result.toString() != 'null') {}
@@ -205,7 +206,7 @@ class ManCredit_Note_PDF {
     String url_usersell =
         '${MyConstant().domain}/GC_User_PDF.php?isAdd=true&serUser=$ser_user';
     try {
-      var response = await http.get(Uri.parse(url_usersell));
+      var response = await httpClient.get(Uri.parse(url_usersell));
       var result = json.decode(response.body);
 
       if (result.toString() != 'null') {
@@ -224,7 +225,7 @@ class ManCredit_Note_PDF {
         '${MyConstant().domain}/GC_bill_pay_amt.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&docnoin=$docnoin';
     print('BBBBBBBBBBBBBBBB>>>> $url');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
       var result = json.decode(response.body);
 
       ///  print('BBBBBBBBBBBBBBBB>>>> $result');
@@ -286,7 +287,7 @@ class ManCredit_Note_PDF {
         '${MyConstant().domain}/GC_CN_invoicePDF.php?isAdd=true&ren=$ren&docnotran=$docnoin&docnoin=$docnoinv';
     print(url2);
     try {
-      var response = await http.get(Uri.parse(url2));
+      var response = await httpClient.get(Uri.parse(url2));
 
       var result = json.decode(response.body);
 
@@ -340,7 +341,7 @@ class ManCredit_Note_PDF {
     String url_4 =
         '${MyConstant().domain}/GC_countmiter_PDF.php?isAdd=true&ren=$ren&ciddoc=$cid_&docnoin=$docnoin&type_doc=Receipt';
     try {
-      var response = await http.get(Uri.parse(url_4));
+      var response = await httpClient.get(Uri.parse(url_4));
 
       var result = json.decode(response.body);
       // print(result);

@@ -10,7 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../Man_PDF/Preview_PDF/Preview_Agreement.dart';
+import '../../Model/GetC_Quot_Select_Model.dart';
 import '../../PeopleChao/Rental_Information.dart';
+import '../../Style/ThaiBaht.dart';
 import '../../Style/loadAndCacheImage.dart';
 
 class Pdfgen_Agreement {
@@ -26,6 +29,7 @@ class Pdfgen_Agreement {
       Form_bussshop,
       Form_bussscontact,
       Form_address,
+      Form_areaaddrx,
       Form_tel,
       Form_email,
       Form_tax,
@@ -104,6 +108,68 @@ class Pdfgen_Agreement {
     //   Sumtotal = Sumtotal +
     //       (int.parse(quotxSelectModels[index].term!) *
     //           double.parse(quotxSelectModels[index].total!));
+    // ===== แสดงรายการทั้งหมดไม่แบ่งหน้า =====
+    int rowNo = 1;
+    quotxSelectModels = quotxSelectModels
+      ..sort((QuotxSelectModel a, QuotxSelectModel b) {
+        // เรียงตาม exptser ก่อน (น้อยไปมาก)
+        final exptserA = int.tryParse(a.exptser ?? '0') ?? 0;
+        final exptserB = int.tryParse(b.exptser ?? '0') ?? 0;
+        if (exptserA != exptserB) return exptserA.compareTo(exptserB);
+
+        // ถ้า exptser เท่ากัน ให้เรียงตามอักษร (ลบอักขระที่ไม่ใช่ตัวอักษรออก)
+        final nameA = (a.expname ?? '').replaceAll(RegExp(r'[^ก-๙a-zA-Z]'), '');
+        final nameB = (b.expname ?? '').replaceAll(RegExp(r'[^ก-๙a-zA-Z]'), '');
+        return nameA.compareTo(nameB);
+      });
+
+    // final tableData = [
+    // for (int index = 0; index < quotxSelectModels.length; index++)
+    //   total_ = total_ +
+    //       (int.parse((quotxSelectModels[index].total == null)
+    //               ? 0
+    //               : quotxSelectModels[index].term!) *
+    //           double.parse((quotxSelectModels[index].total == null)
+    //               ? 0.00
+    //               : quotxSelectModels[index].total!));
+    double total_ = 0.0;
+    for (int index = 0; index < quotxSelectModels.length; index++) {
+      // ถ้า amt_ty ไม่ว่างและ totals มีค่า ให้ใช้ totals
+      if (quotxSelectModels[index].amt_ty != null &&
+          quotxSelectModels[index].amt_ty.toString().isNotEmpty) {
+        total_ += double.tryParse(
+                quotxSelectModels[index].totals?.toString() ?? "0.00") ??
+            0.00;
+      } else {
+        total_ += (int.tryParse(quotxSelectModels[index].term ?? "0") ?? 0) *
+            (double.tryParse(quotxSelectModels[index].total ?? "0.00") ?? 0.00);
+      }
+    }
+
+    double total_1 = 0.0;
+    for (int index = 0; index < quotxSelectModels.length; index++) {
+      final model = quotxSelectModels[index];
+      final bool hasAmtTy = model.amt_ty != null && model.amt_ty!.isNotEmpty;
+
+      if (hasAmtTy) {
+        // ถ้ามี amt_ty ให้หาค่า unique และบวกเฉพาะค่าที่ไม่ซ้ำ
+        final List<String> rawAmtList = model.amt_ty!.split(',');
+        Set<double> uniqueValues = {};
+
+        for (final v in rawAmtList) {
+          final val = double.tryParse(v) ?? 0;
+          uniqueValues.add(val);
+        }
+
+        // บวกค่า unique ทั้งหมด
+        for (final uniqueVal in uniqueValues) {
+          total_1 += uniqueVal;
+        }
+      } else {
+        // ถ้าไม่มี amt_ty ใช้สูตรเดิม
+        total_1 += double.tryParse(model.total?.toString() ?? "0.0") ?? 0.0;
+      }
+    }
 
 ///////////////////////------------------------------------------------->
     pdf.addPage(
@@ -170,9 +236,9 @@ class Pdfgen_Agreement {
                 //         height: 72,
                 //         width: 70,
                 //       ),
-                pw.SizedBox(width: 1 * PdfPageFormat.mm),
+                pw.SizedBox(width: 4 * PdfPageFormat.mm),
                 pw.Container(
-                  width: 280,
+                  // width: 280,
                   child: pw.Column(
                     mainAxisSize: pw.MainAxisSize.min,
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -222,9 +288,10 @@ class Pdfgen_Agreement {
                           '[ $TitleType_Default_Receipt_Name ]',
                           maxLines: 1,
                           style: pw.TextStyle(
-                            fontSize: font_Size,
+                            fontSize: font_Size + 3,
                             font: ttf,
-                            color: PdfColors.grey400,
+                            color: PdfColors.black,
+                            fontWeight: pw.FontWeight.bold,
                           ),
                         ),
                       // pw.Text(
@@ -278,9 +345,12 @@ class Pdfgen_Agreement {
                 ),
               ],
             ),
-            pw.Divider(height: 2),
-            // pw.SizedBox(height: 1 * PdfPageFormat.mm),
-            pw.SizedBox(height: 2 * PdfPageFormat.mm),
+            // pw.Divider(height: 2),
+            // // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+            // pw.SizedBox(height: 2 * PdfPageFormat.mm),
+            pw.SizedBox(height: 1 * PdfPageFormat.mm),
+            pw.Divider(),
+            pw.SizedBox(height: 4 * PdfPageFormat.mm),
           ]);
         },
         build: (context) {
@@ -364,7 +434,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$bill_name",
+                        (bill_name.toString().isNotEmpty)
+                            ? "$bill_name"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -398,7 +470,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$bill_addr",
+                        (bill_addr.toString().isNotEmpty)
+                            ? "$bill_addr"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -450,7 +524,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_bussshop",
+                        (Form_bussshop.toString().isNotEmpty)
+                            ? "$Form_bussshop"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -484,7 +560,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_address",
+                        (Form_address.toString().isNotEmpty)
+                            ? "$Form_address"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -513,7 +591,7 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_tax",
+                        (Form_tax.toString().isNotEmpty) ? "$Form_tax" : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -547,7 +625,7 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_tel",
+                        (Form_tel.toString().isNotEmpty) ? "$Form_tel" : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -576,7 +654,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_email",
+                        (Form_email.toString().isNotEmpty)
+                            ? "$Form_email"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -638,7 +718,7 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_zn",
+                        (Form_zn.toString().isNotEmpty) ? "$Form_zn" : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -682,7 +762,7 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_ln",
+                        (Form_ln.toString().isNotEmpty) ? "$Form_ln" : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -720,7 +800,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_area",
+                        (Form_area.toString().isNotEmpty)
+                            ? "$Form_area"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -749,7 +831,7 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_qty",
+                        (Form_qty.toString().isNotEmpty) ? "$Form_qty" : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -792,7 +874,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$bill_addr",
+                        (Form_areaaddrx.toString().isNotEmpty)
+                            ? "$Form_areaaddrx"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -847,7 +931,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_period",
+                        (Form_period.toString().isNotEmpty)
+                            ? "$Form_period"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -891,7 +977,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_sdate",
+                        (Form_sdate.toString().isNotEmpty)
+                            ? "$Form_sdate"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -920,7 +1008,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_ldate",
+                        (Form_ldate.toString().isNotEmpty)
+                            ? "$Form_ldate"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -955,7 +1045,9 @@ class Pdfgen_Agreement {
                         width: 0.1, // Underline thickness
                       ))),
                       child: pw.Text(
-                        "$Form_typeshop",
+                        (Form_typeshop.toString().isNotEmpty)
+                            ? "$Form_typeshop"
+                            : " - ",
                         textAlign: pw.TextAlign.center,
                         style: pw.TextStyle(
                           color: Colors_pd,
@@ -1021,9 +1113,9 @@ class Pdfgen_Agreement {
 
             pw.Container(
               decoration: const pw.BoxDecoration(
-                color: PdfColors.green100,
+                // color: PdfColors.green100,
                 border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.green900),
+                  bottom: pw.BorderSide(color: PdfColors.black),
                 ),
               ),
               child: pw.Row(
@@ -1031,17 +1123,16 @@ class Pdfgen_Agreement {
                   pw.Expanded(
                     flex: 1,
                     child: pw.Container(
-                      height: 25,
                       child: pw.Center(
                         child: pw.Text(
-                          'งวด',
-                          maxLines: 1,
+                          'ลำดับ',
                           textAlign: pw.TextAlign.left,
                           style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.green900),
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
                         ),
                       ),
                     ),
@@ -1049,35 +1140,62 @@ class Pdfgen_Agreement {
                   pw.Expanded(
                     flex: 2,
                     child: pw.Container(
-                      height: 25,
-                      child: pw.Center(
-                        child: pw.Text(
-                          'วันที่',
-                          textAlign: pw.TextAlign.center,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.green900),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      height: 25,
+                      // decoration: const pw.BoxDecoration(
+                      //   color: PdfColors.grey100,
+                      //   border: const pw.Border(
+                      //     bottom: pw.BorderSide(color: PdfColors.grey300),
+                      //   ),
+                      // ),
                       child: pw.Center(
                         child: pw.Text(
                           'รายการ',
-                          textAlign: pw.TextAlign.center,
-                          maxLines: 1,
+                          textAlign: pw.TextAlign.left,
                           style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.green900),
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  pw.Expanded(
+                    flex: 2,
+                    child: pw.Container(
+                      child: pw.Center(
+                        child: pw.Text(
+                          'วันที่',
+                          textAlign: pw.TextAlign.left,
+                          style: pw.TextStyle(
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  pw.Expanded(
+                    flex: 2,
+                    child: pw.Container(
+                      // decoration: const pw.BoxDecoration(
+                      //   color: PdfColors.grey100,
+                      //   border: const pw.Border(
+                      //     bottom: pw.BorderSide(color: PdfColors.grey300),
+                      //   ),
+                      // ),
+                      child: pw.Center(
+                        child: pw.Text(
+                          'ความถี่ / จำนวนงวด',
+                          textAlign: pw.TextAlign.left,
+                          style: pw.TextStyle(
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
                         ),
                       ),
                     ),
@@ -1085,17 +1203,45 @@ class Pdfgen_Agreement {
                   pw.Expanded(
                     flex: 1,
                     child: pw.Container(
-                      height: 25,
+                      // decoration: const pw.BoxDecoration(
+                      //   color: PdfColors.white,
+                      //   border: const pw.Border(
+                      //     bottom: pw.BorderSide(color: PdfColors.grey300),
+                      //   ),
+                      // ),
+                      child: pw.Center(
+                        child: pw.Text(
+                          'หน่วยละ',
+                          textAlign: pw.TextAlign.left,
+                          style: pw.TextStyle(
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  pw.Expanded(
+                    flex: 1,
+                    child: pw.Container(
+                      // decoration: const pw.BoxDecoration(
+                      //   color: PdfColors.white,
+                      //   border: const pw.Border(
+                      //     bottom: pw.BorderSide(color: PdfColors.grey300),
+                      //   ),
+                      // ),
                       child: pw.Center(
                         child: pw.Text(
                           'ยอด/งวด',
-                          textAlign: pw.TextAlign.center,
-                          maxLines: 1,
+                          textAlign: pw.TextAlign.left,
                           style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.green900),
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
                         ),
                       ),
                     ),
@@ -1103,17 +1249,22 @@ class Pdfgen_Agreement {
                   pw.Expanded(
                     flex: 1,
                     child: pw.Container(
-                      height: 25,
+                      // decoration: const pw.BoxDecoration(
+                      //   color: PdfColors.grey100,
+                      //   border: const pw.Border(
+                      //     bottom: pw.BorderSide(color: PdfColors.grey300),
+                      //   ),
+                      // ),
                       child: pw.Center(
                         child: pw.Text(
-                          'ยอด',
-                          textAlign: pw.TextAlign.center,
-                          maxLines: 1,
+                          'ยอดรวม',
+                          textAlign: pw.TextAlign.left,
                           style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.green900),
+                            fontSize: font_Size,
+                            font: ttf,
+                            fontWeight: pw.FontWeight.bold,
+                            color: Colors_pd,
+                          ),
                         ),
                       ),
                     ),
@@ -1121,107 +1272,720 @@ class Pdfgen_Agreement {
                 ],
               ),
             ),
-            for (int index = 0; index < tableData00.length; index++)
-              pw.Row(
-                children: [
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      height: 25,
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          '${tableData00[index][0]}',
-                          maxLines: 2,
-                          textAlign: pw.TextAlign.left,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              font: ttf,
-                              color: PdfColors.grey800),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Container(
-                      height: 25,
-                      child: pw.Align(
-                        alignment: pw.Alignment.center,
-                        child: pw.Text(
-                          '${tableData00[index][1]}',
-                          maxLines: 2,
-                          textAlign: pw.TextAlign.center,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              font: ttf,
-                              color: PdfColors.grey800),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      height: 25,
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          '${tableData00[index][2]}',
-                          maxLines: 2,
-                          textAlign: pw.TextAlign.left,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              font: ttf,
-                              color: PdfColors.grey800),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      height: 25,
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          '${tableData00[index][3]}',
-                          maxLines: 2,
-                          textAlign: pw.TextAlign.right,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              font: ttf,
-                              color: PdfColors.grey800),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      height: 25,
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          '${tableData00[index][4]}',
-                          maxLines: 2,
-                          textAlign: pw.TextAlign.right,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              font: ttf,
-                              color: PdfColors.grey800),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
             pw.Container(
-              height: 5,
+              height: 1,
+            ),
+            // for (int index = 0; index < quotxSelectModels.length; index++)
+            //   pw.Row(
+            //     children: [
+            //       pw.Expanded(
+            //         flex: 1,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.white,
+            //             border: const pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               '${index + 1}',
+            //               textAlign: pw.TextAlign.left,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 2,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.grey100,
+            //             border: pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               '${quotxSelectModels[index].unit} / ${quotxSelectModels[index].term} (งวด)',
+            //               textAlign: pw.TextAlign.left,
+            //               maxLines: 2,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 2,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.white,
+            //             border: const pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               '${quotxSelectModels[index].expname}',
+            //               textAlign: pw.TextAlign.left,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 2,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.grey100,
+            //             border: const pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               (quotxSelectModels[index].sdate == null ||
+            //                       quotxSelectModels[index].ldate == null)
+            //                   ? '00-00-0000'
+            //                   : '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels[index].sdate!} 00:00:00'))} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels[index].ldate!} 00:00:00'))}',
+            //               textAlign: pw.TextAlign.left,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 1,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.white,
+            //             border: const pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               (quotxSelectModels[index].qty == null)
+            //                   ? '0.00'
+            //                   : '${nFormat.format(double.parse(quotxSelectModels[index].qty!))}',
+            //               textAlign: pw.TextAlign.left,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 1,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.grey100,
+            //             border: const pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               (quotxSelectModels[index].total == null)
+            //                   ? '0.00'
+            //                   : '${nFormat.format(double.parse(quotxSelectModels[index].total!))}',
+            //               textAlign: pw.TextAlign.left,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //       pw.Expanded(
+            //         flex: 1,
+            //         child: pw.Container(
+            //           height: 25,
+            //           decoration: const pw.BoxDecoration(
+            //             color: PdfColors.white,
+            //             border: const pw.Border(
+            //               bottom: pw.BorderSide(color: PdfColors.grey300),
+            //             ),
+            //           ),
+            //           child: pw.Center(
+            //             child: pw.Text(
+            //               (quotxSelectModels[index].total == null)
+            //                   ? '0.00'
+            //                   : '${nFormat.format(int.parse(quotxSelectModels[index].term!) * double.parse(quotxSelectModels[index].total!))}',
+            //               textAlign: pw.TextAlign.right,
+            //               style: pw.TextStyle(
+            //                 fontSize: font_Size,
+            //                 font: ttf,
+            //                 // fontWeight: pw.FontWeight.bold,
+            //                 color: Colors_pd,
+            //               ),
+            //             ),
+            //           ),
+            //         ),
+            //       ),
+            //     ],
+            //   ),
+
+            for (int index = 0; index < quotxSelectModels.length; index++) ...[
+              () {
+                final model = quotxSelectModels[index];
+
+                final bool hasAmtTy =
+                    model.amt_ty != null && model.amt_ty!.isNotEmpty;
+
+                final List<String> rawAmtList =
+                    hasAmtTy ? model.amt_ty!.split(',') : [];
+
+                final List<double> groupedAmt = [];
+                final List<int> groupedCount = [];
+
+                if (hasAmtTy) {
+                  double? current;
+                  double sum = 0;
+                  int count = 0;
+
+                  for (final v in rawAmtList) {
+                    final val = double.tryParse(v) ?? 0;
+
+                    if (current == null) {
+                      current = val;
+                      sum = val;
+                      count = 1;
+                    } else if (val == current) {
+                      sum += val;
+                      count++;
+                    } else {
+                      groupedAmt.add(sum);
+                      groupedCount.add(count);
+                      current = val;
+                      sum = val;
+                      count = 1;
+                    }
+                  }
+
+                  if (current != null) {
+                    groupedAmt.add(sum);
+                    groupedCount.add(count);
+                  }
+                }
+
+                if (!hasAmtTy) {
+                  final currentRowNo = rowNo;
+                  rowNo++;
+                  return pw.Row(
+                    children: [
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.white,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              '$currentRowNo',
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.grey100,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              '${model.expname}',
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.white,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              (model.sdate == null || model.ldate == null)
+                                  ? '00-00-0000'
+                                  : '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${model.sdate} 00:00:00'))}'
+                                      ' - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${model.ldate} 00:00:00'))}',
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 2,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.grey100,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              '${model.unit} / ${model.term} (งวด)',
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.white,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              model.qty == null
+                                  ? '0.00'
+                                  : nFormat.format(double.parse(model.qty)),
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.grey100,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Center(
+                            child: pw.Text(
+                              model.total == null
+                                  ? '0.00'
+                                  : nFormat.format(double.parse(model.total)),
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      pw.Expanded(
+                        flex: 1,
+                        child: pw.Container(
+                          height: 25,
+                          decoration: const pw.BoxDecoration(
+                            color: PdfColors.white,
+                            border: pw.Border(
+                              bottom: pw.BorderSide(color: PdfColors.grey300),
+                            ),
+                          ),
+                          child: pw.Align(
+                            alignment: pw.Alignment.centerRight,
+                            child: pw.Text(
+                              model.total == null || model.term == null
+                                  ? '0.00'
+                                  : nFormat.format(int.parse(model.term) *
+                                      double.parse(model.total)),
+                              style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: Colors_pd,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+
+                int termStart = 1;
+                DateTime currentStartDate =
+                    DateTime.parse('${model.sdate} 00:00:00');
+
+                return pw.Column(
+                  children: List.generate(groupedAmt.length, (i) {
+                    final double amt = groupedAmt[i];
+                    final int count = groupedCount[i];
+                    final int termEnd = termStart + count - 1;
+
+                    final String termText = termStart == termEnd
+                        ? '$termStart'
+                        : '$termStart-$termEnd';
+
+                    termStart = termEnd + 1;
+
+                    DateTime dateStart = currentStartDate;
+                    DateTime dateEnd = dateStart;
+
+                    final unitserValue =
+                        int.tryParse(model.unitser ?? '0') ?? 0;
+                    final bool isLastGroup = (i == groupedAmt.length - 1);
+
+                    if (isLastGroup) {
+                      dateEnd = DateTime.parse('${model.ldate} 00:00:00');
+                    } else {
+                      if (unitserValue == 1) {
+                        dateEnd = DateTime(dateStart.year + count,
+                                dateStart.month, dateStart.day)
+                            .subtract(Duration(days: 1));
+                      } else if (unitserValue == 2) {
+                        int newMonth = dateStart.month + count;
+                        int newYear = dateStart.year;
+                        while (newMonth > 12) {
+                          newMonth -= 12;
+                          newYear++;
+                        }
+                        dateEnd = DateTime(newYear, newMonth, dateStart.day)
+                            .subtract(Duration(days: 1));
+                      } else if (unitserValue == 3) {
+                        dateEnd = dateStart.add(Duration(days: 7 * count - 1));
+                      } else if (unitserValue == 4) {
+                        dateEnd = dateStart.add(Duration(days: count - 1));
+                      }
+                    }
+
+                    currentStartDate = dateEnd.add(Duration(days: 1));
+
+                    final currentRowNo = rowNo;
+                    rowNo++;
+
+                    return pw.Row(
+                      children: [
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.white,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                '$currentRowNo',
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 2,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.grey100,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                '${model.expname}',
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 2,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.white,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                '${DateFormat('dd-MM-yyyy').format(dateStart)}'
+                                ' - ${DateFormat('dd-MM-yyyy').format(dateEnd)}',
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 2,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.grey100,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                '${model.unit} / $termText (งวด)',
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.white,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                nFormat.format(double.parse(model.qty ?? '0')),
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.grey100,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Center(
+                              child: pw.Text(
+                                nFormat.format(amt / count),
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        pw.Expanded(
+                          flex: 1,
+                          child: pw.Container(
+                            height: 25,
+                            decoration: const pw.BoxDecoration(
+                              color: PdfColors.white,
+                              border: pw.Border(
+                                bottom: pw.BorderSide(color: PdfColors.grey300),
+                              ),
+                            ),
+                            child: pw.Align(
+                              alignment: pw.Alignment.centerRight,
+                              child: pw.Text(
+                                nFormat.format(amt),
+                                style: pw.TextStyle(
+                                  fontSize: font_Size,
+                                  font: ttf,
+                                  color: Colors_pd,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  }),
+                );
+              }(),
+            ],
+            pw.Container(
+              // height: 5,
               decoration: const pw.BoxDecoration(
                 // color: PdfColors.green100,
                 border: pw.Border(
-                  bottom: pw.BorderSide(color: PdfColors.green900),
+                  top: pw.BorderSide(color: PdfColors.black, width: 1),
+                ),
+              ),
+            ),
+            pw.Container(
+              height: 25,
+              // decoration: const pw.BoxDecoration(
+              //   border: pw.Border(
+              //     top: pw.BorderSide(color: PdfColors.black),
+              //   ),
+              // ),
+              alignment: pw.Alignment.centerRight,
+              child: pw.Center(
+                child: pw.Row(
+                  children: [
+                    pw.SizedBox(width: 2 * PdfPageFormat.mm),
+                    pw.Expanded(
+                      flex: 5,
+                      child: pw.Text(
+                        (total_1 == null)
+                            ? '-'
+                            : 'ตัวอักษร (~${convertToThaiBaht(total_1)}~)',
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          fontWeight: pw.FontWeight.bold,
+                          font: ttf,
+                          fontStyle: pw.FontStyle.italic,
+                          color: Colors_pd,
+                        ),
+                      ),
+                    ),
+                    pw.Expanded(
+                      flex: 2,
+                      child: pw.Text(
+                        'ยอดรวมสุทธิ',
+                        textAlign: pw.TextAlign.center,
+                        style: pw.TextStyle(
+                          fontSize: font_Size,
+                          fontWeight: pw.FontWeight.bold,
+                          font: ttf,
+                          fontStyle: pw.FontStyle.italic,
+                          color: Colors_pd,
+                        ),
+                      ),
+                    ),
+                    pw.Expanded(
+                      flex: 3,
+                      child: pw.Column(
+                        mainAxisAlignment: pw.MainAxisAlignment.center,
+                        crossAxisAlignment: pw.CrossAxisAlignment.start,
+                        children: [
+                          pw.Row(
+                            children: [
+                              pw.Expanded(flex: 1, child: pw.SizedBox()),
+                              pw.Expanded(
+                                flex: 1,
+                                child: pw.Text(
+                                  (total_1 == null)
+                                      ? '0.00'
+                                      : '${nFormat.format(total_1)}',
+                                  textAlign: pw.TextAlign.center,
+                                  style: pw.TextStyle(
+                                    fontWeight: pw.FontWeight.bold,
+                                    font: ttf,
+                                    fontSize: font_Size,
+                                    color: Colors_pd,
+                                  ),
+                                ),
+                              ),
+                              pw.Expanded(
+                                flex: 1,
+                                child: pw.Text(
+                                  (total_ == null)
+                                      ? '0.00'
+                                      : '${nFormat.format(total_)}',
+                                  textAlign: pw.TextAlign.right,
+                                  style: pw.TextStyle(
+                                    fontWeight: pw.FontWeight.bold,
+                                    font: ttf,
+                                    fontSize: font_Size,
+                                    color: Colors_pd,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -1517,9 +2281,9 @@ class Pdfgen_Agreement {
               //         height: 72,
               //         width: 70,
               //       ),
-              pw.SizedBox(width: 1 * PdfPageFormat.mm),
+              pw.SizedBox(width: 4 * PdfPageFormat.mm),
               pw.Container(
-                width: 280,
+                // width: 280,
                 child: pw.Column(
                   mainAxisSize: pw.MainAxisSize.min,
                   crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -1568,9 +2332,10 @@ class Pdfgen_Agreement {
                         '[ $TitleType_Default_Receipt_Name ]',
                         maxLines: 1,
                         style: pw.TextStyle(
-                          fontSize: font_Size,
+                          fontSize: font_Size + 3,
                           font: ttf,
-                          color: PdfColors.grey400,
+                          color: PdfColors.black,
+                          fontWeight: pw.FontWeight.bold,
                         ),
                       ),
                     // pw.Text(
@@ -1624,14 +2389,17 @@ class Pdfgen_Agreement {
               ),
             ],
           ),
-          pw.Divider(height: 2),
-          // pw.SizedBox(height: 1 * PdfPageFormat.mm),
-          pw.SizedBox(height: 2 * PdfPageFormat.mm),
+          // pw.Divider(height: 2),
+          // // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+          // pw.SizedBox(height: 2 * PdfPageFormat.mm),
+          pw.SizedBox(height: 1 * PdfPageFormat.mm),
+          pw.Divider(),
+          pw.SizedBox(height: 4 * PdfPageFormat.mm),
         ]);
       },
       build: (context) {
         return [
-          pw.SizedBox(height: 30 * PdfPageFormat.mm),
+          pw.SizedBox(height: 2 * PdfPageFormat.mm),
           pw.Text(
             '        สัญญานี้ทำขึ้น 2 ฉบับ มีข้อความตรงกัน คู่สัญญาทั้งสองฝ่ายได้อ่าน และเข้าข้อความในสัญญาฉบับนี้โดยตลอดแล้ว เห็นว่าถูกต้องและตรงตามความประสงค์แล้ว จึงได้ลงลายมือชื่อไว้เป็นหลักฐานต่อหน้าพยาน และเก็บสัญญาไว้ฝ่ายละฉบับ',
             textAlign: pw.TextAlign.center,
@@ -1663,7 +2431,7 @@ class Pdfgen_Agreement {
                       (FormName1_choice == null ||
                               FormName1_choice.toString() == '')
                           ? '(___________________________) '
-                          : '( $FormName1_choice ) ',
+                          : '( $FormName1_choice ) ', // bill_name
                       textAlign: pw.TextAlign.justify,
                       style: pw.TextStyle(
                         color: Colors_pd,
@@ -2019,36 +2787,37 @@ class Pdfgen_Agreement {
           builder: (context) => RentalInforman_Agreement(
             doc: pdf,
             context: context,
+            Get_Value_cid: Get_Value_cid,
             ////////////------------------->
             ///
-            Get_Value_NameShop_index: Get_Value_NameShop_index,
-            Get_Value_cid: Get_Value_cid,
-            verticalGroupValue: _verticalGroupValue,
-            Form_nameshop: Form_nameshop,
-            Form_typeshop: Form_typeshop,
-            Form_bussshop: Form_bussshop,
-            Form_bussscontact: Form_bussscontact,
-            Form_address: Form_address,
-            Form_tel: Form_tel,
-            Form_email: Form_email,
-            Form_tax: Form_tax,
-            Form_ln: Form_ln,
-            Form_zn: Form_zn,
-            Form_area: Form_area,
-            Form_qty: Form_qty,
-            Form_sdate: Form_sdate,
-            Form_ldate: Form_ldate,
-            Form_period: Form_period,
-            Form_rtname: Form_rtname,
-            quotxSelectModels: quotxSelectModels,
-            TransModels: _TransModels,
-            renTal_name: renTal_name,
-            bill_addr: bill_addr,
-            bill_email: bill_email,
-            bill_tel: bill_tel,
-            bill_tax: bill_tax,
-            bill_name: bill_name,
-            newValuePDFimg: newValuePDFimg,
+            // Get_Value_NameShop_index: Get_Value_NameShop_index,
+            // Get_Value_cid: Get_Value_cid,
+            // verticalGroupValue: _verticalGroupValue,
+            // Form_nameshop: Form_nameshop,
+            // Form_typeshop: Form_typeshop,
+            // Form_bussshop: Form_bussshop,
+            // Form_bussscontact: Form_bussscontact,
+            // Form_address: Form_address,
+            // Form_tel: Form_tel,
+            // Form_email: Form_email,
+            // Form_tax: Form_tax,
+            // Form_ln: Form_ln,
+            // Form_zn: Form_zn,
+            // Form_area: Form_area,
+            // Form_qty: Form_qty,
+            // Form_sdate: Form_sdate,
+            // Form_ldate: Form_ldate,
+            // Form_period: Form_period,
+            // Form_rtname: Form_rtname,
+            // quotxSelectModels: quotxSelectModels,
+            // TransModels: _TransModels,
+            // renTal_name: renTal_name,
+            // bill_addr: bill_addr,
+            // bill_email: bill_email,
+            // bill_tel: bill_tel,
+            // bill_tax: bill_tax,
+            // bill_name: bill_name,
+            // newValuePDFimg: newValuePDFimg,
           ),
         ));
   }

@@ -487,12 +487,12 @@ class _Account_OverdueState extends State<Account_Overdue> {
             7)
         ? (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.84
-            : 1200
+            : 1400
         : (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.84 +
                 ((ac2.where((item) => item["st"] == '1').toList().length - 7) *
                     30)
-            : 1200 +
+            : 1400 +
                 ((ac2.where((item) => item["st"] == '1').toList().length - 7) *
                     30);
     // For the first round, use the extracted data as is, no need to sort.

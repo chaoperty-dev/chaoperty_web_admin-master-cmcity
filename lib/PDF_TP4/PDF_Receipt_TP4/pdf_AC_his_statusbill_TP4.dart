@@ -11,6 +11,8 @@ import 'package:printing/printing.dart';
 
 import '../../CRC_16_Prompay/generate_qrcode.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/PreviewPdfgen_Billsplay.dart';
+import '../../Model/trans_re_bill_history_model.dart';
 import '../../PeopleChao/Pays_.dart';
 import '../../Style/File_s.dart';
 import '../../Style/ThaiBaht.dart';
@@ -20,6 +22,7 @@ class Pdfgen_his_statusbill_TP4 {
 //////////---------------------------------------------------->(ใบเสร็จรับเงิน/ใบกำกับภาษี)   ใช้  //
 
   static void exportPDF_statusbill_TP4(
+      List<TransReBillHistoryModel> TransReBillHistory,
       Cust_no,
       cid_s,
       Zone_s,
@@ -167,6 +170,108 @@ class Pdfgen_his_statusbill_TP4 {
     });
 ///// Online Standard QR
 //////////---------------------------------->
+
+    /// ///---------------------> Table header columns (หัวคอลัมน์ของตาราง)
+    final headerColumns = [
+      {
+        'label': 'ลำดับ',
+        'flex': 0,
+        'align': pw.Alignment.center,
+        'width': 25.0
+      },
+      {'label': 'กำหนดชำระ', 'flex': 1, 'align': pw.Alignment.centerLeft},
+      {'label': 'รายการ', 'flex': 4, 'align': pw.Alignment.centerLeft},
+      {'label': 'จำนวน', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'หน่วย', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'VAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'WHT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'VAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'WHT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      // {'label': 'ก่อนVAT', 'flex': 2, 'align': pw.Alignment.centerRight},
+      {'label': 'ก่อนVAT', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'ส่วนลด', 'flex': 1, 'align': pw.Alignment.centerRight},
+      {'label': 'ยอดสุทธิ', 'flex': 2, 'align': pw.Alignment.centerRight},
+    ];
+///////------------------------------->
+    double getTotalByField(
+      List<TransReBillHistoryModel> trans,
+      String? Function(TransReBillHistoryModel item) getter,
+    ) {
+      return trans.fold(0.0, (sum, item) {
+        final value = double.tryParse(getter(item) ?? '0.00') ?? 0.00;
+        return sum + value;
+      });
+    }
+
+///////------------------------------->
+
+    final totalAmt = getTotalByField(
+        _TransReBillHistoryModels, (e) => e.amt.toString() ?? '0');
+    final totalPvat = getTotalByField(
+        _TransReBillHistoryModels, (e) => e.pvat.toString() ?? '0');
+    final totalVat = getTotalByField(
+        _TransReBillHistoryModels, (e) => e.vat.toString() ?? '0');
+    final totalWht = getTotalByField(
+        _TransReBillHistoryModels, (e) => e.wht.toString() ?? '0');
+    final totalLine = getTotalByField(
+        _TransReBillHistoryModels, (e) => e.total.toString() ?? '0');
+
+    final totalDis = double.tryParse(sum_disamt.toString() ?? '0.00') ?? 0.00;
+    final totalFee = double.tryParse(sum_fee.toString() ?? '0.00') ?? 0.00;
+    final totalMatjum =
+        double.tryParse(dis_sum_Matjum.toString() ?? '0.00') ?? 0.00;
+    final totalPakan =
+        double.tryParse(dis_sum_Pakan.toString() ?? '0.00') ?? 0.00;
+
+    final totalBill =
+        ((totalLine + totalFee) - totalDis) - (totalMatjum + totalPakan);
+
+    ///////------------------------------->
+
+    String getFormattedText(String? data) {
+      final value =
+          (data == null) ? 0.00 : double.tryParse(data ?? '0.00') ?? 0.00;
+      return nFormat.format(value);
+    }
+
+    bool isPositive(String? value) {
+      return (double.tryParse(value ?? '0.00') ?? 0.00) > 0;
+    }
+
+    pw.Widget buildCell({
+      required String text,
+      int flex = 1,
+      double padding = 2.0,
+      pw.Alignment alignment = pw.Alignment.centerRight,
+      pw.TextAlign textAlign = pw.TextAlign.right,
+    }) {
+      return pw.Expanded(
+        flex: flex,
+        child: pw.Container(
+          decoration: const pw.BoxDecoration(
+            color: PdfColors.white,
+            border: pw.Border(
+              left: pw.BorderSide(color: PdfColors.grey600),
+              right: pw.BorderSide(color: PdfColors.grey600),
+            ),
+          ),
+          padding: pw.EdgeInsets.all(padding),
+          child: pw.Align(
+            alignment: alignment,
+            child: pw.Text(
+              text,
+              maxLines: 2,
+              textAlign: textAlign,
+              style: pw.TextStyle(
+                fontSize: font_Size,
+                font: ttf,
+                color: PdfColors.grey800,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     pdf.addPage(
       pw.MultiPage(
@@ -698,1650 +803,191 @@ class Pdfgen_his_statusbill_TP4 {
             ),
             pw.SizedBox(height: 2 * PdfPageFormat.mm),
 
-            // pw.Container(
-            //   decoration: const pw.BoxDecoration(
-            //     // color: PdfColors.green100,
-            //     border: pw.Border(
-            //       top: pw.BorderSide(color: PdfColors.grey600),
-            //       bottom: pw.BorderSide(color: PdfColors.grey600),
-            //     ),
-            //   ),
-            //   child: pw.Row(
-            //     children: [
-            //       pw.Container(
-            //         decoration: const pw.BoxDecoration(
-            //           // color: PdfColors.green100,
-            //           border: pw.Border(
-            //             left: pw.BorderSide(color: PdfColors.grey600),
-            //           ),
-            //         ),
-            //         width: 30,
-            //         height: 20,
-            //         padding: const pw.EdgeInsets.all(2.0),
-            //         child: pw.Align(
-            //           alignment: pw.Alignment.centerLeft,
-            //           child: pw.Text(
-            //             'ลำดับ',
-            //             maxLines: 1,
-            //             textAlign: pw.TextAlign.left,
-            //             style: pw.TextStyle(
-            //                 fontSize: font_Size,
-            //                 fontWeight: pw.FontWeight.bold,
-            //                 font: ttf,
-            //                 color: PdfColors.black),
-            //           ),
-            //         ),
-            //       ),
-            //       pw.Expanded(
-            //         flex: 2,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerLeft,
-            //             child: pw.Text(
-            //               'รหัสสินค้า',
-            //               textAlign: pw.TextAlign.left,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //       pw.Expanded(
-            //         flex: 4,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerLeft,
-            //             child: pw.Text(
-            //               'รายการ',
-            //               textAlign: pw.TextAlign.left,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //       // pw.Expanded(
-            //       //   flex: 2,
-            //       //   child: pw.Container(
-            //       //     decoration: const pw.BoxDecoration(
-            //       //       // color: PdfColors.green100,
-            //       //       border: pw.Border(
-            //       //         left: pw.BorderSide(color: PdfColors.grey600),
-            //       //       ),
-            //       //     ),
-            //       //     height: 20,
-            //       //     padding: const pw.EdgeInsets.all(2.0),
-            //       //     child: pw.Align(
-            //       //       alignment: pw.Alignment.centerRight,
-            //       //       child: pw.Text(
-            //       //         'จำนวน',
-            //       //         textAlign: pw.TextAlign.left,
-            //       //         maxLines: 1,
-            //       //         style: pw.TextStyle(
-            //       //             fontSize: font_Size,
-            //       //             fontWeight: pw.FontWeight.bold,
-            //       //             font: ttf,
-            //       //             color: PdfColors.black),
-            //       //       ),
-            //       //     ),
-            //       //   ),
-            //       // ),
-            //       // pw.Expanded(
-            //       //   flex: 2,
-            //       //   child: pw.Container(
-            //       //     decoration: const pw.BoxDecoration(
-            //       //       // color: PdfColors.green100,
-            //       //       border: pw.Border(
-            //       //         left: pw.BorderSide(color: PdfColors.grey600),
-            //       //       ),
-            //       //     ),
-            //       //     height: 20,
-            //       //     padding: const pw.EdgeInsets.all(2.0),
-            //       //     child: pw.Align(
-            //       //       alignment: pw.Alignment.centerRight,
-            //       //       child: pw.Text(
-            //       //         'หน่วย',
-            //       //         textAlign: pw.TextAlign.left,
-            //       //         maxLines: 1,
-            //       //         style: pw.TextStyle(
-            //       //             fontSize: font_Size,
-            //       //             fontWeight: pw.FontWeight.bold,
-            //       //             font: ttf,
-            //       //             color: PdfColors.black),
-            //       //       ),
-            //       //     ),
-            //       //   ),
-            //       // ),
-            //       pw.Expanded(
-            //         flex: 1,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerRight,
-            //             child: pw.Text(
-            //               'VAT',
-            //               textAlign: pw.TextAlign.left,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //       pw.Expanded(
-            //         flex: 1,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerRight,
-            //             child: pw.Text(
-            //               'WHT',
-            //               textAlign: pw.TextAlign.left,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //       pw.Expanded(
-            //         flex: 1,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerRight,
-            //             child: pw.Text(
-            //               'ก่อนVAT',
-            //               textAlign: pw.TextAlign.right,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //       pw.Expanded(
-            //         flex: 1,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerRight,
-            //             child: pw.Text(
-            //               'ส่วนลด',
-            //               textAlign: pw.TextAlign.right,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //       pw.Expanded(
-            //         flex: 1,
-            //         child: pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             // color: PdfColors.green100,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //               right: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           height: 20,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerRight,
-            //             child: pw.Text(
-            //               'ยอดสุทธิ',
-            //               textAlign: pw.TextAlign.right,
-            //               maxLines: 1,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   fontWeight: pw.FontWeight.bold,
-            //                   font: ttf,
-            //                   color: PdfColors.black),
-            //             ),
-            //           ),
-            //         ),
-            //       ),
-            //     ],
-            //   ),
-            // ),
+            //////////////---------------------------------->
+            pw.Container(
+                decoration: const pw.BoxDecoration(
+                  // color: PdfColors.green100,
+                  border: pw.Border(
+                    top: pw.BorderSide(color: PdfColors.grey600),
+                    bottom: pw.BorderSide(color: PdfColors.grey600),
+                  ),
+                ),
+                child: pw.Row(
+                  children: headerColumns.map((col) {
+                    final label = col['label'] as String;
+                    final flex = col['flex'] as int;
+                    final align = col['align'] as pw.Alignment;
+                    final width = col['width'] as double?;
+
+                    final container = pw.Container(
+                      decoration: pw.BoxDecoration(
+                        border: pw.Border(
+                          left: (label == 'ยอดสุทธิ')
+                              ? pw.BorderSide.none
+                              : const pw.BorderSide(color: PdfColors.grey600),
+                          right: const pw.BorderSide(color: PdfColors.grey600),
+                        ),
+                      ),
+                      height: 20,
+                      padding: const pw.EdgeInsets.all(2.0),
+                      child: pw.Align(
+                        alignment: align,
+                        child: pw.Text(
+                          label,
+                          maxLines: 1,
+                          textAlign: (align == pw.Alignment.centerRight)
+                              ? pw.TextAlign.right
+                              : pw.TextAlign.left,
+                          style: pw.TextStyle(
+                            fontSize: font_Size,
+                            fontWeight: pw.FontWeight.bold,
+                            font: ttf,
+                            color: PdfColors.black,
+                          ),
+                        ),
+                      ),
+                    );
+
+                    if (width != null && flex == 0) {
+                      return pw.Container(
+                        width: width,
+                        height: 20,
+                        decoration: const pw.BoxDecoration(
+                          border: pw.Border(
+                            left: pw.BorderSide(color: PdfColors.grey600),
+                          ),
+                        ),
+                        padding: const pw.EdgeInsets.all(2.0),
+                        child: container.child,
+                      );
+                    }
+
+                    return pw.Expanded(flex: flex, child: container);
+                  }).toList(),
+                )),
+
+            pw.Container(
+              decoration: const pw.BoxDecoration(
+                border: pw.Border(
+                  bottom: pw.BorderSide(color: PdfColors.grey600),
+                ),
+              ),
+            ),
+
+            pw.Column(
+              children: List.generate(TransReBillHistory.length, (index) {
+                final TransReBill = TransReBillHistory[index];
+
+                return pw.Container(
+                  decoration: const pw.BoxDecoration(
+                    // color: PdfColors.green100,
+                    border: pw.Border(
+                      // top: pw.BorderSide(color: PdfColors.grey600),
+                      bottom: pw.BorderSide(color: PdfColors.grey600),
+                    ),
+                  ),
+                  child: pw.Row(
+                    children: [
+                      pw.Container(
+                        decoration: const pw.BoxDecoration(
+                          color: PdfColors.white,
+                          border: pw.Border(
+                            left: pw.BorderSide(color: PdfColors.grey600),
+                          ),
+                        ),
+                        width: 25,
+                        padding: const pw.EdgeInsets.all(2.0),
+                        child: pw.Align(
+                          alignment: pw.Alignment.center,
+                          child: pw.Text(
+                            '${index + 1}',
+                            maxLines: 2,
+                            textAlign: pw.TextAlign.center,
+                            style: pw.TextStyle(
+                                fontSize: font_Size,
+                                font: ttf,
+                                color: PdfColors.grey800),
+                          ),
+                        ),
+                      ),
+                      buildCell(
+                        text: (TransReBill.date == null ||
+                                TransReBill.date.toString() == '')
+                            ? '-'
+                            : '${DateFormat('dd-MM').format(DateTime.parse(TransReBill.date.toString()))}-${DateTime.parse(TransReBill.date.toString()).year + 543}',
+                        flex: 1,
+                        alignment: pw.Alignment.centerLeft,
+                        textAlign: pw.TextAlign.center,
+                      ),
+                      buildCell(
+                        text: (TransReBill.unitser.toString() == '6')
+                            ? '${TransReBill.expname} [ หน่วยที่ใช้ไป ${TransReBill.ovalue}-${TransReBill.nvalue} ]' //descr
+                            : '${TransReBill.expname} ${DateFormat('MMM', 'th').format(DateTime.parse(TransReBill.date!))} ${DateTime.parse('${TransReBill.date}').year + 543}',
+                        flex: 4,
+                        alignment: pw.Alignment.centerLeft,
+                        textAlign: pw.TextAlign.left,
+                      ),
+                      buildCell(
+                        text: getFormattedText(TransReBill.qty),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      // buildCell(
+                      //   text: (TransReBill.ele_ty.toString() != '0' &&
+                      //           TransReBill.ele_ty != null)
+                      //       ? 'อัตราพิเศษ'
+                      //       : (TransReBill.dtype.toString() == 'KU')
+                      //           ? getFormattedText('${TransReBill.pri}')
+                      //           : '-',
+                      //   flex: 1,
+                      //   alignment: pw.Alignment.centerRight,
+                      //   textAlign: pw.TextAlign.right,
+                      // ),
+                      buildCell(
+                        text: getFormattedText(TransReBill.vat),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText(TransReBill.wht),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${TransReBill.pvat}'),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${TransReBill.dis_list}'),
+                        flex: 1,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                      buildCell(
+                        text: getFormattedText('${TransReBill.total}'),
+                        flex: 2,
+                        alignment: pw.Alignment.centerRight,
+                        textAlign: pw.TextAlign.right,
+                      ),
+                    ],
+                  ),
+                );
+              }),
+            ),
+
+            // pw.Divider(color: PdfColors.grey),
             pw.Container(
               decoration: const pw.BoxDecoration(
                 // color: PdfColors.green100,
                 border: pw.Border(
                   top: pw.BorderSide(color: PdfColors.grey600),
-                  bottom: pw.BorderSide(color: PdfColors.grey600),
                 ),
               ),
-              child: pw.Row(
-                children: [
-                  pw.Container(
-                    decoration: const pw.BoxDecoration(
-                      // color: PdfColors.green100,
-                      border: pw.Border(
-                        left: pw.BorderSide(color: PdfColors.grey600),
-                      ),
-                    ),
-                    width: 25,
-                    height: 20,
-                    padding: const pw.EdgeInsets.all(2.0),
-                    child: pw.Align(
-                      alignment: pw.Alignment.centerLeft,
-                      child: pw.Text(
-                        'ลำดับ',
-                        maxLines: 1,
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                            fontSize: font_Size,
-                            fontWeight: pw.FontWeight.bold,
-                            font: ttf,
-                            color: PdfColors.black),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          'กำหนดชำระ',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // pw.Expanded(
-                  //   flex: 2,
-                  //   child: pw.Container(
-                  //     decoration: const pw.BoxDecoration(
-                  //       // color: PdfColors.green100,
-                  //       border: pw.Border(
-                  //         right: pw.BorderSide(color: PdfColors.grey600),
-                  //         top: pw.BorderSide(color: PdfColors.grey600),
-                  //         bottom: pw.BorderSide(color: PdfColors.grey600),
-                  //       ),
-                  //     ),
-                  //     height: 30,
-                  //     child: pw.Column(
-                  //       mainAxisAlignment: pw.MainAxisAlignment.center,
-                  //       crossAxisAlignment: pw.CrossAxisAlignment.center,
-                  //       children: [
-                  //         pw.Text(
-                  //           'รหัสสินค้า',
-                  //           maxLines: 1,
-                  //           textAlign: pw.TextAlign.left,
-                  //           style: pw.TextStyle(
-                  //               fontSize: font_Size,
-                  //               font: ttf,
-                  //               color: PdfColors.black),
-                  //         ),
-                  //       ],
-                  //     ),
-                  //   ),
-                  // ),
-                  pw.Expanded(
-                    flex: 4,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerLeft,
-                        child: pw.Text(
-                          'รายการ',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'จำนวน',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // pw.Expanded(
-                  //   flex: 1,
-                  //   child: pw.Container(
-                  //     decoration: const pw.BoxDecoration(
-                  //       // color: PdfColors.green100,
-                  //       border: pw.Border(
-                  //         left: pw.BorderSide(color: PdfColors.grey600),
-                  //       ),
-                  //     ),
-                  //     height: 20,
-                  //     padding: const pw.EdgeInsets.all(2.0),
-                  //     child: pw.Align(
-                  //       alignment: pw.Alignment.centerRight,
-                  //       child: pw.Text(
-                  //         'หน่วย',
-                  //         textAlign: pw.TextAlign.left,
-                  //         maxLines: 1,
-                  //         style: pw.TextStyle(
-                  //             fontSize: font_Size,
-                  //             fontWeight: pw.FontWeight.bold,
-                  //             font: ttf,
-                  //             color: PdfColors.black),
-                  //       ),
-                  //     ),
-                  //   ),
-                  // ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'VAT',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'WHT',
-                          textAlign: pw.TextAlign.left,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'ก่อนVAT',
-                          textAlign: pw.TextAlign.right,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 1,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'ส่วนลด',
-                          textAlign: pw.TextAlign.right,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                  pw.Expanded(
-                    flex: 2,
-                    child: pw.Container(
-                      decoration: const pw.BoxDecoration(
-                        // color: PdfColors.green100,
-                        border: pw.Border(
-                          left: pw.BorderSide(color: PdfColors.grey600),
-                          right: pw.BorderSide(color: PdfColors.grey600),
-                        ),
-                      ),
-                      height: 20,
-                      padding: const pw.EdgeInsets.all(2.0),
-                      child: pw.Align(
-                        alignment: pw.Alignment.centerRight,
-                        child: pw.Text(
-                          'ยอดสุทธิ',
-                          textAlign: pw.TextAlign.right,
-                          maxLines: 1,
-                          style: pw.TextStyle(
-                              fontSize: font_Size,
-                              fontWeight: pw.FontWeight.bold,
-                              font: ttf,
-                              color: PdfColors.black),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            pw.Container(
-              // height: 800,
-              // color: PdfColors.green100,
-              child: pw.Table(
-                border: pw.TableBorder(
-                    bottom: pw.BorderSide(color: PdfColors.grey600, width: 1),
-                    left: pw.BorderSide(color: PdfColors.grey600, width: 1),
-                    right: pw.BorderSide(color: PdfColors.grey600, width: 1),
-                    verticalInside: pw.BorderSide(
-                        width: 1,
-                        color: PdfColors.grey600,
-                        style: pw.BorderStyle.solid)),
-                children: [
-                  for (int index = 0; index < tableData00.length; index++)
-                    pw.TableRow(children: [
-                      pw.Container(
-                        width: 25,
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.topCenter,
-                          child: pw.Text(
-                            '${index + 1}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.left,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
-                      ),
-                      pw.Expanded(
-                        flex: 1,
-                        child: pw.Container(
-                          padding: const pw.EdgeInsets.all(2.0),
-                          child: pw.Align(
-                            alignment: pw.Alignment.topLeft,
-                            child: pw.Text(
-                              (tableData00[index][18].toString() == 'INV')
-                                  ? ''
-                                  : (tableData00[index][1] == null ||
-                                          tableData00[index][1].toString() ==
-                                              '')
-                                      ? '${tableData00[index][1]}'
-                                      : '${DateFormat('dd-MM').format(DateTime.parse(tableData00[index][1].toString()))}-${DateTime.parse(tableData00[index][1].toString()).year + 543}',
-                              maxLines: 1,
-                              textAlign: pw.TextAlign.left,
-                              style: pw.TextStyle(
-                                  fontSize: font_Size,
-                                  font: ttf,
-                                  color: PdfColors.grey800),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // pw.Expanded(
-                      //   flex: 2,
-                      //   child: pw.Container(
-                      //     padding: const pw.EdgeInsets.all(2.0),
-                      //     child: pw.Align(
-                      //       alignment: pw.Alignment.topLeft,
-                      //       child: pw.Text(
-                      //         '${tableData00[index][11]}',
-                      //         maxLines: 1,
-                      //         textAlign: pw.TextAlign.left,
-                      //         style: pw.TextStyle(
-                      //             fontSize: font_Size,
-                      //             font: ttf,
-                      //             color: PdfColors.grey800),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                      pw.Expanded(
-                          flex: 4,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topLeft,
-                              child: pw.Text(
-                                (tableData00[index][18].toString() == 'INV')
-                                    ? '${tableData00[index][2]}'
-                                    : (tableData00[index][0].toString() == '6')
-                                        ? '${tableData00[index][2]} [ หน่วยที่ใช้ไป ${tableData00[index][8]}-${tableData00[index][9]} ]'
-                                        : '${tableData00[index][2]} ${DateFormat('MMM', 'th').format(DateTime.parse(tableData00[index][1]))} ${DateTime.parse('${tableData00[index][1]}').year + 543}',
-                                // (tableData00[index][0].toString() == '6')
-                                //     ? '${tableData00[index][2]} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543} [ หน่วยที่ใช้ไป ${tableData00[index][8]}-${tableData00[index][9]} ]'
-                                //     : '${tableData00[index][2]} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543}',
-                                // (tableData00[index][0].toString() == '6')
-                                //     ? '${tableData00[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData00[index][1]}'))} ${DateTime.parse('${tableData00[index][1]}').year + 543} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543}) [ หน่วยที่ใช้ไป ${tableData00[index][8]}-${tableData00[index][9]} ]'
-                                //     : '${tableData00[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData00[index][1]}'))} ${DateTime.parse('${tableData00[index][1]}').year + 543} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543})',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.left,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                (tableData00[index][18].toString() == 'INV')
-                                    ? '1.00'
-                                    : (tableData00[index][10].toString() ==
-                                            '0.00')
-                                        ? '1.00'
-                                        : '${tableData00[index][10]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      // pw.Expanded(
-                      //     flex: 1,
-                      //     child: pw.Container(
-                      //       padding: const pw.EdgeInsets.all(2.0),
-                      //       child: pw.Align(
-                      //         alignment: pw.Alignment.topRight,
-                      //         child: pw.Text(
-                      //           (tableData00[index][14].toString() != '0' &&
-                      //                   tableData00[index][14] != null)
-                      //               ? 'อัตราพิเศษ'
-                      //               : (tableData00[index][7].toString() ==
-                      //                       '0.00')
-                      //                   ? '${tableData00[index][5]}'
-                      //                   : '${tableData00[index][7]}',
-                      //           maxLines: 2,
-                      //           textAlign: pw.TextAlign.right,
-                      //           style: pw.TextStyle(
-                      //               fontSize: font_Size,
-                      //               font: ttf,
-                      //               color: PdfColors.grey800),
-                      //         ),
-                      //       ),
-                      //     )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData00[index][3]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData00[index][4]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 2,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData00[index][5]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData00[index][12]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 2,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData00[index][13]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                    ]),
-                  for (int index = 0; index < tableData01.length; index++)
-                    pw.TableRow(children: [
-                      pw.Container(
-                        width: 25,
-                        padding: const pw.EdgeInsets.all(2.0),
-                        child: pw.Align(
-                          alignment: pw.Alignment.topCenter,
-                          child: pw.Text(
-                            '${index + 1}',
-                            maxLines: 2,
-                            textAlign: pw.TextAlign.left,
-                            style: pw.TextStyle(
-                                fontSize: font_Size,
-                                font: ttf,
-                                color: PdfColors.grey800),
-                          ),
-                        ),
-                      ),
-                      pw.Expanded(
-                        flex: 1,
-                        child: pw.Container(
-                          padding: const pw.EdgeInsets.all(2.0),
-                          child: pw.Align(
-                            alignment: pw.Alignment.topLeft,
-                            child: pw.Text(
-                              (tableData01[index][1] == null ||
-                                      tableData01[index][1].toString() == '')
-                                  ? '${tableData01[index][1]}'
-                                  : '${DateFormat('dd-MM').format(DateTime.parse(tableData01[index][1].toString()))}-${DateTime.parse(tableData01[index][1].toString()).year + 543}',
-                              maxLines: 1,
-                              textAlign: pw.TextAlign.left,
-                              style: pw.TextStyle(
-                                  fontSize: font_Size,
-                                  font: ttf,
-                                  color: PdfColors.grey800),
-                            ),
-                          ),
-                        ),
-                      ),
-                      // pw.Expanded(
-                      //   flex: 2,
-                      //   child: pw.Container(
-                      //     padding: const pw.EdgeInsets.all(2.0),
-                      //     child: pw.Align(
-                      //       alignment: pw.Alignment.topLeft,
-                      //       child: pw.Text(
-                      //         '${tableData00[index][11]}',
-                      //         maxLines: 1,
-                      //         textAlign: pw.TextAlign.left,
-                      //         style: pw.TextStyle(
-                      //             fontSize: font_Size,
-                      //             font: ttf,
-                      //             color: PdfColors.grey800),
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
-                      pw.Expanded(
-                          flex: 4,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topLeft,
-                              child: pw.Text(
-                                (tableData01[index][0].toString() == '6')
-                                    ? '${tableData01[index][2]} [ หน่วยที่ใช้ไป ${tableData01[index][8]}-${tableData01[index][9]} ]'
-                                    : '${tableData01[index][2]} ${DateFormat('MMM', 'th').format(DateTime.parse(tableData01[index][1]))} ${DateTime.parse('${tableData01[index][1]}').year + 543}',
-                                // (tableData00[index][0].toString() == '6')
-                                //     ? '${tableData00[index][2]} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543} [ หน่วยที่ใช้ไป ${tableData00[index][8]}-${tableData00[index][9]} ]'
-                                //     : '${tableData00[index][2]} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543}',
-                                // (tableData00[index][0].toString() == '6')
-                                //     ? '${tableData00[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData00[index][1]}'))} ${DateTime.parse('${tableData00[index][1]}').year + 543} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543}) [ หน่วยที่ใช้ไป ${tableData00[index][8]}-${tableData00[index][9]} ]'
-                                //     : '${tableData00[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData00[index][1]}'))} ${DateTime.parse('${tableData00[index][1]}').year + 543} ${DateFormat('dd/MM').format(DateTime.parse(tableData00[index][1]))}/${DateTime.parse('${tableData00[index][1]}').year + 543})',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.left,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                (tableData01[index][10].toString() == '0.00')
-                                    ? '1.00'
-                                    : '${tableData01[index][10]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      // pw.Expanded(
-                      //     flex: 1,
-                      //     child: pw.Container(
-                      //       padding: const pw.EdgeInsets.all(2.0),
-                      //       child: pw.Align(
-                      //         alignment: pw.Alignment.topRight,
-                      //         child: pw.Text(
-                      //           (tableData00[index][14].toString() != '0' &&
-                      //                   tableData00[index][14] != null)
-                      //               ? 'อัตราพิเศษ'
-                      //               : (tableData00[index][7].toString() ==
-                      //                       '0.00')
-                      //                   ? '${tableData00[index][5]}'
-                      //                   : '${tableData00[index][7]}',
-                      //           maxLines: 2,
-                      //           textAlign: pw.TextAlign.right,
-                      //           style: pw.TextStyle(
-                      //               fontSize: font_Size,
-                      //               font: ttf,
-                      //               color: PdfColors.grey800),
-                      //         ),
-                      //       ),
-                      //     )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '0.00',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '0.00',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 2,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '0.00',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 1,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '0.00',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                      pw.Expanded(
-                          flex: 2,
-                          child: pw.Container(
-                            padding: const pw.EdgeInsets.all(2.0),
-                            child: pw.Align(
-                              alignment: pw.Alignment.topRight,
-                              child: pw.Text(
-                                '${tableData01[index][6]}',
-                                maxLines: 2,
-                                textAlign: pw.TextAlign.right,
-                                style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: PdfColors.grey800),
-                              ),
-                            ),
-                          )),
-                    ]),
-                  // pw.TableRow(children: [
-                  //   pw.Container(
-                  //     width: 30,
-                  //     padding: const pw.EdgeInsets.all(2.0),
-                  //     child: pw.Align(
-                  //       alignment: pw.Alignment.topCenter,
-                  //       child: pw.Text(
-                  //         '${index + 1}',
-                  //         maxLines: 2,
-                  //         textAlign: pw.TextAlign.left,
-                  //         style: pw.TextStyle(
-                  //             fontSize: font_Size,
-                  //             font: ttf,
-                  //             color: PdfColors.grey800),
-                  //       ),
-                  //     ),
-                  //   ),
-                  //   pw.Expanded(
-                  //     flex: 2,
-                  //     child: pw.Container(
-                  //       padding: const pw.EdgeInsets.all(2.0),
-                  //       child: pw.Align(
-                  //         alignment: pw.Alignment.topLeft,
-                  //         child: pw.Text(
-                  //           '${tableData01[index][11]}',
-                  //           maxLines: 2,
-                  //           textAlign: pw.TextAlign.left,
-                  //           style: pw.TextStyle(
-                  //               fontSize: font_Size,
-                  //               font: ttf,
-                  //               color: PdfColors.grey800),
-                  //         ),
-                  //       ),
-                  //     ),
-                  //   ),
-                  //   pw.Expanded(
-                  //       flex: 4,
-                  //       child: pw.Container(
-                  //         padding: const pw.EdgeInsets.all(2.0),
-                  //         child: pw.Align(
-                  //           alignment: pw.Alignment.topLeft,
-                  //           child: pw.Text(
-                  //             (tableData01[index][0].toString() == '6')
-                  //                 ? '${tableData01[index][2]} [ หน่วยที่ใช้ไป ${tableData01[index][8]}-${tableData01[index][9]} ]'
-                  //                 : '${tableData01[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData01[index][1]}'))} ${DateTime.parse('${tableData01[index][1]}').year + 543} )',
-                  //             // (tableData01[index][0].toString() == '6')
-                  //             //     ? '${tableData01[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData01[index][1]}'))} ${DateTime.parse('${tableData01[index][1]}').year + 543} ${DateFormat('dd/MM').format(DateTime.parse(tableData01[index][1]))}/${DateTime.parse('${tableData01[index][1]}').year + 543}) [ หน่วยที่ใช้ไป ${tableData01[index][8]}-${tableData01[index][9]} ]'
-                  //             //     : '${tableData01[index][2]}(${DateFormat('MMM', 'th_TH').format(DateTime.parse('${tableData01[index][1]}'))} ${DateTime.parse('${tableData01[index][1]}').year + 543} ${DateFormat('dd/MM').format(DateTime.parse(tableData01[index][1]))}/${DateTime.parse('${tableData01[index][1]}').year + 543})',
-                  //             maxLines: 2,
-                  //             textAlign: pw.TextAlign.left,
-                  //             style: pw.TextStyle(
-                  //                 fontSize: font_Size,
-                  //                 font: ttf,
-                  //                 color: PdfColors.grey800),
-                  //           ),
-                  //         ),
-                  //       )),
-                  //   pw.Expanded(
-                  //       flex: 1,
-                  //       child: pw.Container(
-                  //         padding: const pw.EdgeInsets.all(2.0),
-                  //         child: pw.Align(
-                  //           alignment: pw.Alignment.topRight,
-                  //           child: pw.Text(
-                  //             (tableData01[index][10].toString() == '0.00')
-                  //                 ? '1.00'
-                  //                 : '${tableData01[index][10]}',
-                  //             maxLines: 2,
-                  //             textAlign: pw.TextAlign.right,
-                  //             style: pw.TextStyle(
-                  //                 fontSize: font_Size,
-                  //                 font: ttf,
-                  //                 color: PdfColors.grey800),
-                  //           ),
-                  //         ),
-                  //       )),
-                  //   pw.Expanded(
-                  //       flex: 1,
-                  //       child: pw.Container(
-                  //         padding: const pw.EdgeInsets.all(2.0),
-                  //         child: pw.Align(
-                  //           alignment: pw.Alignment.topRight,
-                  //           child: pw.Text(
-                  //             (tableData01[index][7].toString() == '0.00')
-                  //                 ? '${tableData01[index][5]}'
-                  //                 : '${tableData01[index][7]}',
-                  //             maxLines: 2,
-                  //             textAlign: pw.TextAlign.right,
-                  //             style: pw.TextStyle(
-                  //                 fontSize: font_Size,
-                  //                 font: ttf,
-                  //                 color: PdfColors.grey800),
-                  //           ),
-                  //         ),
-                  //       )),
-                  //   pw.Expanded(
-                  //       flex: 1,
-                  //       child: pw.Container(
-                  //         padding: const pw.EdgeInsets.all(2.0),
-                  //         child: pw.Align(
-                  //           alignment: pw.Alignment.topRight,
-                  //           child: pw.Text(
-                  //             '0.00',
-                  //             maxLines: 2,
-                  //             textAlign: pw.TextAlign.right,
-                  //             style: pw.TextStyle(
-                  //                 fontSize: font_Size,
-                  //                 font: ttf,
-                  //                 color: PdfColors.grey800),
-                  //           ),
-                  //         ),
-                  //       )),
-                  //   pw.Expanded(
-                  //       flex: 1,
-                  //       child: pw.Container(
-                  //         padding: const pw.EdgeInsets.all(2.0),
-                  //         child: pw.Align(
-                  //           alignment: pw.Alignment.topRight,
-                  //           child: pw.Text(
-                  //             '0.00',
-                  //             maxLines: 2,
-                  //             textAlign: pw.TextAlign.right,
-                  //             style: pw.TextStyle(
-                  //                 fontSize: font_Size,
-                  //                 font: ttf,
-                  //                 color: PdfColors.grey800),
-                  //           ),
-                  //         ),
-                  //       )),
-                  //   pw.Expanded(
-                  //       flex: 1,
-                  //       child: pw.Container(
-                  //         padding: const pw.EdgeInsets.all(2.0),
-                  //         child: pw.Align(
-                  //           alignment: pw.Alignment.topRight,
-                  //           child: pw.Text(
-                  //             '${tableData01[index][6]}',
-                  //             maxLines: 2,
-                  //             textAlign: pw.TextAlign.right,
-                  //             style: pw.TextStyle(
-                  //                 fontSize: font_Size,
-                  //                 font: ttf,
-                  //                 color: PdfColors.grey800),
-                  //           ),
-                  //         ),
-                  //       )),
-                  // ]),
-                ],
-              ),
-            ),
-            // for (int index = 0; index < tableData00.length; index++)
-            //   pw.Container(
-            //     // height: 30,
-            //     decoration: pw.BoxDecoration(
-            //       // color: PdfColors.green100,
-            //       border: (tableData01.length == 0 &&
-            //               index + 1 == tableData00.length)
-            //           ? pw.Border(
-            //               // top: pw.BorderSide(color: PdfColors.grey600),
-            //               bottom: pw.BorderSide(
-            //                   color: PdfColors.grey600, width: 0.8),
-            //             )
-            //           : pw.Border(
-            //               // top: pw.BorderSide(color: PdfColors.grey600),
-            //               // bottom: pw.BorderSide(
-            //               //     color: PdfColors.grey600, width: 0.8),
-            //               ),
-            //     ),
-            //     child: pw.Row(
-            //       children: [
-            //         pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             color: PdfColors.white,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           width: 30,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerLeft,
-            //             child: pw.Text(
-            //               '${index + 1}',
-            //               maxLines: 2,
-            //               textAlign: pw.TextAlign.left,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   font: ttf,
-            //                   color: PdfColors.grey800),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 2,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: (tableData00[index][11] == '')
-            //                 ? pw.EdgeInsets.all(8.0)
-            //                 : const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerLeft,
-            //               child: pw.Text(
-            //                 // (tableData00[index][1] == null ||
-            //                 //         tableData00[index][1].toString() == '')
-            //                 //     ? '${tableData00[index][1]}'
-            //                 //     : '${DateFormat('dd-MM').format(DateTime.parse(tableData00[index][1].toString()))}-${DateTime.parse(tableData00[index][1].toString()).year + 543}',
-            //                 '${tableData00[index][11]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.center,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 4,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(
-            //                     color: PdfColors.grey600, width: 0.8),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerLeft,
-            //               child: pw.Text(
-            //                 '${tableData00[index][2]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.left,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData00[index][3]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData00[index][4]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData00[index][5]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData00[index][12]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //                 right: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData00[index][13]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-
-            // for (int index = 0; index < tableData01.length; index++)
-            //   pw.Container(
-            //     decoration: const pw.BoxDecoration(
-            //       // color: PdfColors.green100,
-            //       border: pw.Border(
-            //         // top: pw.BorderSide(color: PdfColors.grey600),
-            //         bottom: pw.BorderSide(color: PdfColors.grey600),
-            //       ),
-            //     ),
-            //     child: pw.Row(
-            //       children: [
-            //         pw.Container(
-            //           decoration: const pw.BoxDecoration(
-            //             color: PdfColors.white,
-            //             border: pw.Border(
-            //               left: pw.BorderSide(color: PdfColors.grey600),
-            //             ),
-            //           ),
-            //           width: 30,
-            //           padding: const pw.EdgeInsets.all(2.0),
-            //           child: pw.Align(
-            //             alignment: pw.Alignment.centerLeft,
-            //             child: pw.Text(
-            //               '${tableData00.length + 1}',
-            //               maxLines: 2,
-            //               textAlign: pw.TextAlign.left,
-            //               style: pw.TextStyle(
-            //                   fontSize: font_Size,
-            //                   font: ttf,
-            //                   color: PdfColors.grey800),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 2,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerLeft,
-            //               child: pw.Text(
-            //                 '-',
-            //                 // '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${tableData01[index][1]}'))} ',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.center,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 4,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerLeft,
-            //               child: pw.Text(
-            //                 '${tableData01[index][2]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.left,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         // pw.Expanded(
-            //         //   flex: 2,
-            //         //   child: pw.Container(
-            //         //     decoration: const pw.BoxDecoration(
-            //         //       color: PdfColors.white,
-            //         //       border: const pw.Border(
-            //         //         left: pw.BorderSide(color: PdfColors.grey600),
-            //         //       ),
-            //         //     ),
-            //         //     padding: const pw.EdgeInsets.all(2.0),
-            //         //     child: pw.Align(
-            //         //       alignment: pw.Alignment.centerRight,
-            //         //       child: pw.Text(
-            //         //         '-',
-            //         //         maxLines: 2,
-            //         //         textAlign: pw.TextAlign.right,
-            //         //         style: pw.TextStyle(
-            //         //             fontSize: font_Size,
-            //         //             font: ttf,
-            //         //             color: PdfColors.grey800),
-            //         //       ),
-            //         //     ),
-            //         //   ),
-            //         // ),
-            //         // pw.Expanded(
-            //         //   flex: 2,
-            //         //   child: pw.Container(
-            //         //     decoration: const pw.BoxDecoration(
-            //         //       color: PdfColors.white,
-            //         //       border: const pw.Border(
-            //         //         left: pw.BorderSide(color: PdfColors.grey600),
-            //         //       ),
-            //         //     ),
-            //         //     padding: const pw.EdgeInsets.all(2.0),
-            //         //     child: pw.Align(
-            //         //       alignment: pw.Alignment.centerRight,
-            //         //       child: pw.Text(
-            //         //         '-',
-            //         //         maxLines: 2,
-            //         //         textAlign: pw.TextAlign.right,
-            //         //         style: pw.TextStyle(
-            //         //             fontSize: font_Size,
-            //         //             font: ttf,
-            //         //             color: PdfColors.grey800),
-            //         //       ),
-            //         //     ),
-            //         //   ),
-            //         // ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData01[index][3]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData01[index][4]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData01[index][5]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '0.00',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //         pw.Expanded(
-            //           flex: 1,
-            //           child: pw.Container(
-            //             decoration: const pw.BoxDecoration(
-            //               color: PdfColors.white,
-            //               border: const pw.Border(
-            //                 left: pw.BorderSide(color: PdfColors.grey600),
-            //                 right: pw.BorderSide(color: PdfColors.grey600),
-            //               ),
-            //             ),
-            //             padding: const pw.EdgeInsets.all(2.0),
-            //             child: pw.Align(
-            //               alignment: pw.Alignment.centerRight,
-            //               child: pw.Text(
-            //                 '${tableData01[index][6]}',
-            //                 maxLines: 2,
-            //                 textAlign: pw.TextAlign.right,
-            //                 style: pw.TextStyle(
-            //                     fontSize: font_Size,
-            //                     font: ttf,
-            //                     color: PdfColors.grey800),
-            //               ),
-            //             ),
-            //           ),
-            //         ),
-            //       ],
-            //     ),
-            //   ),
-
-            // pw.Divider(color: PdfColors.grey),
-            pw.Container(
               padding: const pw.EdgeInsets.fromLTRB(0, 4, 0, 0),
               alignment: pw.Alignment.centerRight,
               child: pw.Row(
@@ -2378,7 +1024,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(sum_pvat.toString()))}',
+                              '${nFormat.format(totalPvat)}',
+                              // '${nFormat.format(double.parse(sum_pvat.toString()))}',
                               // '${sum_pvat}',
                               // '$SubTotal',
                               style: pw.TextStyle(
@@ -2402,7 +1049,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(sum_vat.toString()))}',
+                              '${nFormat.format(totalVat)}',
+                              // '${nFormat.format(double.parse(sum_vat.toString()))}',
                               // '${sum_vat}',
                               // '$Vat',
                               style: pw.TextStyle(
@@ -2426,7 +1074,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(sum_wht.toString()))}',
+                              '${nFormat.format(totalWht)}',
+                              // '${nFormat.format(double.parse(sum_wht.toString()))}',
                               // '${sum_wht}',
                               // '$Deduct',
                               style: pw.TextStyle(
@@ -2450,7 +1099,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(sum_fee.toString()))}',
+                              '${nFormat.format(totalFee)}',
+                              // '${nFormat.format(double.parse(sum_fee.toString()))}',
                               // '$Sum_SubTotal',
                               style: pw.TextStyle(
                                   fontSize: font_Size,
@@ -2473,7 +1123,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(Sum_SubTotal.toString()) + double.parse(sum_fee.toString()))}',
+                              '${nFormat.format(((totalPvat + totalVat) - totalWht) + totalFee)}',
+                              // '${nFormat.format(double.parse(Sum_SubTotal.toString()) + double.parse(sum_fee.toString()))}',
                               // '$Sum_SubTotal',
                               style: pw.TextStyle(
                                   fontSize: font_Size,
@@ -2496,7 +1147,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format(double.parse(sum_disamt.toString()))}',
+                              '${nFormat.format(totalDis)}',
+                              // '${nFormat.format(double.parse(sum_disamt.toString()))}',
                               // '${sum_disamt}',
                               // '$DisC',
                               style: pw.TextStyle(
@@ -2579,7 +1231,8 @@ class Pdfgen_his_statusbill_TP4 {
                               ),
                             ),
                             pw.Text(
-                              '${nFormat.format((double.parse(Total.toString()) + double.parse(sum_fee.toString())) - (double.parse(dis_sum_Matjum.toString()) + double.parse(dis_sum_Pakan.toString())))}',
+                              '${nFormat.format(totalBill)}',
+                              // '${nFormat.format((double.parse(Total.toString()) + double.parse(sum_fee.toString())) - (double.parse(dis_sum_Matjum.toString()) + double.parse(dis_sum_Pakan.toString())))}',
                               style: pw.TextStyle(
                                   fontSize: font_Size,
                                   fontWeight: pw.FontWeight.bold,
@@ -2622,7 +1275,7 @@ class Pdfgen_his_statusbill_TP4 {
                         flex: 4,
                         child: pw.Text(
                           //"${nFormat2.format(double.parse(Total.toString()))}";
-                          '(~${convertToThaiBaht(double.parse(Total.toString()) + double.parse(sum_fee.toString()))}~)',
+                          '(~${convertToThaiBaht(totalBill)}~)',
                           style: pw.TextStyle(
                             fontSize: font_Size,
                             fontWeight: pw.FontWeight.bold,
@@ -2656,7 +1309,7 @@ class Pdfgen_his_statusbill_TP4 {
                                   ),
                                 ),
                                 pw.Text(
-                                  '${nFormat.format(double.parse(Total.toString()) + double.parse(sum_fee.toString()))}',
+                                  '${nFormat.format(totalBill)}',
                                   // '${Total}',
                                   style: pw.TextStyle(
                                       fontWeight: pw.FontWeight.bold,

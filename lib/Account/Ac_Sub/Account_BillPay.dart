@@ -610,7 +610,7 @@ class _Account_BillPayState extends State<Account_BillPay> {
       //   red_Invoice(index);
       // });
     } catch (e) {}
-    print('red_Trans_select2 ${_TransReBillHistoryModels.length}');
+    //('red_Trans_select2 ${_TransReBillHistoryModels.length}');
     _ReportValue_type = (paper.toString() == '0')
         ? '${TitleType_Default_Receipt_[0]}'
         : (paper.toString() == '1')
@@ -861,12 +861,12 @@ class _Account_BillPayState extends State<Account_BillPay> {
             9)
         ? (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.83
-            : 1200
+            : 1400
         : (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.83 +
                 ((ac7.where((item) => item["st"] == '1').toList().length - 9) *
                     30)
-            : 1200 +
+            : 1400 +
                 ((ac7.where((item) => item["st"] == '1').toList().length - 9) *
                     30);
     // For the first round, use the extracted data as is, no need to sort.
@@ -6561,7 +6561,7 @@ class _Account_BillPayState extends State<Account_BillPay> {
 
       var result = json.decode(response.body);
       if (result.toString() != 'No') {
-        print('result : Yes');
+        //    print('result : Yes');
       }
     } catch (e) {}
   }

@@ -74,7 +74,7 @@ class _WebUserState extends State<WebUser> {
                   children: <Widget>[
                     GestureDetector(
                       onTap: () async {
-                        print(imgList[i].url.toString());
+                        // //print(imgList[i].url.toString());
                         if (imgList[i].url.toString() != '' &&
                             imgList[i].url != null &&
                             imgList[i].url.toString() != 'null') {
@@ -114,11 +114,11 @@ class _WebUserState extends State<WebUser> {
     try {
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           ImageProModel imageProModel = ImageProModel.fromJson(map);
-          print(imageProModel.url);
+          //  //print(imageProModel.url);
 
           setState(() {
             if (imageProModel.type == 'IM') {
@@ -159,7 +159,7 @@ class _WebUserState extends State<WebUser> {
     try {
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           ImageProSetModel imageProSetModel = ImageProSetModel.fromJson(map);
@@ -188,7 +188,7 @@ class _WebUserState extends State<WebUser> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //    //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -224,7 +224,7 @@ class _WebUserState extends State<WebUser> {
         }
       } else {}
     } catch (e) {}
-    print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
   @override
@@ -1085,17 +1085,17 @@ class _WebUserState extends State<WebUser> {
         );
 
         if (response.statusCode == 200) {
-          print('File uploaded successfully!*** : $fileName_Slip');
+          //print('File uploaded successfully!*** : $fileName_Slip');
           var type = 'IM';
           UpImg(type);
         } else {
-          print('Image upload failed');
+          //print('Image upload failed');
         }
       } catch (e) {
-        print('Error during image processing: $e');
+        //print('Error during image processing: $e');
       }
     } else {
-      // print('ยังไม่ได้เลือกรูปภาพ');
+      // //print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -1107,7 +1107,7 @@ class _WebUserState extends State<WebUser> {
     var response = await http.get(Uri.parse(url));
 
     var result = json.decode(response.body);
-    print(result.toString());
+    //print(result.toString());
     try {
       if (result.toString() == 'true') {
         setState(() {
@@ -1122,7 +1122,7 @@ class _WebUserState extends State<WebUser> {
                         children: <Widget>[
                           GestureDetector(
                             onTap: () async {
-                              print(imgList[i].url.toString());
+                              //print(imgList[i].url.toString());
                               if (imgList[i].url.toString() != '' &&
                                   imgList[i].url != null &&
                                   imgList[i].url.toString() != 'null') {
@@ -1159,7 +1159,7 @@ class _WebUserState extends State<WebUser> {
     var response = await http.get(Uri.parse(url));
 
     var result = json.decode(response.body);
-    print(result.toString());
+    //print(result.toString());
     try {
       if (result.toString() == 'true') {
         setState(() {
@@ -1174,7 +1174,7 @@ class _WebUserState extends State<WebUser> {
                         children: <Widget>[
                           GestureDetector(
                             onTap: () async {
-                              print(imgList[i].url.toString());
+                              //print(imgList[i].url.toString());
                               if (imgList[i].url.toString() != '' &&
                                   imgList[i].url != null &&
                                   imgList[i].url.toString() != 'null') {
@@ -1216,7 +1216,7 @@ class _WebUserState extends State<WebUser> {
     var response = await http.get(Uri.parse(url));
 
     var result = json.decode(response.body);
-    print(result.toString());
+    //print(result.toString());
     try {
       if (result.toString() == 'true') {
         setState(() {
@@ -1241,7 +1241,7 @@ class _WebUserState extends State<WebUser> {
         source: ImageSource.gallery, maxHeight: 100, maxWidth: 100);
 
     if (pickedFile == null) {
-      // print('User canceled image selection');
+      // //print('User canceled image selection');
       return;
     } else {
       // 2. Read the image as bytes

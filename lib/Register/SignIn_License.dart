@@ -15,6 +15,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../AdminScaffold/AdminScaffold.dart';
+import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../Home/Home_Screen.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetC_Otp.dart';
@@ -402,7 +403,7 @@ class _SignInLicenseState extends State<SignInLicense> {
                                           decoration: BoxDecoration(
                                             color: Colors.lime[800],
                                             borderRadius: const BorderRadius
-                                                .only(
+                                                    .only(
                                                 topLeft: Radius.circular(20),
                                                 topRight: Radius.circular(20),
                                                 bottomLeft: Radius.circular(20),
@@ -478,7 +479,7 @@ class _SignInLicenseState extends State<SignInLicense> {
 
                                                   var result = json
                                                       .decode(response.body);
-                                                  print(result);
+                                                  // print(result);
                                                   if (result.toString() ==
                                                       'true') {
                                                     SharedPreferences
@@ -486,8 +487,7 @@ class _SignInLicenseState extends State<SignInLicense> {
                                                         await SharedPreferences
                                                             .getInstance();
                                                     preferences.clear();
-                                                    routToService(
-                                                        SignInScreen());
+                                                    routToService(LoginPage());
                                                   } else {
                                                     ScaffoldMessenger.of(
                                                             context)
@@ -583,7 +583,7 @@ class _SignInLicenseState extends State<SignInLicense> {
       // print(result);
       if (result.toString() == 'true') {
       } else if (result.toString() == 'false') {
-        print('rrrrrrrrrrrrrrfalse');
+        //  print('rrrrrrrrrrrrrrfalse');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -609,7 +609,7 @@ class _SignInLicenseState extends State<SignInLicense> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //print(result);
       if (result.toString() == 'true') {
         Insert_log.Insert_logs('Update Licens', 'License Key');
         String? _route = preferences.getString('route');

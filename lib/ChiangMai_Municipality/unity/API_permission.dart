@@ -10,13 +10,15 @@ import 'Enum.dart';
 
 Future<List<PermissionModelCMM>> read_GC_Permission(
     PermissionType permission) async {
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   final url = '${MyConstant().domain_v1}/lookup/permission';
-  print('🧾 Permission url: $url');
+  //print('🧾 Permission url: $url');
 
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url))
+      ..headers.addAll(headers); // ✅ ต้องใส่ headers ด้วย
     final jsonRes = json.decode(response.body);
-    print('🧾 Raw JSON: $jsonRes');
+    //print('🧾 Raw JSON: $jsonRes');
 
     final List<PermissionModelCMM> allPermissions = [];
 
@@ -43,20 +45,22 @@ Future<List<PermissionModelCMM>> read_GC_Permission(
 
     return allPermissions;
   } catch (e, stack) {
-    print('❌ Error: $e');
-    print('🪵 Stack: $stack');
+    //print('❌ Error: $e');
+    //print('🪵 Stack: $stack');
     return [];
   }
 }
 
 Future<List<PositionsAll>> readPositions(PermissionType permission) async {
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   final url = '${MyConstant().domain_v1}/lookup/permission';
-  print('🧾 Permission url: $url');
+  //print('🧾 Permission url: $url');
 
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url))
+      ..headers.addAll(headers); // ✅ ต้องใส่ headers ด้วย
     final jsonRes = json.decode(response.body);
-    print('🧾 Raw JSON: $jsonRes');
+    //print('🧾 Raw JSON: $jsonRes');
 
     final List<PositionsAll> allPermissions = [];
 
@@ -69,20 +73,22 @@ Future<List<PositionsAll>> readPositions(PermissionType permission) async {
 
     return allPermissions;
   } catch (e, stack) {
-    print('❌ Error: $e');
-    print('🪵 Stack: $stack');
+    //print('❌ Error: $e');
+    //print('🪵 Stack: $stack');
     return [];
   }
 }
 
 Future<List<RolesAll>> readRoles(PermissionType permission) async {
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   final url = '${MyConstant().domain_v1}/lookup/permission';
-  print('🧾 Permission url: $url');
+  //print('🧾 Permission url: $url');
 
   try {
-    final response = await http.get(Uri.parse(url));
+    final response = await http.get(Uri.parse(url))
+      ..headers.addAll(headers); // ✅ ต้องใส่ headers ด้วย
     final jsonRes = json.decode(response.body);
-    print('🧾 Raw JSON: $jsonRes');
+    //print('🧾 Raw JSON: $jsonRes');
 
     final List<RolesAll> allPermissions = [];
 
@@ -109,8 +115,8 @@ Future<List<RolesAll>> readRoles(PermissionType permission) async {
 
     return allPermissions;
   } catch (e, stack) {
-    print('❌ Error: $e');
-    print('🪵 Stack: $stack');
+    //print('❌ Error: $e');
+    //print('🪵 Stack: $stack');
     return [];
   }
 }
@@ -128,16 +134,17 @@ Future<http.StreamedResponse?> Post_Permission({
   required String lastName,
   required String citizenId,
   required String phone,
+  required String prepostion,
 }) async {
-  var headers = {
-    'Accept': 'application/json',
-    'Authorization':
-        'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
-  };
-
+  // var headers = {
+  //   'Accept': 'application/json',
+  //   'Authorization':
+  //       'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
+  // };
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   var request = http.MultipartRequest(
     'POST',
-    Uri.parse('http://192.168.1.89:8080/api/v1/admin/users'),
+    Uri.parse('${MyConstant().domain_v1}/admin/users'),
   );
 
   // ✅ เพิ่มไฟล์
@@ -161,6 +168,7 @@ Future<http.StreamedResponse?> Post_Permission({
   request.fields['profile[last_name]'] = "$lastName";
   request.fields['profile[citizen_id]'] = "$citizenId";
   request.fields['profile[phone]'] = "$phone";
+  request.fields['profile[prepostion]'] = "$prepostion";
 
   final roleIds = roleId;
   for (int i = 0; i < roleIds.length; i++) {
@@ -174,14 +182,14 @@ Future<http.StreamedResponse?> Post_Permission({
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      print('✅ Success:\n$responseBody');
+      //print('✅ Success:\n$responseBody');
     } else {
-      print('❌ Failed [${response.statusCode}]:\n$responseBody');
+      //print('❌ Failed [${response.statusCode}]:\n$responseBody');
     }
 
     return response;
   } catch (e) {
-    print('❌ Exception: $e');
+    //print('❌ Exception: $e');
     return null;
   }
 }
@@ -190,18 +198,18 @@ Future<http.StreamedResponse?> Post_Signatures_Permission({
   required Uint8List fileData,
   required String userUuid,
 }) async {
-  var headers = {
-    'Accept': 'application/json',
-    'Authorization':
-        'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
-  };
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
+  // var headers = {
+  //   'Accept': 'application/json',
+  //   'Authorization':
+  //       'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
+  // };
 
   var request = http.MultipartRequest(
     'POST',
-    Uri.parse(
-        'http://192.168.1.89:8080/api/v1/admin/users/$userUuid/signatures'),
+    Uri.parse('${MyConstant().domain_v1}/admin/users/$userUuid/signatures'),
   );
-  print('POST signatures');
+  //print('POST signatures');
   // ✅ เพิ่มไฟล์
   request.files.add(
     http.MultipartFile.fromBytes(
@@ -236,14 +244,14 @@ Future<http.StreamedResponse?> Post_Signatures_Permission({
     final responseBody = await response.stream.bytesToString();
 
     if (response.statusCode == 200 || response.statusCode == 201) {
-      print('✅ Success:\n$responseBody');
+      //print('✅ Success:\n$responseBody');
     } else {
-      print('❌ Failed [${response.statusCode}]:\n$responseBody');
+      //print('❌ Failed [${response.statusCode}]:\n$responseBody');
     }
 
     return response;
   } catch (e) {
-    print('❌ Exception: $e');
+    //print('❌ Exception: $e');
     return null;
   }
 }
@@ -261,19 +269,20 @@ Future<http.StreamedResponse?> Put_Permission({
   required String citizenId,
   required String phone,
   required String userUuid,
+  required String prepostion,
 }) async {
-  print('Put_Permission');
-
-  var headers = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'Authorization':
-        'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
-  };
+  //print('Put_Permission');
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
+  // var headers = {
+  //   'Accept': 'application/json',
+  //   'Content-Type': 'application/json',
+  //   'Authorization':
+  //       'Bearer 7|Xm7Hdf184i16Y45avEiYkalUofL6XstNlUQJDDiLe79fc995',
+  // };
 
   var request = http.Request(
     'PUT',
-    Uri.parse('http://192.168.1.89:8080/api/v1/admin/users/$userUuid'),
+    Uri.parse('${MyConstant().domain_v1}/admin/users/$userUuid'),
   );
 
   request.body = json.encode({
@@ -287,21 +296,42 @@ Future<http.StreamedResponse?> Put_Permission({
       "first_name": firstName,
       "last_name": lastName,
       "citizen_id": citizenId,
-      "phone": phone
+      "phone": phone,
+      "prepostion": prepostion
     },
     "role_ids": roleId,
   });
+
+  // //print({
+  //   "username": userName,
+  //   "email": eMail,
+  //   "password": passWord,
+  //   "password_confirmation": passWord,
+  //   "position_id": positionId,
+  //   "profile": {
+  //     "prefix": preFix,
+  //     "first_name": firstName,
+  //     "last_name": lastName,
+  //     "citizen_id": citizenId,
+  //     "phone": phone,
+  //     "prepostion": prepostion
+  //   },
+  //   "role_ids": roleId,
+  // });
 
   request.headers.addAll(headers);
 
   http.StreamedResponse response = await request.send();
 
   if (response.statusCode == 200 || response.statusCode == 201) {
-    print(await response.stream.bytesToString());
+    final body = await response.stream.bytesToString(); // ✅ อ่านได้ครั้งเดียว
+    final jsonResponse = json.decode(body);
+    //print('✅ Response JSON: $jsonResponse');
+    // //print('🧾 Raw JSON: $jsonRes');
     return response;
   } else {
-    print('❌ Failed: ${response.statusCode}');
-    print(await response.stream.bytesToString());
+    //print('❌ Failed: ${response.statusCode}');
+    //print(await response.stream.bytesToString());
     return null;
   }
 }
@@ -343,17 +373,17 @@ Future<http.StreamedResponse?> Put_Permission({
 //     final response = await request.send();
 //     final responseBody = await response.stream.bytesToString();
 //     if (response.statusCode == 201 || response.statusCode == 409) {
-//       print('✅ Post Permission Success');
-//       print('📦 Response Body: $responseBody');
+//       //print('✅ Post Permission Success');
+//       //print('📦 Response Body: $responseBody');
 //     } else {
-//       print('❌ Post Permission Failed [${response.statusCode}]');
-//       print('📄 Body: $responseBody');
+//       //print('❌ Post Permission Failed [${response.statusCode}]');
+//       //print('📄 Body: $responseBody');
 //     }
 
 //     return response;
 //   } catch (e, stack) {
-//     print('❌ Exception during Post_Permission: $e');
-//     print('🧭 StackTrace:\n$stack');
+//     //print('❌ Exception during Post_Permission: $e');
+//     //print('🧭 StackTrace:\n$stack');
 //     return null;
 //   }
 // }

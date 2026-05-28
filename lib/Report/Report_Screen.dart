@@ -27,7 +27,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import '../Account/Account_Screen.dart';
+import '../Account/Ac_Sub/Account_Screen.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
 import '../Constant/Myconstant.dart';
@@ -1213,42 +1213,42 @@ class _ReportScreenState extends State<ReportScreen> {
                               ),
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: Align(
-                              alignment: Alignment.topRight,
-                              child: InkWell(
-                                onTap: () async {
-                                  setState(() {
-                                    Status_s = 1;
-                                  });
-                                },
-                                child: Container(
-                                    width: 130,
-                                    padding: const EdgeInsets.all(6.0),
-                                    decoration: BoxDecoration(
-                                      color: Colors.deepOrange[200],
-                                      borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(8),
-                                          topRight: Radius.circular(8),
-                                          bottomLeft: Radius.circular(8),
-                                          bottomRight: Radius.circular(8)),
-                                      border: Border.all(
-                                          color: Colors.white, width: 1),
-                                    ),
-                                    child: Center(
-                                      child: Translate.TranslateAndSetText(
-                                          'Dashboard',
-                                          Colors.white,
-                                          TextAlign.center,
-                                          FontWeight.w500,
-                                          Font_.Fonts_T,
-                                          Text_Size,
-                                          1),
-                                    )),
-                              ),
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.all(4.0),
+                          //   child: Align(
+                          //     alignment: Alignment.topRight,
+                          //     child: InkWell(
+                          //       onTap: () async {
+                          //         setState(() {
+                          //           Status_s = 1;
+                          //         });
+                          //       },
+                          //       child: Container(
+                          //           width: 130,
+                          //           padding: const EdgeInsets.all(6.0),
+                          //           decoration: BoxDecoration(
+                          //             color: Colors.deepOrange[200],
+                          //             borderRadius: const BorderRadius.only(
+                          //                 topLeft: Radius.circular(8),
+                          //                 topRight: Radius.circular(8),
+                          //                 bottomLeft: Radius.circular(8),
+                          //                 bottomRight: Radius.circular(8)),
+                          //             border: Border.all(
+                          //                 color: Colors.white, width: 1),
+                          //           ),
+                          //           child: Center(
+                          //             child: Translate.TranslateAndSetText(
+                          //                 'Dashboard',
+                          //                 Colors.white,
+                          //                 TextAlign.center,
+                          //                 FontWeight.w500,
+                          //                 Font_.Fonts_T,
+                          //                 Text_Size,
+                          //                 1),
+                          //           )),
+                          //     ),
+                          //   ),
+                          // ),
                         ],
                       ),
                     ),
@@ -3564,499 +3564,479 @@ class _ReportScreenState extends State<ReportScreen> {
                           }),
                           child: SingleChildScrollView(
                             scrollDirection: Axis.horizontal,
-                            child: (rtser.toString() == '65')
-                                ? Row(
-                                    children: [
-                                      for (int index = 0; index < 3; index++)
-                                        Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                if (index == 0) {
-                                                  ser_pang_CM = -2;
-                                                } else if (index == 1) {
-                                                  ser_pang_CM = -1;
-                                                } else {
-                                                  ser_pang_CM = 0;
-                                                }
-                                              });
-                                            },
-                                            child: Container(
-                                              width: 125,
-                                              decoration: BoxDecoration(
-                                                color: (ser_pang_CM == -2 &&
-                                                        index == 0)
-                                                    ? Colors.blueGrey
-                                                    : (ser_pang_CM == -1 &&
-                                                            index == 1)
-                                                        ? Colors.blueGrey
-                                                        : (ser_pang_CM == 0 &&
-                                                                index == 2)
-                                                            ? Colors.blueGrey
-                                                            : Colors
-                                                                .blueGrey[200],
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  topRight: Radius.circular(10),
-                                                  bottomLeft:
-                                                      Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10),
-                                                ),
-                                                border: Border.all(
-                                                    color: Colors.white,
-                                                    width: 2),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.all(5.0),
-                                              child: Center(
-                                                child: AutoSizeText(
-                                                  minFontSize: 10,
-                                                  maxFontSize: 20,
-                                                  (index == 0)
-                                                      ? 'Exclusive - A'
-                                                      : (index == 1)
-                                                          ? 'Exclusive - B'
-                                                          : 'Exclusive - C',
-                                                  style: TextStyle(
-                                                    fontSize: Text_Size,
-                                                    color: Colors.white,
-                                                    // fontWeight: FontWeight.bold,
-                                                    fontFamily:
-                                                        FontWeight_.Fonts_T,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
+                            child:
+                                // (rtser.toString() == '65')
+                                // ? Row(
+                                //     children: [
+                                //       for (int index = 0; index < 3; index++)
+                                //         Padding(
+                                //           padding: const EdgeInsets.all(4.0),
+                                //           child: InkWell(
+                                //             onTap: () {
+                                //               setState(() {
+                                //                 if (index == 0) {
+                                //                   ser_pang_CM = -2;
+                                //                 } else if (index == 1) {
+                                //                   ser_pang_CM = -1;
+                                //                 } else {
+                                //                   ser_pang_CM = 0;
+                                //                 }
+                                //               });
+                                //             },
+                                //             child: Container(
+                                //               width: 125,
+                                //               decoration: BoxDecoration(
+                                //                 color: (ser_pang_CM == -2 &&
+                                //                         index == 0)
+                                //                     ? Colors.blueGrey
+                                //                     : (ser_pang_CM == -1 &&
+                                //                             index == 1)
+                                //                         ? Colors.blueGrey
+                                //                         : (ser_pang_CM == 0 &&
+                                //                                 index == 2)
+                                //                             ? Colors.blueGrey
+                                //                             : Colors
+                                //                                 .blueGrey[200],
+                                //                 borderRadius:
+                                //                     const BorderRadius.only(
+                                //                   topLeft: Radius.circular(10),
+                                //                   topRight: Radius.circular(10),
+                                //                   bottomLeft:
+                                //                       Radius.circular(10),
+                                //                   bottomRight:
+                                //                       Radius.circular(10),
+                                //                 ),
+                                //                 border: Border.all(
+                                //                     color: Colors.white,
+                                //                     width: 2),
+                                //               ),
+                                //               padding:
+                                //                   const EdgeInsets.all(5.0),
+                                //               child: Center(
+                                //                 child: AutoSizeText(
+                                //                   minFontSize: 10,
+                                //                   maxFontSize: 20,
+                                //                   (index == 0)
+                                //                       ? 'Exclusive - A'
+                                //                       : (index == 1)
+                                //                           ? 'Exclusive - B'
+                                //                           : 'Exclusive - C',
+                                //                   style: TextStyle(
+                                //                     fontSize: Text_Size,
+                                //                     color: Colors.white,
+                                //                     // fontWeight: FontWeight.bold,
+                                //                     fontFamily:
+                                //                         FontWeight_.Fonts_T,
+                                //                     fontWeight: FontWeight.bold,
+                                //                   ),
+                                //                 ),
+                                //               ),
+                                //             ),
+                                //           ),
+                                //         ),
+                                //       for (int index = 1; index < 9; index++)
+                                //         Padding(
+                                //           padding: const EdgeInsets.all(4.0),
+                                //           child: InkWell(
+                                //             onTap: () {
+                                //               setState(() {
+                                //                 ser_pang_CM = index;
+                                //               });
+                                //             },
+                                //             child: Container(
+                                //               width: 100,
+                                //               decoration: BoxDecoration(
+                                //                 // color: (ser_pang == index + 1 ||
+                                //                 //         ser_pang + index == 0)
+                                //                 //     ? Colors.black54
+                                //                 //     : Colors.black26,
+                                //                 color: (ser_pang_CM == index)
+                                //                     ? Colors.deepPurple
+                                //                     : Colors.deepPurple[200],
+                                //                 borderRadius:
+                                //                     const BorderRadius.only(
+                                //                   topLeft: Radius.circular(10),
+                                //                   topRight: Radius.circular(10),
+                                //                   bottomLeft:
+                                //                       Radius.circular(10),
+                                //                   bottomRight:
+                                //                       Radius.circular(10),
+                                //                 ),
+                                //                 border: Border.all(
+                                //                     color: Colors.white,
+                                //                     width: 2),
+                                //               ),
+                                //               padding:
+                                //                   const EdgeInsets.all(5.0),
+                                //               child: Center(
+                                //                 child: AutoSizeText(
+                                //                   minFontSize: 8,
+                                //                   maxFontSize: Text_Size,
+                                //                   'หน้า ${index}',
+                                //                   style: const TextStyle(
+                                //                     color: Colors.white,
+                                //                     // fontWeight: FontWeight.bold,
+                                //                     fontFamily:
+                                //                         FontWeight_.Fonts_T,
+                                //                     fontWeight: FontWeight.bold,
+                                //                   ),
+                                //                 ),
+                                //               ),
+                                //             ),
+                                //           ),
+                                //         )
+                                //     ],
+                                //   )
+                                // : (rtser.toString() == '72' ||
+                                //         rtser.toString() == '92' ||
+                                //         rtser.toString() == '93' ||
+                                //         rtser.toString() == '94')
+                                //     ? Row(
+                                //         children: [
+                                //           for (int index = 1;
+                                //               index < 3;
+                                //               index++)
+                                //             Padding(
+                                //               padding:
+                                //                   const EdgeInsets.all(4.0),
+                                //               child: InkWell(
+                                //                 onTap: () {
+                                //                   setState(() {
+                                //                     if (index == 0) {
+                                //                       ser_pang_Ortor = -2;
+                                //                     } else if (index == 1) {
+                                //                       ser_pang_Ortor = -1;
+                                //                     } else {
+                                //                       ser_pang_Ortor = 0;
+                                //                     }
+                                //                   });
+                                //                 },
+                                //                 child: Container(
+                                //                   width: 125,
+                                //                   decoration: BoxDecoration(
+                                //                     color: (ser_pang_Ortor ==
+                                //                                 -2 &&
+                                //                             index == 0)
+                                //                         ? Colors.blueGrey
+                                //                         : (ser_pang_Ortor ==
+                                //                                     -1 &&
+                                //                                 index == 1)
+                                //                             ? Colors.blueGrey
+                                //                             : (ser_pang_Ortor ==
+                                //                                         0 &&
+                                //                                     index == 2)
+                                //                                 ? Colors
+                                //                                     .blueGrey
+                                //                                 : Colors.blueGrey[
+                                //                                     200],
+                                //                     borderRadius:
+                                //                         const BorderRadius.only(
+                                //                       topLeft:
+                                //                           Radius.circular(10),
+                                //                       topRight:
+                                //                           Radius.circular(10),
+                                //                       bottomLeft:
+                                //                           Radius.circular(10),
+                                //                       bottomRight:
+                                //                           Radius.circular(10),
+                                //                     ),
+                                //                     border: Border.all(
+                                //                         color: Colors.white,
+                                //                         width: 2),
+                                //                   ),
+                                //                   padding:
+                                //                       const EdgeInsets.all(5.0),
+                                //                   child: Center(
+                                //                     child: AutoSizeText(
+                                //                       minFontSize: 8,
+                                //                       maxFontSize: Text_Size,
+                                //                       // 'Exclusive - A',
+                                //                       // (index == 0)
+                                //                       //     ? 'Exclusive - A'
+                                //                       //     :
+                                //                       (index == 1)
+                                //                           ? 'Exclusive - A'
+                                //                           : 'Exclusive - B',
+                                //                       style: const TextStyle(
+                                //                         color: Colors.white,
+                                //                         // fontWeight: FontWeight.bold,
+                                //                         fontFamily:
+                                //                             FontWeight_.Fonts_T,
+                                //                         fontWeight:
+                                //                             FontWeight.bold,
+                                //                       ),
+                                //                     ),
+                                //                   ),
+                                //                 ),
+                                //               ),
+                                //             ),
+                                //           for (int index = 1;
+                                //               index < 9;
+                                //               index++)
+                                //             Padding(
+                                //               padding:
+                                //                   const EdgeInsets.all(4.0),
+                                //               child: InkWell(
+                                //                 onTap: () {
+                                //                   setState(() {
+                                //                     ser_pang_Ortor = index;
+                                //                   });
+                                //                 },
+                                //                 child: Container(
+                                //                   width: 100,
+                                //                   decoration: BoxDecoration(
+                                //                     // color: (ser_pang == index + 1 ||
+                                //                     //         ser_pang + index == 0)
+                                //                     //     ? Colors.black54
+                                //                     //     : Colors.black26,
+                                //                     color: (ser_pang_Ortor ==
+                                //                             index)
+                                //                         ? Colors.deepPurple
+                                //                         : Colors
+                                //                             .deepPurple[200],
+                                //                     borderRadius:
+                                //                         const BorderRadius.only(
+                                //                       topLeft:
+                                //                           Radius.circular(10),
+                                //                       topRight:
+                                //                           Radius.circular(10),
+                                //                       bottomLeft:
+                                //                           Radius.circular(10),
+                                //                       bottomRight:
+                                //                           Radius.circular(10),
+                                //                     ),
+                                //                     border: Border.all(
+                                //                         color: Colors.white,
+                                //                         width: 2),
+                                //                   ),
+                                //                   padding:
+                                //                       const EdgeInsets.all(5.0),
+                                //                   child: Center(
+                                //                     child: AutoSizeText(
+                                //                       minFontSize: 8,
+                                //                       maxFontSize: Text_Size,
+                                //                       'หน้า ${index}',
+                                //                       style: const TextStyle(
+                                //                         color: Colors.white,
+                                //                         // fontWeight: FontWeight.bold,
+                                //                         fontFamily:
+                                //                             FontWeight_.Fonts_T,
+                                //                         fontWeight:
+                                //                             FontWeight.bold,
+                                //                       ),
+                                //                     ),
+                                //                   ),
+                                //                 ),
+                                //               ),
+                                //             )
+                                //         ],
+                                //       )
+                                //     : (rtser.toString() == '106')
+                                //         ? Row(
+                                //             children: [
+                                //               for (int index = -4;
+                                //                   index < 1;
+                                //                   index++)
+                                //                 Padding(
+                                //                   padding:
+                                //                       const EdgeInsets.all(4.0),
+                                //                   child: InkWell(
+                                //                     onTap: () {
+                                //                       setState(() {
+                                //                         ser_pang_Choice = index;
+                                //                       });
+                                //                     },
+                                //                     child: Container(
+                                //                       width: 125,
+                                //                       decoration: BoxDecoration(
+                                //                         color:
+                                //                             (ser_pang_Choice ==
+                                //                                     index)
+                                //                                 ? Colors
+                                //                                     .teal[600]
+                                //                                 : Colors
+                                //                                     .teal[200],
+                                //                         borderRadius:
+                                //                             const BorderRadius
+                                //                                 .only(
+                                //                           topLeft:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                           topRight:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                           bottomLeft:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                           bottomRight:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                         ),
+                                //                         border: Border.all(
+                                //                             color: Colors.white,
+                                //                             width: 2),
+                                //                       ),
+                                //                       padding:
+                                //                           const EdgeInsets.all(
+                                //                               5.0),
+                                //                       child: Center(
+                                //                         child: AutoSizeText(
+                                //                           minFontSize: 8,
+                                //                           maxFontSize:
+                                //                               Text_Size,
+                                //                           (index == -4)
+                                //                               ? 'Exclusive - A'
+                                //                               : (index == -3)
+                                //                                   ? 'Exclusive - B'
+                                //                                   : (index ==
+                                //                                           -2)
+                                //                                       ? 'Exclusive - C'
+                                //                                       : (index ==
+                                //                                               -1)
+                                //                                           ? 'Exclusive - D'
+                                //                                           : 'Exclusive - E',
+                                //                           style:
+                                //                               const TextStyle(
+                                //                             color: Colors.white,
+                                //                             // fontWeight: FontWeight.bold,
+                                //                             fontFamily:
+                                //                                 FontWeight_
+                                //                                     .Fonts_T,
+                                //                             fontWeight:
+                                //                                 FontWeight.bold,
+                                //                           ),
+                                //                         ),
+                                //                       ),
+                                //                     ),
+                                //                   ),
+                                //                 ),
+                                //               for (int index = 1;
+                                //                   index < 9;
+                                //                   index++)
+                                //                 Padding(
+                                //                   padding:
+                                //                       const EdgeInsets.all(4.0),
+                                //                   child: InkWell(
+                                //                     onTap: () {
+                                //                       setState(() {
+                                //                         ser_pang_Choice = index;
+                                //                       });
+                                //                     },
+                                //                     child: Container(
+                                //                       width: 100,
+                                //                       decoration: BoxDecoration(
+                                //                         // color: (ser_pang == index + 1 ||
+                                //                         //         ser_pang + index == 0)
+                                //                         //     ? Colors.black54
+                                //                         //     : Colors.black26,
+                                //                         color: (ser_pang_Choice ==
+                                //                                 index)
+                                //                             ? Colors.deepPurple
+                                //                             : Colors.deepPurple[
+                                //                                 200],
+                                //                         borderRadius:
+                                //                             const BorderRadius
+                                //                                 .only(
+                                //                           topLeft:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                           topRight:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                           bottomLeft:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                           bottomRight:
+                                //                               Radius.circular(
+                                //                                   10),
+                                //                         ),
+                                //                         border: Border.all(
+                                //                             color: Colors.white,
+                                //                             width: 2),
+                                //                       ),
+                                //                       padding:
+                                //                           const EdgeInsets.all(
+                                //                               5.0),
+                                //                       child: Center(
+                                //                         child: AutoSizeText(
+                                //                           minFontSize: 8,
+                                //                           maxFontSize:
+                                //                               Text_Size,
+                                //                           'หน้า ${index}',
+                                //                           style:
+                                //                               const TextStyle(
+                                //                             color: Colors.white,
+                                //                             // fontWeight: FontWeight.bold,
+                                //                             fontFamily:
+                                //                                 FontWeight_
+                                //                                     .Fonts_T,
+                                //                             fontWeight:
+                                //                                 FontWeight.bold,
+                                //                           ),
+                                //                         ),
+                                //                       ),
+                                //                     ),
+                                //                   ),
+                                //                 )
+                                //             ],
+                                //           )
+                                //         :
+                                Row(
+                              children: [
+                                // for (int index = 0;
+                                //     index < 10;
+                                //     index++)
+                                for (int index = 0;
+                                    index < 2;
+                                    // index < 8;
+                                    index++)
+                                  Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          ser_pang = index + 1;
+                                        });
+                                      },
+                                      child: Container(
+                                        width: 100,
+                                        decoration: BoxDecoration(
+                                          // color: (ser_pang == index + 1 ||
+                                          //         ser_pang + index == 0)
+                                          //     ? Colors.black54
+                                          //     : Colors.black26,
+                                          color: (ser_pang == index + 1 ||
+                                                  ser_pang + index == 0)
+                                              ? Colors.deepPurple
+                                              : Colors.deepPurple[200],
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(10),
+                                            topRight: Radius.circular(10),
+                                            bottomLeft: Radius.circular(10),
+                                            bottomRight: Radius.circular(10),
+                                          ),
+                                          border: Border.all(
+                                              color: Colors.white, width: 2),
+                                        ),
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: Center(
+                                          child: AutoSizeText(
+                                            minFontSize: 8,
+                                            maxFontSize: Text_Size,
+                                            'หน้า ${index + 1}',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              // fontWeight: FontWeight.bold,
+                                              fontFamily: FontWeight_.Fonts_T,
+                                              fontWeight: FontWeight.bold,
                                             ),
                                           ),
                                         ),
-                                      for (int index = 1; index < 9; index++)
-                                        Padding(
-                                          padding: const EdgeInsets.all(4.0),
-                                          child: InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                ser_pang_CM = index;
-                                              });
-                                            },
-                                            child: Container(
-                                              width: 100,
-                                              decoration: BoxDecoration(
-                                                // color: (ser_pang == index + 1 ||
-                                                //         ser_pang + index == 0)
-                                                //     ? Colors.black54
-                                                //     : Colors.black26,
-                                                color: (ser_pang_CM == index)
-                                                    ? Colors.deepPurple
-                                                    : Colors.deepPurple[200],
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  topRight: Radius.circular(10),
-                                                  bottomLeft:
-                                                      Radius.circular(10),
-                                                  bottomRight:
-                                                      Radius.circular(10),
-                                                ),
-                                                border: Border.all(
-                                                    color: Colors.white,
-                                                    width: 2),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.all(5.0),
-                                              child: Center(
-                                                child: AutoSizeText(
-                                                  minFontSize: 8,
-                                                  maxFontSize: Text_Size,
-                                                  'หน้า ${index}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    // fontWeight: FontWeight.bold,
-                                                    fontFamily:
-                                                        FontWeight_.Fonts_T,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        )
-                                    ],
+                                      ),
+                                    ),
                                   )
-                                : (rtser.toString() == '72' ||
-                                        rtser.toString() == '92' ||
-                                        rtser.toString() == '93' ||
-                                        rtser.toString() == '94')
-                                    ? Row(
-                                        children: [
-                                          for (int index = 1;
-                                              index < 3;
-                                              index++)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(4.0),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    if (index == 0) {
-                                                      ser_pang_Ortor = -2;
-                                                    } else if (index == 1) {
-                                                      ser_pang_Ortor = -1;
-                                                    } else {
-                                                      ser_pang_Ortor = 0;
-                                                    }
-                                                  });
-                                                },
-                                                child: Container(
-                                                  width: 125,
-                                                  decoration: BoxDecoration(
-                                                    color: (ser_pang_Ortor ==
-                                                                -2 &&
-                                                            index == 0)
-                                                        ? Colors.blueGrey
-                                                        : (ser_pang_Ortor ==
-                                                                    -1 &&
-                                                                index == 1)
-                                                            ? Colors.blueGrey
-                                                            : (ser_pang_Ortor ==
-                                                                        0 &&
-                                                                    index == 2)
-                                                                ? Colors
-                                                                    .blueGrey
-                                                                : Colors.blueGrey[
-                                                                    200],
-                                                    borderRadius:
-                                                        const BorderRadius.only(
-                                                      topLeft:
-                                                          Radius.circular(10),
-                                                      topRight:
-                                                          Radius.circular(10),
-                                                      bottomLeft:
-                                                          Radius.circular(10),
-                                                      bottomRight:
-                                                          Radius.circular(10),
-                                                    ),
-                                                    border: Border.all(
-                                                        color: Colors.white,
-                                                        width: 2),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(5.0),
-                                                  child: Center(
-                                                    child: AutoSizeText(
-                                                      minFontSize: 8,
-                                                      maxFontSize: Text_Size,
-                                                      // 'Exclusive - A',
-                                                      // (index == 0)
-                                                      //     ? 'Exclusive - A'
-                                                      //     :
-                                                      (index == 1)
-                                                          ? 'Exclusive - A'
-                                                          : 'Exclusive - B',
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        // fontWeight: FontWeight.bold,
-                                                        fontFamily:
-                                                            FontWeight_.Fonts_T,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          for (int index = 1;
-                                              index < 9;
-                                              index++)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(4.0),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    ser_pang_Ortor = index;
-                                                  });
-                                                },
-                                                child: Container(
-                                                  width: 100,
-                                                  decoration: BoxDecoration(
-                                                    // color: (ser_pang == index + 1 ||
-                                                    //         ser_pang + index == 0)
-                                                    //     ? Colors.black54
-                                                    //     : Colors.black26,
-                                                    color: (ser_pang_Ortor ==
-                                                            index)
-                                                        ? Colors.deepPurple
-                                                        : Colors
-                                                            .deepPurple[200],
-                                                    borderRadius:
-                                                        const BorderRadius.only(
-                                                      topLeft:
-                                                          Radius.circular(10),
-                                                      topRight:
-                                                          Radius.circular(10),
-                                                      bottomLeft:
-                                                          Radius.circular(10),
-                                                      bottomRight:
-                                                          Radius.circular(10),
-                                                    ),
-                                                    border: Border.all(
-                                                        color: Colors.white,
-                                                        width: 2),
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(5.0),
-                                                  child: Center(
-                                                    child: AutoSizeText(
-                                                      minFontSize: 8,
-                                                      maxFontSize: Text_Size,
-                                                      'หน้า ${index}',
-                                                      style: const TextStyle(
-                                                        color: Colors.white,
-                                                        // fontWeight: FontWeight.bold,
-                                                        fontFamily:
-                                                            FontWeight_.Fonts_T,
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            )
-                                        ],
-                                      )
-                                    : (rtser.toString() == '106')
-                                        ? Row(
-                                            children: [
-                                              for (int index = -4;
-                                                  index < 1;
-                                                  index++)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(4.0),
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        ser_pang_Choice = index;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      width: 125,
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            (ser_pang_Choice ==
-                                                                    index)
-                                                                ? Colors
-                                                                    .teal[600]
-                                                                : Colors
-                                                                    .teal[200],
-                                                        borderRadius:
-                                                            const BorderRadius
-                                                                .only(
-                                                          topLeft:
-                                                              Radius.circular(
-                                                                  10),
-                                                          topRight:
-                                                              Radius.circular(
-                                                                  10),
-                                                          bottomLeft:
-                                                              Radius.circular(
-                                                                  10),
-                                                          bottomRight:
-                                                              Radius.circular(
-                                                                  10),
-                                                        ),
-                                                        border: Border.all(
-                                                            color: Colors.white,
-                                                            width: 2),
-                                                      ),
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              5.0),
-                                                      child: Center(
-                                                        child: AutoSizeText(
-                                                          minFontSize: 8,
-                                                          maxFontSize:
-                                                              Text_Size,
-                                                          (index == -4)
-                                                              ? 'Exclusive - A'
-                                                              : (index == -3)
-                                                                  ? 'Exclusive - B'
-                                                                  : (index ==
-                                                                          -2)
-                                                                      ? 'Exclusive - C'
-                                                                      : (index ==
-                                                                              -1)
-                                                                          ? 'Exclusive - D'
-                                                                          : 'Exclusive - E',
-                                                          style:
-                                                              const TextStyle(
-                                                            color: Colors.white,
-                                                            // fontWeight: FontWeight.bold,
-                                                            fontFamily:
-                                                                FontWeight_
-                                                                    .Fonts_T,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              for (int index = 1;
-                                                  index < 9;
-                                                  index++)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(4.0),
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        ser_pang_Choice = index;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      width: 100,
-                                                      decoration: BoxDecoration(
-                                                        // color: (ser_pang == index + 1 ||
-                                                        //         ser_pang + index == 0)
-                                                        //     ? Colors.black54
-                                                        //     : Colors.black26,
-                                                        color: (ser_pang_Choice ==
-                                                                index)
-                                                            ? Colors.deepPurple
-                                                            : Colors.deepPurple[
-                                                                200],
-                                                        borderRadius:
-                                                            const BorderRadius
-                                                                .only(
-                                                          topLeft:
-                                                              Radius.circular(
-                                                                  10),
-                                                          topRight:
-                                                              Radius.circular(
-                                                                  10),
-                                                          bottomLeft:
-                                                              Radius.circular(
-                                                                  10),
-                                                          bottomRight:
-                                                              Radius.circular(
-                                                                  10),
-                                                        ),
-                                                        border: Border.all(
-                                                            color: Colors.white,
-                                                            width: 2),
-                                                      ),
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              5.0),
-                                                      child: Center(
-                                                        child: AutoSizeText(
-                                                          minFontSize: 8,
-                                                          maxFontSize:
-                                                              Text_Size,
-                                                          'หน้า ${index}',
-                                                          style:
-                                                              const TextStyle(
-                                                            color: Colors.white,
-                                                            // fontWeight: FontWeight.bold,
-                                                            fontFamily:
-                                                                FontWeight_
-                                                                    .Fonts_T,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                            ],
-                                          )
-                                        : Row(
-                                            children: [
-                                              // for (int index = 0;
-                                              //     index < 10;
-                                              //     index++)
-                                              for (int index = 0;
-                                                  index < 8;
-                                                  index++)
-                                                Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(4.0),
-                                                  child: InkWell(
-                                                    onTap: () {
-                                                      setState(() {
-                                                        ser_pang = index + 1;
-                                                      });
-                                                    },
-                                                    child: Container(
-                                                      width: 100,
-                                                      decoration: BoxDecoration(
-                                                        // color: (ser_pang == index + 1 ||
-                                                        //         ser_pang + index == 0)
-                                                        //     ? Colors.black54
-                                                        //     : Colors.black26,
-                                                        color: (ser_pang ==
-                                                                    index + 1 ||
-                                                                ser_pang +
-                                                                        index ==
-                                                                    0)
-                                                            ? Colors.deepPurple
-                                                            : Colors.deepPurple[
-                                                                200],
-                                                        borderRadius:
-                                                            const BorderRadius
-                                                                .only(
-                                                          topLeft:
-                                                              Radius.circular(
-                                                                  10),
-                                                          topRight:
-                                                              Radius.circular(
-                                                                  10),
-                                                          bottomLeft:
-                                                              Radius.circular(
-                                                                  10),
-                                                          bottomRight:
-                                                              Radius.circular(
-                                                                  10),
-                                                        ),
-                                                        border: Border.all(
-                                                            color: Colors.white,
-                                                            width: 2),
-                                                      ),
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              5.0),
-                                                      child: Center(
-                                                        child: AutoSizeText(
-                                                          minFontSize: 8,
-                                                          maxFontSize:
-                                                              Text_Size,
-                                                          'หน้า ${index + 1}',
-                                                          style:
-                                                              const TextStyle(
-                                                            color: Colors.white,
-                                                            // fontWeight: FontWeight.bold,
-                                                            fontFamily:
-                                                                FontWeight_
-                                                                    .Fonts_T,
-                                                            fontWeight:
-                                                                FontWeight.bold,
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                )
-                                            ],
-                                          ),
+                              ],
+                            ),
                           ),
                         ),
                       ),

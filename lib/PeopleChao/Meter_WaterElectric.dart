@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:html' as html;
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Model/GetContractx_Model.dart';
 import '../Model/GetExp_Model.dart';
@@ -150,7 +151,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -196,6 +197,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
         _TransModels.clear();
       });
     }
+
     SharedPreferences preferences = await SharedPreferences.getInstance();
     var ren = preferences.getString('renTalSer');
     var ciddoc = widget.Get_Value_cid;
@@ -206,7 +208,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
           '${MyConstant().domain}/GC_quotx_consx.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&_cser=$_cser';
       print(url);
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         // print(result);
@@ -255,7 +257,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
       String url =
           '${MyConstant().domain}/GC_exp_wherser.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         // print(result);
@@ -357,7 +359,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
         final url =
             '${MyConstant().domain}/File_uploadMeter.php?name=$fileName_Slip&Foder=$foder&extension=$extension_';
 
-        final response = await http.post(
+        final response = await httpClient.post(
           Uri.parse(url),
           body: {
             'image': base64_Slip,
@@ -368,7 +370,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
         );
 
         if (response.statusCode == 200) {
-          print(response.body);
+          // print(response.body);
           OK_up_insert_img(indextran);
         } else {
           print('Image upload failed');
@@ -534,7 +536,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
         '${MyConstant().domain}/UPC_Invoice_img.php?isAdd=true&ren=$ren&fileName=$fileName_Slip&transer=$tran_ser';
     // print('$tran_ser /// $ren /// $user /// $fileName_Slip ');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
 
@@ -834,276 +836,425 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                       : 800,
                                   // height: MediaQuery.of(context).size.width * 0.5,
                                   child: Column(children: [
-                                    Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.center,
-                                      children: [
-                                        Expanded(
-                                          child: GestureDetector(
-                                            onTap: () {
-                                              if (renTal_lavel > 1) {
-                                                showDialog<void>(
-                                                  context: context,
-                                                  barrierDismissible:
-                                                      false, // user must tap button!
-                                                  builder:
-                                                      (BuildContext context) {
-                                                    return AlertDialog(
-                                                      shape: const RoundedRectangleBorder(
-                                                          borderRadius:
-                                                              BorderRadius.all(
-                                                                  Radius.circular(
-                                                                      20.0))),
-                                                      // title: const Text('AlertDialog Title'),
-                                                      content:
-                                                          SingleChildScrollView(
-                                                        child: ListBody(
-                                                          children: <Widget>[
-                                                            Container(
-                                                              width: MediaQuery.of(
-                                                                          context)
-                                                                      .size
-                                                                      .width *
-                                                                  0.3,
-                                                              height: MediaQuery.of(
-                                                                          context)
-                                                                      .size
-                                                                      .width *
-                                                                  0.08,
-                                                              child: Center(
+                                    Container(
+                                      height: 55,
+                                      decoration: BoxDecoration(
+                                        color: Colors.blue[200],
+                                        borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(10),
+                                          topRight: Radius.circular(10),
+                                          bottomLeft: Radius.circular(0),
+                                          bottomRight: Radius.circular(0),
+                                        ),
+                                        // border: Border.all(
+                                        //     color: Colors.grey, width: 1),
+                                      ),
+                                      padding: const EdgeInsets.all(2.0),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Expanded(
+                                            child: GestureDetector(
+                                              onTap: (true == true)
+                                                  ? null
+                                                  : () {
+                                                      if (renTal_lavel > 1) {
+                                                        showDialog<void>(
+                                                          context: context,
+                                                          barrierDismissible:
+                                                              false, // user must tap button!
+                                                          builder: (BuildContext
+                                                              context) {
+                                                            return AlertDialog(
+                                                              shape: const RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.all(
+                                                                          Radius.circular(
+                                                                              20.0))),
+                                                              // title: const Text('AlertDialog Title'),
+                                                              content:
+                                                                  SingleChildScrollView(
+                                                                child: ListBody(
+                                                                  children: <Widget>[
+                                                                    Container(
+                                                                      width: MediaQuery.of(context)
+                                                                              .size
+                                                                              .width *
+                                                                          0.3,
+                                                                      height: MediaQuery.of(context)
+                                                                              .size
+                                                                              .width *
+                                                                          0.08,
+                                                                      child:
+                                                                          Center(
+                                                                        child:
+                                                                            Padding(
+                                                                          padding:
+                                                                              const EdgeInsets.all(8.0),
+                                                                          child:
+                                                                              Column(
+                                                                            children: [
+                                                                              Container(
+                                                                                padding: const EdgeInsets.all(8.0),
+                                                                                child: AutoSizeText(
+                                                                                  maxLines: 2,
+                                                                                  minFontSize: 8,
+                                                                                  // maxFontSize: 15,
+                                                                                  'เลขมิเตอร์เดิม $_cmeter',
+                                                                                  textAlign: TextAlign.start,
+                                                                                  style: const TextStyle(
+                                                                                      color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                      // fontWeight: FontWeight.bold,
+                                                                                      fontFamily: Font_.Fonts_T
+
+                                                                                      //fontSize: 10.0
+                                                                                      ),
+                                                                                ),
+                                                                              ),
+                                                                              TextFormField(
+                                                                                textAlign: TextAlign.center,
+                                                                                // initialValue:
+                                                                                //     _cmeter,
+                                                                                onFieldSubmitted: (value) async {
+                                                                                  SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                  String? ren = preferences.getString('renTalSer');
+                                                                                  String? ser_user = preferences.getString('ser');
+                                                                                  var qser = _cser;
+                                                                                  String url = '${MyConstant().domain}/UM_contactx.php?isAdd=true&ren=$ren&qser=$qser&qty=$value&ser_user=$ser_user';
+
+                                                                                  try {
+                                                                                    var response = await httpClient.get(Uri.parse(url));
+
+                                                                                    var result = json.decode(response.body);
+                                                                                    // print(result);
+                                                                                    if (result.toString() == 'true') {
+                                                                                      setState(() {
+                                                                                        _cser = null;
+                                                                                      });
+
+                                                                                      red_exp_wherser();
+                                                                                    }
+                                                                                  } catch (e) {}
+                                                                                  Navigator.of(context).pop();
+
+                                                                                  var name = preferences.getString('fname');
+                                                                                  Insert_log.Insert_logs('สัญญาเช่า', '$name>สัญญา${widget.Get_Value_cid}>แก้ไขเลขเครื่อง');
+                                                                                },
+                                                                                // maxLength: 13,
+                                                                                cursorColor: Colors.green,
+                                                                                decoration: InputDecoration(
+                                                                                    fillColor: Colors.white.withOpacity(0.05),
+                                                                                    filled: true,
+
+                                                                                    // prefixIcon:
+                                                                                    //     const Icon(Icons.key, color: Colors.black),
+                                                                                    // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                                    focusedBorder: const OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.only(
+                                                                                        topRight: Radius.circular(15),
+                                                                                        topLeft: Radius.circular(15),
+                                                                                        bottomRight: Radius.circular(15),
+                                                                                        bottomLeft: Radius.circular(15),
+                                                                                      ),
+                                                                                      borderSide: BorderSide(
+                                                                                        width: 1,
+                                                                                        color: Colors.grey,
+                                                                                      ),
+                                                                                    ),
+                                                                                    enabledBorder: const OutlineInputBorder(
+                                                                                      borderRadius: BorderRadius.only(
+                                                                                        topRight: Radius.circular(15),
+                                                                                        topLeft: Radius.circular(15),
+                                                                                        bottomRight: Radius.circular(15),
+                                                                                        bottomLeft: Radius.circular(15),
+                                                                                      ),
+                                                                                      borderSide: BorderSide(
+                                                                                        width: 1,
+                                                                                        color: Colors.grey,
+                                                                                      ),
+                                                                                    ),
+                                                                                    labelText: 'แก้ไขเลขเครื่อง',
+                                                                                    labelStyle: const TextStyle(
+                                                                                        color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                        // fontWeight: FontWeight.bold,
+                                                                                        fontFamily: Font_.Fonts_T)),
+                                                                                // inputFormatters: <TextInputFormatter>[
+                                                                                //   // for below version 2 use this
+                                                                                //   FilteringTextInputFormatter.allow(
+                                                                                //       RegExp(r'[0-9]')),
+                                                                                //   // for version 2 and greater youcan also use this
+                                                                                //   FilteringTextInputFormatter
+                                                                                //       .digitsOnly
+                                                                                // ],
+                                                                              ),
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ),
+                                                              actions: <Widget>[
+                                                                Row(
+                                                                  mainAxisAlignment:
+                                                                      MainAxisAlignment
+                                                                          .end,
+                                                                  children: [
+                                                                    Container(
+                                                                      child:
+                                                                          Padding(
+                                                                        padding:
+                                                                            const EdgeInsets.all(8.0),
+                                                                        child:
+                                                                            InkWell(
+                                                                          child: Container(
+                                                                              width: 100,
+                                                                              decoration: const BoxDecoration(
+                                                                                color: Colors.black,
+                                                                                borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
+                                                                                // border: Border.all(color: Colors.white, width: 1),
+                                                                              ),
+                                                                              padding: const EdgeInsets.all(8.0),
+                                                                              child: const Center(
+                                                                                  child: Text(
+                                                                                'ปิด',
+                                                                                textAlign: TextAlign.center,
+                                                                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T
+                                                                                    //fontSize: 10.0
+                                                                                    ),
+                                                                              ))),
+                                                                          onTap:
+                                                                              () {
+                                                                            Navigator.of(context).pop();
+                                                                          },
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                                  ],
+                                                                ),
+                                                              ],
+                                                            );
+                                                          },
+                                                        );
+                                                      }
+                                                    },
+                                              child: Container(
+                                                // height: 55,
+                                                // decoration: BoxDecoration(
+                                                //   color: Colors.blue[200],
+                                                //   borderRadius:
+                                                //       const BorderRadius.only(
+                                                //     topLeft: Radius.circular(10),
+                                                //     topRight: Radius.circular(10),
+                                                //     bottomLeft:
+                                                //         Radius.circular(0),
+                                                //     bottomRight:
+                                                //         Radius.circular(0),
+                                                //   ),
+                                                //   // border: Border.all(
+                                                //   //     color: Colors.grey, width: 1),
+                                                // ),
+                                                // padding:
+                                                //     const EdgeInsets.all(2.0),
+                                                child: Center(
+                                                  child: Text(
+                                                    '$_cnamex ($_cunit)\n$_cmeter',
+                                                    maxLines: 2,
+                                                    textAlign: TextAlign.center,
+                                                    style: const TextStyle(
+                                                        color:
+                                                            PeopleChaoScreen_Color
+                                                                .Colors_Text1_,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontFamily:
+                                                            FontWeight_.Fonts_T
+                                                        //fontSize: 10.0
+                                                        ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          SizedBox(
+                                            width: 120,
+                                            height: 40,
+                                            child: Center(
+                                              child: InkWell(
+                                                  onTap: () {
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (context) =>
+                                                          AlertDialog(
+                                                        shape: const RoundedRectangleBorder(
+                                                            borderRadius:
+                                                                BorderRadius.all(
+                                                                    Radius.circular(
+                                                                        20.0))),
+                                                        backgroundColor:
+                                                            AppbackgroundColor
+                                                                .Sub_Abg_Colors,
+                                                        titlePadding:
+                                                            const EdgeInsets
+                                                                .all(0.0),
+                                                        contentPadding:
+                                                            const EdgeInsets
+                                                                .all(10.0),
+                                                        actionsPadding:
+                                                            const EdgeInsets
+                                                                .all(6.0),
+                                                        title: Center(
+                                                          child: Column(
+                                                            children: [
+                                                              Row(
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .end,
+                                                                children: [
+                                                                  InkWell(
+                                                                    onTap: () {
+                                                                      Navigator.pop(
+                                                                          context);
+                                                                    },
+                                                                    child:
+                                                                        Padding(
+                                                                      padding:
+                                                                          const EdgeInsets.all(
+                                                                              4.0),
+                                                                      child: Icon(
+                                                                          Icons
+                                                                              .highlight_off,
+                                                                          size:
+                                                                              30,
+                                                                          color:
+                                                                              Colors.red[700]),
+                                                                    ),
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ),
+                                                        content:
+                                                            SingleChildScrollView(
+                                                          child: ListBody(
+                                                            children: <Widget>[
+                                                              Center(
                                                                 child: Padding(
                                                                   padding:
                                                                       const EdgeInsets
                                                                               .all(
                                                                           8.0),
-                                                                  child: Column(
-                                                                    children: [
-                                                                      Container(
-                                                                        padding:
-                                                                            const EdgeInsets.all(8.0),
-                                                                        child:
-                                                                            AutoSizeText(
-                                                                          maxLines:
-                                                                              2,
-                                                                          minFontSize:
-                                                                              8,
-                                                                          // maxFontSize: 15,
-                                                                          'เลขมิเตอร์เดิม $_cmeter',
-                                                                          textAlign:
-                                                                              TextAlign.start,
-                                                                          style: const TextStyle(
-                                                                              color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                              // fontWeight: FontWeight.bold,
-                                                                              fontFamily: Font_.Fonts_T
-
-                                                                              //fontSize: 10.0
-                                                                              ),
-                                                                        ),
-                                                                      ),
-                                                                      TextFormField(
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                        // initialValue:
-                                                                        //     _cmeter,
-                                                                        onFieldSubmitted:
-                                                                            (value) async {
-                                                                          SharedPreferences
-                                                                              preferences =
-                                                                              await SharedPreferences.getInstance();
-                                                                          String?
-                                                                              ren =
-                                                                              preferences.getString('renTalSer');
-                                                                          String?
-                                                                              ser_user =
-                                                                              preferences.getString('ser');
-                                                                          var qser =
-                                                                              _cser;
-                                                                          String
-                                                                              url =
-                                                                              '${MyConstant().domain}/UM_contactx.php?isAdd=true&ren=$ren&qser=$qser&qty=$value&ser_user=$ser_user';
-
-                                                                          try {
-                                                                            var response =
-                                                                                await http.get(Uri.parse(url));
-
-                                                                            var result =
-                                                                                json.decode(response.body);
-                                                                            // print(result);
-                                                                            if (result.toString() ==
-                                                                                'true') {
-                                                                              setState(() {
-                                                                                _cser = null;
-                                                                              });
-
-                                                                              red_exp_wherser();
-                                                                            }
-                                                                          } catch (e) {}
-                                                                          Navigator.of(context)
-                                                                              .pop();
-
-                                                                          var name =
-                                                                              preferences.getString('fname');
-                                                                          Insert_log.Insert_logs(
-                                                                              'สัญญาเช่า',
-                                                                              '$name>สัญญา${widget.Get_Value_cid}>แก้ไขเลขเครื่อง');
-                                                                        },
-                                                                        // maxLength: 13,
-                                                                        cursorColor:
-                                                                            Colors.green,
-                                                                        decoration: InputDecoration(
-                                                                            fillColor: Colors.white.withOpacity(0.05),
-                                                                            filled: true,
-
-                                                                            // prefixIcon:
-                                                                            //     const Icon(Icons.key, color: Colors.black),
-                                                                            // suffixIcon: Icon(Icons.clear, color: Colors.black),
-                                                                            focusedBorder: const OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.only(
-                                                                                topRight: Radius.circular(15),
-                                                                                topLeft: Radius.circular(15),
-                                                                                bottomRight: Radius.circular(15),
-                                                                                bottomLeft: Radius.circular(15),
-                                                                              ),
-                                                                              borderSide: BorderSide(
-                                                                                width: 1,
-                                                                                color: Colors.grey,
-                                                                              ),
-                                                                            ),
-                                                                            enabledBorder: const OutlineInputBorder(
-                                                                              borderRadius: BorderRadius.only(
-                                                                                topRight: Radius.circular(15),
-                                                                                topLeft: Radius.circular(15),
-                                                                                bottomRight: Radius.circular(15),
-                                                                                bottomLeft: Radius.circular(15),
-                                                                              ),
-                                                                              borderSide: BorderSide(
-                                                                                width: 1,
-                                                                                color: Colors.grey,
-                                                                              ),
-                                                                            ),
-                                                                            labelText: 'แก้ไขเลขเครื่อง',
-                                                                            labelStyle: const TextStyle(
-                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                // fontWeight: FontWeight.bold,
-                                                                                fontFamily: Font_.Fonts_T)),
-                                                                        // inputFormatters: <TextInputFormatter>[
-                                                                        //   // for below version 2 use this
-                                                                        //   FilteringTextInputFormatter.allow(
-                                                                        //       RegExp(r'[0-9]')),
-                                                                        //   // for version 2 and greater youcan also use this
-                                                                        //   FilteringTextInputFormatter
-                                                                        //       .digitsOnly
-                                                                        // ],
-                                                                      ),
-                                                                    ],
+                                                                  child: Text(
+                                                                    'หมายเหตุการคำนวน ',
+                                                                    style: TextStyle(
+                                                                        // decoration:
+                                                                        //     TextDecoration
+                                                                        //         .underline,
+                                                                        color: Colors.grey.shade600,
+                                                                        fontSize: 16,
+                                                                        fontFamily: Font_.Fonts_T),
                                                                   ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ),
-                                                      actions: <Widget>[
-                                                        Row(
-                                                          mainAxisAlignment:
-                                                              MainAxisAlignment
-                                                                  .end,
-                                                          children: [
-                                                            Container(
-                                                              child: Padding(
+                                                              Padding(
                                                                 padding:
                                                                     const EdgeInsets
                                                                             .all(
                                                                         8.0),
-                                                                child: InkWell(
-                                                                  child: Container(
-                                                                      width: 100,
-                                                                      decoration: const BoxDecoration(
-                                                                        color: Colors
-                                                                            .black,
-                                                                        borderRadius: BorderRadius.only(
-                                                                            topLeft:
-                                                                                Radius.circular(10),
-                                                                            topRight: Radius.circular(10),
-                                                                            bottomLeft: Radius.circular(10),
-                                                                            bottomRight: Radius.circular(10)),
-                                                                        // border: Border.all(color: Colors.white, width: 1),
-                                                                      ),
-                                                                      padding: const EdgeInsets.all(8.0),
-                                                                      child: const Center(
-                                                                          child: Text(
-                                                                        'ปิด',
-                                                                        textAlign:
-                                                                            TextAlign.center,
-                                                                        style: TextStyle(
-                                                                            color:
-                                                                                Colors.white,
-                                                                            fontWeight: FontWeight.bold,
-                                                                            fontFamily: FontWeight_.Fonts_T
-                                                                            //fontSize: 10.0
-                                                                            ),
-                                                                      ))),
-                                                                  onTap: () {
-                                                                    Navigator.of(
-                                                                            context)
-                                                                        .pop();
-                                                                  },
+                                                                child: Text(
+                                                                  'คำนวน A : ',
+                                                                  style: TextStyle(
+                                                                      color: Colors
+                                                                          .grey
+                                                                          .shade900,
+                                                                      fontSize:
+                                                                          14,
+                                                                      fontFamily:
+                                                                          Font_
+                                                                              .Fonts_T),
                                                                 ),
                                                               ),
-                                                            ),
-                                                          ],
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                  'กรณี CT = 0.00 : [ หน่วยที่ใช้ * หน่วยละ  ] + บวกเพิ่ม% = ยอดเงิน',
+                                                                  style: TextStyle(
+                                                                      // decoration:
+                                                                      //     TextDecoration
+                                                                      //         .underline,
+                                                                      color: Colors.grey.shade600,
+                                                                      fontSize: 14,
+                                                                      fontFamily: Font_.Fonts_T),
+                                                                ),
+                                                              ),
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                  'คำนวน B : ',
+                                                                  style: TextStyle(
+                                                                      // decoration:
+                                                                      //     TextDecoration
+                                                                      //         .underline,
+                                                                      color: Colors.grey.shade900,
+                                                                      fontSize: 14,
+                                                                      fontFamily: Font_.Fonts_T),
+                                                                ),
+                                                              ),
+                                                              Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        8.0),
+                                                                child: Text(
+                                                                  'กรณี CT > 0.00 : [ (หน่วยที่ใช้ * CT) *หน่วยละ ) ] + บวกเพิ่ม% = ยอดเงิน',
+                                                                  style: TextStyle(
+                                                                      // decoration:
+                                                                      //     TextDecoration
+                                                                      //         .underline,
+                                                                      color: Colors.grey.shade600,
+                                                                      fontSize: 14,
+                                                                      fontFamily: Font_.Fonts_T),
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
                                                         ),
-                                                      ],
+                                                      ),
                                                     );
                                                   },
-                                                );
-                                              }
-                                            },
-                                            child: Container(
-                                              height: 55,
-                                              decoration: BoxDecoration(
-                                                color: Colors.blue[200],
-                                                borderRadius:
-                                                    const BorderRadius.only(
-                                                  topLeft: Radius.circular(10),
-                                                  topRight: Radius.circular(10),
-                                                  bottomLeft:
-                                                      Radius.circular(0),
-                                                  bottomRight:
-                                                      Radius.circular(0),
-                                                ),
-                                                // border: Border.all(
-                                                //     color: Colors.grey, width: 1),
-                                              ),
-                                              padding:
-                                                  const EdgeInsets.all(2.0),
-                                              child: Center(
-                                                child: Text(
-                                                  '$_cnamex ($_cunit)\n$_cmeter',
-                                                  maxLines: 2,
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(
-                                                      color:
-                                                          PeopleChaoScreen_Color
-                                                              .Colors_Text1_,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontFamily:
-                                                          FontWeight_.Fonts_T
-                                                      //fontSize: 10.0
-                                                      ),
-                                                ),
-                                              ),
+                                                  child: Text(
+                                                    'การคำนวน',
+                                                    style: TextStyle(
+                                                        decoration:
+                                                            TextDecoration
+                                                                .underline,
+                                                        color: Colors
+                                                            .grey.shade600,
+                                                        fontSize: 14,
+                                                        fontFamily:
+                                                            Font_.Fonts_T),
+                                                  )),
                                             ),
                                           ),
-                                        ),
-                                      ],
+                                        ],
+                                      ),
                                     ),
                                     Container(
                                       padding: const EdgeInsets.all(2.0),
                                       // height: 70,
                                       color: Colors.blue[100],
                                       child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
                                           const Expanded(
                                             flex: 1,
@@ -1274,6 +1425,107 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                             flex: 1,
                                             child: Column(
                                               crossAxisAlignment:
+                                                  CrossAxisAlignment.center,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                AutoSizeText(
+                                                  minFontSize: 8,
+                                                  maxFontSize: 14,
+                                                  'หม้อแปลงกระแส',
+                                                  maxLines: 1,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text1_,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily:
+                                                          FontWeight_.Fonts_T
+                                                      //fontSize: 10.0
+                                                      ),
+                                                ),
+                                                AutoSizeText(
+                                                  minFontSize: 8,
+                                                  maxFontSize: 14,
+                                                  '(CT)',
+                                                  maxLines: 1,
+                                                  textAlign: TextAlign.center,
+                                                  style: TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text1_,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily:
+                                                          FontWeight_.Fonts_T
+                                                      //fontSize: 10.0
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                AutoSizeText(
+                                                  minFontSize: 8,
+                                                  maxFontSize: 14,
+                                                  'หน่วยละ',
+                                                  maxLines: 1,
+                                                  textAlign: TextAlign.end,
+                                                  style: TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text1_,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily:
+                                                          FontWeight_.Fonts_T
+                                                      //fontSize: 10.0
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                AutoSizeText(
+                                                  minFontSize: 8,
+                                                  maxFontSize: 14,
+                                                  'บวกเพิ่ม %',
+                                                  maxLines: 1,
+                                                  textAlign: TextAlign.end,
+                                                  style: TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text1_,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                      fontFamily:
+                                                          FontWeight_.Fonts_T
+                                                      //fontSize: 10.0
+                                                      ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
                                                   CrossAxisAlignment.end,
                                               mainAxisAlignment:
                                                   MainAxisAlignment.center,
@@ -1295,24 +1547,24 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                       //fontSize: 10.0
                                                       ),
                                                 ),
-                                                AutoSizeText(
-                                                  minFontSize: 8,
-                                                  maxFontSize: 14,
-                                                  '',
-                                                  // '(รวม VAT)',
-                                                  maxLines: 1,
-                                                  textAlign: TextAlign.center,
-                                                  style: const TextStyle(
-                                                      color:
-                                                          PeopleChaoScreen_Color
-                                                              .Colors_Text1_,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      fontFamily:
-                                                          FontWeight_.Fonts_T
-                                                      //fontSize: 10.0
-                                                      ),
-                                                ),
+                                                // AutoSizeText(
+                                                //   minFontSize: 8,
+                                                //   maxFontSize: 14,
+                                                //   '',
+                                                //   // '(รวม VAT)',
+                                                //   maxLines: 1,
+                                                //   textAlign: TextAlign.center,
+                                                //   style: const TextStyle(
+                                                //       color:
+                                                //           PeopleChaoScreen_Color
+                                                //               .Colors_Text1_,
+                                                //       fontWeight:
+                                                //           FontWeight.bold,
+                                                //       fontFamily:
+                                                //           FontWeight_.Fonts_T
+                                                //       //fontSize: 10.0
+                                                //       ),
+                                                // ),
                                               ],
                                             ),
                                           ),
@@ -1520,7 +1772,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                                                                             String url = '${MyConstant().domain}/UPC_Invoice_ovalue.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user';
 
                                                                                                             try {
-                                                                                                              var response = await http.get(Uri.parse(url));
+                                                                                                              var response = await httpClient.get(Uri.parse(url));
 
                                                                                                               var result = json.decode(response.body);
                                                                                                               // print(result);
@@ -1680,7 +1932,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                                                   String url = '${MyConstant().domain}/InC_Invoice.php?isAdd=true&ren=$ren&qser=$qser&qty=$value&ser_user=$ser_user&oval=$oval&con_ser=$_cser';
 
                                                                                   try {
-                                                                                    var response = await http.get(Uri.parse(url));
+                                                                                    var response = await httpClient.get(Uri.parse(url));
 
                                                                                     var result = json.decode(response.body);
                                                                                     // print(result);
@@ -1783,7 +2035,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                                                             String url = '${MyConstant().domain}/UPC_Invoice_ovalue.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user';
                                                                                             // print(url);
                                                                                             try {
-                                                                                              var response = await http.get(Uri.parse(url));
+                                                                                              var response = await httpClient.get(Uri.parse(url));
 
                                                                                               var result = json.decode(response.body);
                                                                                               // print(result);
@@ -1932,10 +2184,63 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                                               .nvalue,
                                                                       onChanged:
                                                                           (value) {
-                                                                        if (value.toString().length >
-                                                                            8) {
-                                                                          Dialog_Error(
-                                                                              'เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง (00xxxx)');
+                                                                        final original =
+                                                                            _TransModels[indextran].nvalue ??
+                                                                                '';
+                                                                        final cleaned = value.replaceAll(
+                                                                            ',',
+                                                                            '');
+
+                                                                        if (cleaned
+                                                                            .isEmpty)
+                                                                          return;
+
+                                                                        bool isDecimal(
+                                                                            String
+                                                                                value) {
+                                                                          final parsed =
+                                                                              double.tryParse(value);
+                                                                          return parsed != null &&
+                                                                              value.contains('.');
+                                                                        }
+
+                                                                        if (isDecimal(
+                                                                            original)) {
+                                                                          print(
+                                                                              'เป็นค่าทศนิยม');
+
+                                                                          final parts =
+                                                                              cleaned.split('.');
+                                                                          final intPart =
+                                                                              parts[0];
+                                                                          final decimalPart = parts.length > 1
+                                                                              ? parts[1]
+                                                                              : '';
+
+                                                                          // if (decimalPart.length !=
+                                                                          //     6) {
+                                                                          //   Dialog_Error('กรุณากรอกตัวเลขหลังจุดทศนิยมให้ครบ 6 หลัก เช่น 0123456789.123456');
+                                                                          //   return;
+                                                                          // }
+                                                                          // if (intPart.length >
+                                                                          //     9) {
+                                                                          //   Dialog_Error('กรุณากรอก 10 หลักก่อนจุดทศนิยมครบแล้ว');
+                                                                          //   return;
+                                                                          // }
+                                                                          // if (intPart.length >
+                                                                          //     10) {
+                                                                          //   Dialog_Error('กรุณากรอกไม่เกิน 10 หลักก่อนจุดทศนิยม');
+                                                                          //   return;
+                                                                          // }
+                                                                        } else {
+                                                                          print(
+                                                                              'ไม่ใช่ค่าทศนิยม');
+
+                                                                          if (cleaned.length >
+                                                                              8) {
+                                                                            Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง (00xxxx)');
+                                                                            return;
+                                                                          }
                                                                         }
                                                                       },
 
@@ -1945,294 +2250,9 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                                         Insert_log.Insert_logs(
                                                                             'ผู้เช่า',
                                                                             '${_TransModels[indextran].docno} แก้ไขมิเตอร์(หลัง)[id:${_TransModels[indextran].ser}] ${_TransModels[indextran].nvalue} >> $value');
-                                                                        if (indextran ==
-                                                                            0) {
-                                                                          SharedPreferences
-                                                                              preferences =
-                                                                              await SharedPreferences.getInstance();
-                                                                          String?
-                                                                              ren =
-                                                                              preferences.getString('renTalSer');
-                                                                          String?
-                                                                              ser_user =
-                                                                              preferences.getString('ser');
-
-                                                                          var qser_in =
-                                                                              _TransModels[indextran].ser_in;
-                                                                          var tran_expser =
-                                                                              _TransModels[indextran].expser;
-                                                                          var qser_inn =
-                                                                              _TransModels[indextran].ser_in;
-
-                                                                          var tran_ser =
-                                                                              _TransModels[indextran].ser;
-                                                                          var tran_sern =
-                                                                              _TransModels[indextran].ser;
-                                                                          var ovalue =
-                                                                              _TransModels[indextran].ovalue; // ก่อน
-                                                                          var nvalue =
-                                                                              _TransModels[indextran].nvalue; // หลัง
-                                                                          _celvat; //vat
-                                                                          _cqty_vat; // หน่วย
-                                                                          final inputValue =
-                                                                              value.toString();
-                                                                          final parsedNValue =
-                                                                              int.tryParse(value ?? '');
-                                                                          final parsedOValue =
-                                                                              int.tryParse(ovalue ?? '');
-
-                                                                          var value_nvalue = (inputValue == '0' || inputValue == '0000' || inputValue == '00000000' || inputValue.length > 8 || parsedNValue == null || parsedOValue == null || parsedNValue < parsedOValue)
-                                                                              ? ovalue
-                                                                              : value;
-                                                                          // print(
-                                                                          //     'ovalue>>>. $ovalue  ---- nvalue>>>>>> $nvalue');
-
-                                                                          String
-                                                                              url =
-                                                                              '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value_nvalue&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
-
-                                                                          try {
-                                                                            var response =
-                                                                                await http.get(Uri.parse(url));
-
-                                                                            var result =
-                                                                                json.decode(response.body);
-                                                                            // print(result);
-                                                                            if (result.toString() !=
-                                                                                'null') {
-                                                                              setState(() {
-                                                                                red_Trans(_cser);
-                                                                              });
-                                                                              Dia_log2();
-                                                                            }
-                                                                          } catch (e) {
-                                                                            Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง!');
-                                                                          }
-                                                                        } else {
-                                                                          if (_TransModels[indextran].ovalue ==
-                                                                              null) {
-                                                                            if (_TransModels[indextran].ovalue ==
-                                                                                null) {
-                                                                              SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                              String? ren = preferences.getString('renTalSer');
-                                                                              String? ser_user = preferences.getString('ser');
-
-                                                                              var qser_in = _TransModels[indextran].ser_in; // ser in
-
-                                                                              var tran_ser = _TransModels[indextran].ser; // ser tran
-                                                                              var ovalue = _TransModels[indextran - 1].nvalue; // ก่อน
-                                                                              var nvalue = _TransModels[indextran].nvalue; // หลัง
-                                                                              _celvat; //vat
-                                                                              _cqty_vat; // หน่วย
-                                                                              // print('1ovalue>>>. $ovalue  ---- nvalue>>>>>> $nvalue');
-                                                                              var oval = '$_cnamex ${DateFormat.MMM('th_TH').format((DateTime.parse('${_TransModels[indextran].date} 00:00:00')))} ${DateTime.parse('${_TransModels[indextran].date} 00:00:00').year + 543}';
-                                                                              String url = '${MyConstant().domain}/InC_InvoiceNew.php?isAdd=true&ren=$ren&tran_ser=$tran_ser&qty=$value&ser_user=$ser_user&oval=$oval&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser';
-
-                                                                              try {
-                                                                                var response = await http.get(Uri.parse(url));
-
-                                                                                var result = json.decode(response.body);
-                                                                                // print(result);
-                                                                                if (result.toString() != 'null') {
-                                                                                  setState(() {
-                                                                                    red_Trans(_cser);
-                                                                                  });
-                                                                                  Dia_log2();
-                                                                                }
-                                                                              } catch (e) {
-                                                                                Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง!');
-                                                                              }
-                                                                            }
-                                                                          } else {
-                                                                            SharedPreferences
-                                                                                preferences =
-                                                                                await SharedPreferences.getInstance();
-                                                                            String?
-                                                                                ren =
-                                                                                preferences.getString('renTalSer');
-                                                                            String?
-                                                                                ser_user =
-                                                                                preferences.getString('ser');
-
-                                                                            var qser_in =
-                                                                                _TransModels[indextran].ser_in;
-                                                                            var qser_inn =
-                                                                                _TransModels[indextran].ser_in;
-                                                                            var tran_expser =
-                                                                                _TransModels[indextran].expser;
-                                                                            var tran_sern =
-                                                                                _TransModels[indextran].ser;
-                                                                            var tran_ser =
-                                                                                _TransModels[indextran].ser;
-                                                                            var ovalue =
-                                                                                _TransModels[indextran].ovalue; // ก่อน
-                                                                            var nvalue =
-                                                                                _TransModels[indextran].nvalue; // หลัง
-                                                                            _celvat; //vat
-                                                                            _cqty_vat; // หน่วย
-
-                                                                            // print('2ovalue>>>. $ovalue  --$value-- nvalue>>>>>> $nvalue ');
-
-                                                                            if (double.parse(value) <
-                                                                                double.parse(ovalue!)) {
-                                                                              Dialog_Error('ค่าที่กรอกต้องมากกว่าหรือเท่ากับค่าเริ่มต้น (${ovalue})');
-
-                                                                              // print('23ovalue>>>--$value-- น้อยกว่า  $ovalue');
-                                                                              // showDialog<void>(
-                                                                              //     context: context,
-                                                                              //     barrierDismissible: false, // user must tap button!
-                                                                              //     builder: (BuildContext context) {
-                                                                              //       return AlertDialog(
-                                                                              //         shape: const RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(20.0))),
-                                                                              //         // title: const Text('AlertDialog Title'),
-                                                                              //         content: SingleChildScrollView(
-                                                                              //           child: ListBody(
-                                                                              //             children: <Widget>[
-                                                                              //               Center(
-                                                                              //                 child: Column(
-                                                                              //                   mainAxisAlignment: MainAxisAlignment.center,
-                                                                              //                   children: [
-                                                                              //                     Padding(
-                                                                              //                       padding: const EdgeInsets.all(8.0),
-                                                                              //                       child: Icon(
-                                                                              //                         Icons.report_problem,
-                                                                              //                         size: 50,
-                                                                              //                         color: Colors.yellow.shade800,
-                                                                              //                       ),
-                                                                              //                     ),
-                                                                              //                     Padding(
-                                                                              //                       padding: const EdgeInsets.all(8.0),
-                                                                              //                       child: Text(
-                                                                              //                         'เลขมิเตอร์น้อยกว่าเลขมิเตอร์ก่อนหน้า ต้องการเริ่มเลขมิเตอร์ใหม่',
-                                                                              //                         textAlign: TextAlign.center,
-                                                                              //                         style: TextStyle(color: PeopleChaoScreen_Color.Colors_Text1_, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T
-                                                                              //                             //fontSize: 10.0
-                                                                              //                             ),
-                                                                              //                       ),
-                                                                              //                     ),
-                                                                              //                   ],
-                                                                              //                 ),
-                                                                              //               ),
-                                                                              //             ],
-                                                                              //           ),
-                                                                              //         ),
-                                                                              //         actions: <Widget>[
-                                                                              //           Row(
-                                                                              //             mainAxisAlignment: MainAxisAlignment.center,
-                                                                              //             children: [
-                                                                              //               Expanded(
-                                                                              //                 child: Container(
-                                                                              //                   child: Padding(
-                                                                              //                     padding: const EdgeInsets.all(8.0),
-                                                                              //                     child: InkWell(
-                                                                              //                       child: Container(
-                                                                              //                           width: 100,
-                                                                              //                           decoration: BoxDecoration(
-                                                                              //                             color: Colors.green.shade900,
-                                                                              //                             borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                              //                             // border: Border.all(color: Colors.white, width: 1),
-                                                                              //                           ),
-                                                                              //                           padding: const EdgeInsets.all(8.0),
-                                                                              //                           child: const Center(
-                                                                              //                               child: Text(
-                                                                              //                             'ตกลง',
-                                                                              //                             textAlign: TextAlign.center,
-                                                                              //                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T
-                                                                              //                                 //fontSize: 10.0
-                                                                              //                                 ),
-                                                                              //                           ))),
-                                                                              //                       onTap: () async {
-                                                                              //                         String url = '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
-
-                                                                              //                         try {
-                                                                              //                           var response = await http.get(Uri.parse(url));
-
-                                                                              //                           var result = json.decode(response.body);
-                                                                              //                           print(result);
-                                                                              //                           if (result.toString() != 'null') {
-                                                                              //                             setState(() {
-                                                                              //                               Navigator.of(context).pop();
-                                                                              //                               red_Trans(_cser);
-                                                                              //                             });
-                                                                              //                           }
-                                                                              //                         } catch (e) {}
-                                                                              //                       },
-                                                                              //                     ),
-                                                                              //                   ),
-                                                                              //                 ),
-                                                                              //               ),
-                                                                              //               Expanded(
-                                                                              //                 child: Container(
-                                                                              //                   child: Padding(
-                                                                              //                     padding: const EdgeInsets.all(8.0),
-                                                                              //                     child: InkWell(
-                                                                              //                       child: Container(
-                                                                              //                           width: 100,
-                                                                              //                           decoration: const BoxDecoration(
-                                                                              //                             color: Colors.black,
-                                                                              //                             borderRadius: BorderRadius.only(topLeft: Radius.circular(10), topRight: Radius.circular(10), bottomLeft: Radius.circular(10), bottomRight: Radius.circular(10)),
-                                                                              //                             // border: Border.all(color: Colors.white, width: 1),
-                                                                              //                           ),
-                                                                              //                           padding: const EdgeInsets.all(8.0),
-                                                                              //                           child: const Center(
-                                                                              //                               child: Text(
-                                                                              //                             'ปิด',
-                                                                              //                             textAlign: TextAlign.center,
-                                                                              //                             style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontFamily: FontWeight_.Fonts_T
-                                                                              //                                 //fontSize: 10.0
-                                                                              //                                 ),
-                                                                              //                           ))),
-                                                                              //                       onTap: () {
-                                                                              //                         Navigator.of(context).pop();
-                                                                              //                       },
-                                                                              //                     ),
-                                                                              //                   ),
-                                                                              //                 ),
-                                                                              //               )
-                                                                              //             ],
-                                                                              //           ),
-                                                                              //         ],
-                                                                              //       );
-                                                                              //     });
-                                                                            } else {
-                                                                              String url = '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
-
-                                                                              try {
-                                                                                var response = await http.get(Uri.parse(url));
-
-                                                                                var result = json.decode(response.body);
-                                                                                // print(result);
-                                                                                if (result.toString() != 'null') {
-                                                                                  setState(() {
-                                                                                    red_Trans(_cser);
-                                                                                  });
-                                                                                  Dia_log2();
-                                                                                }
-                                                                              } catch (e) {
-                                                                                Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง!');
-                                                                              }
-                                                                            }
-
-                                                                            // String
-                                                                            //     url =
-                                                                            //     '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
-
-                                                                            // try {
-                                                                            //   var response =
-                                                                            //       await http.get(Uri.parse(url));
-
-                                                                            //   var result =
-                                                                            //       json.decode(response.body);
-                                                                            //   print(result);
-                                                                            //   if (result.toString() !=
-                                                                            //       'null') {
-                                                                            //     setState(() {
-                                                                            //       red_Trans(_cser);
-                                                                            //     });
-                                                                            //   }
-                                                                            // } catch (e) {}
-                                                                          }
-                                                                        }
+                                                                        FieldSubmit_nvalue(
+                                                                            indextran,
+                                                                            value);
                                                                       },
                                                                       // cursorColor:
                                                                       //     Colors
@@ -2267,14 +2287,30 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
 
                                                                               //fontWeight: FontWeight.bold,
                                                                               fontFamily: Font_.Fonts_T)),
-                                                                      inputFormatters: <TextInputFormatter>[
-                                                                        // for below version 2 use this
-                                                                        FilteringTextInputFormatter.allow(
-                                                                            RegExp(r'[0-9]')),
-                                                                        // for version 2 and greater youcan also use this
+                                                                      inputFormatters: [
                                                                         FilteringTextInputFormatter
-                                                                            .digitsOnly
+                                                                            .allow(
+                                                                          RegExp(
+                                                                              r'^\d{0,10}(\.\d{0,6})?$'), // ✅ ไม่เกิน 10 หลักหน้า, 6 หลักหลังจุด
+                                                                        ),
                                                                       ],
+
+                                                                      // inputFormatters: [
+                                                                      //   FilteringTextInputFormatter
+                                                                      //       .allow(
+                                                                      //     RegExp(
+                                                                      //         r'^\d{0,10}(\.\d{0,6})?$'), // 🔒 ก่อนจุดไม่เกิน 10, หลังจุดไม่เกิน 6
+                                                                      //   ),
+                                                                      // ],
+
+                                                                      // inputFormatters: <TextInputFormatter>[
+                                                                      //   // for below version 2 use this
+                                                                      //   FilteringTextInputFormatter.allow(
+                                                                      //       RegExp(r'[0-9]')),
+                                                                      //   // for version 2 and greater youcan also use this
+                                                                      //   FilteringTextInputFormatter
+                                                                      //       .digitsOnly
+                                                                      // ],
                                                                     ),
                                                                   )
                                                                 : Padding(
@@ -2349,6 +2385,478 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                               //fontWeight: FontWeight.bold,
                                                               fontFamily: Font_
                                                                   .Fonts_T),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Container(
+                                                            width: 150,
+                                                            height: 40,
+                                                            decoration:
+                                                                const BoxDecoration(
+                                                              // color: Colors.green,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .all(Radius
+                                                                          .circular(
+                                                                              6)),
+                                                              // border: Border.all(color: Colors.grey, width: 1),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2.0),
+                                                            child:
+                                                                TextFormField(
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .right,
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .number,
+                                                              showCursor: _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          null ||
+                                                                      _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          ''
+                                                                  ? true
+                                                                  : false,
+                                                              //add this line
+                                                              readOnly: _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          null ||
+                                                                      _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          ''
+                                                                  ? false
+                                                                  : true,
+
+                                                              initialValue:
+                                                                  '${nFormat.format(double.parse(_TransModels[indextran].ct_amt!))}',
+                                                              onChanged:
+                                                                  (value) {},
+
+                                                              onFieldSubmitted:
+                                                                  (value) async {
+                                                                Insert_log.Insert_logs(
+                                                                    'ผู้เช่า',
+                                                                    '${_TransModels[indextran].docno} แก้ไข มิเตอร์CTหน่วยละน้ำ-ไฟ [${_TransModels[indextran].ct_amt} >> $value]');
+                                                                SharedPreferences
+                                                                    preferences =
+                                                                    await SharedPreferences
+                                                                        .getInstance();
+                                                                String? ren =
+                                                                    preferences
+                                                                        .getString(
+                                                                            'renTalSer');
+                                                                String?
+                                                                    ser_user =
+                                                                    preferences
+                                                                        .getString(
+                                                                            'ser');
+                                                                String url =
+                                                                    '${MyConstant().domain}/UPC_Invoice_pri_percen.php?isAdd=true&ren=$ren&type=ctAmt&value=$value&ser_user=$ser_user&ser=${_TransModels[indextran].ser_in}&refno=${_TransModels[indextran].c_refno}';
+                                                                // print(url);
+                                                                try {
+                                                                  var response =
+                                                                      await httpClient.get(
+                                                                          Uri.parse(
+                                                                              url));
+
+                                                                  var result =
+                                                                      json.decode(
+                                                                          response
+                                                                              .body);
+                                                                  // print(result);
+                                                                  if (result
+                                                                          .toString() !=
+                                                                      'null') {
+                                                                    final nvalue_data = _TransModels[
+                                                                            indextran]
+                                                                        .nvalue
+                                                                        .toString();
+                                                                    await FieldSubmit_nvalue(
+                                                                        indextran,
+                                                                        nvalue_data);
+                                                                    // setState(
+                                                                    //     () {
+                                                                    //   red_Trans(
+                                                                    //       _cser);
+                                                                    // });
+                                                                  }
+                                                                } catch (e) {}
+                                                              },
+
+                                                              decoration: InputDecoration(
+                                                                  fillColor: Colors.white.withOpacity(0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder: const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(6)),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder: const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(6)),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText: 'ระบุชื่อร้านค้า',
+                                                                  labelStyle: const TextStyle(
+                                                                      color: Colors.black54,
+
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily: Font_.Fonts_T)),
+                                                              inputFormatters: [
+                                                                FilteringTextInputFormatter
+                                                                    .allow(
+                                                                  RegExp(
+                                                                      r'^\d{0,10}(\.\d{0,6})?$'), // ✅ ไม่เกิน 10 หลักหน้า, 6 หลักหลังจุด
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Container(
+                                                            width: 150,
+                                                            height: 40,
+                                                            decoration:
+                                                                const BoxDecoration(
+                                                              // color: Colors.green,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .all(Radius
+                                                                          .circular(
+                                                                              6)),
+                                                              // border: Border.all(color: Colors.grey, width: 1),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2.0),
+                                                            child:
+                                                                TextFormField(
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .right,
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .number,
+                                                              showCursor: _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          null ||
+                                                                      _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          ''
+                                                                  ? true
+                                                                  : false,
+                                                              //add this line
+                                                              readOnly: _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          null ||
+                                                                      _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          ''
+                                                                  ? false
+                                                                  : true,
+
+                                                              initialValue:
+                                                                  '${nFormat.format(double.parse(_TransModels[indextran].pri!))}',
+                                                              onChanged:
+                                                                  (value) {},
+
+                                                              onFieldSubmitted:
+                                                                  (value) async {
+                                                                Insert_log.Insert_logs(
+                                                                    'ผู้เช่า',
+                                                                    '${_TransModels[indextran].docno} แก้ไข มิเตอร์หน่วยละน้ำ-ไฟ [${_TransModels[indextran].pri} >> $value]');
+                                                                SharedPreferences
+                                                                    preferences =
+                                                                    await SharedPreferences
+                                                                        .getInstance();
+                                                                String? ren =
+                                                                    preferences
+                                                                        .getString(
+                                                                            'renTalSer');
+                                                                String?
+                                                                    ser_user =
+                                                                    preferences
+                                                                        .getString(
+                                                                            'ser');
+                                                                String url =
+                                                                    '${MyConstant().domain}/UPC_Invoice_pri_percen.php?isAdd=true&ren=$ren&type=pri&value=$value&ser_user=$ser_user&ser=${_TransModels[indextran].ser_in}&refno=${_TransModels[indextran].c_refno}';
+                                                                // print(url);
+                                                                try {
+                                                                  var response =
+                                                                      await httpClient.get(
+                                                                          Uri.parse(
+                                                                              url));
+
+                                                                  var result =
+                                                                      json.decode(
+                                                                          response
+                                                                              .body);
+                                                                  // print(result);
+                                                                  if (result
+                                                                          .toString() !=
+                                                                      'null') {
+                                                                    final nvalue_data = _TransModels[
+                                                                            indextran]
+                                                                        .nvalue
+                                                                        .toString();
+                                                                    await FieldSubmit_nvalue(
+                                                                        indextran,
+                                                                        nvalue_data);
+                                                                    // setState(
+                                                                    //     () {
+                                                                    //   red_Trans(
+                                                                    //       _cser);
+                                                                    // });
+                                                                  }
+                                                                } catch (e) {}
+                                                              },
+
+                                                              decoration: InputDecoration(
+                                                                  fillColor: Colors.white.withOpacity(0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder: const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(6)),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder: const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(6)),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText: 'ระบุชื่อร้านค้า',
+                                                                  labelStyle: const TextStyle(
+                                                                      color: Colors.black54,
+
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily: Font_.Fonts_T)),
+                                                              inputFormatters: [
+                                                                FilteringTextInputFormatter
+                                                                    .allow(
+                                                                  RegExp(
+                                                                      r'^\d{0,10}(\.\d{0,6})?$'), // ✅ ไม่เกิน 10 หลักหน้า, 6 หลักหลังจุด
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      // Expanded(
+                                                      //   flex: 1,
+                                                      //   child: Text(
+                                                      //     (_TransModels[indextran]
+                                                      //                     .pri ==
+                                                      //                 null ||
+                                                      //             _TransModels[
+                                                      //                         indextran]
+                                                      //                     .pri
+                                                      //                     .toString() ==
+                                                      //                 '')
+                                                      //         ? '0.00'
+                                                      //         : '${nFormat.format(double.parse(_TransModels[indextran].pri!))}',
+                                                      //     // '${_TransModels[indextran].qty5}',
+                                                      //     textAlign:
+                                                      //         TextAlign.right,
+                                                      //     overflow: TextOverflow
+                                                      //         .ellipsis,
+                                                      //     style: TextStyle(
+                                                      //         color: PeopleChaoScreen_Color
+                                                      //             .Colors_Text2_,
+                                                      //         //fontWeight: FontWeight.bold,
+                                                      //         fontFamily: Font_
+                                                      //             .Fonts_T),
+                                                      //   ),
+                                                      // ),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Align(
+                                                          alignment: Alignment
+                                                              .centerRight,
+                                                          child: Container(
+                                                            width: 100,
+                                                            height: 40,
+                                                            decoration:
+                                                                const BoxDecoration(
+                                                              // color: Colors.green,
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .all(Radius
+                                                                          .circular(
+                                                                              6)),
+                                                              // border: Border.all(color: Colors.grey, width: 1),
+                                                            ),
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2.0),
+                                                            child:
+                                                                TextFormField(
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .right,
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .number,
+                                                              showCursor: _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          null ||
+                                                                      _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          ''
+                                                                  ? true
+                                                                  : false,
+                                                              //add this line
+                                                              readOnly: _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          null ||
+                                                                      _TransModels[indextran]
+                                                                              .docno_in ==
+                                                                          ''
+                                                                  ? false
+                                                                  : true,
+
+                                                              initialValue:
+                                                                  _TransModels[
+                                                                          indextran]
+                                                                      .pvat_percen,
+                                                              onChanged:
+                                                                  (value) {},
+
+                                                              onFieldSubmitted:
+                                                                  (value) async {
+                                                                Insert_log.Insert_logs(
+                                                                    'ผู้เช่า',
+                                                                    '${_TransModels[indextran].docno} แก้ไข มิเตอร์percen% น้ำ-ไฟ [${_TransModels[indextran].pvat_percen} >> $value]');
+                                                                SharedPreferences
+                                                                    preferences =
+                                                                    await SharedPreferences
+                                                                        .getInstance();
+                                                                String? ren =
+                                                                    preferences
+                                                                        .getString(
+                                                                            'renTalSer');
+                                                                String?
+                                                                    ser_user =
+                                                                    preferences
+                                                                        .getString(
+                                                                            'ser');
+                                                                String url =
+                                                                    '${MyConstant().domain}/UPC_Invoice_pri_percen.php?isAdd=true&ren=$ren&type=percen&value=$value&ser_user=$ser_user&ser=${_TransModels[indextran].ser_in}&refno=${_TransModels[indextran].c_refno}';
+                                                                // print(url);
+                                                                try {
+                                                                  var response =
+                                                                      await httpClient.get(
+                                                                          Uri.parse(
+                                                                              url));
+
+                                                                  var result =
+                                                                      json.decode(
+                                                                          response
+                                                                              .body);
+                                                                  // print(result);
+                                                                  if (result
+                                                                          .toString() !=
+                                                                      'null') {
+                                                                    final nvalue_data = _TransModels[
+                                                                            indextran]
+                                                                        .nvalue
+                                                                        .toString();
+                                                                    await FieldSubmit_nvalue(
+                                                                        indextran,
+                                                                        nvalue_data);
+                                                                    // setState(
+                                                                    //     () {
+                                                                    //   red_Trans(
+                                                                    //       _cser);
+                                                                    // });
+                                                                  }
+                                                                } catch (e) {}
+                                                              },
+
+                                                              decoration: InputDecoration(
+                                                                  fillColor: Colors.white.withOpacity(0.3),
+                                                                  filled: true,
+                                                                  // prefixIcon:
+                                                                  //     const Icon(Icons.person, color: Colors.black),
+                                                                  // suffixIcon: Icon(Icons.clear, color: Colors.black),
+                                                                  focusedBorder: const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(6)),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .black,
+                                                                    ),
+                                                                  ),
+                                                                  enabledBorder: const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius.all(
+                                                                            Radius.circular(6)),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Colors
+                                                                          .grey,
+                                                                    ),
+                                                                  ),
+                                                                  // labelText: 'ระบุชื่อร้านค้า',
+                                                                  labelStyle: const TextStyle(
+                                                                      color: Colors.black54,
+
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily: Font_.Fonts_T)),
+                                                              inputFormatters: [
+                                                                FilteringTextInputFormatter
+                                                                    .allow(
+                                                                  RegExp(
+                                                                      r'^\d{0,10}(\.\d{0,6})?$'), // ✅ ไม่เกิน 10 หลักหน้า, 6 หลักหลังจุด
+                                                                ),
+                                                              ],
+                                                            ),
+                                                          ),
                                                         ),
                                                       ),
                                                       Expanded(
@@ -2432,6 +2940,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
                                                           ),
                                                         ),
                                                       ),
+
                                                       Container(
                                                         width: 200,
                                                         child: (_TransModels[
@@ -3018,7 +3527,7 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
         '${MyConstant().domain}/GC_electricity_history.php?isAdd=true&ren=$ren&qser_in=$qser_in';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -4131,6 +4640,187 @@ class _MeterWaterElectricState extends State<MeterWaterElectric> {
               ),
             );
           });
+    }
+  }
+
+  Future<void> FieldSubmit_nvalue(indextran, value) async {
+    if (indextran == 0) {
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      String? ren = preferences.getString('renTalSer');
+      String? ser_user = preferences.getString('ser');
+
+      var qser_in = _TransModels[indextran].ser_in;
+      var tran_expser = _TransModels[indextran].expser;
+      var qser_inn = _TransModels[indextran].ser_in;
+
+      var tran_ser = _TransModels[indextran].ser;
+      var tran_sern = _TransModels[indextran].ser;
+      var ovalue = _TransModels[indextran].ovalue; // ก่อน
+      var nvalue = _TransModels[indextran].nvalue; // หลัง
+      var ctAmt = _TransModels[indextran].ct_amt; // หลัง
+      _celvat; //vat
+      _cqty_vat; // หน่วย
+      final inputValue = value.toString();
+      final original = _TransModels[indextran].nvalue ?? '';
+      var value_nvalue;
+
+      bool isDecimal(String value) {
+        final parsed = double.tryParse(value);
+        return parsed != null && value.contains('.');
+      }
+
+      setState(() {
+        if (isDecimal(original)) {
+          print('OnFieldSubmitted : เป็นค่าทศนิยม');
+          // final cleaned = value.replaceAll(',', '');
+          // final parts = cleaned.split('.');
+          // final intPart = parts[0];
+          // final decimalPart = parts.length > 1 ? parts[1] : '';
+          // // ✅ กรณีเป็นทศนิยม
+          // final parsedN = double.tryParse(inputValue);
+          // final parsedO = double.tryParse(ovalue ?? '');
+
+          // final isInvalid = decimalPart.length != 6 ||
+          //     intPart.length > 10 ||
+          //     inputValue.length > 17 || // ความยาวรวมเกิน 17
+          //     parsedN == null ||
+          //     parsedO == null ||
+          //     parsedN < parsedO;
+
+          value_nvalue = inputValue;
+        } else {
+          print('OnFieldSubmitted : เป็นจำนวนเต็ม');
+          // ✅ กรณีเป็นจำนวนเต็ม
+          final parsedN = int.tryParse(inputValue);
+          final parsedO = int.tryParse(ovalue ?? '');
+
+          final isInvalid = inputValue == '0' ||
+              inputValue == '0000' ||
+              inputValue == '00000000' ||
+              inputValue.length > 8 ||
+              parsedN == null ||
+              parsedO == null ||
+              parsedN < parsedO;
+
+          value_nvalue = isInvalid ? ovalue : inputValue;
+        }
+      });
+
+      String url =
+          '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value_nvalue&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
+      // print(url);
+
+      try {
+        var response = await httpClient.get(Uri.parse(url));
+
+        var result = json.decode(response.body);
+        // print(result);
+        if (result.toString() != 'null') {
+          setState(() {
+            red_Trans(_cser);
+          });
+          Dia_log2();
+        }
+      } catch (e) {
+        // print(e);
+        Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง!');
+      }
+    } else {
+      if (_TransModels[indextran].ovalue == null) {
+        if (_TransModels[indextran].ovalue == null) {
+          SharedPreferences preferences = await SharedPreferences.getInstance();
+          String? ren = preferences.getString('renTalSer');
+          String? ser_user = preferences.getString('ser');
+
+          var qser_in = _TransModels[indextran].ser_in; // ser in
+
+          var tran_ser = _TransModels[indextran].ser; // ser tran
+          var ovalue = _TransModels[indextran - 1].nvalue; // ก่อน
+          var nvalue = _TransModels[indextran].nvalue; // หลัง
+          _celvat; //vat
+          _cqty_vat; // หน่วย
+          // print('1ovalue>>>. $ovalue  ---- nvalue>>>>>> $nvalue');
+          var oval =
+              '$_cnamex ${DateFormat.MMM('th_TH').format((DateTime.parse('${_TransModels[indextran].date} 00:00:00')))} ${DateTime.parse('${_TransModels[indextran].date} 00:00:00').year + 543}';
+          String url =
+              '${MyConstant().domain}/InC_InvoiceNew.php?isAdd=true&ren=$ren&tran_ser=$tran_ser&qty=$value&ser_user=$ser_user&oval=$oval&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser';
+
+          try {
+            var response = await httpClient.get(Uri.parse(url));
+
+            var result = json.decode(response.body);
+            // print(result);
+            if (result.toString() != 'null') {
+              setState(() {
+                red_Trans(_cser);
+              });
+              Dia_log2();
+            }
+          } catch (e) {
+            Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง!1');
+          }
+        }
+      } else {
+        SharedPreferences preferences = await SharedPreferences.getInstance();
+        String? ren = preferences.getString('renTalSer');
+        String? ser_user = preferences.getString('ser');
+
+        var qser_in = _TransModels[indextran].ser_in;
+        var qser_inn = _TransModels[indextran].ser_in;
+        var tran_expser = _TransModels[indextran].expser;
+        var tran_sern = _TransModels[indextran].ser;
+        var tran_ser = _TransModels[indextran].ser;
+        var ovalue = _TransModels[indextran].ovalue; // ก่อน
+        var nvalue = _TransModels[indextran].nvalue; // หลัง
+        _celvat; //vat
+        _cqty_vat; // หน่วย
+
+        // print('2ovalue>>>. $ovalue  --$value-- nvalue>>>>>> $nvalue ');
+
+        if (double.parse(value) < double.parse(ovalue!)) {
+          Dialog_Error(
+              'ค่าที่กรอกต้องมากกว่าหรือเท่ากับค่าเริ่มต้น (${ovalue})');
+
+          // print('23ovalue>>>--$value-- น้อยกว่า  $ovalue');
+        } else {
+          String url =
+              '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
+
+          try {
+            var response = await httpClient.get(Uri.parse(url));
+
+            var result = json.decode(response.body);
+            // print(result);
+            if (result.toString() != 'null') {
+              setState(() {
+                red_Trans(_cser);
+              });
+              Dia_log2();
+            }
+          } catch (e) {
+            Dialog_Error('เกิดข้อผิดพลาดหรือตัวเลขไม่ถูกต้อง!2');
+          }
+        }
+
+        // String
+        //     url =
+        //     '${MyConstant().domain}/UPC_Invoice.php?isAdd=true&ren=$ren&qser_in=$qser_in&qty=$value&ser_user=$ser_user&ovalue=$ovalue&nvalue=$nvalue&_celvat=$_celvat&_cqty_vat=$_cqty_vat&con_ser=$_cser&tran_ser=$tran_ser&tran_sern=$tran_sern&qser_inn=$qser_inn&tran_expser=$tran_expser';
+
+        // try {
+        //   var response =
+        //       await httpClient.get(Uri.parse(url));
+
+        //   var result =
+        //       json.decode(response.body);
+        //   print(result);
+        //   if (result.toString() !=
+        //       'null') {
+        //     setState(() {
+        //       red_Trans(_cser);
+        //     });
+        //   }
+        // } catch (e) {}
+      }
     }
   }
 /////////////---------------------------------------------------->

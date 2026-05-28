@@ -71,6 +71,15 @@ class TeNantCanCellChoiceModel {
   String? inv;
   String? w1;
 
+  String? rent_wht;
+  String? service_wht;
+  String? land_wht;
+  String? water_pvat;
+  String? water_vat;
+  String? electricity_pvat;
+  String? electricity_vat;
+  String? zn_code;
+
   TeNantCanCellChoiceModel({
     this.ser,
     this.datex,
@@ -141,6 +150,14 @@ class TeNantCanCellChoiceModel {
     this.cdate,
     this.inv,
     this.w1,
+    this.rent_wht,
+    this.service_wht,
+    this.land_wht,
+    this.water_pvat,
+    this.water_vat,
+    this.electricity_pvat,
+    this.electricity_vat,
+    this.zn_code,
   });
 
   TeNantCanCellChoiceModel.fromJson(Map<String, dynamic> json) {
@@ -215,6 +232,15 @@ class TeNantCanCellChoiceModel {
     cdate = json['cdate'];
     inv = json['inv'];
     w1 = json['w1'];
+
+    rent_wht = json['rent_wht'];
+    service_wht = json['service_wht'];
+    land_wht = json['land_wht'];
+    water_pvat = json['water_pvat'];
+    water_vat = json['water_vat'];
+    electricity_pvat = json['electricity_pvat'];
+    electricity_vat = json['electricity_vat'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -291,6 +317,16 @@ class TeNantCanCellChoiceModel {
     data['cdate'] = this.cdate;
     data['inv'] = this.inv;
     data['w1'] = this.w1;
+
+    data['rent_wht'] = this.rent_wht;
+    data['service_wht'] = this.service_wht;
+    data['land_wht'] = this.land_wht;
+    data['water_pvat'] = this.water_pvat;
+    data['water_vat'] = this.water_vat;
+    data['electricity_pvat'] = this.electricity_pvat;
+    data['electricity_vat'] = this.electricity_vat;
+    data['zn_code'] = this.zn_code;
+
     return data;
   }
 }

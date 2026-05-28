@@ -429,7 +429,7 @@ class _MeterScreenState extends State<MeterScreen> {
                       ),
                     ),
                     onTap: () {
-                      print('ลบมิเตอร์$type , index: ${index}');
+                      // print('ลบมิเตอร์$type , index: ${index}');
                       Navigator.of(context).pop();
                     },
                   ),
@@ -462,7 +462,7 @@ class _MeterScreenState extends State<MeterScreen> {
                       ),
                     ),
                     onTap: () {
-                      print('ลบมิเตอร์$type , index: ${index}');
+                      // print('ลบมิเตอร์$type , index: ${index}');
                       Navigator.of(context).pop();
                     },
                   ),
@@ -598,7 +598,7 @@ class _MeterScreenState extends State<MeterScreen> {
                       ),
                     ),
                     onTap: () {
-                      print('Editมิเตอร์$type , index: ${index}');
+                      // print('Editมิเตอร์$type , index: ${index}');
                       Navigator.of(context).pop();
                     },
                   ),
@@ -631,7 +631,7 @@ class _MeterScreenState extends State<MeterScreen> {
                       ),
                     ),
                     onTap: () {
-                      print('Editมิเตอร์$type , index: ${index}');
+                      //print('Editมิเตอร์$type , index: ${index}');
                       Navigator.of(context).pop();
                     },
                   ),
@@ -645,7 +645,7 @@ class _MeterScreenState extends State<MeterScreen> {
   }
 
 ///////////////------------------------------------------------------->
-@override
+  @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Padding(

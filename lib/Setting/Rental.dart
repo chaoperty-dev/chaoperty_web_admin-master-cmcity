@@ -2755,9 +2755,13 @@ class _RentalState extends State<Rental> {
                               children: [
                                 SizedBox(
                                   width: (!Responsive.isDesktop(context))
-                                      ? 1300
+                                      ? 1400.00
                                       : MediaQuery.of(context).size.width *
                                           0.85,
+                                  // width: (!Responsive.isDesktop(context))
+                                  //     ? 1300
+                                  //     : MediaQuery.of(context).size.width *
+                                  //         0.85,
                                   child: Column(
                                     children: [
                                       Row(
@@ -3266,12 +3270,11 @@ class _RentalState extends State<Rental> {
                                                                       expModels[
                                                                               index]
                                                                           .expname,
-                                                                  onFieldSubmitted: (renTal_ser
-                                                                              .toString() ==
-                                                                          '106')
+                                                                  onFieldSubmitted: checkSerexp(
+                                                                          index)
                                                                       ? (value) async {
                                                                           _showMyDialogPay_Error(
-                                                                              'ชอยส์ มินิสโตร์ (ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty)');
+                                                                              'ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty');
                                                                         }
                                                                       : (value) async {
                                                                           SharedPreferences
@@ -3696,28 +3699,32 @@ class _RentalState extends State<Rental> {
                                                                           children: [
                                                                             Expanded(
                                                                               child: GestureDetector(
-                                                                                  onTap: () async {
-                                                                                    SharedPreferences preferences = await SharedPreferences.getInstance();
-                                                                                    String? ren = preferences.getString('renTalSer');
-                                                                                    String? ser_user = preferences.getString('ser');
-                                                                                    var vser = expModels[index].ser;
+                                                                                  onTap: checkSerexp(index)
+                                                                                      ? () async {
+                                                                                          _showMyDialogPay_Error('ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty');
+                                                                                        }
+                                                                                      : () async {
+                                                                                          SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                                          String? ren = preferences.getString('renTalSer');
+                                                                                          String? ser_user = preferences.getString('ser');
+                                                                                          var vser = expModels[index].ser;
 
-                                                                                    var autox = expModels[index].cal_auto == '1' ? '0' : '1';
-                                                                                    String url = '${MyConstant().domain}/UpC_exp_Auto_cal.php?isAdd=true&ren=$ren&vser=$vser&ser_user=$ser_user&autox=$autox';
+                                                                                          var autox = expModels[index].cal_auto == '1' ? '0' : '1';
+                                                                                          String url = '${MyConstant().domain}/UpC_exp_Auto_cal.php?isAdd=true&ren=$ren&vser=$vser&ser_user=$ser_user&autox=$autox';
 
-                                                                                    try {
-                                                                                      var response = await http.get(Uri.parse(url));
+                                                                                          try {
+                                                                                            var response = await http.get(Uri.parse(url));
 
-                                                                                      var result = json.decode(response.body);
-                                                                                      // print(result);
-                                                                                      if (result.toString() == 'true') {
-                                                                                        Insert_log.Insert_logs('ตั้งค่า', (autox == '0') ? 'การเช่า>>${expTypeModels[Ser_Sub].bills}(ปิดดึงราคา ${expModels[index].expname})' : 'การเช่า>>${expTypeModels[Ser_Sub].bills}(เปิดดึงราคา ${expModels[index].expname})');
-                                                                                        setState(() {
-                                                                                          read_GC_Exp();
-                                                                                        });
-                                                                                      } else {}
-                                                                                    } catch (e) {}
-                                                                                  },
+                                                                                            var result = json.decode(response.body);
+                                                                                            // print(result);
+                                                                                            if (result.toString() == 'true') {
+                                                                                              Insert_log.Insert_logs('ตั้งค่า', (autox == '0') ? 'การเช่า>>${expTypeModels[Ser_Sub].bills}(ปิดดึงราคา ${expModels[index].expname})' : 'การเช่า>>${expTypeModels[Ser_Sub].bills}(เปิดดึงราคา ${expModels[index].expname})');
+                                                                                              setState(() {
+                                                                                                read_GC_Exp();
+                                                                                              });
+                                                                                            } else {}
+                                                                                          } catch (e) {}
+                                                                                        },
                                                                                   child: expModels[index].cal_auto == '1'
                                                                                       ? const Icon(
                                                                                           Icons.toggle_on,
@@ -4504,45 +4511,33 @@ class _RentalState extends State<Rental> {
                                                                               .all(
                                                                           8.0),
                                                                   child: GestureDetector(
-                                                                      onTap: () async {
-                                                                        SharedPreferences
-                                                                            preferences =
-                                                                            await SharedPreferences.getInstance();
-                                                                        String?
-                                                                            ren =
-                                                                            preferences.getString('renTalSer');
-                                                                        String?
-                                                                            ser_user =
-                                                                            preferences.getString('ser');
-                                                                        var vser =
-                                                                            expModels[index].ser;
+                                                                      onTap: checkSerexp(index)
+                                                                          ? () async {
+                                                                              _showMyDialogPay_Error('ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty');
+                                                                            }
+                                                                          : () async {
+                                                                              SharedPreferences preferences = await SharedPreferences.getInstance();
+                                                                              String? ren = preferences.getString('renTalSer');
+                                                                              String? ser_user = preferences.getString('ser');
+                                                                              var vser = expModels[index].ser;
 
-                                                                        var autox = expModels[index].auto ==
-                                                                                '1'
-                                                                            ? '0'
-                                                                            : '1';
-                                                                        String
-                                                                            url =
-                                                                            '${MyConstant().domain}/UpC_exp_Auto.php?isAdd=true&ren=$ren&vser=$vser&ser_user=$ser_user&autox=$autox';
+                                                                              var autox = expModels[index].auto == '1' ? '0' : '1';
+                                                                              String url = '${MyConstant().domain}/UpC_exp_Auto.php?isAdd=true&ren=$ren&vser=$vser&ser_user=$ser_user&autox=$autox';
 
-                                                                        try {
-                                                                          var response =
-                                                                              await http.get(Uri.parse(url));
+                                                                              try {
+                                                                                var response = await http.get(Uri.parse(url));
 
-                                                                          var result =
-                                                                              json.decode(response.body);
-                                                                          // print(
-                                                                          //     result);
-                                                                          if (result.toString() ==
-                                                                              'true') {
-                                                                            Insert_log.Insert_logs('ตั้งค่า',
-                                                                                (autox == '0') ? 'การเช่า>>${expTypeModels[Ser_Sub].bills}(ปิดAuto ${expModels[index].expname})' : 'การเช่า>>${Ser_Sub + 1}.${expTypeModels[Ser_Sub].bills}(เปิดAuto ${expModels[index].expname})');
-                                                                            setState(() {
-                                                                              read_GC_Exp();
-                                                                            });
-                                                                          } else {}
-                                                                        } catch (e) {}
-                                                                      },
+                                                                                var result = json.decode(response.body);
+                                                                                // print(
+                                                                                //     result);
+                                                                                if (result.toString() == 'true') {
+                                                                                  Insert_log.Insert_logs('ตั้งค่า', (autox == '0') ? 'การเช่า>>${expTypeModels[Ser_Sub].bills}(ปิดAuto ${expModels[index].expname})' : 'การเช่า>>${Ser_Sub + 1}.${expTypeModels[Ser_Sub].bills}(เปิดAuto ${expModels[index].expname})');
+                                                                                  setState(() {
+                                                                                    read_GC_Exp();
+                                                                                  });
+                                                                                } else {}
+                                                                              } catch (e) {}
+                                                                            },
                                                                       child: expModels[index].auto == '1'
                                                                           ? const Icon(
                                                                               Icons.toggle_on,
@@ -4580,8 +4575,8 @@ class _RentalState extends State<Rental> {
                                                                   width: 100,
                                                                   decoration:
                                                                       BoxDecoration(
-                                                                    color: (renTal_ser.toString() ==
-                                                                            '106')
+                                                                    color: checkSerexp(
+                                                                            index)
                                                                         ? Colors
                                                                             .grey
                                                                         : Colors
@@ -4611,10 +4606,10 @@ class _RentalState extends State<Rental> {
                                                                           8.0),
                                                                   child:
                                                                       GestureDetector(
-                                                                    onTap: (renTal_ser.toString() ==
-                                                                            '106')
+                                                                    onTap: checkSerexp(
+                                                                            index)
                                                                         ? () async {
-                                                                            _showMyDialogPay_Error('ชอยส์ มินิสโตร์ (ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty)');
+                                                                            _showMyDialogPay_Error('ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty');
                                                                           }
                                                                         : () async {
                                                                             SharedPreferences
@@ -5062,9 +5057,13 @@ class _RentalState extends State<Rental> {
                               children: [
                                 SizedBox(
                                   width: (!Responsive.isDesktop(context))
-                                      ? 800
+                                      ? 1400.00
                                       : MediaQuery.of(context).size.width *
                                           0.85,
+                                  // width: (!Responsive.isDesktop(context))
+                                  //     ? 800
+                                  //     : MediaQuery.of(context).size.width *
+                                  //         0.85,
                                   child: Column(
                                     children: [
                                       Row(
@@ -5552,12 +5551,11 @@ class _RentalState extends State<Rental> {
                                                                       expModels[
                                                                               index]
                                                                           .expname,
-                                                                  onFieldSubmitted: (renTal_ser
-                                                                              .toString() ==
-                                                                          '106')
+                                                                  onFieldSubmitted: checkSerexp(
+                                                                          index)
                                                                       ? (value) async {
                                                                           _showMyDialogPay_Error(
-                                                                              'ชอยส์ มินิสโตร์ (ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty)');
+                                                                              'ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty');
                                                                         }
                                                                       : (value) async {
                                                                           SharedPreferences
@@ -7165,8 +7163,8 @@ class _RentalState extends State<Rental> {
                                                                     Container(
                                                                   decoration:
                                                                       BoxDecoration(
-                                                                    color: (renTal_ser.toString() ==
-                                                                            '106')
+                                                                    color: checkSerexp(
+                                                                            index)
                                                                         ? Colors
                                                                             .grey
                                                                         : Colors
@@ -7196,10 +7194,10 @@ class _RentalState extends State<Rental> {
                                                                           8.0),
                                                                   child:
                                                                       GestureDetector(
-                                                                    onTap: (renTal_ser.toString() ==
-                                                                            '106')
+                                                                    onTap: checkSerexp(
+                                                                            index)
                                                                         ? () async {
-                                                                            _showMyDialogPay_Error('ชอยส์ มินิสโตร์ (ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty)');
+                                                                            _showMyDialogPay_Error('ไม่สามารถเพิ่ม-ลบ-แก้ไขได้/กรุณาติดต่อ Chaoperty');
                                                                           }
                                                                         : () async {
                                                                             SharedPreferences
@@ -7533,6 +7531,12 @@ class _RentalState extends State<Rental> {
             height: 100,
           ),
         ]));
+  }
+
+  bool checkSerexp(index) {
+    bool t = expModels[index].ser.toString() == '1' ||
+        expModels[index].ser.toString() == '9';
+    return t;
   }
 
   /////////---------------------------------------->

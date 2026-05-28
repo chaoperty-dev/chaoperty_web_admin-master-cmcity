@@ -14,29 +14,29 @@ Future<Map<String, String>?> pickSlipImageAsBase64() async {
     );
 
     if (pickedFile == null) {
-      print('⚠️ ผู้ใช้ยกเลิกการเลือกรูปภาพ');
+      //print('⚠️ ผู้ใช้ยกเลิกการเลือกรูปภาพ');
       return null;
     }
 
-    print('📄 เลือกรูปได้จาก path: ${pickedFile.path}');
+    //print('📄 เลือกรูปได้จาก path: ${pickedFile.path}');
 
     final imageBytes = await pickedFile.readAsBytes();
     final base64Image = base64Encode(imageBytes);
 
     final ext = pickedFile.path.split('.').last;
-    print(
-        '✅ แปลงรูปภาพเป็น base64 สำเร็จ ขนาด: ${imageBytes.length} bytes, นามสกุล: .$ext');
+    //print(
+    //  '✅ แปลงรูปภาพเป็น base64 สำเร็จ ขนาด: ${imageBytes.length} bytes, นามสกุล: .$ext');
 
     return {
       'base64': base64Image,
       'extension': ext,
     };
   } on PlatformException catch (e) {
-    print('🚫 PlatformException: ${e.code} - ${e.message}');
+    //print('🚫 PlatformException: ${e.code} - ${e.message}');
     return null;
   } catch (e, stackTrace) {
-    print('❌ เกิดข้อผิดพลาดไม่ทราบสาเหตุ: $e');
-    print('🪵 StackTrace:\n$stackTrace');
+    //print('❌ เกิดข้อผิดพลาดไม่ทราบสาเหตุ: $e');
+    //print('🪵 StackTrace:\n$stackTrace');
     return null;
   }
 }

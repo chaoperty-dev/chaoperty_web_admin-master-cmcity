@@ -39,7 +39,7 @@ dynamic extractAndMapByKey(String key, dynamic json) {
   final factory = modelRegistry[key];
 
   if (factory == null) {
-    print('⚠️ No model registered for key: $key');
+    //print('⚠️ No model registered for key: $key');
     return null;
   }
 
@@ -57,9 +57,11 @@ dynamic extractAndMapByKey(String key, dynamic json) {
 
 Future<Map<String, dynamic>> fetchAny(String uuid) async {
   final Map<String, dynamic> results = {};
-
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   final url = Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid');
-  final request = http.Request('GET', url);
+  final request = http.Request('GET', url)
+    ..headers.addAll(headers); // ✅ ต้องใส่ headers ด้วย
+  // final request = http.Request('GET', url);
   print(url);
   try {
     final response = await request.send();
@@ -67,7 +69,7 @@ Future<Map<String, dynamic>> fetchAny(String uuid) async {
     final reason = response.reasonPhrase ?? '';
 
     if (statusCode != 200) {
-      print('❌ HTTP Error: $statusCode $reason');
+      //print('❌ HTTP Error: $statusCode $reason');  uuid_Request: ffdbb8c3-ee26-4539-9181-382cd2e86639
       return results;
     }
 
@@ -88,22 +90,22 @@ Future<Map<String, dynamic>> fetchAny(String uuid) async {
 
           if (data != null) {
             results[key] = data;
-            print('✅ $key extracted: ${data.runtimeType}');
+            //print('✅ $key extracted: ${data.runtimeType}');
           } else {
-            print('⚠️ $key not found or mapping failed');
+            //print('⚠️ $key not found or mapping failed');
           }
         }
       } else {
-        print('⚠️ Unexpected JSON root type: ${result.runtimeType}');
+        //print('⚠️ Unexpected JSON root type: ${result.runtimeType}');
       }
     } catch (jsonErr, stack) {
-      print('❌ JSON Decode Error: $jsonErr');
-      print('📦 Raw response body:\n$body');
-      print('🧭 Stack trace:\n$stack');
+      //print('❌ JSON Decode Error: $jsonErr');
+      //print('📦 Raw response body:\n$body');
+      //print('🧭 Stack trace:\n$stack');
     }
   } catch (e, s) {
-    print('❌ Network/Request Error: $e');
-    print('🧭 Stack trace:\n$s');
+    //print('❌ Network/Request Error: $e');
+    //print('🧭 Stack trace:\n$s');
   }
 
   return results;
@@ -212,7 +214,7 @@ Future<void> setDataHandler({
       if (result['client'] != null) {
         clientModels.add(ClientModel.fromJson(result['client']));
       } else {
-        print('⚠️ client ไม่พบใน result');
+        //print('⚠️ client ไม่พบใน result');
       }
       final docs = (result['documents'] as List)
           .map((e) => DocumentModel.fromJson(e))
@@ -278,16 +280,20 @@ DocumentModel? finddocumentByDocCode(
   }
 }
 
-Future<http.Response?> readSubmitError({required String requests_uuid}) async {
+Future<http.Response?> readSubmitError({
+  required String requests_uuid,
+  required String Comment,
+}) async {
   final url =
       Uri.parse('${MyConstant().domain_v1}/admin/requests/$requests_uuid');
-  final headers = {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-  };
-
+  // final headers = {
+  //   'Accept': 'application/json',
+  //   'Content-Type': 'application/json',
+  // };
+  final headers = await MyHeaders.build(); // ✅ ต้อง await
   final body = json.encode({
     "status": "documents_submitted",
+    "comment": '$Comment',
   });
   try {
     final response = await http.put(
@@ -297,10 +303,10 @@ Future<http.Response?> readSubmitError({required String requests_uuid}) async {
     );
     // final response = await http.put(url); // ใช้ http.put ตรง
 
-    // print('response : ${response.body}');
+    // //print('response : ${response.body}');
     return response;
   } catch (e) {
-    print('❌ HTTP Error: $e');
+    //print('❌ HTTP Error: $e');
     return null;
   }
 }

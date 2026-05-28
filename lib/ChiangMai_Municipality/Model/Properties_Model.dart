@@ -40,7 +40,7 @@ class NewRequest {
   String? ldate;
   int? sertype;
   String? type;
-  int? qty;
+  String? qty;
   String? comment;
   String? createdAt;
   String? updatedAt;

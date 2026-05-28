@@ -110,6 +110,7 @@ class TransReBillHistoryModel {
   String? ramt;
   String? ramtd;
   String? room_number;
+
   String? sname;
   String? bno;
   String? bank;
@@ -154,8 +155,30 @@ class TransReBillHistoryModel {
   String? total_t;
   String? dis2;
   String? vat_dis;
+  String? dis_list;
   String? net_amount_pvat;
   String? net_non_pvat;
+
+  String? pvat_original;
+
+  String? name_user;
+  String? date_cid;
+  String? status_cid;
+
+  String? exp_dtype;
+  String? sum_pvat;
+  String? sum_vat;
+  String? sum_wht;
+  String? sum_items;
+  String? total_duesbill;
+  String? dis_lis;
+  String? stype;
+  String? pdate;
+  String? vat_original;
+  String? amount_original;
+  String? wht_original;
+  String? receipt_ser;
+  String? zn_code;
 
   TransReBillHistoryModel({
     this.ser,
@@ -307,8 +330,27 @@ class TransReBillHistoryModel {
     this.total_t,
     this.dis2,
     this.vat_dis,
+    this.dis_list,
     this.net_amount_pvat,
     this.net_non_pvat,
+    this.pvat_original,
+    this.name_user,
+    this.date_cid,
+    this.status_cid,
+    this.exp_dtype,
+    this.sum_pvat,
+    this.sum_vat,
+    this.sum_wht,
+    this.sum_items,
+    this.total_duesbill,
+    this.dis_lis,
+    this.stype,
+    this.pdate,
+    this.vat_original,
+    this.amount_original,
+    this.wht_original,
+    this.receipt_ser,
+    this.zn_code,
   });
 
   TransReBillHistoryModel.fromJson(Map<String, dynamic> json) {
@@ -466,8 +508,28 @@ class TransReBillHistoryModel {
     dis2 = json['dis2'];
 
     vat_dis = json['vat_dis'];
+    dis_list = json['dis_list'];
     net_amount_pvat = json['net_amount_pvat'];
     net_non_pvat = json['net_non_pvat'];
+    pvat_original = json['pvat_original'];
+    name_user = json['name_user'];
+
+    date_cid = json['date_cid'];
+    status_cid = json['status_cid'];
+    exp_dtype = json['exp_dtype'];
+    sum_pvat = json['sum_pvat'];
+    sum_vat = json['sum_vat'];
+    sum_wht = json['sum_wht'];
+    sum_items = json['sum_items'];
+    total_duesbill = json['total_duesbill'];
+    dis_lis = json['dis_lis'];
+    stype = json['stype'];
+    pdate = json['pdate'];
+    vat_original = json['vat_original'];
+    amount_original = json['amount_original'];
+    wht_original = json['wht_original'];
+    receipt_ser = json['receipt_ser'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -624,8 +686,28 @@ class TransReBillHistoryModel {
     data['total_t'] = this.total_t;
     data['dis2'] = this.dis2;
     data['vat_dis'] = this.vat_dis;
+    data['dis_list'] = this.dis_list;
     data['net_amount_pvat'] = this.net_amount_pvat;
     data['net_non_pvat'] = this.net_non_pvat;
+    data['pvat_original'] = this.pvat_original;
+
+    data['name_user'] = this.name_user;
+    data['date_cid'] = this.date_cid;
+    data['status_cid'] = this.status_cid;
+    data['exp_dtype'] = this.exp_dtype;
+    data['sum_pvat'] = this.sum_pvat;
+    data['sum_vat'] = this.sum_vat;
+    data['sum_wht'] = this.sum_wht;
+    data['sum_items'] = this.sum_items;
+    data['total_duesbill'] = this.total_duesbill;
+    data['dis_lis'] = this.dis_lis;
+    data['stype'] = this.stype;
+    data['pdate'] = this.pdate;
+    data['vat_original'] = this.vat_original;
+    data['amount_original'] = this.amount_original;
+    data['wht_original'] = this.wht_original;
+    data['receipt_ser'] = this.receipt_ser;
+    data['zn_code'] = this.zn_code;
     return data;
   }
 }

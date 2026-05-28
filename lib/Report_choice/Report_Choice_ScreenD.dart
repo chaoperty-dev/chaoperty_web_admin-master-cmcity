@@ -222,7 +222,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         Map<String, dynamic> map = Map();
         map['ser'] = '0';
@@ -273,7 +273,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
     var ren = preferences.getString('renTalSer');
     var zone = preferences.getString('zoneSer');
 
-    // print('ren >>>>>> $ren');
+    // //print('ren >>>>>> $ren');
 
     String url =
         '${MyConstant().domain}/GC_Bank_Paytype.php?isAdd=true&ren=$ren';
@@ -282,7 +282,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           PayMentModel payMentModel = PayMentModel.fromJson(map);
@@ -330,7 +330,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -370,9 +370,9 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         }
       } else {}
     } catch (e) {
-      // print('Error-Dis(read_GC_rental) : ${e}');
+      // //print('Error-Dis(read_GC_rental) : ${e}');
     }
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
 ////////--------------------------------------------------------------->
@@ -490,7 +490,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           ExpModel expModel = ExpModel.fromJson(map);
@@ -519,7 +519,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       Map<String, dynamic> map = Map();
       map['ser'] = '0';
       map['rser'] = '0';
@@ -586,7 +586,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
   //     var response = await http.get(Uri.parse(url));
 
   //     var result = json.decode(response.body);
-  //     // print('result $ciddoc');
+  //     // //print('result $ciddoc');
   //     if (result.toString() != 'null') {
   //       setState(() {
   //         Await_Status_Report1 = 1;
@@ -606,7 +606,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
   //       });
   //     });
   //   } catch (e) {
-  //     print(e);
+  //     //print(e);
   //   }
   // }
 
@@ -627,17 +627,17 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
     var serMONTH = Befor_Mon_Invoice;
     var serYEAR = Befor_YE_Invoice;
 
-    // print('zone_ser >> $zone_ser $zone');
+    // //print('zone_ser >> $zone_ser $zone');
 
     String url =
         '${MyConstant().domain}/GC_InvoiceBefor_Report.php?isAdd=true&ren=$ren&serMONTH=$serMONTH&serYEAR=$serYEAR&zone_ser=$zone_ser_Invoice_Befor';
-    // print('read_Trans_invoice_all   $url');
+    // //print('read_Trans_invoice_all   $url');
 
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'true') {
         for (var map in result) {
           TransModel _TransModel = TransModel.fromJson(map);
@@ -664,12 +664,12 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
     String url = (Serdata.toString() == 'All')
         ? '${MyConstant().domain}/GC_bill_invoiceMonFullChoice_historyReport.php?isAdd=true&ren=$ren&Serdata=$Serdata&serzone=$zone_ser_Invoice_Mon&sdate=$Mon_Invoice_Mon&ldate=$YE_Invoice_Mon'
         : '${MyConstant().domain}/GC_bill_invoiceMonFullChoice_historyReport.php?isAdd=true&ren=$ren&Serdata=$Serdata&serzone=$zone_ser_Invoice_Mon&sdate=$Mon_Invoice_Mon&ldate=$YE_Invoice_Mon';
-    print('result $url');
+    ////print('result $url');
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         // setState(() {
         //   Await_Status_Report1 = 1;
@@ -689,7 +689,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         });
       });
     } catch (e) {
-      print(e);
+      //print(e);
     }
   }
 
@@ -717,7 +717,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         setState(() {
           Await_Status_Report2 = 1;
@@ -737,7 +737,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         });
       });
     } catch (e) {
-      print(e);
+      //print(e);
     }
   }
 
@@ -754,7 +754,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         ? '0'
         : '$zone_ser_Cannotice_Mon';
 
-    // print('zone>>>>>>zone>>>>>$zone');
+    // //print('zone>>>>>>zone>>>>>$zone');
 
     String url = zone == null || zone == '0'
         ? '${MyConstant().domain}/GC_tenant_CanceNoticeAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=0&mont_h=$Mon_Cannotice_Mon&yea_r=$YE_Cannotice_Mon'
@@ -764,7 +764,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantChoiceModel teNantModelsCancel =
@@ -777,7 +777,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       // setState(() {
       //   Await_Status_Report2 = 1;
       // });
-      // print('teNantModels///result ${teNantModels_noti.length}');
+      // //print('teNantModels///result ${teNantModels_noti.length}');
     } catch (e) {}
   }
 
@@ -793,19 +793,19 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         ? '0'
         : '$zone_ser_Pe_Mon';
 
-    // print('zone>>>>>>zone>>>>>$zone');
+    // //print('zone>>>>>>zone>>>>>$zone');
 //  String? Status_pe_History = 'สัญญาปัจจุบัน', Status_pe_ser_History = '1';
 //   String? Status_Datex_History = 'วันที่เริ่มสัญญา',
 //       Status_Datex_ser_History = '0';
     String url = zone == null || zone == '0'
         ? '${MyConstant().domain}/GC_tenantExdAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=0&mont_h=$Mon_Pe_Mon&yea_r=$YE_Pe_Mon&tyespe=$Status_pe_ser_History&tyesdate=$Status_Datex_ser_History'
         : '${MyConstant().domain}/GC_tenantExdAll_ChoiceReport.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_Pe_Mon&yea_r=$YE_Pe_Mon&tyespe=$Status_pe_ser_History&tyesdate=$Status_Datex_ser_History';
-    print(url);
+    //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantModel teNantModelss = TeNantModel.fromJson(map);
@@ -817,7 +817,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       // setState(() {
       //   Await_Status_Report2 = 1;
       // });
-      // print('teNantModels///result ${teNantModels_noti.length}');
+      // //print('teNantModels///result ${teNantModels_noti.length}');
     } catch (e) {}
   }
 
@@ -867,7 +867,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         });
       } else {}
     } catch (e) {
-      print('Error during image processing: $e');
+      //print('Error during image processing: $e');
     }
   }
 
@@ -884,15 +884,15 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         ? '0'
         : '$zone_ser_Pe_Mon';
 
-    // print('zone>>>>>>zone>>>>>$zone');
+    // //print('zone>>>>>>zone>>>>>$zone');
     String url =
         '${MyConstant().domain}/GC_tenant_Renew_AllReport_Choice.php?isAdd=true&ren=$ren&zser=$zone&month_s=$Mon_Pe_Mon&year_s=$YE_Pe_Mon&type_date=0';
-    // print(url);
+    // //print(url);
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           TeNantRenewChoiceModel teNantModels_Renewss =
@@ -958,7 +958,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         setState(() {
           Value_InvoiceDate_Daily = "${formatter.format(result)}";
         });
-        print("${Value_InvoiceDate_Daily}");
+        //print("${Value_InvoiceDate_Daily}");
         // if (Value_Chang_Zone_Daily != null) {
         //   red_Trans_bill();
         //   red_Trans_billDailyBank();
@@ -989,7 +989,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $url');
+      // //print('result $url');
       if (result.toString() != 'null') {
         setState(() {
           Await_Status_Report4 = 1;
@@ -1009,7 +1009,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
           _transMeterModels = transMeterModels;
           Await_Status_Report4 = null;
         });
-        // print('mitter : ${transMeterModels.length}');
+        // //print('mitter : ${transMeterModels.length}');
       });
     } catch (e) {}
   }
@@ -1101,7 +1101,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         // Mon_Cannotice_Mon = DateFormat('MM').format(selectedDate);
         // YE_Cannotice_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Befor_Mon_Invoice}, Year: ${Befor_YE_Invoice}');
+      //print('Selected month: ${Befor_Mon_Invoice}, Year: ${Befor_YE_Invoice}');
     }
   }
 
@@ -1114,7 +1114,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         Mon_Pe_Mon = DateFormat('MM').format(selectedDate);
         YE_Pe_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print('Selected month: ${Mon_Pe_Mon}, Year: ${YE_Pe_Mon}');
+      //print('Selected month: ${Mon_Pe_Mon}, Year: ${YE_Pe_Mon}');
     }
   }
 
@@ -1128,8 +1128,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
         Mon_transMeter_Mon = DateFormat('MM').format(selectedDate);
         YE_transMeter_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_transMeter_Mon}, Year: ${YE_transMeter_Mon}');
+      //print(
+      //  'Selected month: ${Mon_transMeter_Mon}, Year: ${YE_transMeter_Mon}');
     }
   }
 
@@ -1165,8 +1165,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
     });
     Mon_Invoice_Mon = Value_InvDate_Daily_S;
     YE_Invoice_Mon = Value_InvDate_Daily_L;
-    print(Mon_Invoice_Mon);
-    print(YE_Invoice_Mon);
+    //print(Mon_Invoice_Mon);
+    //print(YE_Invoice_Mon);
   }
 
 ////////////------------------------------------------>
@@ -1680,7 +1680,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                     zone_ser_Invoice_Mon =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $zone_ser_Invoice_Mon  //${zone_name_Invoice_Mon}');
                                 },
                                 onMenuStateChange: (isOpen) {
@@ -1771,7 +1771,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                           //       zone_ser_Invoice_Mon =
                           //           zoneModels_report[selectedIndex].ser!;
                           //     });
-                          //     // print(
+                          //     // //print(
                           //     //     'Selected Index: $zone_ser_Invoice_Mon  //${zone_name_Invoice_Mon}');
                           //   },
                           // ),
@@ -1792,8 +1792,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                   }
                                   try {
                                     red_InvoiceMonFull_bill().then((result) {
-                                      // print('red_InvoiceMonFull_bill');
-                                      // print('red_InvoiceMonFull_bill');
+                                      // //print('red_InvoiceMonFull_bill');
+                                      // //print('red_InvoiceMonFull_bill');
                                       setState(() {
                                         Await_Status_Report1 = 1;
                                       });
@@ -1820,8 +1820,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                   //   Dia_log();
                                   //   try {
                                   //     red_InvoiceMonFull_bill().then((result) {
-                                  //       // print('red_InvoiceMonFull_bill');
-                                  //       // print('red_InvoiceMonFull_bill');
+                                  //       // //print('red_InvoiceMonFull_bill');
+                                  //       // //print('red_InvoiceMonFull_bill');
                                   //       setState(() {
                                   //         Await_Status_Report1 = 1;
                                   //       });
@@ -2302,7 +2302,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                     zone_ser_Invoice_Befor =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $zone_ser_Invoice_Mon  //${zone_name_Invoice_Mon}');
                                 },
                                 onMenuStateChange: (isOpen) {
@@ -2328,8 +2328,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                   }
                                   try {
                                     read_Trans_invoice_Befor().then((result) {
-                                      // print('red_InvoiceMonFull_bill');
-                                      // print('red_InvoiceMonFull_bill');
+                                      // //print('red_InvoiceMonFull_bill');
+                                      // //print('red_InvoiceMonFull_bill');
                                       setState(() {
                                         Await_Status_Report2 = 1;
                                       });
@@ -2905,7 +2905,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
               //                       zone_ser_Cannotice_Mon =
               //                           zoneModels_report[selectedIndex].ser!;
               //                     });
-              //                     // print(
+              //                     // //print(
               //                     //     'Selected Index: $zone_name_Cannotice_Mon  //${zone_ser_Cannotice_Mon}');
               //                   },
               //                   onMenuStateChange: (isOpen) {
@@ -2990,7 +2990,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
               //             //       zone_ser_Cannotice_Mon =
               //             //           zoneModels_report[selectedIndex].ser!;
               //             //     });
-              //             //     // print(
+              //             //     // //print(
               //             //     //     'Selected Index: $zone_name_Cannotice_Mon  //${zone_ser_Cannotice_Mon}');
               //             //   },
               //             // ),
@@ -3008,8 +3008,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
               //                     Dia_log();
               //                     try {
               //                       read_GC_tenant_Cancel().then((result) {
-              //                         // print('red_InvoiceMonFull_bill');
-              //                         // print('red_InvoiceMonFull_bill');
+              //                         // //print('red_InvoiceMonFull_bill');
+              //                         // //print('red_InvoiceMonFull_bill');
               //                         setState(() {
               //                           Await_Status_Report2 = 1;
               //                         });
@@ -3286,7 +3286,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                 Status_pe_History = Status[selectedIndex]!;
                                 Status_pe_ser_History = '${selectedIndex}';
                               });
-                              // print(selectedIndex);
+                              // //print(selectedIndex);
                             },
                           ),
                         ),
@@ -3405,7 +3405,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                   Status_Datex_ser_History =
                                       '${selectedIndex + 1}';
                                 });
-                                // print(selectedIndex);
+                                // //print(selectedIndex);
                               },
                             ),
                           ),
@@ -3840,7 +3840,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                     zone_ser_Pe_Mon =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $zone_name_Cannotice_Mon  //${zone_ser_Cannotice_Mon}');
                                 },
                                 onMenuStateChange: (isOpen) {
@@ -3925,7 +3925,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                           //       zone_ser_Cannotice_Mon =
                           //           zoneModels_report[selectedIndex].ser!;
                           //     });
-                          //     // print(
+                          //     // //print(
                           //     //     'Selected Index: $zone_name_Cannotice_Mon  //${zone_ser_Cannotice_Mon}');
                           //   },
                           // ),
@@ -3943,8 +3943,8 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                   Dia_log();
                                   try {
                                     read_GC_tenant().then((result) {
-                                      // print('red_InvoiceMonFull_bill');
-                                      // print('red_InvoiceMonFull_bill');
+                                      // //print('red_InvoiceMonFull_bill');
+                                      // //print('red_InvoiceMonFull_bill');
                                       if (Status_pe_ser_History != '3') {
                                         People_tenant_New().then((result) {
                                           read_GC_tenant_Renew().then((result) {
@@ -4543,7 +4543,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                 expSZ_name = value!;
                                 expSZ_ser = expSZModels[selectedIndex].ser!;
                               });
-                              // print(
+                              // //print(
                               //     'Selected Index: $expSZ_name  //${expSZ_ser}');
                             },
                           ),
@@ -4688,7 +4688,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                     zone_ser_transMeter =
                                         zoneModels_report[selectedIndex].ser!;
                                   });
-                                  // print(
+                                  // //print(
                                   //     'Selected Index: $zone_name_transMeter  //${zone_ser_transMeter}');
                                 },
                                 onMenuStateChange: (isOpen) {
@@ -5091,7 +5091,7 @@ class _Report_Choice_ScreenDState extends State<Report_Choice_ScreenD> {
                                     onTap: () {
                                       int selectedIndex = expModels.indexWhere(
                                           (items) => items.ser == item.ser);
-                                      print(expModels[selectedIndex].expname);
+                                      //print(expModels[selectedIndex].expname);
                                       // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
                                       //This rebuilds the StatefulWidget to update the button's text
                                       setState(() {

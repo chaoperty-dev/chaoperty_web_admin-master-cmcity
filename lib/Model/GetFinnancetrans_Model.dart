@@ -48,6 +48,7 @@ class FinnancetransModel {
   String? ref1;
   String? ref2;
   String? ref3;
+  String? ref4;
   String? inv;
   String? date_book;
 
@@ -101,6 +102,7 @@ class FinnancetransModel {
       this.ref1,
       this.ref2,
       this.ref3,
+      this.ref4,
       this.inv,
       this.date_book});
 
@@ -154,6 +156,7 @@ class FinnancetransModel {
     ref1 = json['ref1'];
     ref2 = json['ref2'];
     ref3 = json['ref3'];
+    ref4 = json['ref4'];
     inv = json['inv'];
     date_book = json['date_book'];
   }
@@ -209,6 +212,7 @@ class FinnancetransModel {
     data['ref1'] = this.ref1;
     data['ref2'] = this.ref2;
     data['ref3'] = this.ref3;
+    data['ref4'] = this.ref4;
     data['inv'] = this.inv;
     data['date_book'] = this.date_book;
     ;

@@ -24,6 +24,8 @@ import 'package:syncfusion_flutter_pdf/pdf.dart';
 import 'package:intl/intl.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
+import '../Constant/api_cache.dart';
 import '../Model/GetC_Quot_Select_Model.dart';
 import '../Model/GetContract_Photo_Model.dart';
 import '../Model/GetRenTal_Model.dart';
@@ -73,6 +75,7 @@ class PeopleChaoScreen extends StatefulWidget {
 }
 
 class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
+  static final _apiCache = ApiCache(ttl: const Duration(seconds: 60));
   var nFormat = NumberFormat("#,##0.00", "en_US");
   TextEditingController Text_searchBar_Sub_TeNant = TextEditingController();
   int Date_ser = 0;
@@ -115,6 +118,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
     'ต้นฉบับ',
     'สำเนา',
   ];
+
   List Status = [
     'ปัจจุบัน',
     'หมดสัญญา',
@@ -181,9 +185,10 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
     super.initState();
     checkPreferance();
     read_GC_zone();
-    // read_GC_tenant();
     read_GC_rental();
-    read_GC_areaSelect();
+    // read_GC_tenant();
+
+    // read_GC_areaSelect();
     teNantModels_Save = [];
   }
 
@@ -199,7 +204,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
         '${MyConstant().domain}/GC_electricity.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       print(result);
@@ -218,22 +223,53 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
   }
 
   Future<Null> read_GC_rental() async {
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    var ren = preferences.getString('renTalSer');
+    final cacheKey = 'read_GC_rental_$ren';
+
+    if (_apiCache.isValid(cacheKey)) {
+      final cachedData = _apiCache.get(cacheKey);
+      if (cachedData != null) {
+        setState(() {
+          renTalModels.clear();
+          for (var map in cachedData) {
+            RenTalModel renTalModel = RenTalModel.fromJson(map);
+            open_set_date = int.parse(renTalModel.open_set_date!) == 0
+                ? 30
+                : int.parse(renTalModel.open_set_date!);
+            foder = renTalModel.dbn;
+            rtname = renTalModel.rtname;
+            type = renTalModel.type;
+            typex = renTalModel.typex;
+            renname = renTalModel.pn!.trim();
+            pkqty = int.parse(renTalModel.pkqty!);
+            pkuser = int.parse(renTalModel.pkuser!);
+
+            pkname = renTalModel.pk!.trim();
+            img_ = renTalModel.img;
+            img_logo = renTalModel.imglogo;
+
+            renTalModels.add(renTalModel);
+          }
+        });
+        return;
+      }
+    }
+
     if (renTalModels.isNotEmpty) {
       renTalModels.clear();
     }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-    var ren = preferences.getString('renTalSer');
-    var utype = preferences.getString('utype');
-    var seruser = preferences.getString('ser');
+
     String url =
-        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ser=$seruser&type=$utype&ren=$ren';
+        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
 
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      //  print(result);
       if (result != null) {
+        if (result is List) _apiCache.set(cacheKey, result);
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
           var rtnamex = renTalModel.rtname;
@@ -246,12 +282,6 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
           var foderx = renTalModel.dbn;
           var img = renTalModel.img;
           var imglogo = renTalModel.imglogo;
-          var bill_addrx = renTalModel.bill_addr!.trim();
-          var bill_taxx = renTalModel.bill_tax!.trim();
-          var bill_telx = renTalModel.bill_tel!.trim();
-          var bill_emailx = renTalModel.bill_email!.trim();
-          var bill_defaultx = renTalModel.bill_default;
-          var bill_tserx = renTalModel.tser;
           var open_set_datex = int.parse(renTalModel.open_set_date!);
           setState(() {
             open_set_date = open_set_datex == 0 ? 30 : open_set_datex;
@@ -262,24 +292,100 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
             renname = name;
             pkqty = pkqtyx;
             pkuser = pkuserx;
+
             pkname = pkx;
             img_ = img;
             img_logo = imglogo;
-            bill_addr = bill_addrx;
-            bill_tax = bill_taxx;
-            bill_tel = bill_telx;
-            bill_email = bill_emailx;
-            bill_default = bill_defaultx;
-            bill_tser = bill_tserx;
-            bill_name = renTalModel.bill_name;
 
             renTalModels.add(renTalModel);
           });
         }
       } else {}
     } catch (e) {}
-    print('Peoplename>>>>>  $renname >>> $open_set_date');
+    // print('name>>>>>  $renname');
   }
+
+  // Future<Null> read_GC_rental() async {
+  //   if (_apiCache.isValid('read_GC_rental')) {
+  //     final cachedData = _apiCache.get('read_GC_rental');
+  //     if (cachedData != null) {
+  //       setState(() {
+  //         renTalModels.clear();
+  //         for (var map in cachedData) {
+  //           RenTalModel renTalModel = RenTalModel.fromJson(map);
+  //           open_set_date = int.parse(renTalModel.open_set_date!) == 0
+  //               ? 30
+  //               : int.parse(renTalModel.open_set_date!);
+  //           foder = renTalModel.dbn;
+  //           rtname = renTalModel.rtname;
+  //           type = renTalModel.type;
+  //           typex = renTalModel.typex;
+  //           renname = renTalModel.pn!.trim();
+  //           pkqty = int.parse(renTalModel.pkqty!);
+  //           pkuser = int.parse(renTalModel.pkuser!);
+  //           pkname = renTalModel.pk!.trim();
+  //           img_ = renTalModel.img;
+  //           img_logo = renTalModel.imglogo;
+  //           bill_addr = renTalModel.bill_addr!.trim();
+  //           bill_tax = renTalModel.bill_tax!.trim();
+  //           bill_tel = renTalModel.bill_tel!.trim();
+  //           bill_email = renTalModel.bill_email!.trim();
+  //           bill_default = renTalModel.bill_default;
+  //           bill_tser = renTalModel.tser;
+  //           bill_name = renTalModel.bill_name;
+  //           renTalModels.add(renTalModel);
+  //         }
+  //       });
+  //       return;
+  //     }
+  //   }
+
+  //   if (renTalModels.isNotEmpty) {
+  //     setState(() {
+  //       renTalModels.clear();
+  //     });
+  //   }
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //   var utype = preferences.getString('utype');
+  //   var seruser = preferences.getString('ser');
+  //   String url =
+  //       '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ser=$seruser&type=$utype&ren=$ren';
+
+  //   try {
+  //     var response = await httpClient.get(Uri.parse(url));
+  //     var result = json.decode(response.body);
+  //     if (result != null) {
+  //       if (result is List) _apiCache.set('read_GC_rental', result);
+  //       for (var map in result) {
+  //         RenTalModel renTalModel = RenTalModel.fromJson(map);
+  //         setState(() {
+  //           open_set_date = int.parse(renTalModel.open_set_date!) == 0
+  //               ? 30
+  //               : int.parse(renTalModel.open_set_date!);
+  //           foder = renTalModel.dbn;
+  //           rtname = renTalModel.rtname;
+  //           type = renTalModel.type;
+  //           typex = renTalModel.typex;
+  //           renname = renTalModel.pn!.trim();
+  //           pkqty = int.parse(renTalModel.pkqty!);
+  //           pkuser = int.parse(renTalModel.pkuser!);
+  //           pkname = renTalModel.pk!.trim();
+  //           img_ = renTalModel.img;
+  //           img_logo = renTalModel.imglogo;
+  //           bill_addr = renTalModel.bill_addr!.trim();
+  //           bill_tax = renTalModel.bill_tax!.trim();
+  //           bill_tel = renTalModel.bill_tel!.trim();
+  //           bill_email = renTalModel.bill_email!.trim();
+  //           bill_default = renTalModel.bill_default;
+  //           bill_tser = renTalModel.tser;
+  //           bill_name = renTalModel.bill_name;
+  //           renTalModels.add(renTalModel);
+  //         });
+  //       }
+  //     }
+  //   } catch (e) {}
+  // }
 
   Future<Null> checkPreferance() async {
     SharedPreferences preferences = await SharedPreferences.getInstance();
@@ -297,52 +403,127 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
   }
 
   Future<Null> read_GC_zone() async {
-    if (zoneModels.length != 0) {
-      zoneModels.clear();
-    }
     SharedPreferences preferences = await SharedPreferences.getInstance();
-
     var ren = preferences.getString('renTalSer');
+    ZoneModel _allZoneItem() {
+      return ZoneModel.fromJson({
+        'ser': '0',
+        'rser': '0',
+        'zn': 'ทั้งหมด',
+        'qty': '0',
+        'img': '0',
+        'data_update': '0',
+      });
+    }
+
+    int _zoneSort(ZoneModel a, ZoneModel b) {
+      if (a.zn == 'ทั้งหมด') return -1;
+      if (b.zn == 'ทั้งหมด') return 1;
+      return a.zn!.compareTo(b.zn!);
+    }
+
+    final cacheKey = 'read_GC_zone_$ren';
+
+    void updateZoneList(List data) {
+      setState(() {
+        zoneModels
+          ..clear()
+          ..add(_allZoneItem())
+          ..addAll(data.map((e) => ZoneModel.fromJson(e)));
+
+        zoneModels.sort(_zoneSort);
+      });
+    }
+
+    if (_apiCache.isValid(cacheKey)) {
+      final cachedData = _apiCache.get(cacheKey);
+      if (cachedData != null) {
+        updateZoneList(cachedData);
+        return;
+      }
+    }
+
+    if (zoneModels.isNotEmpty) {
+      setState(() {
+        zoneModels.clear();
+      });
+    }
 
     String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      final response = await httpClient.get(Uri.parse(url));
+      final result = json.decode(response.body);
 
-      var result = json.decode(response.body);
-      // print(result);
-      Map<String, dynamic> map = Map();
-      map['ser'] = '0';
-      map['rser'] = '0';
-      map['zn'] = 'ทั้งหมด';
-      map['qty'] = '0';
-      map['img'] = '0';
-      map['data_update'] = '0';
-
-      ZoneModel zoneModelx = ZoneModel.fromJson(map);
-
-      setState(() {
-        zoneModels.add(zoneModelx);
-      });
-
-      for (var map in result) {
-        ZoneModel zoneModel = ZoneModel.fromJson(map);
-        setState(() {
-          zoneModels.add(zoneModel);
-        });
+      if (result != null && result is List) {
+        _apiCache.set(cacheKey, result);
+        updateZoneList(result);
       }
-      zoneModels.sort((a, b) {
-        if (a.zn == 'ทั้งหมด') {
-          return -1; // 'all' should come before other elements
-        } else if (b.zn == 'ทั้งหมด') {
-          return 1; // 'all' should come after other elements
-        } else {
-          return a.zn!
-              .compareTo(b.zn!); // sort other elements in ascending order
-        }
-      });
     } catch (e) {}
   }
+
+  // Future<Null> read_GC_zone() async {
+  //   if (_apiCache.isValid('read_GC_zone')) {
+  //     final cachedData = _apiCache.get('read_GC_zone');
+  //     if (cachedData != null) {
+  //       setState(() {
+  //         zoneModels.clear();
+  //         zoneModels.add(ZoneModel.fromJson({
+  //           'ser': '0',
+  //           'rser': '0',
+  //           'zn': 'ทั้งหมด',
+  //           'qty': '0',
+  //           'img': '0',
+  //           'data_update': '0',
+  //         }));
+  //         for (var map in cachedData) {
+  //           zoneModels.add(ZoneModel.fromJson(map));
+  //         }
+  //         zoneModels.sort((a, b) {
+  //           if (a.zn == 'ทั้งหมด') return -1;
+  //           if (b.zn == 'ทั้งหมด') return 1;
+  //           return a.zn!.compareTo(b.zn!);
+  //         });
+  //       });
+  //       return;
+  //     }
+  //   }
+
+  //   if (zoneModels.isNotEmpty) {
+  //     setState(() {
+  //       zoneModels.clear();
+  //     });
+  //   }
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //   String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
+
+  //   try {
+  //     var response = await httpClient.get(Uri.parse(url));
+  //     var result = json.decode(response.body);
+  //     if (result != null) {
+  //       if (result is List) _apiCache.set('read_GC_zone', result);
+  //       setState(() {
+  //         zoneModels.add(ZoneModel.fromJson({
+  //           'ser': '0',
+  //           'rser': '0',
+  //           'zn': 'ทั้งหมด',
+  //           'qty': '0',
+  //           'img': '0',
+  //           'data_update': '0',
+  //         }));
+  //         for (var map in result) {
+  //           zoneModels.add(ZoneModel.fromJson(map));
+  //         }
+  //         zoneModels.sort((a, b) {
+  //           if (a.zn == 'ทั้งหมด') return -1;
+  //           if (b.zn == 'ทั้งหมด') return 1;
+  //           return a.zn!.compareTo(b.zn!);
+  //         });
+  //       });
+  //     }
+  //   } catch (e) {}
+  // }
 
   /////////////////--------------------------->
   Future<Null> read_tenant_limit() async {
@@ -370,7 +551,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
     String url =
         '${MyConstant().domain}/GC_photo_cont.php?isAdd=true&ren=$ren&ciddoc=$ciddoc_&qutser=$qutser_';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -413,7 +594,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
         '${MyConstant().domain}/GC_quot_conx.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -447,7 +628,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
         : '${MyConstant().domain}/GC_tenant_Cancel_All.php?isAdd=true&ren=$ren&zone=$zone';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -478,7 +659,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
     var ren = preferences.getString('renTalSer');
     var zone = preferences.getString('zonePSer');
 
-    print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $select');
+    // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $select');
 
     if (select == 1) {
       String url = zone == null
@@ -488,7 +669,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         // print(result);
@@ -565,7 +746,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         // print(result);
@@ -635,7 +816,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
       try {
-        var response = await http.get(Uri.parse(url));
+        var response = await httpClient.get(Uri.parse(url));
 
         var result = json.decode(response.body);
         print(result);
@@ -704,44 +885,58 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
         read_tenant_limit();
       } catch (e) {}
     } else if (select == 4) {
-      String url = zone == null
-          ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-          : zone == '0'
-              ? '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=$zone'
-              : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
-
       try {
-        var response = await http.get(Uri.parse(url));
+        String url;
 
-        var result = json.decode(response.body);
-        print(result);
-        if (result != null) {
-          for (var map in result) {
-            TeNantModel teNantModel = TeNantModel.fromJson(map);
-            if (teNantModel.quantity == '2' || teNantModel.quantity == '3') {
-              setState(() {
-                limitedList_teNantModels.add(teNantModel);
-              });
-            }
-          }
+        if (zone == null || zone == '0') {
+          url =
+              '${MyConstant().domain}/GC_tenantAll.php?isAdd=true&ren=$ren&zone=${zone ?? ''}&where_quot=1';
         } else {
-          setState(() {
-            if (limitedList_teNantModels.isEmpty) {
+          url =
+              '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone&where_quot=1';
+        }
+
+        print('Requesting: $url');
+
+        var response = await httpClient.get(Uri.parse(url));
+
+        if (response.statusCode == 200) {
+          var result = json.decode(response.body);
+
+          if (result != null) {
+            List<TeNantModel> tempList = [];
+
+            for (var map in result) {
+              TeNantModel teNantModel = TeNantModel.fromJson(map);
+              tempList.add(teNantModel);
+            }
+            print('tempList.length');
+            print(tempList.length);
+
+            setState(() {
+              limitedList_teNantModels = tempList;
+              _teNantModels = tempList;
+              zone_ser = preferences.getString('zonePSer');
+              zone_name = preferences.getString('zonesPName');
+            });
+          } else {
+            setState(() {
+              limitedList_teNantModels.clear();
+              _teNantModels.clear();
               preferences.remove('zonePSer');
               preferences.remove('zonesPName');
               zone_ser = null;
               zone_name = null;
-            }
-          });
-        }
-        setState(() {
-          _teNantModels = limitedList_teNantModels;
+            });
+          }
 
-          zone_ser = preferences.getString('zonePSer');
-          zone_name = preferences.getString('zonesPName');
-        });
-        read_tenant_limit();
-      } catch (e) {}
+          read_tenant_limit();
+        } else {
+          print('Server error: ${response.statusCode}');
+        }
+      } catch (e) {
+        print('Exception: $e');
+      }
     }
   }
 // /////////////////////----------------------------------------->
@@ -765,7 +960,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
 //               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
 //       try {
-//         var response = await http.get(Uri.parse(url));
+//         var response = await httpClient.get(Uri.parse(url));
 
 //         var result = json.decode(response.body);
 //         // print(result);
@@ -841,7 +1036,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
 //               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
 //       try {
-//         var response = await http.get(Uri.parse(url));
+//         var response = await httpClient.get(Uri.parse(url));
 
 //         var result = json.decode(response.body);
 //         // print(result);
@@ -910,7 +1105,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
 //               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
 //       try {
-//         var response = await http.get(Uri.parse(url));
+//         var response = await httpClient.get(Uri.parse(url));
 
 //         var result = json.decode(response.body);
 //         print(result);
@@ -985,7 +1180,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
 //               : '${MyConstant().domain}/GC_tenant.php?isAdd=true&ren=$ren&zone=$zone';
 
 //       try {
-//         var response = await http.get(Uri.parse(url));
+//         var response = await httpClient.get(Uri.parse(url));
 
 //         var result = json.decode(response.body);
 //         print(result);
@@ -1596,1747 +1791,1764 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: (ReturnBodyPeople == 'PeopleChaoScreen2')
-          ? Column(
-              children: [
-                Row(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: InkWell(
-                        onTap: () {
-                          setState(() {
-                            ReturnBodyPeople = 'PeopleChaoScreen';
-                          });
-                        },
-                        child: Container(
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(10),
-                                topRight: Radius.circular(10),
-                                bottomLeft: Radius.circular(10),
-                                bottomRight: Radius.circular(10)),
-                          ),
-                          padding: const EdgeInsets.all(8.0),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Colors.black,
+      child: SizedBox(
+        width: double.infinity,
+        child: (ReturnBodyPeople == 'PeopleChaoScreen2')
+            ? Column(
+                children: [
+                  Row(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () {
+                            setState(() {
+                              ReturnBodyPeople = 'PeopleChaoScreen';
+                            });
+                          },
+                          child: Container(
+                            decoration: const BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: const Icon(
+                              Icons.arrow_back,
+                              color: Colors.black,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                PeopleChaoScreen2(
-                  Get_Value_cid: Value_cid,
-                  Get_Value_NameShop_index: Value_NameShop_index,
-                  Get_Value_status: Value_stasus,
-                  Get_Value_indexpage: '0',
-                  updateMessage: updateMessage,
-                ),
-              ],
-            )
-          : (ReturnBodyPeople == 'PeopleChaoScreen3')
-              ? Column(
-                  children: [
-                    Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: () {
-                              setState(() {
-                                ReturnBodyPeople = 'PeopleChaoScreen';
-                              });
-                            },
-                            child: Container(
-                              decoration: const BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10),
-                                    bottomLeft: Radius.circular(10),
-                                    bottomRight: Radius.circular(10)),
-                              ),
-                              padding: const EdgeInsets.all(8.0),
-                              child: const Icon(
-                                Icons.arrow_back,
-                                color: Colors.black,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    /////////////----------->คุมเงินประกัน
-                    const PeopleChaoScreen3(),
-                    /////////////----------->คุมเงินประกัน
-                  ],
-                )
-              : (ReturnBodyPeople == 'PeopleChaoScreen4')
-                  ? Column(
-                      children: [
-                        Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    ReturnBodyPeople = 'PeopleChaoScreen';
-                                  });
-                                },
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(10),
-                                        topRight: Radius.circular(10),
-                                        bottomLeft: Radius.circular(10),
-                                        bottomRight: Radius.circular(10)),
-                                  ),
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: const Icon(
-                                    Icons.arrow_back,
-                                    color: Colors.black,
-                                  ),
+                    ],
+                  ),
+                  PeopleChaoScreen2(
+                    Get_Value_cid: Value_cid,
+                    Get_Value_NameShop_index: Value_NameShop_index,
+                    Get_Value_status: Value_stasus,
+                    Get_Value_indexpage: '0',
+                    updateMessage: updateMessage,
+                  ),
+                ],
+              )
+            : (ReturnBodyPeople == 'PeopleChaoScreen3')
+                ? Column(
+                    children: [
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () {
+                                setState(() {
+                                  ReturnBodyPeople = 'PeopleChaoScreen';
+                                });
+                              },
+                              child: Container(
+                                decoration: const BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(10),
+                                      topRight: Radius.circular(10),
+                                      bottomLeft: Radius.circular(10),
+                                      bottomRight: Radius.circular(10)),
+                                ),
+                                padding: const EdgeInsets.all(8.0),
+                                child: const Icon(
+                                  Icons.arrow_back,
+                                  color: Colors.black,
                                 ),
                               ),
                             ),
-                          ],
-                        ), /////////////----------->ยกเลิกสัญญา
-                        const PeopleChaoScreen4(),
-                        /////////////----------->ยกเลิกสัญญา
-                      ],
-                    )
-                  : Column(
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.fromLTRB(0, 8, 8, 0),
-                                child: Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Padding(
-                                    padding:
-                                        const EdgeInsets.fromLTRB(8, 8, 2, 0),
-                                    child: Container(
-                                      width: 100,
-                                      decoration: BoxDecoration(
-                                        color: AppbackgroundColor.TiTile_Box,
-                                        // color: AppbackgroundColor.TiTile_Colors,
-                                        borderRadius: const BorderRadius.only(
+                          ),
+                        ],
+                      ),
+                      /////////////----------->คุมเงินประกัน
+                      const PeopleChaoScreen3(),
+                      /////////////----------->คุมเงินประกัน
+                    ],
+                  )
+                : (ReturnBodyPeople == 'PeopleChaoScreen4')
+                    ? Column(
+                        children: [
+                          Row(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: InkWell(
+                                  onTap: () {
+                                    setState(() {
+                                      ReturnBodyPeople = 'PeopleChaoScreen';
+                                    });
+                                  },
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.only(
                                           topLeft: Radius.circular(10),
                                           topRight: Radius.circular(10),
                                           bottomLeft: Radius.circular(10),
-                                          bottomRight: Radius.circular(10),
-                                        ),
-                                        border: Border.all(
-                                            color: Colors.white, width: 2),
-                                      ),
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          Translate.TranslateAndSetText(
-                                              'ผู้เช่า ',
-                                              ReportScreen_Color.Colors_Text1_,
-                                              TextAlign.center,
-                                              FontWeight.bold,
-                                              FontWeight_.Fonts_T,
-                                              14,
-                                              1),
-                                          // AutoSizeText(
-                                          //   'ผู้เช่า ',
-                                          //   overflow: TextOverflow.ellipsis,
-                                          //   minFontSize: 8,
-                                          //   maxFontSize: 20,
-                                          //   style: TextStyle(
-                                          //     decoration:
-                                          //         TextDecoration.underline,
-                                          //     color: ReportScreen_Color
-                                          //         .Colors_Text1_,
-                                          //     fontWeight: FontWeight.bold,
-                                          //     fontFamily: FontWeight_.Fonts_T,
-                                          //   ),
-                                          // ),
-                                          AutoSizeText(
-                                            ' > >',
-                                            overflow: TextOverflow.ellipsis,
-                                            minFontSize: 8,
-                                            maxFontSize: 20,
-                                            style: TextStyle(
-                                              color: Colors.green,
-                                              fontWeight: FontWeight.bold,
-                                              fontFamily: FontWeight_.Fonts_T,
-                                            ),
+                                          bottomRight: Radius.circular(10)),
+                                    ),
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: const Icon(
+                                      Icons.arrow_back,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ), /////////////----------->ยกเลิกสัญญา
+                          const PeopleChaoScreen4(),
+                          /////////////----------->ยกเลิกสัญญา
+                        ],
+                      )
+                    : Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(0, 8, 8, 0),
+                                  child: Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Padding(
+                                      padding:
+                                          const EdgeInsets.fromLTRB(8, 8, 2, 0),
+                                      child: Container(
+                                        width: 100,
+                                        decoration: BoxDecoration(
+                                          color: AppbackgroundColor.TiTile_Box,
+                                          // color: AppbackgroundColor.TiTile_Colors,
+                                          borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(10),
+                                            topRight: Radius.circular(10),
+                                            bottomLeft: Radius.circular(10),
+                                            bottomRight: Radius.circular(10),
                                           ),
-                                        ],
+                                          border: Border.all(
+                                              color: Colors.white, width: 2),
+                                        ),
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Translate.TranslateAndSetText(
+                                                'ผู้เช่า ',
+                                                ReportScreen_Color
+                                                    .Colors_Text1_,
+                                                TextAlign.center,
+                                                FontWeight.bold,
+                                                FontWeight_.Fonts_T,
+                                                14,
+                                                1),
+                                            // AutoSizeText(
+                                            //   'ผู้เช่า ',
+                                            //   overflow: TextOverflow.ellipsis,
+                                            //   minFontSize: 8,
+                                            //   maxFontSize: 20,
+                                            //   style: TextStyle(
+                                            //     decoration:
+                                            //         TextDecoration.underline,
+                                            //     color: ReportScreen_Color
+                                            //         .Colors_Text1_,
+                                            //     fontWeight: FontWeight.bold,
+                                            //     fontFamily: FontWeight_.Fonts_T,
+                                            //   ),
+                                            // ),
+                                            AutoSizeText(
+                                              ' > >',
+                                              overflow: TextOverflow.ellipsis,
+                                              minFontSize: 8,
+                                              maxFontSize: 20,
+                                              style: TextStyle(
+                                                color: Colors.green,
+                                                fontWeight: FontWeight.bold,
+                                                fontFamily: FontWeight_.Fonts_T,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ),
                               ),
-                            ),
-                            Align(
-                              alignment: Alignment.centerRight,
-                              child: viewpage(context, '$Ser_nowpage'),
-                            ),
-                          ],
-                        ),
-                        //               Row(
-                        //   mainAxisAlignment: MainAxisAlignment.end,
-                        //   children: [
-                        //     Align(
-                        //       alignment: Alignment.topLeft,
-                        //       child: viewpage(context, '$Ser_nowpage'),
-                        //     ),
-                        //   ],
-                        // ),
-                        (Ser_QRpage == 1)
-                            ? Align(
+                              Align(
                                 alignment: Alignment.centerRight,
-                                child: Padding(
-                                  padding: EdgeInsets.all(8.0),
-                                  child: InkWell(
-                                    onTap: () {
-                                      setState(() {
-                                        Ser_QRpage = 0;
-                                      });
-                                    },
-                                    child: Container(
-                                        decoration: const BoxDecoration(
-                                          color: Colors.black,
-                                          borderRadius: BorderRadius.only(
-                                              topLeft: Radius.circular(10),
-                                              topRight: Radius.circular(10),
-                                              bottomLeft: Radius.circular(10),
-                                              bottomRight: Radius.circular(10)),
-                                          // border: Border.all(color: Colors.white, width: 1),
-                                        ),
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: Translate.TranslateAndSetText(
-                                            '<< ย้อนกลับ ',
-                                            Colors.white,
-                                            TextAlign.center,
-                                            FontWeight.bold,
-                                            FontWeight_.Fonts_T,
-                                            14,
-                                            1)),
+                                child: viewpage(context, '$Ser_nowpage'),
+                              ),
+                            ],
+                          ),
+                          //               Row(
+                          //   mainAxisAlignment: MainAxisAlignment.end,
+                          //   children: [
+                          //     Align(
+                          //       alignment: Alignment.topLeft,
+                          //       child: viewpage(context, '$Ser_nowpage'),
+                          //     ),
+                          //   ],
+                          // ),
+                          (Ser_QRpage == 1)
+                              ? Align(
+                                  alignment: Alignment.centerRight,
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: InkWell(
+                                      onTap: () {
+                                        setState(() {
+                                          Ser_QRpage = 0;
+                                        });
+                                      },
+                                      child: Container(
+                                          decoration: const BoxDecoration(
+                                            color: Colors.black,
+                                            borderRadius: BorderRadius.only(
+                                                topLeft: Radius.circular(10),
+                                                topRight: Radius.circular(10),
+                                                bottomLeft: Radius.circular(10),
+                                                bottomRight:
+                                                    Radius.circular(10)),
+                                            // border: Border.all(color: Colors.white, width: 1),
+                                          ),
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Translate.TranslateAndSetText(
+                                              '<< ย้อนกลับ ',
+                                              Colors.white,
+                                              TextAlign.center,
+                                              FontWeight.bold,
+                                              FontWeight_.Fonts_T,
+                                              14,
+                                              1)),
+                                    ),
                                   ),
-                                ),
-                              )
-                            : Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    color: AppbackgroundColor.TiTile_Box,
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(10),
-                                        topRight: Radius.circular(10),
-                                        bottomLeft: Radius.circular(10),
-                                        bottomRight: Radius.circular(10)),
-                                    // border: Border.all(color: Colors.white, width: 1),
-                                  ),
+                                )
+                              : Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    children: [
-                                      MediaQuery.of(context).size.shortestSide <
-                                              MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  1
-                                          ? Padding(
-                                              padding: EdgeInsets.all(8.0),
-                                              child:
-                                                  Translate.TranslateAndSetText(
-                                                      'โซนพื้นที่เช่า : ',
-                                                      PeopleChaoScreen_Color
-                                                          .Colors_Text1_,
-                                                      TextAlign.center,
-                                                      FontWeight.bold,
-                                                      FontWeight_.Fonts_T,
-                                                      14,
-                                                      1))
-                                          : const SizedBox(),
-                                      Expanded(
-                                        flex: MediaQuery.of(context)
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      color: AppbackgroundColor.TiTile_Box,
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(10),
+                                          topRight: Radius.circular(10),
+                                          bottomLeft: Radius.circular(10),
+                                          bottomRight: Radius.circular(10)),
+                                      // border: Border.all(color: Colors.white, width: 1),
+                                    ),
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: Row(
+                                      children: [
+                                        MediaQuery.of(context)
                                                     .size
                                                     .shortestSide <
                                                 MediaQuery.of(context)
                                                         .size
                                                         .width *
                                                     1
-                                            ? 2
-                                            : 3,
-                                        child: Padding(
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: AppbackgroundColor
-                                                  .Sub_Abg_Colors,
-                                              borderRadius:
-                                                  const BorderRadius.only(
-                                                      topLeft:
-                                                          Radius.circular(10),
-                                                      topRight:
-                                                          Radius.circular(10),
-                                                      bottomLeft:
-                                                          Radius.circular(10),
-                                                      bottomRight:
-                                                          Radius.circular(10)),
-                                              border: Border.all(
-                                                  color: Colors.grey, width: 1),
-                                            ),
-                                            width: 150,
-                                            child: DropdownButtonHideUnderline(
-                                              child: DropdownButton2<String>(
-                                                  isExpanded: true,
-                                                  searchController:
-                                                      Dropdown_Controller,
-                                                  searchInnerWidget: Container(
-                                                    // width: 200,
-                                                    height: 50,
-                                                    decoration: BoxDecoration(
-                                                      color: Colors.red[100]!
-                                                          .withOpacity(0.5),
-                                                      borderRadius:
-                                                          const BorderRadius
-                                                                  .only(
-                                                              topLeft: Radius
-                                                                  .circular(8),
-                                                              topRight: Radius
-                                                                  .circular(8),
-                                                              bottomLeft: Radius
-                                                                  .circular(8),
-                                                              bottomRight:
-                                                                  Radius
-                                                                      .circular(
-                                                                          8)),
-                                                      border: Border.all(
-                                                          color: Colors.grey,
-                                                          width: 1),
-                                                    ),
-                                                    child: TextFormField(
-                                                      expands: true,
-                                                      maxLines: null,
-                                                      controller:
-                                                          Dropdown_Controller,
-                                                      decoration:
-                                                          InputDecoration(
-                                                        isDense: true,
-                                                        contentPadding:
-                                                            const EdgeInsets
-                                                                .symmetric(
-                                                          horizontal: 10,
-                                                          vertical: 8,
-                                                        ),
-                                                        hintText: 'Search...',
-                                                        // fillColor: Colors.red[300],
-                                                        hintStyle:
-                                                            const TextStyle(
-                                                                fontSize: 12),
-                                                        border:
-                                                            OutlineInputBorder(
-                                                          borderRadius:
-                                                              BorderRadius
-                                                                  .circular(8),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  hint: Translate
-                                                      .TranslateAndSetText(
-                                                          zone_name == null
-                                                              ? 'ทั้งหมด'
-                                                              : '$zone_name',
-                                                          ChaoAreaScreen_Color
-                                                              .Colors_Text2_,
-                                                          TextAlign.center,
-                                                          FontWeight.bold,
-                                                          FontWeight_.Fonts_T,
-                                                          14,
-                                                          2),
-                                                  icon: const Icon(
-                                                    Icons.arrow_drop_down,
-                                                    color: TextHome_Color
-                                                        .TextHome_Colors,
-                                                  ),
-                                                  style: const TextStyle(
-                                                      color: Colors.green,
-                                                      fontFamily:
-                                                          Font_.Fonts_T),
-                                                  iconSize: 30,
-                                                  buttonHeight: 35,
-                                                  dropdownDecoration:
-                                                      BoxDecoration(
-                                                    borderRadius:
-                                                        BorderRadius.circular(
-                                                            10),
-                                                  ),
-                                                  items: zoneModels
-                                                      .map((item) =>
-                                                          DropdownMenuItem<
-                                                              String>(
-                                                            value:
-                                                                '${item.ser},${item.zn}',
-                                                            child: Column(
-                                                              crossAxisAlignment:
-                                                                  CrossAxisAlignment
-                                                                      .start,
-                                                              mainAxisAlignment:
-                                                                  MainAxisAlignment
-                                                                      .spaceBetween,
-                                                              children: [
-                                                                Text(
-                                                                  item.zn!,
-                                                                  maxLines: 2,
-                                                                  style: const TextStyle(
-                                                                      fontSize:
-                                                                          14,
-                                                                      fontFamily:
-                                                                          Font_
-                                                                              .Fonts_T),
-                                                                ),
-                                                                Divider(
-                                                                  color: Colors
-                                                                          .grey[
-                                                                      300],
-                                                                  height: 4.0,
-                                                                ),
-                                                              ],
-                                                            ),
-                                                          ))
-                                                      .toList(),
-
-                                                  // value: selectedValue,
-                                                  onChanged: (value) async {
-                                                    var zones =
-                                                        value!.indexOf(',');
-                                                    var zoneSer = value
-                                                        .substring(0, zones);
-                                                    var zonesName = value
-                                                        .substring(zones + 1);
-                                                    print(
-                                                        'mmmmm ${zoneSer.toString()} $zonesName');
-
-                                                    SharedPreferences
-                                                        preferences =
-                                                        await SharedPreferences
-                                                            .getInstance();
-                                                    preferences.setString(
-                                                        'zonePSer',
-                                                        zoneSer.toString());
-                                                    preferences.setString(
-                                                        'zonesPName',
-                                                        zonesName.toString());
-
-                                                    setState(() {
-                                                      // read_GC_tenant();
-                                                      read_GC_areaSelect();
-                                                    });
-
-                                                    String? _route = preferences
-                                                        .getString('route');
-                                                    MaterialPageRoute
-                                                        materialPageRoute =
-                                                        MaterialPageRoute(
-                                                            builder: (BuildContext
-                                                                    context) =>
-                                                                AdminScafScreen(
-                                                                    route:
-                                                                        _route));
-                                                    Navigator
-                                                        .pushAndRemoveUntil(
-                                                            context,
-                                                            materialPageRoute,
-                                                            (route) => false);
-                                                  },
-                                                  searchMatchFn:
-                                                      (item, searchValue) {
-                                                    return item.value
-                                                        .toString()
-                                                        .contains(searchValue);
-                                                  },
-                                                  onMenuStateChange: (isOpen) {
-                                                    if (!isOpen) {
-                                                      Dropdown_Controller
-                                                          .clear();
-                                                    }
-                                                  }),
-                                            ),
-
-                                            // DropdownButtonFormField2(
-                                            //   decoration: InputDecoration(
-                                            //     isDense: true,
-                                            //     contentPadding: EdgeInsets.zero,
-                                            //     border: OutlineInputBorder(
-                                            //       borderRadius:
-                                            //           BorderRadius.circular(10),
-                                            //     ),
-                                            //   ),
-                                            //   isExpanded: true,
-                                            //   hint: (zone_name == null)
-                                            //       ? Translate
-                                            //           .TranslateAndSetText(
-                                            //               'ทั้งหมด',
-                                            //               PeopleChaoScreen_Color
-                                            //                   .Colors_Text1_,
-                                            //               TextAlign.center,
-                                            //               null,
-                                            //               Font_.Fonts_T,
-                                            //               14,
-                                            //               1)
-                                            //       : Text(
-                                            //           '$zone_name',
-                                            //           maxLines: 1,
-                                            //           style: const TextStyle(
-                                            //               fontSize: 14,
-                                            //               color:
-                                            //                   PeopleChaoScreen_Color
-                                            //                       .Colors_Text2_,
-                                            //               fontFamily:
-                                            //                   Font_.Fonts_T),
-                                            //         ),
-                                            //   icon: const Icon(
-                                            //     Icons.arrow_drop_down,
-                                            //     color: Colors.black,
-                                            //   ),
-                                            //   style: const TextStyle(
-                                            //       color: PeopleChaoScreen_Color
-                                            //           .Colors_Text2_,
-                                            //       fontFamily: Font_.Fonts_T),
-                                            //   iconSize: 30,
-                                            //   buttonHeight: 40,
-                                            //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                                            //   dropdownDecoration: BoxDecoration(
-                                            //     borderRadius:
-                                            //         BorderRadius.circular(10),
-                                            //   ),
-                                            //   items: zoneModels
-                                            //       .map((item) =>
-                                            //           DropdownMenuItem<String>(
-                                            //             value:
-                                            //                 '${item.ser},${item.zn}',
-                                            //             child: Text(
-                                            //               item.zn!,
-                                            //               style: const TextStyle(
-                                            //                   fontSize: 14,
-                                            //                   color: PeopleChaoScreen_Color
-                                            //                       .Colors_Text2_,
-                                            //                   fontFamily: Font_
-                                            //                       .Fonts_T),
-                                            //             ),
-                                            //           ))
-                                            //       .toList(),
-
-                                            //   onChanged: (value) async {
-                                            //     var zones = value!.indexOf(',');
-                                            //     var zoneSer =
-                                            //         value.substring(0, zones);
-                                            //     var zonesName =
-                                            //         value.substring(zones + 1);
-                                            //     print(
-                                            //         'mmmmm ${zoneSer.toString()} $zonesName');
-
-                                            //     SharedPreferences preferences =
-                                            //         await SharedPreferences
-                                            //             .getInstance();
-                                            //     preferences.setString(
-                                            //         'zonePSer',
-                                            //         zoneSer.toString());
-                                            //     preferences.setString(
-                                            //         'zonesPName',
-                                            //         zonesName.toString());
-
-                                            //     setState(() {
-                                            //       // read_GC_tenant();
-                                            //       read_GC_areaSelect();
-                                            //     });
-
-                                            //     String? _route = preferences
-                                            //         .getString('route');
-                                            //     MaterialPageRoute
-                                            //         materialPageRoute =
-                                            //         MaterialPageRoute(
-                                            //             builder: (BuildContext
-                                            //                     context) =>
-                                            //                 AdminScafScreen(
-                                            //                     route: _route));
-                                            //     Navigator.pushAndRemoveUntil(
-                                            //         context,
-                                            //         materialPageRoute,
-                                            //         (route) => false);
-                                            //   },
-                                            //   // onSaved: (value) {
-                                            //   //   // selectedValue = value.toString();
-                                            //   // },
-                                            // ),
-                                          ),
-                                        ),
-                                      ),
-                                      // (Status_ == 5 || Status_ == 6)
-                                      //     ? Expanded(flex: 1, child: SizedBox())
-                                      //     : Expanded(
-                                      //         flex: 1,
-                                      //         child: Padding(
-                                      //           padding: EdgeInsets.all(8.0),
-                                      //           child: Text(
-                                      //             'ค้นหา:',
-                                      //             textAlign: TextAlign.end,
-                                      //             style: TextStyle(
-                                      //                 color: PeopleChaoScreen_Color
-                                      //                     .Colors_Text1_,
-                                      //                 fontWeight: FontWeight.bold,
-                                      //                 fontFamily:
-                                      //                     FontWeight_.Fonts_T),
-                                      //           ),
-                                      //         ),
-                                      //       ),
-                                      // (Status_ == 5 || Status_ == 6)
-                                      //     ? Expanded(flex: 4, child: SizedBox())
-                                      //     : Expanded(
-                                      //         // flex: MediaQuery.of(context)
-                                      //         //             .size
-                                      //         //             .shortestSide <
-                                      //         //         MediaQuery.of(context).size.width * 1
-                                      //         //     ? 8
-                                      //         //     : 6,
-                                      //         flex: 4,
-                                      //         child: Padding(
-                                      //           padding: const EdgeInsets.all(8.0),
-                                      //           child: Container(
-                                      //             decoration: BoxDecoration(
-                                      //               color: AppbackgroundColor
-                                      //                   .Sub_Abg_Colors,
-                                      //               borderRadius:
-                                      //                   const BorderRadius.only(
-                                      //                       topLeft:
-                                      //                           Radius.circular(10),
-                                      //                       topRight:
-                                      //                           Radius.circular(10),
-                                      //                       bottomLeft:
-                                      //                           Radius.circular(10),
-                                      //                       bottomRight:
-                                      //                           Radius.circular(10)),
-                                      //               border: Border.all(
-                                      //                   color: Colors.grey, width: 1),
-                                      //             ),
-                                      //             // width: 120,
-                                      //             height: 40,
-                                      //             child: _searchBar(),
-                                      //           ),
-                                      //         ),
-                                      //       ),
-                                      Expanded(
-                                          flex: 5,
+                                            ? Padding(
+                                                padding: EdgeInsets.all(8.0),
+                                                child: Translate
+                                                    .TranslateAndSetText(
+                                                        'โซนพื้นที่เช่า : ',
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text1_,
+                                                        TextAlign.center,
+                                                        FontWeight.bold,
+                                                        FontWeight_.Fonts_T,
+                                                        14,
+                                                        1))
+                                            : const SizedBox(),
+                                        Expanded(
+                                          flex: MediaQuery.of(context)
+                                                      .size
+                                                      .shortestSide <
+                                                  MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      1
+                                              ? 2
+                                              : 3,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
-                                            child: Column(
-                                              children: [
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  children: [
-                                                    Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              0),
-                                                      child: Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .start,
-                                                        children: [
-                                                          InkWell(
-                                                            onTap: () {
-                                                              setState(() {
-                                                                quotxSelectModels_Select
-                                                                    .clear();
-                                                                ser_indexShow =
-                                                                    null;
-                                                                Ser_QRpage = 1;
-                                                              });
-                                                            },
-                                                            child: Container(
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                color: Colors
-                                                                        .yellow[
-                                                                    800],
-                                                                borderRadius: const BorderRadius
-                                                                        .only(
-                                                                    topLeft:
-                                                                        Radius.circular(
-                                                                            10),
-                                                                    topRight: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    bottomLeft:
-                                                                        Radius.circular(
-                                                                            10),
-                                                                    bottomRight:
-                                                                        Radius.circular(
-                                                                            10)),
-                                                                border: Border.all(
-                                                                    color: Colors
-                                                                        .grey,
-                                                                    width: 1),
-                                                              ),
-                                                              child:
-                                                                  const Padding(
-                                                                padding:
-                                                                    EdgeInsets
-                                                                        .all(
-                                                                            4.0),
-                                                                child: Center(
-                                                                  child: Row(
-                                                                    mainAxisAlignment:
-                                                                        MainAxisAlignment
-                                                                            .center,
-                                                                    children: [
-                                                                      Padding(
-                                                                        padding:
-                                                                            EdgeInsets.all(2.0),
-                                                                        child:
-                                                                            Icon(
-                                                                          Icons
-                                                                              .contact_emergency,
-                                                                          color:
-                                                                              Colors.white,
-                                                                        ),
-                                                                      ),
-                                                                      Padding(
-                                                                        padding:
-                                                                            EdgeInsets.all(2.0),
-                                                                        child:
-                                                                            Text(
-                                                                          'Card',
-                                                                          style:
-                                                                              TextStyle(
-                                                                            color:
-                                                                                PeopleChaoScreen_Color.Colors_Text1_,
-                                                                            fontWeight:
-                                                                                FontWeight.bold,
-                                                                            fontFamily:
-                                                                                FontWeight_.Fonts_T,
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    ],
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                            ),
+                                            child: Container(
+                                              decoration: BoxDecoration(
+                                                color: AppbackgroundColor
+                                                    .Sub_Abg_Colors,
+                                                borderRadius:
+                                                    const BorderRadius.only(
+                                                        topLeft:
+                                                            Radius.circular(10),
+                                                        topRight:
+                                                            Radius.circular(10),
+                                                        bottomLeft:
+                                                            Radius.circular(10),
+                                                        bottomRight:
+                                                            Radius.circular(
+                                                                10)),
+                                                border: Border.all(
+                                                    color: Colors.grey,
+                                                    width: 1),
+                                              ),
+                                              width: 150,
+                                              child:
+                                                  DropdownButtonHideUnderline(
+                                                child: DropdownButton2<String>(
+                                                    isExpanded: true,
+                                                    searchController:
+                                                        Dropdown_Controller,
+                                                    searchInnerWidget:
+                                                        Container(
+                                                      // width: 200,
+                                                      height: 50,
+                                                      decoration: BoxDecoration(
+                                                        color: Colors.red[100]!
+                                                            .withOpacity(0.5),
+                                                        borderRadius: const BorderRadius
+                                                                .only(
+                                                            topLeft: Radius
+                                                                .circular(8),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    8),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    8),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    8)),
+                                                        border: Border.all(
+                                                            color: Colors.grey,
+                                                            width: 1),
+                                                      ),
+                                                      child: TextFormField(
+                                                        expands: true,
+                                                        maxLines: null,
+                                                        controller:
+                                                            Dropdown_Controller,
+                                                        decoration:
+                                                            InputDecoration(
+                                                          isDense: true,
+                                                          contentPadding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                            horizontal: 10,
+                                                            vertical: 8,
                                                           ),
-                                                        ],
+                                                          hintText: 'Search...',
+                                                          // fillColor: Colors.red[300],
+                                                          hintStyle:
+                                                              const TextStyle(
+                                                                  fontSize: 12),
+                                                          border:
+                                                              OutlineInputBorder(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        8),
+                                                          ),
+                                                        ),
                                                       ),
                                                     ),
-                                                    const SizedBox(
-                                                      width: 10,
+                                                    hint: Translate
+                                                        .TranslateAndSetText(
+                                                            zone_name == null
+                                                                ? 'ทั้งหมด'
+                                                                : '$zone_name',
+                                                            ChaoAreaScreen_Color
+                                                                .Colors_Text2_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            14,
+                                                            2),
+                                                    icon: const Icon(
+                                                      Icons.arrow_drop_down,
+                                                      color: TextHome_Color
+                                                          .TextHome_Colors,
                                                     ),
-                                                  ],
-                                                ),
-                                              ],
+                                                    style: const TextStyle(
+                                                        color: Colors.green,
+                                                        fontFamily:
+                                                            Font_.Fonts_T),
+                                                    iconSize: 30,
+                                                    buttonHeight: 35,
+                                                    dropdownDecoration:
+                                                        BoxDecoration(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                              10),
+                                                    ),
+                                                    items: zoneModels
+                                                        .map((item) =>
+                                                            DropdownMenuItem<
+                                                                String>(
+                                                              value:
+                                                                  '${item.ser},${item.zn}',
+                                                              child: Column(
+                                                                crossAxisAlignment:
+                                                                    CrossAxisAlignment
+                                                                        .start,
+                                                                mainAxisAlignment:
+                                                                    MainAxisAlignment
+                                                                        .spaceBetween,
+                                                                children: [
+                                                                  Text(
+                                                                    item.zn!,
+                                                                    maxLines: 2,
+                                                                    style: const TextStyle(
+                                                                        fontSize:
+                                                                            14,
+                                                                        fontFamily:
+                                                                            Font_.Fonts_T),
+                                                                  ),
+                                                                  Divider(
+                                                                    color: Colors
+                                                                            .grey[
+                                                                        300],
+                                                                    height: 4.0,
+                                                                  ),
+                                                                ],
+                                                              ),
+                                                            ))
+                                                        .toList(),
+
+                                                    // value: selectedValue,
+                                                    onChanged: (value) async {
+                                                      var zones =
+                                                          value!.indexOf(',');
+                                                      var zoneSer = value
+                                                          .substring(0, zones);
+                                                      var zonesName = value
+                                                          .substring(zones + 1);
+                                                      print(
+                                                          'mmmmm ${zoneSer.toString()} $zonesName');
+
+                                                      SharedPreferences
+                                                          preferences =
+                                                          await SharedPreferences
+                                                              .getInstance();
+                                                      preferences.setString(
+                                                          'zonePSer',
+                                                          zoneSer.toString());
+                                                      preferences.setString(
+                                                          'zonesPName',
+                                                          zonesName.toString());
+
+                                                      setState(() {
+                                                        // read_GC_tenant();
+                                                        read_GC_areaSelect();
+                                                      });
+
+                                                      String? _route =
+                                                          preferences.getString(
+                                                              'route');
+                                                      MaterialPageRoute
+                                                          materialPageRoute =
+                                                          MaterialPageRoute(
+                                                              builder: (BuildContext
+                                                                      context) =>
+                                                                  AdminScafScreen(
+                                                                      route:
+                                                                          _route));
+                                                      Navigator
+                                                          .pushAndRemoveUntil(
+                                                              context,
+                                                              materialPageRoute,
+                                                              (route) => false);
+                                                    },
+                                                    searchMatchFn:
+                                                        (item, searchValue) {
+                                                      return item.value
+                                                          .toString()
+                                                          .contains(
+                                                              searchValue);
+                                                    },
+                                                    onMenuStateChange:
+                                                        (isOpen) {
+                                                      if (!isOpen) {
+                                                        Dropdown_Controller
+                                                            .clear();
+                                                      }
+                                                    }),
+                                              ),
+
+                                              // DropdownButtonFormField2(
+                                              //   decoration: InputDecoration(
+                                              //     isDense: true,
+                                              //     contentPadding: EdgeInsets.zero,
+                                              //     border: OutlineInputBorder(
+                                              //       borderRadius:
+                                              //           BorderRadius.circular(10),
+                                              //     ),
+                                              //   ),
+                                              //   isExpanded: true,
+                                              //   hint: (zone_name == null)
+                                              //       ? Translate
+                                              //           .TranslateAndSetText(
+                                              //               'ทั้งหมด',
+                                              //               PeopleChaoScreen_Color
+                                              //                   .Colors_Text1_,
+                                              //               TextAlign.center,
+                                              //               null,
+                                              //               Font_.Fonts_T,
+                                              //               14,
+                                              //               1)
+                                              //       : Text(
+                                              //           '$zone_name',
+                                              //           maxLines: 1,
+                                              //           style: const TextStyle(
+                                              //               fontSize: 14,
+                                              //               color:
+                                              //                   PeopleChaoScreen_Color
+                                              //                       .Colors_Text2_,
+                                              //               fontFamily:
+                                              //                   Font_.Fonts_T),
+                                              //         ),
+                                              //   icon: const Icon(
+                                              //     Icons.arrow_drop_down,
+                                              //     color: Colors.black,
+                                              //   ),
+                                              //   style: const TextStyle(
+                                              //       color: PeopleChaoScreen_Color
+                                              //           .Colors_Text2_,
+                                              //       fontFamily: Font_.Fonts_T),
+                                              //   iconSize: 30,
+                                              //   buttonHeight: 40,
+                                              //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                                              //   dropdownDecoration: BoxDecoration(
+                                              //     borderRadius:
+                                              //         BorderRadius.circular(10),
+                                              //   ),
+                                              //   items: zoneModels
+                                              //       .map((item) =>
+                                              //           DropdownMenuItem<String>(
+                                              //             value:
+                                              //                 '${item.ser},${item.zn}',
+                                              //             child: Text(
+                                              //               item.zn!,
+                                              //               style: const TextStyle(
+                                              //                   fontSize: 14,
+                                              //                   color: PeopleChaoScreen_Color
+                                              //                       .Colors_Text2_,
+                                              //                   fontFamily: Font_
+                                              //                       .Fonts_T),
+                                              //             ),
+                                              //           ))
+                                              //       .toList(),
+
+                                              //   onChanged: (value) async {
+                                              //     var zones = value!.indexOf(',');
+                                              //     var zoneSer =
+                                              //         value.substring(0, zones);
+                                              //     var zonesName =
+                                              //         value.substring(zones + 1);
+                                              //     print(
+                                              //         'mmmmm ${zoneSer.toString()} $zonesName');
+
+                                              //     SharedPreferences preferences =
+                                              //         await SharedPreferences
+                                              //             .getInstance();
+                                              //     preferences.setString(
+                                              //         'zonePSer',
+                                              //         zoneSer.toString());
+                                              //     preferences.setString(
+                                              //         'zonesPName',
+                                              //         zonesName.toString());
+
+                                              //     setState(() {
+                                              //       // read_GC_tenant();
+                                              //       read_GC_areaSelect();
+                                              //     });
+
+                                              //     String? _route = preferences
+                                              //         .getString('route');
+                                              //     MaterialPageRoute
+                                              //         materialPageRoute =
+                                              //         MaterialPageRoute(
+                                              //             builder: (BuildContext
+                                              //                     context) =>
+                                              //                 AdminScafScreen(
+                                              //                     route: _route));
+                                              //     Navigator.pushAndRemoveUntil(
+                                              //         context,
+                                              //         materialPageRoute,
+                                              //         (route) => false);
+                                              //   },
+                                              //   // onSaved: (value) {
+                                              //   //   // selectedValue = value.toString();
+                                              //   // },
+                                              // ),
                                             ),
-                                          ))
-                                      // Expanded(
-                                      //   // flex: MediaQuery.of(context)
-                                      //   //             .size
-                                      //   //             .shortestSide <
-                                      //   //         MediaQuery.of(context).size.width * 1
-                                      //   //     ? 8
-                                      //   //     : 6,
-                                      //   flex: 4,
-                                      //   child: Padding(
-                                      //     padding: const EdgeInsets.all(8.0),
-                                      //     child: Container(
-                                      //       decoration: BoxDecoration(
-                                      //         color:
-                                      //             AppbackgroundColor.Sub_Abg_Colors,
-                                      //         borderRadius: const BorderRadius.only(
-                                      //             topLeft: Radius.circular(10),
-                                      //             topRight: Radius.circular(10),
-                                      //             bottomLeft: Radius.circular(10),
-                                      //             bottomRight: Radius.circular(10)),
-                                      //         border: Border.all(
-                                      //             color: Colors.grey, width: 1),
-                                      //       ),
-                                      //       // width: 120,
-                                      //       height: 40,
-                                      //       child: _searchBar2(),
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                      // Expanded(
-                                      //   // flex: MediaQuery.of(context)
-                                      //   //             .size
-                                      //   //             .shortestSide <
-                                      //   //         MediaQuery.of(context).size.width * 1
-                                      //   //     ? 8
-                                      //   //     : 6,
-                                      //   flex: 4,
-                                      //   child: Padding(
-                                      //     padding: const EdgeInsets.all(8.0),
-                                      //     child: Container(
-                                      //       decoration: BoxDecoration(
-                                      //         color:
-                                      //             AppbackgroundColor.Sub_Abg_Colors,
-                                      //         borderRadius: const BorderRadius.only(
-                                      //             topLeft: Radius.circular(10),
-                                      //             topRight: Radius.circular(10),
-                                      //             bottomLeft: Radius.circular(10),
-                                      //             bottomRight: Radius.circular(10)),
-                                      //         border: Border.all(
-                                      //             color: Colors.grey, width: 1),
-                                      //       ),
-                                      //       // width: 120,
-                                      //       height: 40,
-                                      //       child: _searchBar3(),
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                      // Expanded(
-                                      //   flex: 2,
-                                      //   child: SingleChildScrollView(
-                                      //     scrollDirection: Axis.horizontal,
-                                      //     child: Row(
-                                      //       children: [
-                                      //         Container(
-                                      //           child: Row(
-                                      //             children: [
-                                      //               const Padding(
-                                      //                 padding: EdgeInsets.all(8.0),
-                                      //                 child: Text(
-                                      //                   'โซนพื้นที่เช่า:',
-                                      //                   style: TextStyle(
-                                      //                       color:
-                                      //                           PeopleChaoScreen_Color
-                                      //                               .Colors_Text1_,
-                                      //                       fontWeight:
-                                      //                           FontWeight.bold,
-                                      //                       fontFamily:
-                                      //                           FontWeight_.Fonts_T),
-                                      //                 ),
-                                      //               ),
-                                      //               Padding(
-                                      //                 padding:
-                                      //                     const EdgeInsets.all(8.0),
-                                      //                 child: Container(
-                                      //                   decoration: BoxDecoration(
-                                      //                     color: AppbackgroundColor
-                                      //                         .Sub_Abg_Colors,
-                                      //                     borderRadius:
-                                      //                         const BorderRadius.only(
-                                      //                             topLeft:
-                                      //                                 Radius.circular(
-                                      //                                     10),
-                                      //                             topRight:
-                                      //                                 Radius.circular(
-                                      //                                     10),
-                                      //                             bottomLeft:
-                                      //                                 Radius.circular(
-                                      //                                     10),
-                                      //                             bottomRight:
-                                      //                                 Radius.circular(
-                                      //                                     10)),
-                                      //                     border: Border.all(
-                                      //                         color: Colors.grey,
-                                      //                         width: 1),
-                                      //                   ),
-                                      //                   width: 150,
-                                      //                   child:
-                                      //                       DropdownButtonFormField2(
-                                      //                     decoration: InputDecoration(
-                                      //                       isDense: true,
-                                      //                       contentPadding:
-                                      //                           EdgeInsets.zero,
-                                      //                       border:
-                                      //                           OutlineInputBorder(
-                                      //                         borderRadius:
-                                      //                             BorderRadius
-                                      //                                 .circular(10),
-                                      //                       ),
-                                      //                     ),
-                                      //                     isExpanded: true,
-                                      //                     hint: Text(
-                                      //                       zone_name == null
-                                      //                           ? 'ทั้งหมด'
-                                      //                           : '$zone_name',
-                                      //                       maxLines: 1,
-                                      //                       style: const TextStyle(
-                                      //                           fontSize: 14,
-                                      //                           color:
-                                      //                               PeopleChaoScreen_Color
-                                      //                                   .Colors_Text2_,
-                                      //                           fontFamily:
-                                      //                               Font_.Fonts_T),
-                                      //                     ),
-                                      //                     icon: const Icon(
-                                      //                       Icons.arrow_drop_down,
-                                      //                       color: Colors.black,
-                                      //                     ),
-                                      //                     style: const TextStyle(
-                                      //                         color:
-                                      //                             PeopleChaoScreen_Color
-                                      //                                 .Colors_Text2_,
-                                      //                         fontFamily:
-                                      //                             Font_.Fonts_T),
-                                      //                     iconSize: 30,
-                                      //                     buttonHeight: 40,
-                                      //                     // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                                      //                     dropdownDecoration:
-                                      //                         BoxDecoration(
-                                      //                       borderRadius:
-                                      //                           BorderRadius.circular(
-                                      //                               10),
-                                      //                     ),
-                                      //                     items: zoneModels
-                                      //                         .map((item) =>
-                                      //                             DropdownMenuItem<
-                                      //                                 String>(
-                                      //                               value:
-                                      //                                   '${item.ser},${item.zn}',
-                                      //                               child: Text(
-                                      //                                 item.zn!,
-                                      //                                 style: const TextStyle(
-                                      //                                     fontSize:
-                                      //                                         14,
-                                      //                                     color: PeopleChaoScreen_Color
-                                      //                                         .Colors_Text2_,
-                                      //                                     fontFamily:
-                                      //                                         Font_
-                                      //                                             .Fonts_T),
-                                      //                               ),
-                                      //                             ))
-                                      //                         .toList(),
+                                          ),
+                                        ),
+                                        // (Status_ == 5 || Status_ == 6)
+                                        //     ? Expanded(flex: 1, child: SizedBox())
+                                        //     : Expanded(
+                                        //         flex: 1,
+                                        //         child: Padding(
+                                        //           padding: EdgeInsets.all(8.0),
+                                        //           child: Text(
+                                        //             'ค้นหา:',
+                                        //             textAlign: TextAlign.end,
+                                        //             style: TextStyle(
+                                        //                 color: PeopleChaoScreen_Color
+                                        //                     .Colors_Text1_,
+                                        //                 fontWeight: FontWeight.bold,
+                                        //                 fontFamily:
+                                        //                     FontWeight_.Fonts_T),
+                                        //           ),
+                                        //         ),
+                                        //       ),
+                                        // (Status_ == 5 || Status_ == 6)
+                                        //     ? Expanded(flex: 4, child: SizedBox())
+                                        //     : Expanded(
+                                        //         // flex: MediaQuery.of(context)
+                                        //         //             .size
+                                        //         //             .shortestSide <
+                                        //         //         MediaQuery.of(context).size.width * 1
+                                        //         //     ? 8
+                                        //         //     : 6,
+                                        //         flex: 4,
+                                        //         child: Padding(
+                                        //           padding: const EdgeInsets.all(8.0),
+                                        //           child: Container(
+                                        //             decoration: BoxDecoration(
+                                        //               color: AppbackgroundColor
+                                        //                   .Sub_Abg_Colors,
+                                        //               borderRadius:
+                                        //                   const BorderRadius.only(
+                                        //                       topLeft:
+                                        //                           Radius.circular(10),
+                                        //                       topRight:
+                                        //                           Radius.circular(10),
+                                        //                       bottomLeft:
+                                        //                           Radius.circular(10),
+                                        //                       bottomRight:
+                                        //                           Radius.circular(10)),
+                                        //               border: Border.all(
+                                        //                   color: Colors.grey, width: 1),
+                                        //             ),
+                                        //             // width: 120,
+                                        //             height: 40,
+                                        //             child: _searchBar(),
+                                        //           ),
+                                        //         ),
+                                        //       ),
+                                        // Expanded(
+                                        //     flex: 5,
+                                        //     child: Padding(
+                                        //       padding:
+                                        //           const EdgeInsets.all(8.0),
+                                        //       child: Column(
+                                        //         children: [
+                                        //           Row(
+                                        //             mainAxisAlignment:
+                                        //                 MainAxisAlignment.end,
+                                        //             children: [
+                                        //               Padding(
+                                        //                 padding:
+                                        //                     const EdgeInsets
+                                        //                         .all(0),
+                                        //                 child: Row(
+                                        //                   mainAxisAlignment:
+                                        //                       MainAxisAlignment
+                                        //                           .start,
+                                        //                   children: [
+                                        //                     InkWell(
+                                        //                       onTap: () {
+                                        //                         setState(() {
+                                        //                           quotxSelectModels_Select
+                                        //                               .clear();
+                                        //                           ser_indexShow =
+                                        //                               null;
+                                        //                           Ser_QRpage =
+                                        //                               1;
+                                        //                         });
+                                        //                       },
+                                        //                       child: Container(
+                                        //                         decoration:
+                                        //                             BoxDecoration(
+                                        //                           color: Colors
+                                        //                                   .yellow[
+                                        //                               800],
+                                        //                           borderRadius: const BorderRadius
+                                        //                                   .only(
+                                        //                               topLeft:
+                                        //                                   Radius.circular(
+                                        //                                       10),
+                                        //                               topRight:
+                                        //                                   Radius.circular(
+                                        //                                       10),
+                                        //                               bottomLeft:
+                                        //                                   Radius.circular(
+                                        //                                       10),
+                                        //                               bottomRight:
+                                        //                                   Radius.circular(
+                                        //                                       10)),
+                                        //                           border: Border.all(
+                                        //                               color: Colors
+                                        //                                   .grey,
+                                        //                               width: 1),
+                                        //                         ),
+                                        //                         child:
+                                        //                             const Padding(
+                                        //                           padding:
+                                        //                               EdgeInsets
+                                        //                                   .all(
+                                        //                                       4.0),
+                                        //                           child: Center(
+                                        //                             child: Row(
+                                        //                               mainAxisAlignment:
+                                        //                                   MainAxisAlignment
+                                        //                                       .center,
+                                        //                               children: [
+                                        //                                 Padding(
+                                        //                                   padding:
+                                        //                                       EdgeInsets.all(2.0),
+                                        //                                   child:
+                                        //                                       Icon(
+                                        //                                     Icons.contact_emergency,
+                                        //                                     color:
+                                        //                                         Colors.white,
+                                        //                                   ),
+                                        //                                 ),
+                                        //                                 Padding(
+                                        //                                   padding:
+                                        //                                       EdgeInsets.all(2.0),
+                                        //                                   child:
+                                        //                                       Text(
+                                        //                                     'Card',
+                                        //                                     style:
+                                        //                                         TextStyle(
+                                        //                                       color: PeopleChaoScreen_Color.Colors_Text1_,
+                                        //                                       fontWeight: FontWeight.bold,
+                                        //                                       fontFamily: FontWeight_.Fonts_T,
+                                        //                                     ),
+                                        //                                   ),
+                                        //                                 ),
+                                        //                               ],
+                                        //                             ),
+                                        //                           ),
+                                        //                         ),
+                                        //                       ),
+                                        //                     ),
+                                        //                   ],
+                                        //                 ),
+                                        //               ),
+                                        //               const SizedBox(
+                                        //                 width: 10,
+                                        //               ),
+                                        //             ],
+                                        //           ),
+                                        //         ],
+                                        //       ),
+                                        //     ))
+                                        // Expanded(
+                                        //   // flex: MediaQuery.of(context)
+                                        //   //             .size
+                                        //   //             .shortestSide <
+                                        //   //         MediaQuery.of(context).size.width * 1
+                                        //   //     ? 8
+                                        //   //     : 6,
+                                        //   flex: 4,
+                                        //   child: Padding(
+                                        //     padding: const EdgeInsets.all(8.0),
+                                        //     child: Container(
+                                        //       decoration: BoxDecoration(
+                                        //         color:
+                                        //             AppbackgroundColor.Sub_Abg_Colors,
+                                        //         borderRadius: const BorderRadius.only(
+                                        //             topLeft: Radius.circular(10),
+                                        //             topRight: Radius.circular(10),
+                                        //             bottomLeft: Radius.circular(10),
+                                        //             bottomRight: Radius.circular(10)),
+                                        //         border: Border.all(
+                                        //             color: Colors.grey, width: 1),
+                                        //       ),
+                                        //       // width: 120,
+                                        //       height: 40,
+                                        //       child: _searchBar2(),
+                                        //     ),
+                                        //   ),
+                                        // ),
+                                        // Expanded(
+                                        //   // flex: MediaQuery.of(context)
+                                        //   //             .size
+                                        //   //             .shortestSide <
+                                        //   //         MediaQuery.of(context).size.width * 1
+                                        //   //     ? 8
+                                        //   //     : 6,
+                                        //   flex: 4,
+                                        //   child: Padding(
+                                        //     padding: const EdgeInsets.all(8.0),
+                                        //     child: Container(
+                                        //       decoration: BoxDecoration(
+                                        //         color:
+                                        //             AppbackgroundColor.Sub_Abg_Colors,
+                                        //         borderRadius: const BorderRadius.only(
+                                        //             topLeft: Radius.circular(10),
+                                        //             topRight: Radius.circular(10),
+                                        //             bottomLeft: Radius.circular(10),
+                                        //             bottomRight: Radius.circular(10)),
+                                        //         border: Border.all(
+                                        //             color: Colors.grey, width: 1),
+                                        //       ),
+                                        //       // width: 120,
+                                        //       height: 40,
+                                        //       child: _searchBar3(),
+                                        //     ),
+                                        //   ),
+                                        // ),
+                                        // Expanded(
+                                        //   flex: 2,
+                                        //   child: SingleChildScrollView(
+                                        //     scrollDirection: Axis.horizontal,
+                                        //     child: Row(
+                                        //       children: [
+                                        //         Container(
+                                        //           child: Row(
+                                        //             children: [
+                                        //               const Padding(
+                                        //                 padding: EdgeInsets.all(8.0),
+                                        //                 child: Text(
+                                        //                   'โซนพื้นที่เช่า:',
+                                        //                   style: TextStyle(
+                                        //                       color:
+                                        //                           PeopleChaoScreen_Color
+                                        //                               .Colors_Text1_,
+                                        //                       fontWeight:
+                                        //                           FontWeight.bold,
+                                        //                       fontFamily:
+                                        //                           FontWeight_.Fonts_T),
+                                        //                 ),
+                                        //               ),
+                                        //               Padding(
+                                        //                 padding:
+                                        //                     const EdgeInsets.all(8.0),
+                                        //                 child: Container(
+                                        //                   decoration: BoxDecoration(
+                                        //                     color: AppbackgroundColor
+                                        //                         .Sub_Abg_Colors,
+                                        //                     borderRadius:
+                                        //                         const BorderRadius.only(
+                                        //                             topLeft:
+                                        //                                 Radius.circular(
+                                        //                                     10),
+                                        //                             topRight:
+                                        //                                 Radius.circular(
+                                        //                                     10),
+                                        //                             bottomLeft:
+                                        //                                 Radius.circular(
+                                        //                                     10),
+                                        //                             bottomRight:
+                                        //                                 Radius.circular(
+                                        //                                     10)),
+                                        //                     border: Border.all(
+                                        //                         color: Colors.grey,
+                                        //                         width: 1),
+                                        //                   ),
+                                        //                   width: 150,
+                                        //                   child:
+                                        //                       DropdownButtonFormField2(
+                                        //                     decoration: InputDecoration(
+                                        //                       isDense: true,
+                                        //                       contentPadding:
+                                        //                           EdgeInsets.zero,
+                                        //                       border:
+                                        //                           OutlineInputBorder(
+                                        //                         borderRadius:
+                                        //                             BorderRadius
+                                        //                                 .circular(10),
+                                        //                       ),
+                                        //                     ),
+                                        //                     isExpanded: true,
+                                        //                     hint: Text(
+                                        //                       zone_name == null
+                                        //                           ? 'ทั้งหมด'
+                                        //                           : '$zone_name',
+                                        //                       maxLines: 1,
+                                        //                       style: const TextStyle(
+                                        //                           fontSize: 14,
+                                        //                           color:
+                                        //                               PeopleChaoScreen_Color
+                                        //                                   .Colors_Text2_,
+                                        //                           fontFamily:
+                                        //                               Font_.Fonts_T),
+                                        //                     ),
+                                        //                     icon: const Icon(
+                                        //                       Icons.arrow_drop_down,
+                                        //                       color: Colors.black,
+                                        //                     ),
+                                        //                     style: const TextStyle(
+                                        //                         color:
+                                        //                             PeopleChaoScreen_Color
+                                        //                                 .Colors_Text2_,
+                                        //                         fontFamily:
+                                        //                             Font_.Fonts_T),
+                                        //                     iconSize: 30,
+                                        //                     buttonHeight: 40,
+                                        //                     // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                                        //                     dropdownDecoration:
+                                        //                         BoxDecoration(
+                                        //                       borderRadius:
+                                        //                           BorderRadius.circular(
+                                        //                               10),
+                                        //                     ),
+                                        //                     items: zoneModels
+                                        //                         .map((item) =>
+                                        //                             DropdownMenuItem<
+                                        //                                 String>(
+                                        //                               value:
+                                        //                                   '${item.ser},${item.zn}',
+                                        //                               child: Text(
+                                        //                                 item.zn!,
+                                        //                                 style: const TextStyle(
+                                        //                                     fontSize:
+                                        //                                         14,
+                                        //                                     color: PeopleChaoScreen_Color
+                                        //                                         .Colors_Text2_,
+                                        //                                     fontFamily:
+                                        //                                         Font_
+                                        //                                             .Fonts_T),
+                                        //                               ),
+                                        //                             ))
+                                        //                         .toList(),
 
-                                      //                     onChanged: (value) async {
-                                      //                       var zones =
-                                      //                           value!.indexOf(',');
-                                      //                       var zoneSer = value
-                                      //                           .substring(0, zones);
-                                      //                       var zonesName = value
-                                      //                           .substring(zones + 1);
-                                      //                       print(
-                                      //                           'mmmmm ${zoneSer.toString()} $zonesName');
+                                        //                     onChanged: (value) async {
+                                        //                       var zones =
+                                        //                           value!.indexOf(',');
+                                        //                       var zoneSer = value
+                                        //                           .substring(0, zones);
+                                        //                       var zonesName = value
+                                        //                           .substring(zones + 1);
+                                        //                       print(
+                                        //                           'mmmmm ${zoneSer.toString()} $zonesName');
 
-                                      //                       SharedPreferences
-                                      //                           preferences =
-                                      //                           await SharedPreferences
-                                      //                               .getInstance();
-                                      //                       preferences.setString(
-                                      //                           'zonePSer',
-                                      //                           zoneSer.toString());
-                                      //                       preferences.setString(
-                                      //                           'zonesPName',
-                                      //                           zonesName.toString());
+                                        //                       SharedPreferences
+                                        //                           preferences =
+                                        //                           await SharedPreferences
+                                        //                               .getInstance();
+                                        //                       preferences.setString(
+                                        //                           'zonePSer',
+                                        //                           zoneSer.toString());
+                                        //                       preferences.setString(
+                                        //                           'zonesPName',
+                                        //                           zonesName.toString());
 
-                                      //                       setState(() {
-                                      //                         read_GC_tenant();
-                                      //                       });
-                                      //                     },
-                                      //                     // onSaved: (value) {
-                                      //                     //   // selectedValue = value.toString();
-                                      //                     // },
-                                      //                   ),
-                                      //                 ),
-                                      //               ),
-                                      //               Padding(
-                                      //                 padding: EdgeInsets.all(8.0),
-                                      //                 child: Text(
-                                      //                   'ค้นหา:',
-                                      //                   textAlign: TextAlign.end,
-                                      //                   style: TextStyle(
-                                      //                       color:
-                                      //                           PeopleChaoScreen_Color
-                                      //                               .Colors_Text1_,
-                                      //                       fontWeight:
-                                      //                           FontWeight.bold,
-                                      //                       fontFamily:
-                                      //                           FontWeight_.Fonts_T),
-                                      //                 ),
-                                      //               ),
-                                      //               Padding(
-                                      //                 padding:
-                                      //                     const EdgeInsets.all(8.0),
-                                      //                 child: Container(
-                                      //                   decoration: BoxDecoration(
-                                      //                     color: AppbackgroundColor
-                                      //                         .Sub_Abg_Colors,
-                                      //                     borderRadius:
-                                      //                         const BorderRadius.only(
-                                      //                             topLeft:
-                                      //                                 Radius.circular(
-                                      //                                     10),
-                                      //                             topRight:
-                                      //                                 Radius.circular(
-                                      //                                     10),
-                                      //                             bottomLeft:
-                                      //                                 Radius.circular(
-                                      //                                     10),
-                                      //                             bottomRight:
-                                      //                                 Radius.circular(
-                                      //                                     10)),
-                                      //                     border: Border.all(
-                                      //                         color: Colors.grey,
-                                      //                         width: 1),
-                                      //                   ),
-                                      //                   width: 120,
-                                      //                   height: 35,
-                                      //                   child: _searchBar(),
-                                      //                 ),
-                                      //               ),
-                                      //             ],
-                                      //           ),
-                                      //         ),
-                                      //       ],
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                      // Padding(
-                                      //   padding:
-                                      //       const EdgeInsets.fromLTRB(8, 8, 15, 8),
-                                      // child: InkWell(
-                                      //   child: Container(
-                                      //       // padding: EdgeInsets.all(8.0),
-                                      //       child: CircleAvatar(
-                                      //     backgroundColor: Colors.yellow[700],
-                                      //     radius: 20,
-                                      //     child: PopupMenuButton(
-                                      //       child: const Text(
-                                      //         '...',
-                                      //         style: TextStyle(
-                                      //             fontSize: 25,
-                                      //             color: Colors.white,
-                                      //             fontWeight: FontWeight.bold,
-                                      //             fontFamily: FontWeight_.Fonts_T),
-                                      //       ),
-                                      //       itemBuilder: (BuildContext context) => [
-                                      //         PopupMenuItem(
-                                      //           child: InkWell(
-                                      //               onTap: () async {
-                                      //                 Navigator.pop(context);
-                                      //                 setState(() {
-                                      //                   ReturnBodyPeople =
-                                      //                       'PeopleChaoScreen3';
-                                      //                 });
-                                      //               },
-                                      //               child: Container(
-                                      //                   padding:
-                                      //                       const EdgeInsets.all(
-                                      //                           10),
-                                      //                   width:
-                                      //                       MediaQuery.of(context)
-                                      //                           .size
-                                      //                           .width,
-                                      //                   child: Row(
-                                      //                     children: const [
-                                      //                       Expanded(
-                                      //                         child: Text(
-                                      //                           'คุมเงินประกัน',
-                                      //                           style: TextStyle(
-                                      //                               color: PeopleChaoScreen_Color
-                                      //                                   .Colors_Text1_,
-                                      //                               fontWeight:
-                                      //                                   FontWeight
-                                      //                                       .bold,
-                                      //                               fontFamily:
-                                      //                                   FontWeight_
-                                      //                                       .Fonts_T),
-                                      //                         ),
-                                      //                       )
-                                      //                     ],
-                                      //                   ))),
-                                      //         ),
-                                      //         PopupMenuItem(
-                                      //           child: InkWell(
-                                      //               onTap: () async {
-                                      //                 Navigator.pop(context);
-                                      //                 setState(() {
-                                      //                   ReturnBodyPeople =
-                                      //                       'PeopleChaoScreen4';
-                                      //                 });
-                                      //               },
-                                      //               child: Container(
-                                      //                   padding:
-                                      //                       const EdgeInsets.all(
-                                      //                           10),
-                                      //                   width:
-                                      //                       MediaQuery.of(context)
-                                      //                           .size
-                                      //                           .width,
-                                      //                   child: Row(
-                                      //                     children: const [
-                                      //                       Expanded(
-                                      //                         child: Text(
-                                      //                           'ยกเลิกสัญญา',
-                                      //                           style: TextStyle(
-                                      //                               color: PeopleChaoScreen_Color
-                                      //                                   .Colors_Text1_,
-                                      //                               fontWeight:
-                                      //                                   FontWeight
-                                      //                                       .bold,
-                                      //                               fontFamily:
-                                      //                                   FontWeight_
-                                      //                                       .Fonts_T),
-                                      //                         ),
-                                      //                       )
-                                      //                     ],
-                                      //                   ))),
-                                      //         ),
-                                      //       ],
-                                      //     ),
-                                      //   )),
-                                      // ),
-                                      // ),
-                                    ],
+                                        //                       setState(() {
+                                        //                         read_GC_tenant();
+                                        //                       });
+                                        //                     },
+                                        //                     // onSaved: (value) {
+                                        //                     //   // selectedValue = value.toString();
+                                        //                     // },
+                                        //                   ),
+                                        //                 ),
+                                        //               ),
+                                        //               Padding(
+                                        //                 padding: EdgeInsets.all(8.0),
+                                        //                 child: Text(
+                                        //                   'ค้นหา:',
+                                        //                   textAlign: TextAlign.end,
+                                        //                   style: TextStyle(
+                                        //                       color:
+                                        //                           PeopleChaoScreen_Color
+                                        //                               .Colors_Text1_,
+                                        //                       fontWeight:
+                                        //                           FontWeight.bold,
+                                        //                       fontFamily:
+                                        //                           FontWeight_.Fonts_T),
+                                        //                 ),
+                                        //               ),
+                                        //               Padding(
+                                        //                 padding:
+                                        //                     const EdgeInsets.all(8.0),
+                                        //                 child: Container(
+                                        //                   decoration: BoxDecoration(
+                                        //                     color: AppbackgroundColor
+                                        //                         .Sub_Abg_Colors,
+                                        //                     borderRadius:
+                                        //                         const BorderRadius.only(
+                                        //                             topLeft:
+                                        //                                 Radius.circular(
+                                        //                                     10),
+                                        //                             topRight:
+                                        //                                 Radius.circular(
+                                        //                                     10),
+                                        //                             bottomLeft:
+                                        //                                 Radius.circular(
+                                        //                                     10),
+                                        //                             bottomRight:
+                                        //                                 Radius.circular(
+                                        //                                     10)),
+                                        //                     border: Border.all(
+                                        //                         color: Colors.grey,
+                                        //                         width: 1),
+                                        //                   ),
+                                        //                   width: 120,
+                                        //                   height: 35,
+                                        //                   child: _searchBar(),
+                                        //                 ),
+                                        //               ),
+                                        //             ],
+                                        //           ),
+                                        //         ),
+                                        //       ],
+                                        //     ),
+                                        //   ),
+                                        // ),
+                                        // Padding(
+                                        //   padding:
+                                        //       const EdgeInsets.fromLTRB(8, 8, 15, 8),
+                                        // child: InkWell(
+                                        //   child: Container(
+                                        //       // padding: EdgeInsets.all(8.0),
+                                        //       child: CircleAvatar(
+                                        //     backgroundColor: Colors.yellow[700],
+                                        //     radius: 20,
+                                        //     child: PopupMenuButton(
+                                        //       child: const Text(
+                                        //         '...',
+                                        //         style: TextStyle(
+                                        //             fontSize: 25,
+                                        //             color: Colors.white,
+                                        //             fontWeight: FontWeight.bold,
+                                        //             fontFamily: FontWeight_.Fonts_T),
+                                        //       ),
+                                        //       itemBuilder: (BuildContext context) => [
+                                        //         PopupMenuItem(
+                                        //           child: InkWell(
+                                        //               onTap: () async {
+                                        //                 Navigator.pop(context);
+                                        //                 setState(() {
+                                        //                   ReturnBodyPeople =
+                                        //                       'PeopleChaoScreen3';
+                                        //                 });
+                                        //               },
+                                        //               child: Container(
+                                        //                   padding:
+                                        //                       const EdgeInsets.all(
+                                        //                           10),
+                                        //                   width:
+                                        //                       MediaQuery.of(context)
+                                        //                           .size
+                                        //                           .width,
+                                        //                   child: Row(
+                                        //                     children: const [
+                                        //                       Expanded(
+                                        //                         child: Text(
+                                        //                           'คุมเงินประกัน',
+                                        //                           style: TextStyle(
+                                        //                               color: PeopleChaoScreen_Color
+                                        //                                   .Colors_Text1_,
+                                        //                               fontWeight:
+                                        //                                   FontWeight
+                                        //                                       .bold,
+                                        //                               fontFamily:
+                                        //                                   FontWeight_
+                                        //                                       .Fonts_T),
+                                        //                         ),
+                                        //                       )
+                                        //                     ],
+                                        //                   ))),
+                                        //         ),
+                                        //         PopupMenuItem(
+                                        //           child: InkWell(
+                                        //               onTap: () async {
+                                        //                 Navigator.pop(context);
+                                        //                 setState(() {
+                                        //                   ReturnBodyPeople =
+                                        //                       'PeopleChaoScreen4';
+                                        //                 });
+                                        //               },
+                                        //               child: Container(
+                                        //                   padding:
+                                        //                       const EdgeInsets.all(
+                                        //                           10),
+                                        //                   width:
+                                        //                       MediaQuery.of(context)
+                                        //                           .size
+                                        //                           .width,
+                                        //                   child: Row(
+                                        //                     children: const [
+                                        //                       Expanded(
+                                        //                         child: Text(
+                                        //                           'ยกเลิกสัญญา',
+                                        //                           style: TextStyle(
+                                        //                               color: PeopleChaoScreen_Color
+                                        //                                   .Colors_Text1_,
+                                        //                               fontWeight:
+                                        //                                   FontWeight
+                                        //                                       .bold,
+                                        //                               fontFamily:
+                                        //                                   FontWeight_
+                                        //                                       .Fonts_T),
+                                        //                         ),
+                                        //                       )
+                                        //                     ],
+                                        //                   ))),
+                                        //         ),
+                                        //       ],
+                                        //     ),
+                                        //   )),
+                                        // ),
+                                        // ),
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                        // Padding(
-                        //   padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                        //   child: Container(
-                        //       width: MediaQuery.of(context).size.width,
-                        //       decoration: const BoxDecoration(
-                        //         color: AppbackgroundColor.TiTile_Colors,
-                        //         borderRadius: BorderRadius.only(
-                        //             topLeft: Radius.circular(10),
-                        //             topRight: Radius.circular(10),
-                        //             bottomLeft: Radius.circular(0),
-                        //             bottomRight: Radius.circular(0)),
-                        //         // border: Border.all(color: Colors.white, width: 1),
-                        //       ),
-                        //       // padding: const EdgeInsets.all(8.0),
-                        //       child: Row(
-                        //         children: [
-                        //           Expanded(
-                        //               flex: 1,
-                        //               child: Row(
-                        //                 children: [
-                        //                   const Expanded(
-                        //                     flex: 2,
-                        //                     child:
-                        // Padding(
-                        //                       padding: EdgeInsets.all(8.0),
-                        //                       child: Text(
-                        //                         'โซนพื้นที่เช่า:',
-                        //                         style: TextStyle(
-                        //                             color:
-                        //                                 PeopleChaoScreen_Color
-                        //                                     .Colors_Text1_,
-                        //                             fontWeight: FontWeight.bold,
-                        //                             fontFamily:
-                        //                                 FontWeight_.Fonts_T),
-                        //                       ),
-                        //                     ),
-                        //                   ),
-                        //                   Expanded(
-                        //                     flex: 3,
-                        //                     child:
-                        // Padding(
-                        //                       padding:
-                        //                           const EdgeInsets.all(8.0),
-                        //                       child: Container(
-                        //                         decoration: BoxDecoration(
-                        //                           color: AppbackgroundColor
-                        //                               .Sub_Abg_Colors,
-                        //                           borderRadius:
-                        //                               const BorderRadius.only(
-                        //                                   topLeft:
-                        //                                       Radius.circular(
-                        //                                           10),
-                        //                                   topRight:
-                        //                                       Radius.circular(
-                        //                                           10),
-                        //                                   bottomLeft:
-                        //                                       Radius.circular(
-                        //                                           10),
-                        //                                   bottomRight:
-                        //                                       Radius.circular(
-                        //                                           10)),
-                        //                           border: Border.all(
-                        //                               color: Colors.grey,
-                        //                               width: 1),
-                        //                         ),
-                        //                         width: 150,
-                        //                         child: DropdownButtonFormField2(
-                        //                           decoration: InputDecoration(
-                        //                             isDense: true,
-                        //                             contentPadding:
-                        //                                 EdgeInsets.zero,
-                        //                             border: OutlineInputBorder(
-                        //                               borderRadius:
-                        //                                   BorderRadius.circular(
-                        //                                       10),
-                        //                             ),
-                        //                           ),
-                        //                           isExpanded: true,
-                        //                           hint: Text(
-                        //                             zone_name == null
-                        //                                 ? 'ทั้งหมด'
-                        //                                 : '$zone_name',
-                        //                             maxLines: 1,
-                        //                             style: const TextStyle(
-                        //                                 fontSize: 14,
-                        //                                 color:
-                        //                                     PeopleChaoScreen_Color
-                        //                                         .Colors_Text2_,
-                        //                                 fontFamily:
-                        //                                     Font_.Fonts_T),
-                        //                           ),
-                        //                           icon: const Icon(
-                        //                             Icons.arrow_drop_down,
-                        //                             color: Colors.black,
-                        //                           ),
-                        //                           style: const TextStyle(
-                        //                               color:
-                        //                                   PeopleChaoScreen_Color
-                        //                                       .Colors_Text2_,
-                        //                               fontFamily:
-                        //                                   Font_.Fonts_T),
-                        //                           iconSize: 30,
-                        //                           buttonHeight: 40,
-                        //                           // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                        //                           dropdownDecoration:
-                        //                               BoxDecoration(
-                        //                             borderRadius:
-                        //                                 BorderRadius.circular(
-                        //                                     10),
-                        //                           ),
-                        //                           items: zoneModels
-                        //                               .map((item) =>
-                        //                                   DropdownMenuItem<
-                        //                                       String>(
-                        //                                     value:
-                        //                                         '${item.ser},${item.zn}',
-                        //                                     child: Text(
-                        //                                       item.zn!,
-                        //                                       style: const TextStyle(
-                        //                                           fontSize: 14,
-                        //                                           color: PeopleChaoScreen_Color
-                        //                                               .Colors_Text2_,
-                        //                                           fontFamily: Font_
-                        //                                               .Fonts_T),
-                        //                                     ),
-                        //                                   ))
-                        //                               .toList(),
+                          // Padding(
+                          //   padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                          //   child: Container(
+                          //       width: MediaQuery.of(context).size.width,
+                          //       decoration: const BoxDecoration(
+                          //         color: AppbackgroundColor.TiTile_Colors,
+                          //         borderRadius: BorderRadius.only(
+                          //             topLeft: Radius.circular(10),
+                          //             topRight: Radius.circular(10),
+                          //             bottomLeft: Radius.circular(0),
+                          //             bottomRight: Radius.circular(0)),
+                          //         // border: Border.all(color: Colors.white, width: 1),
+                          //       ),
+                          //       // padding: const EdgeInsets.all(8.0),
+                          //       child: Row(
+                          //         children: [
+                          //           Expanded(
+                          //               flex: 1,
+                          //               child: Row(
+                          //                 children: [
+                          //                   const Expanded(
+                          //                     flex: 2,
+                          //                     child:
+                          // Padding(
+                          //                       padding: EdgeInsets.all(8.0),
+                          //                       child: Text(
+                          //                         'โซนพื้นที่เช่า:',
+                          //                         style: TextStyle(
+                          //                             color:
+                          //                                 PeopleChaoScreen_Color
+                          //                                     .Colors_Text1_,
+                          //                             fontWeight: FontWeight.bold,
+                          //                             fontFamily:
+                          //                                 FontWeight_.Fonts_T),
+                          //                       ),
+                          //                     ),
+                          //                   ),
+                          //                   Expanded(
+                          //                     flex: 3,
+                          //                     child:
+                          // Padding(
+                          //                       padding:
+                          //                           const EdgeInsets.all(8.0),
+                          //                       child: Container(
+                          //                         decoration: BoxDecoration(
+                          //                           color: AppbackgroundColor
+                          //                               .Sub_Abg_Colors,
+                          //                           borderRadius:
+                          //                               const BorderRadius.only(
+                          //                                   topLeft:
+                          //                                       Radius.circular(
+                          //                                           10),
+                          //                                   topRight:
+                          //                                       Radius.circular(
+                          //                                           10),
+                          //                                   bottomLeft:
+                          //                                       Radius.circular(
+                          //                                           10),
+                          //                                   bottomRight:
+                          //                                       Radius.circular(
+                          //                                           10)),
+                          //                           border: Border.all(
+                          //                               color: Colors.grey,
+                          //                               width: 1),
+                          //                         ),
+                          //                         width: 150,
+                          //                         child: DropdownButtonFormField2(
+                          //                           decoration: InputDecoration(
+                          //                             isDense: true,
+                          //                             contentPadding:
+                          //                                 EdgeInsets.zero,
+                          //                             border: OutlineInputBorder(
+                          //                               borderRadius:
+                          //                                   BorderRadius.circular(
+                          //                                       10),
+                          //                             ),
+                          //                           ),
+                          //                           isExpanded: true,
+                          //                           hint: Text(
+                          //                             zone_name == null
+                          //                                 ? 'ทั้งหมด'
+                          //                                 : '$zone_name',
+                          //                             maxLines: 1,
+                          //                             style: const TextStyle(
+                          //                                 fontSize: 14,
+                          //                                 color:
+                          //                                     PeopleChaoScreen_Color
+                          //                                         .Colors_Text2_,
+                          //                                 fontFamily:
+                          //                                     Font_.Fonts_T),
+                          //                           ),
+                          //                           icon: const Icon(
+                          //                             Icons.arrow_drop_down,
+                          //                             color: Colors.black,
+                          //                           ),
+                          //                           style: const TextStyle(
+                          //                               color:
+                          //                                   PeopleChaoScreen_Color
+                          //                                       .Colors_Text2_,
+                          //                               fontFamily:
+                          //                                   Font_.Fonts_T),
+                          //                           iconSize: 30,
+                          //                           buttonHeight: 40,
+                          //                           // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                          //                           dropdownDecoration:
+                          //                               BoxDecoration(
+                          //                             borderRadius:
+                          //                                 BorderRadius.circular(
+                          //                                     10),
+                          //                           ),
+                          //                           items: zoneModels
+                          //                               .map((item) =>
+                          //                                   DropdownMenuItem<
+                          //                                       String>(
+                          //                                     value:
+                          //                                         '${item.ser},${item.zn}',
+                          //                                     child: Text(
+                          //                                       item.zn!,
+                          //                                       style: const TextStyle(
+                          //                                           fontSize: 14,
+                          //                                           color: PeopleChaoScreen_Color
+                          //                                               .Colors_Text2_,
+                          //                                           fontFamily: Font_
+                          //                                               .Fonts_T),
+                          //                                     ),
+                          //                                   ))
+                          //                               .toList(),
 
-                        //                           onChanged: (value) async {
-                        //                             var zones =
-                        //                                 value!.indexOf(',');
-                        //                             var zoneSer = value
-                        //                                 .substring(0, zones);
-                        //                             var zonesName = value
-                        //                                 .substring(zones + 1);
-                        //                             print(
-                        //                                 'mmmmm ${zoneSer.toString()} $zonesName');
+                          //                           onChanged: (value) async {
+                          //                             var zones =
+                          //                                 value!.indexOf(',');
+                          //                             var zoneSer = value
+                          //                                 .substring(0, zones);
+                          //                             var zonesName = value
+                          //                                 .substring(zones + 1);
+                          //                             print(
+                          //                                 'mmmmm ${zoneSer.toString()} $zonesName');
 
-                        //                             SharedPreferences
-                        //                                 preferences =
-                        //                                 await SharedPreferences
-                        //                                     .getInstance();
-                        //                             preferences.setString(
-                        //                                 'zonePSer',
-                        //                                 zoneSer.toString());
-                        //                             preferences.setString(
-                        //                                 'zonesPName',
-                        //                                 zonesName.toString());
+                          //                             SharedPreferences
+                          //                                 preferences =
+                          //                                 await SharedPreferences
+                          //                                     .getInstance();
+                          //                             preferences.setString(
+                          //                                 'zonePSer',
+                          //                                 zoneSer.toString());
+                          //                             preferences.setString(
+                          //                                 'zonesPName',
+                          //                                 zonesName.toString());
 
-                        //                             setState(() {
-                        //                               read_GC_tenant();
-                        //                             });
-                        //                           },
-                        //                           // onSaved: (value) {
-                        //                           //   // selectedValue = value.toString();
-                        //                           // },
-                        //                         ),
-                        //                       ),
-                        //                     ),
-                        //                   ),
-                        //                 ],
-                        //               )),
-                        //           Expanded(
-                        //               flex: 2,
-                        //               child: Row(
-                        //                 children: [
-                        //                   const Expanded(
-                        //                     flex: 1,
-                        //                     child:
-                        // Padding(
-                        //                       padding: EdgeInsets.all(8.0),
-                        //                       child: Text(
-                        //                         'ค้นหา:',
-                        //                         textAlign: TextAlign.end,
-                        //                         style: TextStyle(
-                        //                             color:
-                        //                                 PeopleChaoScreen_Color
-                        //                                     .Colors_Text1_,
-                        //                             fontWeight: FontWeight.bold,
-                        //                             fontFamily:
-                        //                                 FontWeight_.Fonts_T),
-                        //                       ),
-                        //                     ),
-                        //                   ),
-                        //                   Expanded(
-                        //                     flex: 4,
-                        //                     child:
-                        // Padding(
-                        //                       padding:
-                        //                           const EdgeInsets.all(8.0),
-                        //                       child: Container(
-                        //                         decoration: BoxDecoration(
-                        //                           color: AppbackgroundColor
-                        //                               .Sub_Abg_Colors,
-                        //                           borderRadius:
-                        //                               const BorderRadius.only(
-                        //                                   topLeft:
-                        //                                       Radius.circular(
-                        //                                           10),
-                        //                                   topRight:
-                        //                                       Radius.circular(
-                        //                                           10),
-                        //                                   bottomLeft:
-                        //                                       Radius.circular(
-                        //                                           10),
-                        //                                   bottomRight:
-                        //                                       Radius.circular(
-                        //                                           10)),
-                        //                           border: Border.all(
-                        //                               color: Colors.grey,
-                        //                               width: 1),
-                        //                         ),
-                        //                         width: 120,
-                        //                         height: 35,
-                        //                         child: _searchBar(),
-                        //                       ),
-                        //                     ),
-                        //                   ),
-                        //                 ],
-                        //               )),
-                        //           Expanded(
-                        //               flex: 2,
-                        //               child: Row(
-                        //                 mainAxisAlignment:
-                        //                     MainAxisAlignment.end,
-                        //                 children: [
-                        //                   Padding(
-                        //                     padding: const EdgeInsets.all(8.0),
-                        //                     child: InkWell(
-                        //                       child: Container(
-                        //                           // padding: EdgeInsets.all(8.0),
-                        //                           child: CircleAvatar(
-                        //                         backgroundColor:
-                        //                             Colors.yellow[700],
-                        //                         radius: 20,
-                        //                         child: PopupMenuButton(
-                        //                           child: const Text(
-                        //                             '...',
-                        //                             style: TextStyle(
-                        //                                 fontSize: 25,
-                        //                                 color: Colors.white,
-                        //                                 fontWeight:
-                        //                                     FontWeight.bold,
-                        //                                 fontFamily: FontWeight_
-                        //                                     .Fonts_T),
-                        //                           ),
-                        //                           itemBuilder:
-                        //                               (BuildContext context) =>
-                        //                                   [
-                        //                             PopupMenuItem(
-                        //                               child: InkWell(
-                        //                                   onTap: () async {
-                        //                                     Navigator.pop(
-                        //                                         context);
-                        //                                     setState(() {
-                        //                                       ReturnBodyPeople =
-                        //                                           'PeopleChaoScreen3';
-                        //                                     });
-                        //                                   },
-                        //                                   child: Container(
-                        //                                       padding:
-                        //                                           const EdgeInsets
-                        //                                               .all(10),
-                        //                                       width:
-                        //                                           MediaQuery.of(
-                        //                                                   context)
-                        //                                               .size
-                        //                                               .width,
-                        //                                       child: Row(
-                        //                                         children: [
-                        //                                           const Expanded(
-                        //                                             child: Text(
-                        //                                               'คุมเงินประกัน',
-                        //                                               style: TextStyle(
-                        //                                                   color: PeopleChaoScreen_Color
-                        //                                                       .Colors_Text1_,
-                        //                                                   fontWeight: FontWeight
-                        //                                                       .bold,
-                        //                                                   fontFamily:
-                        //                                                       FontWeight_.Fonts_T),
-                        //                                             ),
-                        //                                           )
-                        //                                         ],
-                        //                                       ))),
-                        //                             ),
-                        //                             PopupMenuItem(
-                        //                               child: InkWell(
-                        //                                   onTap: () async {
-                        //                                     Navigator.pop(
-                        //                                         context);
-                        //                                     setState(() {
-                        //                                       ReturnBodyPeople =
-                        //                                           'PeopleChaoScreen4';
-                        //                                     });
-                        //                                   },
-                        //                                   child: Container(
-                        //                                       padding:
-                        //                                           const EdgeInsets
-                        //                                               .all(10),
-                        //                                       width:
-                        //                                           MediaQuery.of(
-                        //                                                   context)
-                        //                                               .size
-                        //                                               .width,
-                        //                                       child: Row(
-                        //                                         children: [
-                        //                                           const Expanded(
-                        //                                             child: Text(
-                        //                                               'ยกเลิกสัญญา',
-                        //                                               style: TextStyle(
-                        //                                                   color: PeopleChaoScreen_Color
-                        //                                                       .Colors_Text1_,
-                        //                                                   fontWeight: FontWeight
-                        //                                                       .bold,
-                        //                                                   fontFamily:
-                        //                                                       FontWeight_.Fonts_T),
-                        //                                             ),
-                        //                                           )
-                        //                                         ],
-                        //                                       ))),
-                        //                             ),
-                        //                           ],
-                        //                         ),
-                        //                       )),
-                        //                     ),
-                        //                   ),
-                        //                 ],
-                        //               )),
-                        //           const SizedBox(
-                        //             width: 20,
-                        //           ),
-                        //         ],
-                        //       )),
-                        // ),
-                        (Ser_QRpage == 1)
-                            ? SizedBox()
-                            : Padding(
-                                padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                                child: Container(
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white30,
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(0),
-                                        topRight: Radius.circular(0),
-                                        bottomLeft: Radius.circular(10),
-                                        bottomRight: Radius.circular(10)),
-                                    // border: Border.all(color: Colors.grey, width: 1),
-                                  ),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Expanded(
-                                        flex: MediaQuery.of(context)
-                                                    .size
-                                                    .shortestSide <
-                                                MediaQuery.of(context)
-                                                        .size
-                                                        .width *
-                                                    1
-                                            ? 2
-                                            : 3,
-                                        child: SingleChildScrollView(
-                                          scrollDirection: Axis.horizontal,
-                                          child: Row(
-                                            children: [
-                                              Container(
-                                                child: Row(
-                                                  children: [
-                                                    Padding(
-                                                      padding:
-                                                          EdgeInsets.all(8.0),
-                                                      child: Translate
-                                                          .TranslateAndSetText(
-                                                              'ผู้เช่า :',
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text1_,
-                                                              TextAlign.center,
-                                                              FontWeight.bold,
-                                                              FontWeight_
-                                                                  .Fonts_T,
-                                                              14,
-                                                              1),
-                                                    ),
-                                                    for (int i = 0;
-                                                        i < Status.length;
-                                                        i++)
-                                                      Padding(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                    .fromLTRB(
-                                                                4, 2, 4, 2),
-                                                        child: Container(
-                                                          height: 30,
-                                                          // width: 100,
-                                                          child: ElevatedButton(
-                                                            style:
-                                                                ElevatedButton
+                          //                             setState(() {
+                          //                               read_GC_tenant();
+                          //                             });
+                          //                           },
+                          //                           // onSaved: (value) {
+                          //                           //   // selectedValue = value.toString();
+                          //                           // },
+                          //                         ),
+                          //                       ),
+                          //                     ),
+                          //                   ),
+                          //                 ],
+                          //               )),
+                          //           Expanded(
+                          //               flex: 2,
+                          //               child: Row(
+                          //                 children: [
+                          //                   const Expanded(
+                          //                     flex: 1,
+                          //                     child:
+                          // Padding(
+                          //                       padding: EdgeInsets.all(8.0),
+                          //                       child: Text(
+                          //                         'ค้นหา:',
+                          //                         textAlign: TextAlign.end,
+                          //                         style: TextStyle(
+                          //                             color:
+                          //                                 PeopleChaoScreen_Color
+                          //                                     .Colors_Text1_,
+                          //                             fontWeight: FontWeight.bold,
+                          //                             fontFamily:
+                          //                                 FontWeight_.Fonts_T),
+                          //                       ),
+                          //                     ),
+                          //                   ),
+                          //                   Expanded(
+                          //                     flex: 4,
+                          //                     child:
+                          // Padding(
+                          //                       padding:
+                          //                           const EdgeInsets.all(8.0),
+                          //                       child: Container(
+                          //                         decoration: BoxDecoration(
+                          //                           color: AppbackgroundColor
+                          //                               .Sub_Abg_Colors,
+                          //                           borderRadius:
+                          //                               const BorderRadius.only(
+                          //                                   topLeft:
+                          //                                       Radius.circular(
+                          //                                           10),
+                          //                                   topRight:
+                          //                                       Radius.circular(
+                          //                                           10),
+                          //                                   bottomLeft:
+                          //                                       Radius.circular(
+                          //                                           10),
+                          //                                   bottomRight:
+                          //                                       Radius.circular(
+                          //                                           10)),
+                          //                           border: Border.all(
+                          //                               color: Colors.grey,
+                          //                               width: 1),
+                          //                         ),
+                          //                         width: 120,
+                          //                         height: 35,
+                          //                         child: _searchBar(),
+                          //                       ),
+                          //                     ),
+                          //                   ),
+                          //                 ],
+                          //               )),
+                          //           Expanded(
+                          //               flex: 2,
+                          //               child: Row(
+                          //                 mainAxisAlignment:
+                          //                     MainAxisAlignment.end,
+                          //                 children: [
+                          //                   Padding(
+                          //                     padding: const EdgeInsets.all(8.0),
+                          //                     child: InkWell(
+                          //                       child: Container(
+                          //                           // padding: EdgeInsets.all(8.0),
+                          //                           child: CircleAvatar(
+                          //                         backgroundColor:
+                          //                             Colors.yellow[700],
+                          //                         radius: 20,
+                          //                         child: PopupMenuButton(
+                          //                           child: const Text(
+                          //                             '...',
+                          //                             style: TextStyle(
+                          //                                 fontSize: 25,
+                          //                                 color: Colors.white,
+                          //                                 fontWeight:
+                          //                                     FontWeight.bold,
+                          //                                 fontFamily: FontWeight_
+                          //                                     .Fonts_T),
+                          //                           ),
+                          //                           itemBuilder:
+                          //                               (BuildContext context) =>
+                          //                                   [
+                          //                             PopupMenuItem(
+                          //                               child: InkWell(
+                          //                                   onTap: () async {
+                          //                                     Navigator.pop(
+                          //                                         context);
+                          //                                     setState(() {
+                          //                                       ReturnBodyPeople =
+                          //                                           'PeopleChaoScreen3';
+                          //                                     });
+                          //                                   },
+                          //                                   child: Container(
+                          //                                       padding:
+                          //                                           const EdgeInsets
+                          //                                               .all(10),
+                          //                                       width:
+                          //                                           MediaQuery.of(
+                          //                                                   context)
+                          //                                               .size
+                          //                                               .width,
+                          //                                       child: Row(
+                          //                                         children: [
+                          //                                           const Expanded(
+                          //                                             child: Text(
+                          //                                               'คุมเงินประกัน',
+                          //                                               style: TextStyle(
+                          //                                                   color: PeopleChaoScreen_Color
+                          //                                                       .Colors_Text1_,
+                          //                                                   fontWeight: FontWeight
+                          //                                                       .bold,
+                          //                                                   fontFamily:
+                          //                                                       FontWeight_.Fonts_T),
+                          //                                             ),
+                          //                                           )
+                          //                                         ],
+                          //                                       ))),
+                          //                             ),
+                          //                             PopupMenuItem(
+                          //                               child: InkWell(
+                          //                                   onTap: () async {
+                          //                                     Navigator.pop(
+                          //                                         context);
+                          //                                     setState(() {
+                          //                                       ReturnBodyPeople =
+                          //                                           'PeopleChaoScreen4';
+                          //                                     });
+                          //                                   },
+                          //                                   child: Container(
+                          //                                       padding:
+                          //                                           const EdgeInsets
+                          //                                               .all(10),
+                          //                                       width:
+                          //                                           MediaQuery.of(
+                          //                                                   context)
+                          //                                               .size
+                          //                                               .width,
+                          //                                       child: Row(
+                          //                                         children: [
+                          //                                           const Expanded(
+                          //                                             child: Text(
+                          //                                               'ยกเลิกสัญญา',
+                          //                                               style: TextStyle(
+                          //                                                   color: PeopleChaoScreen_Color
+                          //                                                       .Colors_Text1_,
+                          //                                                   fontWeight: FontWeight
+                          //                                                       .bold,
+                          //                                                   fontFamily:
+                          //                                                       FontWeight_.Fonts_T),
+                          //                                             ),
+                          //                                           )
+                          //                                         ],
+                          //                                       ))),
+                          //                             ),
+                          //                           ],
+                          //                         ),
+                          //                       )),
+                          //                     ),
+                          //                   ),
+                          //                 ],
+                          //               )),
+                          //           const SizedBox(
+                          //             width: 20,
+                          //           ),
+                          //         ],
+                          //       )),
+                          // ),
+                          (Ser_QRpage == 1)
+                              ? SizedBox()
+                              : Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                                  child: Container(
+                                    decoration: const BoxDecoration(
+                                      color: Colors.white30,
+                                      borderRadius: BorderRadius.only(
+                                          topLeft: Radius.circular(0),
+                                          topRight: Radius.circular(0),
+                                          bottomLeft: Radius.circular(10),
+                                          bottomRight: Radius.circular(10)),
+                                      // border: Border.all(color: Colors.grey, width: 1),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Expanded(
+                                          flex: MediaQuery.of(context)
+                                                      .size
+                                                      .shortestSide <
+                                                  MediaQuery.of(context)
+                                                          .size
+                                                          .width *
+                                                      1
+                                              ? 2
+                                              : 3,
+                                          child: ScrollConfiguration(
+                                            behavior:
+                                                ScrollConfiguration.of(context)
+                                                    .copyWith(dragDevices: {
+                                              PointerDeviceKind.touch,
+                                              PointerDeviceKind.mouse,
+                                            }),
+                                            child: SingleChildScrollView(
+                                              scrollDirection: Axis.horizontal,
+                                              child: Row(
+                                                children: [
+                                                  Container(
+                                                    child: Row(
+                                                      children: [
+                                                        Padding(
+                                                          padding:
+                                                              EdgeInsets.all(
+                                                                  8.0),
+                                                          child: Translate
+                                                              .TranslateAndSetText(
+                                                                  'ผู้เช่า :',
+                                                                  PeopleChaoScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  TextAlign
+                                                                      .center,
+                                                                  FontWeight
+                                                                      .bold,
+                                                                  FontWeight_
+                                                                      .Fonts_T,
+                                                                  14,
+                                                                  1),
+                                                        ),
+                                                        for (int i = 0;
+                                                            i < Status.length;
+                                                            i++)
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .fromLTRB(
+                                                                    4, 2, 4, 2),
+                                                            child: Container(
+                                                              height: 30,
+                                                              // width: 100,
+                                                              child:
+                                                                  ElevatedButton(
+                                                                style: ElevatedButton
                                                                     .styleFrom(
-                                                              shape:
-                                                                  RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .only(
-                                                                  topLeft: Radius
-                                                                      .circular(
-                                                                          7),
-                                                                  topRight: Radius
-                                                                      .circular(
-                                                                          7),
-                                                                  bottomLeft: Radius
-                                                                      .circular(
-                                                                          7),
-                                                                  bottomRight: Radius
-                                                                      .circular(
-                                                                          7),
-                                                                ),
-                                                                side:
-                                                                    BorderSide(
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade300,
-                                                                  width: 0.5,
-                                                                ),
-                                                              ),
-                                                              backgroundColor: (i +
-                                                                          1 ==
-                                                                      1)
-                                                                  ? (Status_ ==
-                                                                          i + 1)
-                                                                      ? Colors.grey[
-                                                                          700]
-                                                                      : Colors.grey[
-                                                                          300]
-                                                                  : (i + 1 == 2)
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              7),
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              7),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              7),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              7),
+                                                                    ),
+                                                                    side:
+                                                                        BorderSide(
+                                                                      color: Colors
+                                                                          .grey
+                                                                          .shade300,
+                                                                      width:
+                                                                          0.5,
+                                                                    ),
+                                                                  ),
+                                                                  backgroundColor: (i +
+                                                                              1 ==
+                                                                          1)
                                                                       ? (Status_ ==
                                                                               i +
                                                                                   1)
-                                                                          ? Colors.orange[
+                                                                          ? Colors.grey[
                                                                               700]
-                                                                          : Colors.orange[
-                                                                              200]
+                                                                          : Colors.grey[
+                                                                              300]
                                                                       : (i + 1 ==
-                                                                              3)
+                                                                              2)
                                                                           ? (Status_ == i + 1)
-                                                                              ? Colors.blue[700]
-                                                                              : Colors.blue[200]
-                                                                          : (i + 1 == 4)
+                                                                              ? Colors.orange[700]
+                                                                              : Colors.orange[200]
+                                                                          : (i + 1 == 3)
                                                                               ? (Status_ == i + 1)
-                                                                                  ? Colors.deepPurple[700]
-                                                                                  : Colors.deepPurple[200]
-                                                                              : (i + 1 == 5)
+                                                                                  ? Colors.blue[700]
+                                                                                  : Colors.blue[200]
+                                                                              : (i + 1 == 4)
                                                                                   ? (Status_ == i + 1)
-                                                                                      ? Colors.indigo[700]
-                                                                                      : Colors.indigo[200]
-                                                                                  : (i + 1 == 6)
+                                                                                      ? Colors.deepPurple[700]
+                                                                                      : Colors.deepPurple[200]
+                                                                                  : (i + 1 == 5)
                                                                                       ? (Status_ == i + 1)
-                                                                                          ? Colors.pink[700]
-                                                                                          : Colors.pink[200]
-                                                                                      : (Status_ == i + 1)
-                                                                                          ? Colors.red[700]
-                                                                                          : Colors.red[200],
-                                                            ),
-                                                            onPressed:
-                                                                () async {
-                                                              setState(() {
-                                                                tappedIndex_ =
-                                                                    '';
-                                                              });
-                                                              setState(() {
-                                                                Status_ = i + 1;
-                                                              });
-                                                              setState(() {
-                                                                Status_pe =
-                                                                    Status[i]!;
-                                                              });
-                                                              if (Status_ ==
-                                                                  6) {
-                                                              } else if (Status_ ==
-                                                                  7) {
-                                                                print(
-                                                                    'ยกเลิกสัญญา');
-                                                                read_GC_tenant_Cancel();
-                                                              } else {
-                                                                read_GC_areaSelect();
-                                                              }
-                                                            },
-                                                            child: Translate
-                                                                .TranslateAndSet_TextAutoSize(
+                                                                                          ? Colors.indigo[700]
+                                                                                          : Colors.indigo[200]
+                                                                                      : (i + 1 == 6)
+                                                                                          ? (Status_ == i + 1)
+                                                                                              ? Colors.pink[700]
+                                                                                              : Colors.pink[200]
+                                                                                          : (Status_ == i + 1)
+                                                                                              ? Colors.red[700]
+                                                                                              : Colors.red[200],
+                                                                ),
+                                                                onPressed:
+                                                                    () async {
+                                                                  setState(() {
+                                                                    tappedIndex_ =
+                                                                        '';
+                                                                  });
+                                                                  setState(() {
+                                                                    Status_ =
+                                                                        i + 1;
+                                                                  });
+                                                                  setState(() {
+                                                                    Status_pe =
+                                                                        Status[
+                                                                            i]!;
+                                                                  });
+                                                                  if (Status_ ==
+                                                                      6) {
+                                                                  } else if (Status_ ==
+                                                                      7) {
+                                                                    print(
+                                                                        'ยกเลิกสัญญา');
+                                                                    read_GC_tenant_Cancel();
+                                                                  } else {
+                                                                    // read_GC_areaSelect();
+                                                                  }
+                                                                },
+                                                                child: Translate.TranslateAndSet_TextAutoSize(
                                                                     "${Status[i]}",
-                                                                    (Status_ == 0 &&
-                                                                            i + 1 ==
-                                                                                6)
-                                                                        ? Colors
-                                                                            .white
-                                                                        : (Status_ ==
-                                                                                i +
-                                                                                    1)
-                                                                            ? Colors
-                                                                                .white
-                                                                            : Colors
-                                                                                .black,
-                                                                    TextAlign
-                                                                        .center,
+                                                                    (Status_ == 0 && i + 1 == 6)
+                                                                        ? Colors.white
+                                                                        : (Status_ == i + 1)
+                                                                            ? Colors.white
+                                                                            : Colors.black,
+                                                                    TextAlign.center,
                                                                     null,
-                                                                    FontWeight_
-                                                                        .Fonts_T,
+                                                                    FontWeight_.Fonts_T,
                                                                     11,
                                                                     13,
                                                                     1),
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ),
-                                                    // Padding(
-                                                    //   padding:
-                                                    //       const EdgeInsets
-                                                    //           .all(8.0),
-                                                    //   child: InkWell(
-                                                    //     onTap: () {
-                                                    //       setState(() {
-                                                    //         tappedIndex_ = '';
-                                                    //       });
-                                                    //       setState(() {
-                                                    //         Status_ = i + 1;
-                                                    //       });
-                                                    //       setState(() {
-                                                    //         Status_pe =
-                                                    //             Status[i]!;
-                                                    //       });
-                                                    //       if (Status_ == 6) {
-                                                    //       } else if (Status_ ==
-                                                    //           7) {
-                                                    //         print(
-                                                    //             'ยกเลิกสัญญา');
-                                                    //         read_GC_tenant_Cancel();
-                                                    //       } else {
-                                                    //         read_GC_areaSelect();
-                                                    //       }
-                                                    //     },
-                                                    //     child: Container(
-                                                    //       decoration:
-                                                    //           BoxDecoration(
-                                                    //         color: (i + 1 ==
-                                                    //                 1)
-                                                    //             ? (Status_ ==
-                                                    //                     i + 1)
-                                                    //                 ? Colors.grey[
-                                                    //                     700]
-                                                    //                 : Colors.grey[
-                                                    //                     300]
-                                                    //             : (i + 1 == 2)
-                                                    //                 ? (Status_ ==
-                                                    //                         i +
-                                                    //                             1)
-                                                    //                     ? Colors.orange[
-                                                    //                         700]
-                                                    //                     : Colors.orange[
-                                                    //                         200]
-                                                    //                 : (i + 1 ==
-                                                    //                         3)
-                                                    //                     ? (Status_ == i + 1)
-                                                    //                         ? Colors.blue[700]
-                                                    //                         : Colors.blue[200]
-                                                    //                     : (i + 1 == 4)
-                                                    //                         ? (Status_ == i + 1)
-                                                    //                             ? Colors.deepPurple[700]
-                                                    //                             : Colors.deepPurple[200]
-                                                    //                         : (i + 1 == 5)
-                                                    //                             ? (Status_ == i + 1)
-                                                    //                                 ? Colors.indigo[700]
-                                                    //                                 : Colors.indigo[200]
-                                                    //                             : (i + 1 == 6)
-                                                    //                                 ? (Status_ == i + 1)
-                                                    //                                     ? Colors.pink[700]
-                                                    //                                     : Colors.pink[200]
-                                                    //                                 : (Status_ == i + 1)
-                                                    //                                     ? Colors.red[700]
-                                                    //                                     : Colors.red[200],
-                                                    //         borderRadius: const BorderRadius
-                                                    //                 .only(
-                                                    //             topLeft:
-                                                    //                 Radius.circular(
-                                                    //                     10),
-                                                    //             topRight: Radius
-                                                    //                 .circular(
-                                                    //                     10),
-                                                    //             bottomLeft: Radius
-                                                    //                 .circular(
-                                                    //                     10),
-                                                    //             bottomRight: Radius
-                                                    //                 .circular(
-                                                    //                     10)),
-                                                    //         border: (Status_ ==
-                                                    //                 i + 1)
-                                                    //             ? Border.all(
-                                                    //                 color: Colors
-                                                    //                     .white,
-                                                    //                 width: 1)
-                                                    //             : null,
-                                                    //       ),
-                                                    //       padding:
-                                                    //           const EdgeInsets
-                                                    //               .all(8.0),
-                                                    //       child: Center(
-                                                    //         child: Translate.TranslateAndSetText(
-                                                    //             Status[i],
-                                                    //             (Status_ ==
-                                                    //                     i + 1)
-                                                    //                 ? Colors
-                                                    //                     .white
-                                                    //                 : Colors
-                                                    //                     .black,
-                                                    //             TextAlign
-                                                    //                 .center,
-                                                    //             FontWeight
-                                                    //                 .bold,
-                                                    //             FontWeight_
-                                                    //                 .Fonts_T,
-                                                    //             14,
-                                                    //             1),
+                                                        // Padding(
+                                                        //   padding:
+                                                        //       const EdgeInsets
+                                                        //           .all(8.0),
+                                                        //   child: InkWell(
+                                                        //     onTap: () {
+                                                        //       setState(() {
+                                                        //         tappedIndex_ = '';
+                                                        //       });
+                                                        //       setState(() {
+                                                        //         Status_ = i + 1;
+                                                        //       });
+                                                        //       setState(() {
+                                                        //         Status_pe =
+                                                        //             Status[i]!;
+                                                        //       });
+                                                        //       if (Status_ == 6) {
+                                                        //       } else if (Status_ ==
+                                                        //           7) {
+                                                        //         print(
+                                                        //             'ยกเลิกสัญญา');
+                                                        //         read_GC_tenant_Cancel();
+                                                        //       } else {
+                                                        //         read_GC_areaSelect();
+                                                        //       }
+                                                        //     },
+                                                        //     child: Container(
+                                                        //       decoration:
+                                                        //           BoxDecoration(
+                                                        //         color: (i + 1 ==
+                                                        //                 1)
+                                                        //             ? (Status_ ==
+                                                        //                     i + 1)
+                                                        //                 ? Colors.grey[
+                                                        //                     700]
+                                                        //                 : Colors.grey[
+                                                        //                     300]
+                                                        //             : (i + 1 == 2)
+                                                        //                 ? (Status_ ==
+                                                        //                         i +
+                                                        //                             1)
+                                                        //                     ? Colors.orange[
+                                                        //                         700]
+                                                        //                     : Colors.orange[
+                                                        //                         200]
+                                                        //                 : (i + 1 ==
+                                                        //                         3)
+                                                        //                     ? (Status_ == i + 1)
+                                                        //                         ? Colors.blue[700]
+                                                        //                         : Colors.blue[200]
+                                                        //                     : (i + 1 == 4)
+                                                        //                         ? (Status_ == i + 1)
+                                                        //                             ? Colors.deepPurple[700]
+                                                        //                             : Colors.deepPurple[200]
+                                                        //                         : (i + 1 == 5)
+                                                        //                             ? (Status_ == i + 1)
+                                                        //                                 ? Colors.indigo[700]
+                                                        //                                 : Colors.indigo[200]
+                                                        //                             : (i + 1 == 6)
+                                                        //                                 ? (Status_ == i + 1)
+                                                        //                                     ? Colors.pink[700]
+                                                        //                                     : Colors.pink[200]
+                                                        //                                 : (Status_ == i + 1)
+                                                        //                                     ? Colors.red[700]
+                                                        //                                     : Colors.red[200],
+                                                        //         borderRadius: const BorderRadius
+                                                        //                 .only(
+                                                        //             topLeft:
+                                                        //                 Radius.circular(
+                                                        //                     10),
+                                                        //             topRight: Radius
+                                                        //                 .circular(
+                                                        //                     10),
+                                                        //             bottomLeft: Radius
+                                                        //                 .circular(
+                                                        //                     10),
+                                                        //             bottomRight: Radius
+                                                        //                 .circular(
+                                                        //                     10)),
+                                                        //         border: (Status_ ==
+                                                        //                 i + 1)
+                                                        //             ? Border.all(
+                                                        //                 color: Colors
+                                                        //                     .white,
+                                                        //                 width: 1)
+                                                        //             : null,
+                                                        //       ),
+                                                        //       padding:
+                                                        //           const EdgeInsets
+                                                        //               .all(8.0),
+                                                        //       child: Center(
+                                                        //         child: Translate.TranslateAndSetText(
+                                                        //             Status[i],
+                                                        //             (Status_ ==
+                                                        //                     i + 1)
+                                                        //                 ? Colors
+                                                        //                     .white
+                                                        //                 : Colors
+                                                        //                     .black,
+                                                        //             TextAlign
+                                                        //                 .center,
+                                                        //             FontWeight
+                                                        //                 .bold,
+                                                        //             FontWeight_
+                                                        //                 .Fonts_T,
+                                                        //             14,
+                                                        //             1),
 
-                                                    //       ),
-                                                    //     ),
-                                                    //   ),
-                                                    // ),
-                                                  ],
-                                                ),
+                                                        //       ),
+                                                        //     ),
+                                                        //   ),
+                                                        // ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ],
                                               ),
-                                            ],
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
+                                      ],
+                                    ),
                                   ),
                                 ),
-                              ),
-                        BodyHome_Web()
-                        // (!Responsive.isDesktop(context))
-                        //     ? BodyHome_mobile()
-                        //     : BodyHome_Web()
-                      ],
-                    ),
+                          BodyHome_Web()
+                          // (!Responsive.isDesktop(context))
+                          //     ? BodyHome_mobile()
+                          //     : BodyHome_Web()
+                        ],
+                      ),
+      ),
     );
   }
 
@@ -3440,393 +3652,118 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
   }
 
   Widget BodyHome_Web() {
-    return (Ser_QRpage == 1)
-        ? People_GenQR()
-        : (Status_ == 5)
-            ? Rental_customers(updateMessage: updateMessage)
-            : (Status_ == 6)
-                ? Cancellation_notice()
-                : (Status_ == 7)
-                    ? BodyHome_TenantCancel()
-                    : (Status_ < 5)
-                        ? PeopleChaoTenant(
-                            Status: Status_, updateMessage: updateMessage1)
-                        : ScrollConfiguration(
-                            behavior: ScrollConfiguration.of(context)
-                                .copyWith(dragDevices: {
-                              PointerDeviceKind.touch,
-                              PointerDeviceKind.mouse,
-                            }),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              dragStartBehavior: DragStartBehavior.start,
-                              child: SizedBox(
-                                width: (Responsive.isDesktop(context))
-                                    ? MediaQuery.of(context).size.width * 0.85
-                                    : 1200,
-                                child: Column(
-                                  children: [
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.fromLTRB(8, 0, 8, 0),
-                                      child: Container(
-                                          width: (Responsive.isDesktop(context))
-                                              ? MediaQuery.of(context)
-                                                      .size
-                                                      .width *
-                                                  0.85
-                                              : 1200,
-                                          decoration: BoxDecoration(
-                                            color: AppbackgroundColor
-                                                .TiTile_Colors,
-                                            borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(10),
-                                                topRight: Radius.circular(10),
-                                                bottomLeft: Radius.circular(0),
-                                                bottomRight:
-                                                    Radius.circular(0)),
-                                          ),
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: Column(
-                                            children: [
-                                              Row(
-                                                // mainAxisAlignment: MainAxisAlignment.end,
-                                                children: [
-                                                  Padding(
-                                                    padding:
-                                                        EdgeInsets.all(2.0),
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'ค้นหา :',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.center,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            1),
-                                                  ),
-                                                  Expanded(
-                                                    // flex: 1,
-                                                    child: Container(
-                                                      height: 35, //Date_ser
-                                                      // width: 150,
-                                                      decoration: BoxDecoration(
-                                                        color:
-                                                            AppbackgroundColor
-                                                                .Sub_Abg_Colors,
-                                                        borderRadius: const BorderRadius
-                                                                .only(
-                                                            topLeft: Radius
-                                                                .circular(8),
-                                                            topRight:
-                                                                Radius.circular(
-                                                                    8),
-                                                            bottomLeft:
-                                                                Radius.circular(
-                                                                    8),
-                                                            bottomRight:
-                                                                Radius.circular(
-                                                                    8)),
-                                                        border: Border.all(
-                                                            color: Colors.grey,
-                                                            width: 1),
-                                                      ),
-                                                      child: _searchBar(),
+    return LayoutBuilder(builder: (context, cts) {
+      final screenW = cts.maxWidth;
+      final tableMinW = Responsive.isDesktop(context) ? screenW : 980.0;
+
+      return (Ser_QRpage == 1)
+          ? People_GenQR()
+          : (Status_ == 5)
+              ? Rental_customers(updateMessage: updateMessage)
+              : (Status_ == 6)
+                  ? Cancellation_notice()
+                  : (Status_ == 7)
+                      ? BodyHome_TenantCancel()
+                      : (Status_ < 5)
+                          ? PeopleChaoTenant(
+                              Status: Status_, updateMessage: updateMessage1)
+                          : ScrollConfiguration(
+                              behavior: ScrollConfiguration.of(context)
+                                  .copyWith(dragDevices: {
+                                PointerDeviceKind.touch,
+                                PointerDeviceKind.mouse,
+                              }),
+                              child: SingleChildScrollView(
+                                scrollDirection: Axis.horizontal,
+                                dragStartBehavior: DragStartBehavior.start,
+                                child: Container(
+                                  width: tableMinW,
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            8, 0, 8, 0),
+                                        child: Container(
+                                            width: tableMinW,
+                                            decoration: BoxDecoration(
+                                              color: AppbackgroundColor
+                                                  .TiTile_Colors,
+                                              borderRadius: BorderRadius.only(
+                                                  topLeft: Radius.circular(10),
+                                                  topRight: Radius.circular(10),
+                                                  bottomLeft:
+                                                      Radius.circular(0),
+                                                  bottomRight:
+                                                      Radius.circular(0)),
+                                            ),
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  // mainAxisAlignment: MainAxisAlignment.end,
+                                                  children: [
+                                                    Padding(
+                                                      padding:
+                                                          EdgeInsets.all(2.0),
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'ค้นหา :',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.center,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              1),
                                                     ),
-                                                  ),
-                                                  Container(
-                                                      width: 150,
-                                                      child: Next_page_Web())
-                                                ],
-                                              ),
-                                              const Divider(),
-                                              Row(
-                                                children: [
-                                                  Container(
-                                                    decoration: BoxDecoration(
-                                                      color: AppbackgroundColor
-                                                              .Sub_Abg_Colors
-                                                          .withOpacity(0.5),
-                                                      borderRadius:
-                                                          BorderRadius.only(
+                                                    Expanded(
+                                                      // flex: 1,
+                                                      child: Container(
+                                                        height: 35, //Date_ser
+                                                        // width: 150,
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              AppbackgroundColor
+                                                                  .Sub_Abg_Colors,
+                                                          borderRadius: const BorderRadius
+                                                                  .only(
                                                               topLeft: Radius
-                                                                  .circular(10),
+                                                                  .circular(8),
                                                               topRight: Radius
-                                                                  .circular(10),
+                                                                  .circular(8),
                                                               bottomLeft: Radius
-                                                                  .circular(10),
+                                                                  .circular(8),
                                                               bottomRight:
                                                                   Radius
                                                                       .circular(
-                                                                          10)),
-                                                      // border: Border.all(color: Colors.white, width: 1),
+                                                                          8)),
+                                                          border: Border.all(
+                                                              color:
+                                                                  Colors.grey,
+                                                              width: 1),
+                                                        ),
+                                                        child: _searchBar(),
+                                                      ),
                                                     ),
-                                                    child: Row(
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                  2.0),
-                                                          child: Translate
-                                                              .TranslateAndSetText(
-                                                                  'ประเภทวันที่ :',
-                                                                  PeopleChaoScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  TextAlign
-                                                                      .center,
-                                                                  null,
-                                                                  Font_.Fonts_T,
-                                                                  14,
-                                                                  1),
-                                                        ),
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(2.0),
-                                                          child: Container(
-                                                            decoration:
-                                                                const BoxDecoration(
-                                                              color: AppbackgroundColor
-                                                                  .Sub_Abg_Colors,
-                                                              borderRadius: BorderRadius.only(
-                                                                  topLeft: Radius
-                                                                      .circular(
-                                                                          10),
-                                                                  topRight: Radius
-                                                                      .circular(
-                                                                          10),
-                                                                  bottomLeft: Radius
-                                                                      .circular(
-                                                                          10),
-                                                                  bottomRight: Radius
-                                                                      .circular(
-                                                                          10)),
-                                                              // border: Border.all(color: Colors.grey, width: 1),
-                                                            ),
-                                                            width: 150,
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(2.0),
-                                                            child:
-                                                                DropdownButtonFormField2(
-                                                              alignment:
-                                                                  Alignment
-                                                                      .center,
-                                                              focusColor:
-                                                                  Colors.white,
-                                                              autofocus: false,
-                                                              decoration:
-                                                                  InputDecoration(
-                                                                floatingLabelAlignment:
-                                                                    FloatingLabelAlignment
-                                                                        .center,
-                                                                enabled: true,
-                                                                hoverColor:
-                                                                    Colors
-                                                                        .brown,
-                                                                prefixIconColor:
-                                                                    Colors.blue,
-                                                                fillColor: Colors
-                                                                    .white
-                                                                    .withOpacity(
-                                                                        0.05),
-                                                                filled: false,
-                                                                isDense: true,
-                                                                contentPadding:
-                                                                    EdgeInsets
-                                                                        .zero,
-                                                                border:
-                                                                    OutlineInputBorder(
-                                                                  borderSide:
-                                                                      const BorderSide(
-                                                                          color:
-                                                                              Colors.red),
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .circular(
-                                                                              10),
-                                                                ),
-                                                                focusedBorder:
-                                                                    const OutlineInputBorder(
-                                                                  borderRadius:
-                                                                      BorderRadius
-                                                                          .only(
-                                                                    topRight: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    topLeft: Radius
-                                                                        .circular(
-                                                                            10),
-                                                                    bottomRight:
-                                                                        Radius.circular(
-                                                                            10),
-                                                                    bottomLeft:
-                                                                        Radius.circular(
-                                                                            10),
-                                                                  ),
-                                                                  borderSide:
-                                                                      BorderSide(
-                                                                    width: 1,
-                                                                    color: Color
-                                                                        .fromARGB(
-                                                                            255,
-                                                                            231,
-                                                                            227,
-                                                                            227),
-                                                                  ),
-                                                                ),
-                                                              ),
-                                                              isExpanded: false,
-                                                              // value: YEAR_Now,
-                                                              hint: Translate
-                                                                  .TranslateAndSetText(
-                                                                      'ทั้งหมด',
-                                                                      Colors
-                                                                          .grey,
-                                                                      TextAlign
-                                                                          .center,
-                                                                      null,
-                                                                      Font_
-                                                                          .Fonts_T,
-                                                                      14,
-                                                                      1),
-                                                              //  Text(
-                                                              //   'ทั้งหมด',
-                                                              //   maxLines: 2,
-                                                              //   textAlign: TextAlign
-                                                              //       .center,
-                                                              //   style:
-                                                              //       const TextStyle(
-                                                              //     overflow:
-                                                              //         TextOverflow
-                                                              //             .ellipsis,
-                                                              //     fontSize: 12,
-                                                              //     color:
-                                                              //         Colors.grey,
-                                                              //   ),
-                                                              // ),
-                                                              icon: const Icon(
-                                                                Icons
-                                                                    .arrow_drop_down,
-                                                                color: Colors
-                                                                    .black,
-                                                              ),
-                                                              style:
-                                                                  const TextStyle(
-                                                                color:
-                                                                    Colors.grey,
-                                                              ),
-                                                              iconSize: 20,
-                                                              buttonHeight: 30,
-                                                              buttonWidth: 150,
-                                                              // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
-                                                              dropdownDecoration:
-                                                                  BoxDecoration(
-                                                                // color: Colors
-                                                                //     .amber,
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            10),
-                                                                border: Border.all(
-                                                                    color: Colors
-                                                                        .white,
-                                                                    width: 1),
-                                                              ),
-                                                              items: [
-                                                                DropdownMenuItem<
-                                                                    String>(
-                                                                  value: '0',
-                                                                  child: Translate.TranslateAndSetText(
-                                                                      'ทั้งหมด',
-                                                                      Colors
-                                                                          .grey,
-                                                                      TextAlign
-                                                                          .center,
-                                                                      null,
-                                                                      Font_
-                                                                          .Fonts_T,
-                                                                      14,
-                                                                      1),
-                                                                ),
-                                                                DropdownMenuItem<
-                                                                    String>(
-                                                                  value: '1',
-                                                                  child: Translate.TranslateAndSetText(
-                                                                      'วันที่เริ่มสัญญา',
-                                                                      Colors
-                                                                          .grey,
-                                                                      TextAlign
-                                                                          .center,
-                                                                      null,
-                                                                      Font_
-                                                                          .Fonts_T,
-                                                                      14,
-                                                                      1),
-                                                                ),
-                                                                DropdownMenuItem<
-                                                                    String>(
-                                                                  value: '2',
-                                                                  child: Translate.TranslateAndSetText(
-                                                                      'วันที่สิ้นสุดสัญญา',
-                                                                      Colors
-                                                                          .grey,
-                                                                      TextAlign
-                                                                          .center,
-                                                                      null,
-                                                                      Font_
-                                                                          .Fonts_T,
-                                                                      14,
-                                                                      1),
-                                                                ),
-                                                              ],
-
-                                                              onChanged:
-                                                                  (value) async {
-                                                                setState(() {
-                                                                  Text_searchBar_Sub_TeNant
-                                                                      .clear();
-                                                                  // _TransReBillModels =
-                                                                  //     TransReBillModels_;
-                                                                  Date_ser =
-                                                                      int.parse(
-                                                                          value!);
-                                                                });
-                                                              },
-                                                            ),
-                                                          ),
-                                                        ),
-                                                        Padding(
-                                                          padding:
-                                                              EdgeInsets.all(
-                                                                  2.0),
-                                                          child: Translate
-                                                              .TranslateAndSetText(
-                                                                  'ค้นหาวันที่ :',
-                                                                  PeopleChaoScreen_Color
-                                                                      .Colors_Text2_,
-                                                                  TextAlign
-                                                                      .center,
-                                                                  null,
-                                                                  Font_.Fonts_T,
-                                                                  14,
-                                                                  1),
-                                                        ),
-                                                        // SizedBox(
-                                                        //   height: 30, //Date_ser
-                                                        //   width: 120,
-                                                        //   child: _searchBar2(),
-                                                        // )
-                                                        Container(
-                                                          height: 25, //Date_ser
-                                                          width: 120,
-                                                          decoration:
-                                                              BoxDecoration(
-                                                            color: AppbackgroundColor
-                                                                .Sub_Abg_Colors,
-                                                            borderRadius: const BorderRadius
-                                                                    .only(
+                                                    Container(
+                                                        width: 150,
+                                                        child: Next_page_Web())
+                                                  ],
+                                                ),
+                                                const Divider(),
+                                                Row(
+                                                  children: [
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color: AppbackgroundColor
+                                                                .Sub_Abg_Colors
+                                                            .withOpacity(0.5),
+                                                        borderRadius:
+                                                            BorderRadius.only(
                                                                 topLeft: Radius
                                                                     .circular(
                                                                         10),
@@ -3839,617 +3776,961 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                 bottomRight: Radius
                                                                     .circular(
                                                                         10)),
-                                                            border: Border.all(
-                                                                color:
-                                                                    Colors.grey,
-                                                                width: 1),
+                                                        // border: Border.all(color: Colors.white, width: 1),
+                                                      ),
+                                                      child: Row(
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    2.0),
+                                                            child: Translate.TranslateAndSetText(
+                                                                'ประเภทวันที่ :',
+                                                                PeopleChaoScreen_Color
+                                                                    .Colors_Text1_,
+                                                                TextAlign
+                                                                    .center,
+                                                                null,
+                                                                Font_.Fonts_T,
+                                                                14,
+                                                                1),
                                                           ),
-                                                          child:
-                                                              _searchBar_Sub_TeNant(),
-                                                          //  _searchBar_Sub_TeNant(),
-                                                        )
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              const Divider(),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  SizedBox(
-                                                    width: 60,
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'เลขที่สัญญา/เสนอราคา',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.left,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-
-                                                    //  AutoSizeText(
-                                                    //   minFontSize: 10,
-                                                    //   maxFontSize: 25,
-                                                    //   maxLines: 2,
-                                                    //   'เลขที่สัญญา/เสนอราคา',
-                                                    //   textAlign: TextAlign.left,
-                                                    //   style: TextStyle(
-                                                    //       color:
-                                                    //           PeopleChaoScreen_Color
-                                                    //               .Colors_Text1_,
-                                                    //       fontWeight:
-                                                    //           FontWeight.bold,
-                                                    //       fontFamily:
-                                                    //           FontWeight_.Fonts_T
-                                                    //       //fontSize: 10.0
-                                                    //       ),
-                                                    // ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'ชื่อผู้ติดต่อ',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.left,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'ชื่อร้านค้า',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.left,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'โซนพื้นที่',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.left,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'รหัสพื้นที่',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.left,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  // Expanded(
-                                                  //   flex: 1,
-                                                  //   child: Translate
-                                                  //       .TranslateAndSetText(
-                                                  //           'ขนาดพื้นที่(ตร.ม.)',
-                                                  //           PeopleChaoScreen_Color
-                                                  //               .Colors_Text1_,
-                                                  //           TextAlign.left,
-                                                  //           FontWeight.bold,
-                                                  //           FontWeight_.Fonts_T,
-                                                  //           14,
-                                                  //           2),
-                                                  // ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'ระยะเวลาการเช่า',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.right,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'วันเริ่มสัญญา',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.right,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'วันสิ้นสุดสัญญา',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.right,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'สถานะ',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.center,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            'เลขอ้างอิง',
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.center,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            2),
-                                                  ),
-                                                  SizedBox(
-                                                    width: 40,
-                                                  )
-                                                ],
-                                              ),
-                                            ],
-                                          )),
-                                    ),
-                                    Padding(
-                                      padding:
-                                          const EdgeInsets.fromLTRB(8, 0, 8, 0),
-                                      child: Column(
-                                        children: [
-                                          Container(
-                                            height: MediaQuery.of(context)
-                                                    .size
-                                                    .height *
-                                                0.65,
-                                            width:
-                                                (Responsive.isDesktop(context))
-                                                    ? MediaQuery.of(context)
-                                                            .size
-                                                            .width *
-                                                        0.85
-                                                    : 1200,
-                                            decoration: const BoxDecoration(
-                                              color: AppbackgroundColor
-                                                  .Sub_Abg_Colors,
-                                              borderRadius: BorderRadius.only(
-                                                  topLeft: Radius.circular(0),
-                                                  topRight: Radius.circular(0),
-                                                  bottomLeft:
-                                                      Radius.circular(0),
-                                                  bottomRight:
-                                                      Radius.circular(0)),
-                                              // border: Border.all(color: Colors.grey, width: 1),
-                                            ),
-                                            child: teNantModels.isEmpty
-                                                ? SizedBox(
-                                                    child: Column(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment
-                                                              .center,
-                                                      children: [
-                                                        const CircularProgressIndicator(),
-                                                        StreamBuilder(
-                                                          stream: Stream.periodic(
-                                                              const Duration(
-                                                                  milliseconds:
-                                                                      25),
-                                                              (i) => i),
-                                                          builder: (context,
-                                                              snapshot) {
-                                                            if (!snapshot
-                                                                .hasData)
-                                                              return const Text(
-                                                                  '');
-                                                            double elapsed =
-                                                                double.parse(snapshot
-                                                                        .data
-                                                                        .toString()) *
-                                                                    0.05;
-                                                            return Padding(
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(2.0),
+                                                            child: Container(
+                                                              decoration:
+                                                                  const BoxDecoration(
+                                                                color: AppbackgroundColor
+                                                                    .Sub_Abg_Colors,
+                                                                borderRadius: BorderRadius.only(
+                                                                    topLeft: Radius
+                                                                        .circular(
+                                                                            10),
+                                                                    topRight: Radius
+                                                                        .circular(
+                                                                            10),
+                                                                    bottomLeft:
+                                                                        Radius.circular(
+                                                                            10),
+                                                                    bottomRight:
+                                                                        Radius.circular(
+                                                                            10)),
+                                                                // border: Border.all(color: Colors.grey, width: 1),
+                                                              ),
+                                                              width: 150,
                                                               padding:
                                                                   const EdgeInsets
-                                                                      .all(8.0),
-                                                              child: (elapsed >
-                                                                      8.00)
-                                                                  ? const Text(
-                                                                      'ไม่พบข้อมูล',
-                                                                      style: TextStyle(
-                                                                          color: PeopleChaoScreen_Color
-                                                                              .Colors_Text2_,
-                                                                          fontFamily:
-                                                                              Font_.Fonts_T
-                                                                          //fontSize: 10.0
-                                                                          ),
-                                                                    )
-                                                                  : Text(
-                                                                      'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
-                                                                      // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-                                                                      style: const TextStyle(
-                                                                          color: PeopleChaoScreen_Color
-                                                                              .Colors_Text2_,
-                                                                          fontFamily:
-                                                                              Font_.Fonts_T
-                                                                          //fontSize: 10.0
-                                                                          ),
+                                                                      .all(2.0),
+                                                              child:
+                                                                  DropdownButtonFormField2(
+                                                                alignment:
+                                                                    Alignment
+                                                                        .center,
+                                                                focusColor:
+                                                                    Colors
+                                                                        .white,
+                                                                autofocus:
+                                                                    false,
+                                                                decoration:
+                                                                    InputDecoration(
+                                                                  floatingLabelAlignment:
+                                                                      FloatingLabelAlignment
+                                                                          .center,
+                                                                  enabled: true,
+                                                                  hoverColor:
+                                                                      Colors
+                                                                          .brown,
+                                                                  prefixIconColor:
+                                                                      Colors
+                                                                          .blue,
+                                                                  fillColor: Colors
+                                                                      .white
+                                                                      .withOpacity(
+                                                                          0.05),
+                                                                  filled: false,
+                                                                  isDense: true,
+                                                                  contentPadding:
+                                                                      EdgeInsets
+                                                                          .zero,
+                                                                  border:
+                                                                      OutlineInputBorder(
+                                                                    borderSide:
+                                                                        const BorderSide(
+                                                                            color:
+                                                                                Colors.red),
+                                                                    borderRadius:
+                                                                        BorderRadius.circular(
+                                                                            10),
+                                                                  ),
+                                                                  focusedBorder:
+                                                                      const OutlineInputBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .only(
+                                                                      topRight:
+                                                                          Radius.circular(
+                                                                              10),
+                                                                      topLeft: Radius
+                                                                          .circular(
+                                                                              10),
+                                                                      bottomRight:
+                                                                          Radius.circular(
+                                                                              10),
+                                                                      bottomLeft:
+                                                                          Radius.circular(
+                                                                              10),
                                                                     ),
-                                                            );
-                                                          },
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                : ListView.builder(
-                                                    controller:
-                                                        _scrollController1,
-                                                    // itemExtent: 50,
-                                                    physics:
-                                                        const AlwaysScrollableScrollPhysics(),
-                                                    shrinkWrap: true,
-                                                    itemCount:
-                                                        teNantModels.length,
-                                                    itemBuilder:
-                                                        (BuildContext context,
-                                                            int index) {
-                                                      return Column(
-                                                        children: [
-                                                          Material(
-                                                            color: tappedIndex_ ==
-                                                                    index
-                                                                        .toString()
-                                                                ? tappedIndex_Color
-                                                                    .tappedIndex_Colors
-                                                                    .withOpacity(
-                                                                        0.5)
-                                                                : AppbackgroundColor
-                                                                    .Sub_Abg_Colors,
-                                                            child: Container(
-                                                              // color: Colors.white,
-                                                              // color: tappedIndex_ == index.toString()
-                                                              //     ? tappedIndex_Color.tappedIndex_Colors
-                                                              //         .withOpacity(0.5)
-                                                              //     : null,
-                                                              child: ListTile(
-                                                                // onTap: () {
-                                                                //   setState(() {
-                                                                //     tappedIndex_ =
-                                                                //         index.toString();
-                                                                //   });
-                                                                // },
-                                                                title:
-                                                                    Container(
-                                                                  decoration:
-                                                                      const BoxDecoration(
-                                                                    // color: Colors.green[100]!
-                                                                    //     .withOpacity(0.5),
-                                                                    border:
-                                                                        Border(
-                                                                      bottom:
-                                                                          BorderSide(
-                                                                        color: Colors
-                                                                            .black12,
-                                                                        width:
-                                                                            1,
-                                                                      ),
+                                                                    borderSide:
+                                                                        BorderSide(
+                                                                      width: 1,
+                                                                      color: Color.fromARGB(
+                                                                          255,
+                                                                          231,
+                                                                          227,
+                                                                          227),
                                                                     ),
                                                                   ),
-                                                                  child: Row(
-                                                                    mainAxisAlignment:
-                                                                        MainAxisAlignment
+                                                                ),
+                                                                isExpanded:
+                                                                    false,
+                                                                // value: YEAR_Now,
+                                                                hint: Translate.TranslateAndSetText(
+                                                                    'ทั้งหมด',
+                                                                    Colors.grey,
+                                                                    TextAlign
+                                                                        .center,
+                                                                    null,
+                                                                    Font_
+                                                                        .Fonts_T,
+                                                                    14,
+                                                                    1),
+                                                                //  Text(
+                                                                //   'ทั้งหมด',
+                                                                //   maxLines: 2,
+                                                                //   textAlign: TextAlign
+                                                                //       .center,
+                                                                //   style:
+                                                                //       const TextStyle(
+                                                                //     overflow:
+                                                                //         TextOverflow
+                                                                //             .ellipsis,
+                                                                //     fontSize: 12,
+                                                                //     color:
+                                                                //         Colors.grey,
+                                                                //   ),
+                                                                // ),
+                                                                icon:
+                                                                    const Icon(
+                                                                  Icons
+                                                                      .arrow_drop_down,
+                                                                  color: Colors
+                                                                      .black,
+                                                                ),
+                                                                style:
+                                                                    const TextStyle(
+                                                                  color: Colors
+                                                                      .grey,
+                                                                ),
+                                                                iconSize: 20,
+                                                                buttonHeight:
+                                                                    30,
+                                                                buttonWidth:
+                                                                    150,
+                                                                // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                                                                dropdownDecoration:
+                                                                    BoxDecoration(
+                                                                  // color: Colors
+                                                                  //     .amber,
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              10),
+                                                                  border: Border.all(
+                                                                      color: Colors
+                                                                          .white,
+                                                                      width: 1),
+                                                                ),
+                                                                items: [
+                                                                  DropdownMenuItem<
+                                                                      String>(
+                                                                    value: '0',
+                                                                    child: Translate.TranslateAndSetText(
+                                                                        'ทั้งหมด',
+                                                                        Colors
+                                                                            .grey,
+                                                                        TextAlign
                                                                             .center,
-                                                                    children: [
+                                                                        null,
+                                                                        Font_
+                                                                            .Fonts_T,
+                                                                        14,
+                                                                        1),
+                                                                  ),
+                                                                  DropdownMenuItem<
+                                                                      String>(
+                                                                    value: '1',
+                                                                    child: Translate.TranslateAndSetText(
+                                                                        'วันที่เริ่มสัญญา',
+                                                                        Colors
+                                                                            .grey,
+                                                                        TextAlign
+                                                                            .center,
+                                                                        null,
+                                                                        Font_
+                                                                            .Fonts_T,
+                                                                        14,
+                                                                        1),
+                                                                  ),
+                                                                  DropdownMenuItem<
+                                                                      String>(
+                                                                    value: '2',
+                                                                    child: Translate.TranslateAndSetText(
+                                                                        'วันที่สิ้นสุดสัญญา',
+                                                                        Colors
+                                                                            .grey,
+                                                                        TextAlign
+                                                                            .center,
+                                                                        null,
+                                                                        Font_
+                                                                            .Fonts_T,
+                                                                        14,
+                                                                        1),
+                                                                  ),
+                                                                ],
+
+                                                                onChanged:
+                                                                    (value) async {
+                                                                  setState(() {
+                                                                    Text_searchBar_Sub_TeNant
+                                                                        .clear();
+                                                                    // _TransReBillModels =
+                                                                    //     TransReBillModels_;
+                                                                    Date_ser =
+                                                                        int.parse(
+                                                                            value!);
+                                                                  });
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Padding(
+                                                            padding:
+                                                                EdgeInsets.all(
+                                                                    2.0),
+                                                            child: Translate.TranslateAndSetText(
+                                                                'ค้นหาวันที่ :',
+                                                                PeopleChaoScreen_Color
+                                                                    .Colors_Text2_,
+                                                                TextAlign
+                                                                    .center,
+                                                                null,
+                                                                Font_.Fonts_T,
+                                                                14,
+                                                                1),
+                                                          ),
+                                                          // SizedBox(
+                                                          //   height: 30, //Date_ser
+                                                          //   width: 120,
+                                                          //   child: _searchBar2(),
+                                                          // )
+                                                          Container(
+                                                            height:
+                                                                25, //Date_ser
+                                                            width: 120,
+                                                            decoration:
+                                                                BoxDecoration(
+                                                              color: AppbackgroundColor
+                                                                  .Sub_Abg_Colors,
+                                                              borderRadius: const BorderRadius
+                                                                      .only(
+                                                                  topLeft:
+                                                                      Radius.circular(
+                                                                          10),
+                                                                  topRight: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                  bottomLeft: Radius
+                                                                      .circular(
+                                                                          10),
+                                                                  bottomRight: Radius
+                                                                      .circular(
+                                                                          10)),
+                                                              border: Border.all(
+                                                                  color: Colors
+                                                                      .grey,
+                                                                  width: 1),
+                                                            ),
+                                                            child:
+                                                                _searchBar_Sub_TeNant(),
+                                                            //  _searchBar_Sub_TeNant(),
+                                                          )
+                                                        ],
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                                const Divider(),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    SizedBox(
+                                                      width: 60,
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'เลขที่สัญญา/เสนอราคา',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.left,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+
+                                                      //  AutoSizeText(
+                                                      //   minFontSize: 10,
+                                                      //   maxFontSize: 25,
+                                                      //   maxLines: 2,
+                                                      //   'เลขที่สัญญา/เสนอราคา',
+                                                      //   textAlign: TextAlign.left,
+                                                      //   style: TextStyle(
+                                                      //       color:
+                                                      //           PeopleChaoScreen_Color
+                                                      //               .Colors_Text1_,
+                                                      //       fontWeight:
+                                                      //           FontWeight.bold,
+                                                      //       fontFamily:
+                                                      //           FontWeight_.Fonts_T
+                                                      //       //fontSize: 10.0
+                                                      //       ),
+                                                      // ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'ชื่อผู้ติดต่อ',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.left,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'ชื่อร้านค้า',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.left,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'โซนพื้นที่',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.left,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'รหัสพื้นที่',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.left,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    // Expanded(
+                                                    //   flex: 1,
+                                                    //   child: Translate
+                                                    //       .TranslateAndSetText(
+                                                    //           'ขนาดพื้นที่(ตร.ม.)',
+                                                    //           PeopleChaoScreen_Color
+                                                    //               .Colors_Text1_,
+                                                    //           TextAlign.left,
+                                                    //           FontWeight.bold,
+                                                    //           FontWeight_.Fonts_T,
+                                                    //           14,
+                                                    //           2),
+                                                    // ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'ระยะเวลาการเช่า',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.right,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'วันเริ่มสัญญา',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.right,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'วันสิ้นสุดสัญญา',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.right,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'สถานะ',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.center,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Translate
+                                                          .TranslateAndSetText(
+                                                              'เลขอ้างอิง',
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text1_,
+                                                              TextAlign.center,
+                                                              FontWeight.bold,
+                                                              FontWeight_
+                                                                  .Fonts_T,
+                                                              14,
+                                                              2),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 40,
+                                                    )
+                                                  ],
+                                                ),
+                                              ],
+                                            )),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            8, 0, 8, 0),
+                                        child: Column(
+                                          children: [
+                                            Container(
+                                              height: MediaQuery.of(context)
+                                                      .size
+                                                      .height *
+                                                  0.65,
+                                              width: tableMinW,
+                                              decoration: const BoxDecoration(
+                                                color: AppbackgroundColor
+                                                    .Sub_Abg_Colors,
+                                                borderRadius: BorderRadius.only(
+                                                    topLeft: Radius.circular(0),
+                                                    topRight:
+                                                        Radius.circular(0),
+                                                    bottomLeft:
+                                                        Radius.circular(0),
+                                                    bottomRight:
+                                                        Radius.circular(0)),
+                                                // border: Border.all(color: Colors.grey, width: 1),
+                                              ),
+                                              child: teNantModels.isEmpty
+                                                  ? SizedBox(
+                                                      child: Column(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          const CircularProgressIndicator(),
+                                                          StreamBuilder(
+                                                            stream: Stream.periodic(
+                                                                const Duration(
+                                                                    milliseconds:
+                                                                        25),
+                                                                (i) => i),
+                                                            builder: (context,
+                                                                snapshot) {
+                                                              if (!snapshot
+                                                                  .hasData)
+                                                                return const Text(
+                                                                    '');
+                                                              double elapsed =
+                                                                  double.parse(snapshot
+                                                                          .data
+                                                                          .toString()) *
+                                                                      0.05;
+                                                              return Padding(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        8.0),
+                                                                child: (elapsed >
+                                                                        8.00)
+                                                                    ? const Text(
+                                                                        'ไม่พบข้อมูล',
+                                                                        style: TextStyle(
+                                                                            color:
+                                                                                PeopleChaoScreen_Color.Colors_Text2_,
+                                                                            fontFamily: Font_.Fonts_T
+                                                                            //fontSize: 10.0
+                                                                            ),
+                                                                      )
+                                                                    : Text(
+                                                                        'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
+                                                                        // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                                                        style: const TextStyle(
+                                                                            color:
+                                                                                PeopleChaoScreen_Color.Colors_Text2_,
+                                                                            fontFamily: Font_.Fonts_T
+                                                                            //fontSize: 10.0
+                                                                            ),
+                                                                      ),
+                                                              );
+                                                            },
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    )
+                                                  : ListView.builder(
+                                                      controller:
+                                                          _scrollController1,
+                                                      // itemExtent: 50,
+                                                      physics:
+                                                          const AlwaysScrollableScrollPhysics(),
+                                                      shrinkWrap: true,
+                                                      itemCount:
+                                                          teNantModels.length,
+                                                      itemBuilder:
+                                                          (BuildContext context,
+                                                              int index) {
+                                                        return Column(
+                                                          children: [
+                                                            Material(
+                                                              color: tappedIndex_ ==
+                                                                      index
+                                                                          .toString()
+                                                                  ? tappedIndex_Color
+                                                                      .tappedIndex_Colors
+                                                                      .withOpacity(
+                                                                          0.5)
+                                                                  : AppbackgroundColor
+                                                                      .Sub_Abg_Colors,
+                                                              child: Container(
+                                                                // color: Colors.white,
+                                                                // color: tappedIndex_ == index.toString()
+                                                                //     ? tappedIndex_Color.tappedIndex_Colors
+                                                                //         .withOpacity(0.5)
+                                                                //     : null,
+                                                                child: ListTile(
+                                                                  // onTap: () {
+                                                                  //   setState(() {
+                                                                  //     tappedIndex_ =
+                                                                  //         index.toString();
+                                                                  //   });
+                                                                  // },
+                                                                  title:
                                                                       Container(
-                                                                        decoration:
-                                                                            BoxDecoration(
-                                                                          color: Colors
-                                                                              .grey
-                                                                              .shade300,
-                                                                          borderRadius: const BorderRadius.only(
-                                                                              topLeft: Radius.circular(10),
-                                                                              topRight: Radius.circular(10),
-                                                                              bottomLeft: Radius.circular(10),
-                                                                              bottomRight: Radius.circular(10)),
-                                                                          // border: Border.all(color: Colors.grey, width: 1),
-                                                                        ),
-                                                                        padding:
-                                                                            const EdgeInsets.all(4.0),
-                                                                        child:
-                                                                            PopupMenuButton(
-                                                                          onOpened:
-                                                                              () {
-                                                                            setState(() {
-                                                                              quotxSelectModels_Select.clear();
-                                                                              ser_indexShow = null;
-                                                                              tappedIndex_ = index.toString();
-                                                                            });
-                                                                          },
-                                                                          child:
-                                                                              Center(
-                                                                            child:
-                                                                                InkWell(
-                                                                              // onTap: () {
-                                                                              //   setState(() {
-                                                                              //     tappedIndex_ =
-                                                                              //         index.toString();
-                                                                              //   });
-                                                                              // },
-                                                                              child: Translate.TranslateAndSetText('เรียกดู >', PeopleChaoScreen_Color.Colors_Text1_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                              //     AutoSizeText(
-                                                                              //   minFontSize:
-                                                                              //       10,
-                                                                              //   maxFontSize:
-                                                                              //       25,
-                                                                              //   maxLines:
-                                                                              //       1,
-                                                                              //   'เรียกดู >',
-                                                                              //   textAlign:
-                                                                              //       TextAlign.center,
-                                                                              //   style: TextStyle(
-                                                                              //       color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                              //       //fontWeight: FontWeight.bold,
-                                                                              //       fontFamily: Font_.Fonts_T),
-                                                                              // ),
-                                                                            ),
-                                                                          ),
-                                                                          itemBuilder:
-                                                                              (BuildContext context) => [
-                                                                            PopupMenuItem(
-                                                                              child: Column(
-                                                                                children: [
-                                                                                  InkWell(
-                                                                                      onTap: () {
-                                                                                        if (renTal_lavel <= 2) {
-                                                                                          Navigator.pop(context);
-                                                                                          infomation();
-                                                                                        } else {
-                                                                                          var ser_teNant = teNantModels[index].quantity;
-                                                                                          var ser_ciddoc = teNantModels[index].docno == null ? teNantModels[index].cid : teNantModels[index].docno;
-                                                                                          setState(() {
-                                                                                            Value_NameShop_index = '$ser_teNant';
-                                                                                            Value_cid = '$ser_ciddoc';
-                                                                                            Value_stasus = teNantModels[index].quantity == '1'
-                                                                                                ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                                                    ? 'หมดสัญญา'
-                                                                                                    : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                                                        ? 'ใกล้หมดสัญญา'
-                                                                                                        : 'เช่าอยู่'
-                                                                                                : teNantModels[index].quantity == '2'
-                                                                                                    ? 'เสนอราคา'
-                                                                                                    : teNantModels[index].quantity == '3'
-                                                                                                        ? 'เสนอราคา(มัดจำ)'
-                                                                                                        : 'ว่าง';
-                                                                                          });
-
-                                                                                          setState(() {
-                                                                                            ReturnBodyPeople = 'PeopleChaoScreen2';
-                                                                                          });
-                                                                                          Navigator.pop(context);
-                                                                                        }
-                                                                                        // Navigator.push(
-                                                                                        //     context,
-                                                                                        //     MaterialPageRoute(
-                                                                                        //         builder: (context) =>
-                                                                                        //             const PeopleChaoScreen2()));
-                                                                                      },
-                                                                                      child: Container(
-                                                                                          padding: const EdgeInsets.all(10),
-                                                                                          width: MediaQuery.of(context).size.width,
-                                                                                          child: Row(
-                                                                                            children: [
-                                                                                              Expanded(
-                                                                                                  child: Text(
-                                                                                                teNantModels[index].docno == null
-                                                                                                    ? teNantModels[index].cid == null
-                                                                                                        ? ''
-                                                                                                        : '${teNantModels[index].cid}'
-                                                                                                    : '${teNantModels[index].docno}',
-                                                                                                overflow: TextOverflow.ellipsis,
-                                                                                                style: const TextStyle(
-                                                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                    //fontWeight: FontWeight.bold,
-                                                                                                    fontFamily: Font_.Fonts_T),
-                                                                                              ))
-                                                                                            ],
-                                                                                          ))),
-                                                                                  teNantModels[index].cid == teNantModels[index].fid
-                                                                                      ? SizedBox()
-                                                                                      : InkWell(
-                                                                                          onTap: () {
-                                                                                            if (renTal_lavel <= 2) {
-                                                                                              Navigator.pop(context);
-                                                                                              infomation();
-                                                                                            } else {
-                                                                                              var ser_teNant = teNantModels[index].quantity;
-                                                                                              var ser_ciddoc = teNantModels[index].docno == null ? teNantModels[index].fid : teNantModels[index].docno;
-                                                                                              setState(() {
-                                                                                                Value_NameShop_index = '$ser_teNant';
-                                                                                                Value_cid = '$ser_ciddoc';
-                                                                                                Value_stasus = teNantModels[index].quantity == '1'
-                                                                                                    ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                                                        ? 'หมดสัญญา'
-                                                                                                        : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                                                            ? 'ใกล้หมดสัญญา'
-                                                                                                            : 'เช่าอยู่'
-                                                                                                    : teNantModels[index].quantity == '2'
-                                                                                                        ? 'เสนอราคา'
-                                                                                                        : teNantModels[index].quantity == '3'
-                                                                                                            ? 'เสนอราคา(มัดจำ)'
-                                                                                                            : 'ว่าง';
-                                                                                              });
-
-                                                                                              setState(() {
-                                                                                                ReturnBodyPeople = 'PeopleChaoScreen2';
-                                                                                              });
-                                                                                              Navigator.pop(context);
-                                                                                            }
-                                                                                            // Navigator.push(
-                                                                                            //     context,
-                                                                                            //     MaterialPageRoute(
-                                                                                            //         builder: (context) =>
-                                                                                            //             const PeopleChaoScreen2()));
-                                                                                          },
-                                                                                          child: Container(
-                                                                                              padding: const EdgeInsets.all(10),
-                                                                                              width: MediaQuery.of(context).size.width,
-                                                                                              child: Row(
-                                                                                                children: [
-                                                                                                  Translate.TranslateAndSetText(
-                                                                                                      teNantModels[index].docno == null
-                                                                                                          ? teNantModels[index].cid == null
-                                                                                                              ? ''
-                                                                                                              : 'สัญญาเดิม : '
-                                                                                                          : '',
-                                                                                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                                                                                      TextAlign.left,
-                                                                                                      null,
-                                                                                                      Font_.Fonts_T,
-                                                                                                      14,
-                                                                                                      1),
-                                                                                                  Text(
-                                                                                                    teNantModels[index].docno == null
-                                                                                                        ? teNantModels[index].cid == null
-                                                                                                            ? ''
-                                                                                                            : '${teNantModels[index].fid}'
-                                                                                                        : '${teNantModels[index].docno}',
-                                                                                                    overflow: TextOverflow.ellipsis,
-                                                                                                    textAlign: TextAlign.left,
-                                                                                                    style: const TextStyle(
-                                                                                                        color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                                        //fontWeight: FontWeight.bold,
-                                                                                                        fontFamily: Font_.Fonts_T),
-                                                                                                  ),
-                                                                                                ],
-                                                                                              ))),
-                                                                                ],
-                                                                              ),
-                                                                            ),
-                                                                          ],
+                                                                    decoration:
+                                                                        const BoxDecoration(
+                                                                      // color: Colors.green[100]!
+                                                                      //     .withOpacity(0.5),
+                                                                      border:
+                                                                          Border(
+                                                                        bottom:
+                                                                            BorderSide(
+                                                                          color:
+                                                                              Colors.black12,
+                                                                          width:
+                                                                              1,
                                                                         ),
                                                                       ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Row(
-                                                                          children: [
-                                                                            Padding(
-                                                                              padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
-                                                                              child: Copy_Text(
-                                                                                  context,
-                                                                                  teNantModels[index].docno == null
-                                                                                      ? teNantModels[index].cid == null
-                                                                                          ? ''
-                                                                                          : '${teNantModels[index].cid}'
-                                                                                      : '${teNantModels[index].docno}'),
+                                                                    ),
+                                                                    child: Row(
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .center,
+                                                                      children: [
+                                                                        Container(
+                                                                          decoration:
+                                                                              BoxDecoration(
+                                                                            color:
+                                                                                Colors.grey.shade300,
+                                                                            borderRadius: const BorderRadius.only(
+                                                                                topLeft: Radius.circular(10),
+                                                                                topRight: Radius.circular(10),
+                                                                                bottomLeft: Radius.circular(10),
+                                                                                bottomRight: Radius.circular(10)),
+                                                                            // border: Border.all(color: Colors.grey, width: 1),
+                                                                          ),
+                                                                          padding:
+                                                                              const EdgeInsets.all(4.0),
+                                                                          child:
+                                                                              PopupMenuButton(
+                                                                            onOpened:
+                                                                                () {
+                                                                              setState(() {
+                                                                                quotxSelectModels_Select.clear();
+                                                                                ser_indexShow = null;
+                                                                                tappedIndex_ = index.toString();
+                                                                              });
+                                                                            },
+                                                                            child:
+                                                                                Center(
+                                                                              child: InkWell(
+                                                                                // onTap: () {
+                                                                                //   setState(() {
+                                                                                //     tappedIndex_ =
+                                                                                //         index.toString();
+                                                                                //   });
+                                                                                // },
+                                                                                child: Translate.TranslateAndSetText('เรียกดู >', PeopleChaoScreen_Color.Colors_Text1_, TextAlign.left, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                //     AutoSizeText(
+                                                                                //   minFontSize:
+                                                                                //       10,
+                                                                                //   maxFontSize:
+                                                                                //       25,
+                                                                                //   maxLines:
+                                                                                //       1,
+                                                                                //   'เรียกดู >',
+                                                                                //   textAlign:
+                                                                                //       TextAlign.center,
+                                                                                //   style: TextStyle(
+                                                                                //       color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                //       //fontWeight: FontWeight.bold,
+                                                                                //       fontFamily: Font_.Fonts_T),
+                                                                                // ),
+                                                                              ),
                                                                             ),
-                                                                            Expanded(
-                                                                              child: Padding(
-                                                                                padding: const EdgeInsets.all(0.0),
-                                                                                child: AutoSizeText(
-                                                                                  minFontSize: 10,
-                                                                                  maxFontSize: 25,
-                                                                                  maxLines: 1,
-                                                                                  teNantModels[index].docno == null
-                                                                                      ? teNantModels[index].cid == null
-                                                                                          ? ''
-                                                                                          : '${teNantModels[index].cid}'
-                                                                                      : '${teNantModels[index].docno}',
-                                                                                  textAlign: TextAlign.left,
-                                                                                  overflow: TextOverflow.ellipsis,
-                                                                                  style: const TextStyle(
-                                                                                      color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                      //fontWeight: FontWeight.bold,
-                                                                                      fontFamily: Font_.Fonts_T),
+                                                                            itemBuilder: (BuildContext context) =>
+                                                                                [
+                                                                              PopupMenuItem(
+                                                                                child: Column(
+                                                                                  children: [
+                                                                                    InkWell(
+                                                                                        onTap: () {
+                                                                                          if (renTal_lavel <= 2) {
+                                                                                            Navigator.pop(context);
+                                                                                            infomation();
+                                                                                          } else {
+                                                                                            var ser_teNant = teNantModels[index].quantity;
+                                                                                            var ser_ciddoc = teNantModels[index].docno == null ? teNantModels[index].cid : teNantModels[index].docno;
+                                                                                            setState(() {
+                                                                                              Value_NameShop_index = '$ser_teNant';
+                                                                                              Value_cid = '$ser_ciddoc';
+                                                                                              Value_stasus = teNantModels[index].quantity == '1'
+                                                                                                  ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                                                      ? 'หมดสัญญา'
+                                                                                                      : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                                                          ? 'ใกล้หมดสัญญา'
+                                                                                                          : 'เช่าอยู่'
+                                                                                                  : teNantModels[index].quantity == '2'
+                                                                                                      ? 'เสนอราคา'
+                                                                                                      : teNantModels[index].quantity == '3'
+                                                                                                          ? 'เสนอราคา(มัดจำ)'
+                                                                                                          : 'ว่าง';
+                                                                                            });
+
+                                                                                            setState(() {
+                                                                                              ReturnBodyPeople = 'PeopleChaoScreen2';
+                                                                                            });
+                                                                                            Navigator.pop(context);
+                                                                                          }
+                                                                                          // Navigator.push(
+                                                                                          //     context,
+                                                                                          //     MaterialPageRoute(
+                                                                                          //         builder: (context) =>
+                                                                                          //             const PeopleChaoScreen2()));
+                                                                                        },
+                                                                                        child: Container(
+                                                                                            padding: const EdgeInsets.all(10),
+                                                                                            width: MediaQuery.of(context).size.width,
+                                                                                            child: Row(
+                                                                                              children: [
+                                                                                                Expanded(
+                                                                                                    child: Text(
+                                                                                                  teNantModels[index].docno == null
+                                                                                                      ? teNantModels[index].cid == null
+                                                                                                          ? ''
+                                                                                                          : '${teNantModels[index].cid}'
+                                                                                                      : '${teNantModels[index].docno}',
+                                                                                                  overflow: TextOverflow.ellipsis,
+                                                                                                  style: const TextStyle(
+                                                                                                      color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                                      //fontWeight: FontWeight.bold,
+                                                                                                      fontFamily: Font_.Fonts_T),
+                                                                                                ))
+                                                                                              ],
+                                                                                            ))),
+                                                                                    // teNantModels[index].cid == teNantModels[index].fid
+                                                                                    //     ? SizedBox()
+                                                                                    //     : InkWell(
+                                                                                    //         onTap: () {
+                                                                                    //           if (renTal_lavel <= 2) {
+                                                                                    //             Navigator.pop(context);
+                                                                                    //             infomation();
+                                                                                    //           } else {
+                                                                                    //             var ser_teNant = teNantModels[index].quantity;
+                                                                                    //             var ser_ciddoc = teNantModels[index].docno == null ? teNantModels[index].fid : teNantModels[index].docno;
+                                                                                    //             setState(() {
+                                                                                    //               Value_NameShop_index = '$ser_teNant';
+                                                                                    //               Value_cid = '$ser_ciddoc';
+                                                                                    //               Value_stasus = teNantModels[index].quantity == '1'
+                                                                                    //                   ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                                    //                       ? 'หมดสัญญา'
+                                                                                    //                       : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                                    //                           ? 'ใกล้หมดสัญญา'
+                                                                                    //                           : 'เช่าอยู่'
+                                                                                    //                   : teNantModels[index].quantity == '2'
+                                                                                    //                       ? 'เสนอราคา'
+                                                                                    //                       : teNantModels[index].quantity == '3'
+                                                                                    //                           ? 'เสนอราคา(มัดจำ)'
+                                                                                    //                           : 'ว่าง';
+                                                                                    //             });
+
+                                                                                    //             setState(() {
+                                                                                    //               ReturnBodyPeople = 'PeopleChaoScreen2';
+                                                                                    //             });
+                                                                                    //             Navigator.pop(context);
+                                                                                    //           }
+                                                                                    //           // Navigator.push(
+                                                                                    //           //     context,
+                                                                                    //           //     MaterialPageRoute(
+                                                                                    //           //         builder: (context) =>
+                                                                                    //           //             const PeopleChaoScreen2()));
+                                                                                    //         },
+                                                                                    //         child: Container(
+                                                                                    //             padding: const EdgeInsets.all(10),
+                                                                                    //             width: MediaQuery.of(context).size.width,
+                                                                                    //             child: Row(
+                                                                                    //               children: [
+                                                                                    //                 Translate.TranslateAndSetText(
+                                                                                    //                     teNantModels[index].docno == null
+                                                                                    //                         ? teNantModels[index].cid == null
+                                                                                    //                             ? ''
+                                                                                    //                             : 'สัญญาเดิม : '
+                                                                                    //                         : '',
+                                                                                    //                     PeopleChaoScreen_Color.Colors_Text1_,
+                                                                                    //                     TextAlign.left,
+                                                                                    //                     null,
+                                                                                    //                     Font_.Fonts_T,
+                                                                                    //                     14,
+                                                                                    //                     1),
+                                                                                    //                 Text(
+                                                                                    //                   teNantModels[index].docno == null
+                                                                                    //                       ? teNantModels[index].cid == null
+                                                                                    //                           ? ''
+                                                                                    //                           : '${teNantModels[index].fid}'
+                                                                                    //                       : '${teNantModels[index].docno}',
+                                                                                    //                   overflow: TextOverflow.ellipsis,
+                                                                                    //                   textAlign: TextAlign.left,
+                                                                                    //                   style: const TextStyle(
+                                                                                    //                       color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                    //                       //fontWeight: FontWeight.bold,
+                                                                                    //                       fontFamily: Font_.Fonts_T),
+                                                                                    //                 ),
+                                                                                    //               ],
+                                                                                    //             ))),
+                                                                                  ],
                                                                                 ),
                                                                               ),
-                                                                            ),
-
-                                                                            // Spacer()
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(2.0),
-                                                                          child:
-                                                                              AutoSizeText(
-                                                                            minFontSize:
-                                                                                10,
-                                                                            maxFontSize:
-                                                                                25,
-                                                                            maxLines:
-                                                                                1,
-                                                                            teNantModels[index].cname == null
-                                                                                ? teNantModels[index].cname_q == null
-                                                                                    ? ''
-                                                                                    : '${teNantModels[index].cname_q}'
-                                                                                : '${teNantModels[index].cname}',
-                                                                            textAlign:
-                                                                                TextAlign.left,
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            style: const TextStyle(
-                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                //fontWeight: FontWeight.bold,
-                                                                                fontFamily: Font_.Fonts_T),
+                                                                            ],
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(2.0),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Row(
+                                                                            children: [
+                                                                              Padding(
+                                                                                padding: const EdgeInsets.fromLTRB(8, 0, 0, 0),
+                                                                                child: Copy_Text(
+                                                                                    context,
+                                                                                    teNantModels[index].docno == null
+                                                                                        ? teNantModels[index].cid == null
+                                                                                            ? ''
+                                                                                            : '${teNantModels[index].cid}'
+                                                                                        : '${teNantModels[index].docno}'),
+                                                                              ),
+                                                                              Expanded(
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.all(0.0),
+                                                                                  child: AutoSizeText(
+                                                                                    minFontSize: 10,
+                                                                                    maxFontSize: 25,
+                                                                                    maxLines: 1,
+                                                                                    teNantModels[index].docno == null
+                                                                                        ? teNantModels[index].cid == null
+                                                                                            ? ''
+                                                                                            : '${teNantModels[index].cid}'
+                                                                                        : '${teNantModels[index].docno}',
+                                                                                    textAlign: TextAlign.left,
+                                                                                    overflow: TextOverflow.ellipsis,
+                                                                                    style: const TextStyle(
+                                                                                        color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                        //fontWeight: FontWeight.bold,
+                                                                                        fontFamily: Font_.Fonts_T),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+
+                                                                              // Spacer()
+                                                                            ],
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(2.0),
+                                                                            child:
+                                                                                AutoSizeText(
+                                                                              minFontSize: 10,
+                                                                              maxFontSize: 25,
+                                                                              maxLines: 1,
+                                                                              teNantModels[index].cname == null
+                                                                                  ? teNantModels[index].cname_q == null
+                                                                                      ? ''
+                                                                                      : '${teNantModels[index].cname_q}'
+                                                                                  : '${teNantModels[index].cname}',
+                                                                              textAlign: TextAlign.left,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: const TextStyle(
+                                                                                  color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //fontWeight: FontWeight.bold,
+                                                                                  fontFamily: Font_.Fonts_T),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(2.0),
+                                                                            child:
+                                                                                Tooltip(
+                                                                              richMessage: TextSpan(
+                                                                                text: teNantModels[index].sname == null
+                                                                                    ? teNantModels[index].sname_q == null
+                                                                                        ? ''
+                                                                                        : '${teNantModels[index].sname_q}'
+                                                                                    : '${teNantModels[index].sname}',
+                                                                                style: const TextStyle(
+                                                                                  color: HomeScreen_Color.Colors_Text1_,
+                                                                                  fontWeight: FontWeight.bold,
+                                                                                  fontFamily: FontWeight_.Fonts_T,
+                                                                                  //fontSize: 10.0
+                                                                                ),
+                                                                              ),
+                                                                              decoration: BoxDecoration(
+                                                                                borderRadius: BorderRadius.circular(5),
+                                                                                color: Colors.grey[200],
+                                                                              ),
+                                                                              child: AutoSizeText(
+                                                                                minFontSize: 10,
+                                                                                maxFontSize: 25,
+                                                                                maxLines: 1,
+                                                                                teNantModels[index].sname == null
+                                                                                    ? teNantModels[index].sname_q == null
+                                                                                        ? ''
+                                                                                        : '${teNantModels[index].sname_q}'
+                                                                                    : '${teNantModels[index].sname}',
+                                                                                textAlign: TextAlign.left,
+                                                                                overflow: TextOverflow.ellipsis,
+                                                                                style: const TextStyle(
+                                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                    //fontWeight: FontWeight.bold,
+                                                                                    fontFamily: Font_.Fonts_T),
+                                                                              ),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(2.0),
+                                                                            child:
+                                                                                AutoSizeText(
+                                                                              minFontSize: 10,
+                                                                              maxFontSize: 25,
+                                                                              maxLines: 1,
+                                                                              '${teNantModels[index].zn}',
+                                                                              textAlign: TextAlign.left,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: const TextStyle(
+                                                                                  color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //fontWeight: FontWeight.bold,
+                                                                                  fontFamily: Font_.Fonts_T),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
                                                                           child:
                                                                               Tooltip(
                                                                             richMessage:
                                                                                 TextSpan(
-                                                                              text: teNantModels[index].sname == null
-                                                                                  ? teNantModels[index].sname_q == null
+                                                                              text: teNantModels[index].ln_c == null
+                                                                                  ? teNantModels[index].ln_q == null
                                                                                       ? ''
-                                                                                      : '${teNantModels[index].sname_q}'
-                                                                                  : '${teNantModels[index].sname}',
+                                                                                      : '${teNantModels[index].ln_q}'
+                                                                                  : '${teNantModels[index].ln_c}',
                                                                               style: const TextStyle(
                                                                                 color: HomeScreen_Color.Colors_Text1_,
                                                                                 fontWeight: FontWeight.bold,
@@ -4463,77 +4744,102 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                               color: Colors.grey[200],
                                                                             ),
                                                                             child:
-                                                                                AutoSizeText(
-                                                                              minFontSize: 10,
-                                                                              maxFontSize: 25,
-                                                                              maxLines: 1,
-                                                                              teNantModels[index].sname == null
-                                                                                  ? teNantModels[index].sname_q == null
-                                                                                      ? ''
-                                                                                      : '${teNantModels[index].sname_q}'
-                                                                                  : '${teNantModels[index].sname}',
-                                                                              textAlign: TextAlign.left,
-                                                                              overflow: TextOverflow.ellipsis,
-                                                                              style: const TextStyle(
-                                                                                  color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                  //fontWeight: FontWeight.bold,
-                                                                                  fontFamily: Font_.Fonts_T),
+                                                                                Padding(
+                                                                              padding: const EdgeInsets.all(2.0),
+                                                                              child: AutoSizeText(
+                                                                                minFontSize: 10,
+                                                                                maxFontSize: 25,
+                                                                                maxLines: 1,
+                                                                                teNantModels[index].ln_c == null
+                                                                                    ? teNantModels[index].ln_q == null
+                                                                                        ? ''
+                                                                                        : '${teNantModels[index].ln_q}'
+                                                                                    : '${teNantModels[index].ln_c}',
+                                                                                textAlign: TextAlign.left,
+                                                                                style: const TextStyle(
+                                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                    //fontWeight: FontWeight.bold,
+                                                                                    fontFamily: Font_.Fonts_T),
+                                                                              ),
                                                                             ),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(2.0),
-                                                                          child:
-                                                                              AutoSizeText(
-                                                                            minFontSize:
-                                                                                10,
-                                                                            maxFontSize:
-                                                                                25,
-                                                                            maxLines:
-                                                                                1,
-                                                                            '${teNantModels[index].zn}',
-                                                                            textAlign:
-                                                                                TextAlign.left,
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            style: const TextStyle(
-                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                //fontWeight: FontWeight.bold,
-                                                                                fontFamily: Font_.Fonts_T),
-                                                                          ),
+                                                                        // Expanded(
+                                                                        //   flex: 1,
+                                                                        //   child:
+                                                                        //       Padding(
+                                                                        //     padding:
+                                                                        //         const EdgeInsets.all(
+                                                                        //             2.0),
+                                                                        //     child:
+                                                                        //         AutoSizeText(
+                                                                        //       minFontSize:
+                                                                        //           10,
+                                                                        //       maxFontSize:
+                                                                        //           25,
+                                                                        //       maxLines:
+                                                                        //           1,
+                                                                        //       teNantModels[index].area_c ==
+                                                                        //               null
+                                                                        //           ? teNantModels[index].area_q == null
+                                                                        //               ? ''
+                                                                        //               : '${teNantModels[index].area_q}'
+                                                                        //           : '${teNantModels[index].area_c}',
+                                                                        //       textAlign:
+                                                                        //           TextAlign.right,
+                                                                        //       overflow:
+                                                                        //           TextOverflow.ellipsis,
+                                                                        //       style: const TextStyle(
+                                                                        //           color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                        //           //fontWeight: FontWeight.bold,
+                                                                        //           fontFamily: Font_.Fonts_T),
+                                                                        //     ),
+                                                                        //   ),
+                                                                        // ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child: Padding(
+                                                                              padding: const EdgeInsets.all(2.0),
+                                                                              child: Translate.TranslateAndSetText(
+                                                                                  teNantModels[index].period == null
+                                                                                      ? teNantModels[index].period_q == null
+                                                                                          ? ''
+                                                                                          : '${teNantModels[index].period_q}  ${teNantModels[index].rtname_q!.substring(3)}'
+                                                                                      : '${teNantModels[index].period}  ${teNantModels[index].rtname!.substring(3)}',
+                                                                                  PeopleChaoScreen_Color.Colors_Text1_,
+                                                                                  TextAlign.end,
+                                                                                  null,
+                                                                                  Font_.Fonts_T,
+                                                                                  14,
+                                                                                  1)
+                                                                              //     AutoSizeText(
+                                                                              //   minFontSize:
+                                                                              //       10,
+                                                                              //   maxFontSize:
+                                                                              //       25,
+                                                                              //   maxLines:
+                                                                              //       1,
+                                                                              //   teNantModels[index].period ==
+                                                                              //           null
+                                                                              //       ? teNantModels[index].period_q == null
+                                                                              //           ? ''
+                                                                              //           : '${teNantModels[index].period_q}  ${teNantModels[index].rtname_q!.substring(3)}'
+                                                                              //       : '${teNantModels[index].period}  ${teNantModels[index].rtname!.substring(3)}',
+                                                                              //   textAlign:
+                                                                              //       TextAlign.end,
+                                                                              //   overflow:
+                                                                              //       TextOverflow.ellipsis,
+                                                                              //   style: const TextStyle(
+                                                                              //       color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                              //       //fontWeight: FontWeight.bold,
+                                                                              //       fontFamily: Font_.Fonts_T),
+                                                                              // ),
+                                                                              ),
                                                                         ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Tooltip(
-                                                                          richMessage:
-                                                                              TextSpan(
-                                                                            text: teNantModels[index].ln_c == null
-                                                                                ? teNantModels[index].ln_q == null
-                                                                                    ? ''
-                                                                                    : '${teNantModels[index].ln_q}'
-                                                                                : '${teNantModels[index].ln_c}',
-                                                                            style:
-                                                                                const TextStyle(
-                                                                              color: HomeScreen_Color.Colors_Text1_,
-                                                                              fontWeight: FontWeight.bold,
-                                                                              fontFamily: FontWeight_.Fonts_T,
-                                                                              //fontSize: 10.0
-                                                                            ),
-                                                                          ),
-                                                                          decoration:
-                                                                              BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(5),
-                                                                            color:
-                                                                                Colors.grey[200],
-                                                                          ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
                                                                           child:
                                                                               Padding(
                                                                             padding:
@@ -4543,12 +4849,13 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                               minFontSize: 10,
                                                                               maxFontSize: 25,
                                                                               maxLines: 1,
-                                                                              teNantModels[index].ln_c == null
-                                                                                  ? teNantModels[index].ln_q == null
+                                                                              teNantModels[index].sdate_q == null
+                                                                                  ? teNantModels[index].sdate == null
                                                                                       ? ''
-                                                                                      : '${teNantModels[index].ln_q}'
-                                                                                  : '${teNantModels[index].ln_c}',
-                                                                              textAlign: TextAlign.left,
+                                                                                      : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].sdate} 00:00:00')).toString()
+                                                                                  : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].sdate_q} 00:00:00')).toString(),
+                                                                              textAlign: TextAlign.end,
+                                                                              overflow: TextOverflow.ellipsis,
                                                                               style: const TextStyle(
                                                                                   color: PeopleChaoScreen_Color.Colors_Text2_,
                                                                                   //fontWeight: FontWeight.bold,
@@ -4556,55 +4863,67 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                             ),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                      // Expanded(
-                                                                      //   flex: 1,
-                                                                      //   child:
-                                                                      //       Padding(
-                                                                      //     padding:
-                                                                      //         const EdgeInsets.all(
-                                                                      //             2.0),
-                                                                      //     child:
-                                                                      //         AutoSizeText(
-                                                                      //       minFontSize:
-                                                                      //           10,
-                                                                      //       maxFontSize:
-                                                                      //           25,
-                                                                      //       maxLines:
-                                                                      //           1,
-                                                                      //       teNantModels[index].area_c ==
-                                                                      //               null
-                                                                      //           ? teNantModels[index].area_q == null
-                                                                      //               ? ''
-                                                                      //               : '${teNantModels[index].area_q}'
-                                                                      //           : '${teNantModels[index].area_c}',
-                                                                      //       textAlign:
-                                                                      //           TextAlign.right,
-                                                                      //       overflow:
-                                                                      //           TextOverflow.ellipsis,
-                                                                      //       style: const TextStyle(
-                                                                      //           color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                      //           //fontWeight: FontWeight.bold,
-                                                                      //           fontFamily: Font_.Fonts_T),
-                                                                      //     ),
-                                                                      //   ),
-                                                                      // ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child: Padding(
-                                                                            padding: const EdgeInsets.all(2.0),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(2.0),
+                                                                            child:
+                                                                                AutoSizeText(
+                                                                              minFontSize: 10,
+                                                                              maxFontSize: 25,
+                                                                              maxLines: 1,
+                                                                              teNantModels[index].ldate_q == null
+                                                                                  ? teNantModels[index].ldate == null
+                                                                                      ? ''
+                                                                                      : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].ldate} 00:00:00')).toString()
+                                                                                  : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].ldate_q} 00:00:00')).toString(),
+                                                                              textAlign: TextAlign.end,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: const TextStyle(
+                                                                                  color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //fontWeight: FontWeight.bold,
+                                                                                  fontFamily: Font_.Fonts_T),
+                                                                            ),
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                const EdgeInsets.all(2.0),
                                                                             child: Translate.TranslateAndSetText(
-                                                                                teNantModels[index].period == null
-                                                                                    ? teNantModels[index].period_q == null
-                                                                                        ? ''
-                                                                                        : '${teNantModels[index].period_q}  ${teNantModels[index].rtname_q!.substring(3)}'
-                                                                                    : '${teNantModels[index].period}  ${teNantModels[index].rtname!.substring(3)}',
-                                                                                PeopleChaoScreen_Color.Colors_Text1_,
-                                                                                TextAlign.end,
+                                                                                teNantModels[index].quantity == '1'
+                                                                                    ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                                        ? 'หมดสัญญา'
+                                                                                        : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                                            ? 'ใกล้หมดสัญญา'
+                                                                                            : 'เช่าอยู่'
+                                                                                    : teNantModels[index].quantity == '2'
+                                                                                        ? 'เสนอราคา'
+                                                                                        : teNantModels[index].quantity == '3'
+                                                                                            ? 'เสนอราคา(มัดจำ)'
+                                                                                            : 'ว่าง',
+                                                                                teNantModels[index].quantity == '1'
+                                                                                    ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                                        ? Colors.red
+                                                                                        : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                                            ? Colors.orange.shade900
+                                                                                            : Colors.black
+                                                                                    : teNantModels[index].quantity == '2'
+                                                                                        ? Colors.blue
+                                                                                        : teNantModels[index].quantity == '3'
+                                                                                            ? Colors.blue
+                                                                                            : Colors.green,
+                                                                                TextAlign.center,
                                                                                 null,
                                                                                 Font_.Fonts_T,
                                                                                 14,
-                                                                                1)
+                                                                                2),
                                                                             //     AutoSizeText(
                                                                             //   minFontSize:
                                                                             //       10,
@@ -4612,314 +4931,199 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                             //       25,
                                                                             //   maxLines:
                                                                             //       1,
-                                                                            //   teNantModels[index].period ==
-                                                                            //           null
-                                                                            //       ? teNantModels[index].period_q == null
-                                                                            //           ? ''
-                                                                            //           : '${teNantModels[index].period_q}  ${teNantModels[index].rtname_q!.substring(3)}'
-                                                                            //       : '${teNantModels[index].period}  ${teNantModels[index].rtname!.substring(3)}',
+                                                                            //   teNantModels[index].quantity ==
+                                                                            //           '1'
+                                                                            //       ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                            //           ? 'หมดสัญญา'
+                                                                            //           : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                            //               ? 'ใกล้หมดสัญญา'
+                                                                            //               : 'เช่าอยู่'
+                                                                            //       : teNantModels[index].quantity == '2'
+                                                                            //           ? 'เสนอราคา'
+                                                                            //           : teNantModels[index].quantity == '3'
+                                                                            //               ? 'เสนอราคา(มัดจำ)'
+                                                                            //               : 'ว่าง',
                                                                             //   textAlign:
                                                                             //       TextAlign.end,
                                                                             //   overflow:
                                                                             //       TextOverflow.ellipsis,
-                                                                            //   style: const TextStyle(
-                                                                            //       color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                            //       //fontWeight: FontWeight.bold,
-                                                                            //       fontFamily: Font_.Fonts_T),
+                                                                            //   style: TextStyle(
+                                                                            //       color: teNantModels[index].quantity == '1'
+                                                                            //           ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
+                                                                            //               ? Colors.red
+                                                                            //               : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
+                                                                            //                   ? Colors.orange.shade900
+                                                                            //                   : Colors.black
+                                                                            //           : teNantModels[index].quantity == '2'
+                                                                            //               ? Colors.blue
+                                                                            //               : teNantModels[index].quantity == '3'
+                                                                            //                   ? Colors.blue
+                                                                            //                   : Colors.green,
+                                                                            //       fontFamily: Font_.Fonts_T
+                                                                            //       //fontSize: 10.0
+                                                                            //       ),
                                                                             // ),
+                                                                          ),
+                                                                        ),
+                                                                        Expanded(
+                                                                          flex:
+                                                                              1,
+                                                                          child:
+                                                                              Padding(
+                                                                            padding:
+                                                                                EdgeInsets.all(2.0),
+                                                                            child:
+                                                                                AutoSizeText(
+                                                                              minFontSize: 10,
+                                                                              maxFontSize: 25,
+                                                                              maxLines: 1,
+                                                                              teNantModels[index].wnote == null ? '' : '${teNantModels[index].wnote}',
+                                                                              textAlign: TextAlign.center,
+                                                                              overflow: TextOverflow.ellipsis,
+                                                                              style: const TextStyle(
+                                                                                  color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                  //fontWeight: FontWeight.bold,
+                                                                                  fontFamily: Font_.Fonts_T),
                                                                             ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(2.0),
-                                                                          child:
-                                                                              AutoSizeText(
-                                                                            minFontSize:
-                                                                                10,
-                                                                            maxFontSize:
-                                                                                25,
-                                                                            maxLines:
-                                                                                1,
-                                                                            teNantModels[index].sdate_q == null
-                                                                                ? teNantModels[index].sdate == null
-                                                                                    ? ''
-                                                                                    : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].sdate} 00:00:00')).toString()
-                                                                                : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].sdate_q} 00:00:00')).toString(),
-                                                                            textAlign:
-                                                                                TextAlign.end,
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            style: const TextStyle(
-                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                //fontWeight: FontWeight.bold,
-                                                                                fontFamily: Font_.Fonts_T),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(2.0),
-                                                                          child:
-                                                                              AutoSizeText(
-                                                                            minFontSize:
-                                                                                10,
-                                                                            maxFontSize:
-                                                                                25,
-                                                                            maxLines:
-                                                                                1,
-                                                                            teNantModels[index].ldate_q == null
-                                                                                ? teNantModels[index].ldate == null
-                                                                                    ? ''
-                                                                                    : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].ldate} 00:00:00')).toString()
-                                                                                : DateFormat('dd-MM-yyyy').format(DateTime.parse('${teNantModels[index].ldate_q} 00:00:00')).toString(),
-                                                                            textAlign:
-                                                                                TextAlign.end,
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            style: const TextStyle(
-                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                //fontWeight: FontWeight.bold,
-                                                                                fontFamily: Font_.Fonts_T),
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
-                                                                          padding:
-                                                                              const EdgeInsets.all(2.0),
-                                                                          child: Translate.TranslateAndSetText(
-                                                                              teNantModels[index].quantity == '1'
-                                                                                  ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                                      ? 'หมดสัญญา'
-                                                                                      : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                                          ? 'ใกล้หมดสัญญา'
-                                                                                          : 'เช่าอยู่'
-                                                                                  : teNantModels[index].quantity == '2'
-                                                                                      ? 'เสนอราคา'
-                                                                                      : teNantModels[index].quantity == '3'
-                                                                                          ? 'เสนอราคา(มัดจำ)'
-                                                                                          : 'ว่าง',
-                                                                              teNantModels[index].quantity == '1'
-                                                                                  ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                                      ? Colors.red
-                                                                                      : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                                          ? Colors.orange.shade900
-                                                                                          : Colors.black
-                                                                                  : teNantModels[index].quantity == '2'
-                                                                                      ? Colors.blue
-                                                                                      : teNantModels[index].quantity == '3'
-                                                                                          ? Colors.blue
-                                                                                          : Colors.green,
-                                                                              TextAlign.center,
-                                                                              null,
-                                                                              Font_.Fonts_T,
-                                                                              14,
-                                                                              2),
-                                                                          //     AutoSizeText(
-                                                                          //   minFontSize:
-                                                                          //       10,
-                                                                          //   maxFontSize:
-                                                                          //       25,
-                                                                          //   maxLines:
-                                                                          //       1,
-                                                                          //   teNantModels[index].quantity ==
-                                                                          //           '1'
-                                                                          //       ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                          //           ? 'หมดสัญญา'
-                                                                          //           : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                          //               ? 'ใกล้หมดสัญญา'
-                                                                          //               : 'เช่าอยู่'
-                                                                          //       : teNantModels[index].quantity == '2'
-                                                                          //           ? 'เสนอราคา'
-                                                                          //           : teNantModels[index].quantity == '3'
-                                                                          //               ? 'เสนอราคา(มัดจำ)'
-                                                                          //               : 'ว่าง',
-                                                                          //   textAlign:
-                                                                          //       TextAlign.end,
-                                                                          //   overflow:
-                                                                          //       TextOverflow.ellipsis,
-                                                                          //   style: TextStyle(
-                                                                          //       color: teNantModels[index].quantity == '1'
-                                                                          //           ? datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) == true
-                                                                          //               ? Colors.red
-                                                                          //               : datex.isAfter(DateTime.parse('${teNantModels[index].ldate} 00:00:00.000').subtract(Duration(days: open_set_date))) == true
-                                                                          //                   ? Colors.orange.shade900
-                                                                          //                   : Colors.black
-                                                                          //           : teNantModels[index].quantity == '2'
-                                                                          //               ? Colors.blue
-                                                                          //               : teNantModels[index].quantity == '3'
-                                                                          //                   ? Colors.blue
-                                                                          //                   : Colors.green,
-                                                                          //       fontFamily: Font_.Fonts_T
-                                                                          //       //fontSize: 10.0
-                                                                          //       ),
-                                                                          // ),
-                                                                        ),
-                                                                      ),
-                                                                      Expanded(
-                                                                        flex: 1,
-                                                                        child:
-                                                                            Padding(
+                                                                        Padding(
                                                                           padding:
                                                                               EdgeInsets.all(2.0),
                                                                           child:
-                                                                              AutoSizeText(
-                                                                            minFontSize:
-                                                                                10,
-                                                                            maxFontSize:
-                                                                                25,
-                                                                            maxLines:
-                                                                                1,
-                                                                            teNantModels[index].wnote == null
-                                                                                ? ''
-                                                                                : '${teNantModels[index].wnote}',
-                                                                            textAlign:
-                                                                                TextAlign.center,
-                                                                            overflow:
-                                                                                TextOverflow.ellipsis,
-                                                                            style: const TextStyle(
-                                                                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                //fontWeight: FontWeight.bold,
-                                                                                fontFamily: Font_.Fonts_T),
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                      Padding(
-                                                                        padding:
-                                                                            EdgeInsets.all(2.0),
-                                                                        child:
-                                                                            SizedBox(
-                                                                          width:
-                                                                              40,
-                                                                          height:
-                                                                              30,
-                                                                          child:
-                                                                              Align(
-                                                                            alignment:
-                                                                                Alignment.centerRight,
+                                                                              SizedBox(
+                                                                            width:
+                                                                                40,
+                                                                            height:
+                                                                                30,
                                                                             child:
-                                                                                InkWell(
-                                                                              onTap: () {
-                                                                                if (renTal_lavel <= 2) {
-                                                                                  infomation();
-                                                                                } else {
-                                                                                  setState(() {
-                                                                                    tappedIndex_ = index.toString();
-                                                                                    if (ser_indexShow == index) {
-                                                                                      quotxSelectModels_Select.clear();
-                                                                                      ser_indexShow = null;
-                                                                                    } else {
-                                                                                      red_quotx_Select(index);
-                                                                                      ser_indexShow = index;
-                                                                                    }
-                                                                                  });
-                                                                                }
-                                                                              },
-                                                                              child: CircleAvatar(
-                                                                                  backgroundColor: (ser_indexShow == index) ? Colors.red[700]!.withOpacity(0.5) : Colors.grey[600]!.withOpacity(0.5),
-                                                                                  child: Icon(
-                                                                                    (ser_indexShow == index) ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down_outlined,
-                                                                                    color: Colors.white,
-                                                                                    size: 20,
-                                                                                  )),
+                                                                                Align(
+                                                                              alignment: Alignment.centerRight,
+                                                                              child: InkWell(
+                                                                                onTap: () {
+                                                                                  if (renTal_lavel <= 2) {
+                                                                                    infomation();
+                                                                                  } else {
+                                                                                    setState(() {
+                                                                                      tappedIndex_ = index.toString();
+                                                                                      if (ser_indexShow == index) {
+                                                                                        quotxSelectModels_Select.clear();
+                                                                                        ser_indexShow = null;
+                                                                                      } else {
+                                                                                        red_quotx_Select(index);
+                                                                                        ser_indexShow = index;
+                                                                                      }
+                                                                                    });
+                                                                                  }
+                                                                                },
+                                                                                child: CircleAvatar(
+                                                                                    backgroundColor: (ser_indexShow == index) ? Colors.red[700]!.withOpacity(0.5) : Colors.grey[600]!.withOpacity(0.5),
+                                                                                    child: Icon(
+                                                                                      (ser_indexShow == index) ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down_outlined,
+                                                                                      color: Colors.white,
+                                                                                      size: 20,
+                                                                                    )),
+                                                                              ),
                                                                             ),
                                                                           ),
                                                                         ),
-                                                                      ),
-                                                                    ],
+                                                                      ],
+                                                                    ),
                                                                   ),
                                                                 ),
                                                               ),
                                                             ),
-                                                          ),
-                                                          if (ser_indexShow ==
-                                                              index)
-                                                            SizedBox(
-                                                              child: Padding(
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                            .all(
-                                                                        8.0),
-                                                                child: Column(
-                                                                  children: [
-                                                                    Container(
-                                                                      decoration:
-                                                                          BoxDecoration(
-                                                                        color: Colors
-                                                                            .green[100],
-                                                                        borderRadius: BorderRadius.only(
-                                                                            topLeft:
-                                                                                Radius.circular(8),
-                                                                            topRight: Radius.circular(8),
-                                                                            bottomLeft: Radius.circular(0),
-                                                                            bottomRight: Radius.circular(0)),
-                                                                      ),
-                                                                      padding:
-                                                                          const EdgeInsets.all(
-                                                                              2.0),
-                                                                      child:
-                                                                          Row(
-                                                                        children: [
-                                                                          Expanded(
-                                                                            flex:
-                                                                                1,
-                                                                            child:
-                                                                                Padding(
-                                                                              padding: EdgeInsets.all(2.0),
-                                                                              child: Translate.TranslateAndSetText('งวด', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                            ),
-                                                                          ),
-                                                                          Expanded(
-                                                                            flex:
-                                                                                1,
-                                                                            child:
-                                                                                Padding(
-                                                                              padding: EdgeInsets.all(2.0),
-                                                                              child: Translate.TranslateAndSetText('วันที่', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                            ),
-                                                                          ),
-                                                                          Expanded(
-                                                                            flex:
-                                                                                1,
-                                                                            child:
-                                                                                Padding(
-                                                                              padding: EdgeInsets.all(2.0),
-                                                                              child: Translate.TranslateAndSetText('รายการ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                            ),
-                                                                          ),
-                                                                          Expanded(
-                                                                            flex:
-                                                                                1,
-                                                                            child:
-                                                                                Padding(
-                                                                              padding: EdgeInsets.all(2.0),
-                                                                              child: Translate.TranslateAndSetText('ยอด/งวด', ReportScreen_Color.Colors_Text1_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                            ),
-                                                                          ),
-                                                                          Expanded(
-                                                                            flex:
-                                                                                1,
-                                                                            child:
-                                                                                Padding(
-                                                                              padding: EdgeInsets.all(2.0),
-                                                                              child: Translate.TranslateAndSetText('ยอด', ReportScreen_Color.Colors_Text1_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                            ),
-                                                                          ),
-                                                                        ],
-                                                                      ),
-                                                                    ),
-                                                                    if (quotxSelectModels_Select
-                                                                            .length ==
-                                                                        0)
+                                                            if (ser_indexShow ==
+                                                                index)
+                                                              SizedBox(
+                                                                child: Padding(
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .all(
+                                                                          8.0),
+                                                                  child: Column(
+                                                                    children: [
                                                                       Container(
+                                                                        decoration:
+                                                                            BoxDecoration(
+                                                                          color:
+                                                                              Colors.green[100],
+                                                                          borderRadius: BorderRadius.only(
+                                                                              topLeft: Radius.circular(8),
+                                                                              topRight: Radius.circular(8),
+                                                                              bottomLeft: Radius.circular(0),
+                                                                              bottomRight: Radius.circular(0)),
+                                                                        ),
+                                                                        padding:
+                                                                            const EdgeInsets.all(2.0),
+                                                                        child:
+                                                                            Row(
+                                                                          children: [
+                                                                            Expanded(
+                                                                              flex: 1,
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.all(2.0),
+                                                                                child: Translate.TranslateAndSetText('งวด', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                              ),
+                                                                            ),
+                                                                            Expanded(
+                                                                              flex: 1,
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.all(2.0),
+                                                                                child: Translate.TranslateAndSetText('วันที่', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                              ),
+                                                                            ),
+                                                                            Expanded(
+                                                                              flex: 1,
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.all(2.0),
+                                                                                child: Translate.TranslateAndSetText('รายการ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                              ),
+                                                                            ),
+                                                                            Expanded(
+                                                                              flex: 1,
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.all(2.0),
+                                                                                child: Translate.TranslateAndSetText('ยอด/งวด', ReportScreen_Color.Colors_Text1_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                              ),
+                                                                            ),
+                                                                            Expanded(
+                                                                              flex: 1,
+                                                                              child: Padding(
+                                                                                padding: EdgeInsets.all(2.0),
+                                                                                child: Translate.TranslateAndSetText('ยอด', ReportScreen_Color.Colors_Text1_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                      if (quotxSelectModels_Select
+                                                                              .length ==
+                                                                          0)
+                                                                        Container(
+                                                                            decoration:
+                                                                                BoxDecoration(
+                                                                              color: Colors.green[50],
+                                                                              border: const Border(
+                                                                                bottom: BorderSide(
+                                                                                  color: Colors.black12,
+                                                                                  width: 1,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                            child: ListTile(
+                                                                                title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                                                              Expanded(
+                                                                                flex: 1,
+                                                                                child: Translate.TranslateAndSetText('ไม่พบข้อมูล', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                              ),
+                                                                            ]))),
+                                                                      for (int index2 =
+                                                                              0;
+                                                                          index2 <
+                                                                              quotxSelectModels_Select.length;
+                                                                          index2++)
+                                                                        Container(
                                                                           decoration:
                                                                               BoxDecoration(
                                                                             color:
@@ -4933,89 +5137,35 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                             ),
                                                                           ),
                                                                           child: ListTile(
-                                                                              title: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                                                                            Expanded(
-                                                                              flex: 1,
-                                                                              child: Translate.TranslateAndSetText('ไม่พบข้อมูล', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                            ),
-                                                                          ]))),
-                                                                    for (int index2 =
-                                                                            0;
-                                                                        index2 <
-                                                                            quotxSelectModels_Select.length;
-                                                                        index2++)
-                                                                      Container(
-                                                                        decoration:
-                                                                            BoxDecoration(
-                                                                          color:
-                                                                              Colors.green[50],
-                                                                          border:
-                                                                              const Border(
-                                                                            bottom:
-                                                                                BorderSide(
-                                                                              color: Colors.black12,
-                                                                              width: 1,
-                                                                            ),
-                                                                          ),
-                                                                        ),
-                                                                        child: ListTile(
-                                                                            title: Row(
-                                                                          mainAxisAlignment:
-                                                                              MainAxisAlignment.center,
-                                                                          children: [
-                                                                            Expanded(
-                                                                              flex: 1,
-                                                                              child: Translate.TranslateAndSetText('${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)', ReportScreen_Color.Colors_Text1_, TextAlign.start, null, Font_.Fonts_T, 14, 1),
-                                                                              //     AutoSizeText(
-                                                                              //   maxLines:
-                                                                              //       2,
-                                                                              //   minFontSize:
-                                                                              //       8,
-                                                                              //   // maxFontSize: 15,
-                                                                              //   '${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)',
-                                                                              //   textAlign:
-                                                                              //       TextAlign.start,
-                                                                              //   style: const TextStyle(
-                                                                              //       color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                              //       //fontWeight: FontWeight.bold,
-                                                                              //       fontFamily: Font_.Fonts_T),
-                                                                              // ),
-                                                                            ),
-                                                                            Expanded(
-                                                                              flex: 1,
-                                                                              child: AutoSizeText(
-                                                                                maxLines: 2,
-                                                                                minFontSize: 8,
-                                                                                // maxFontSize: 15,
-                                                                                '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].sdate!} 00:00:00'))} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].ldate!} 00:00:00'))}',
-                                                                                textAlign: TextAlign.start,
-                                                                                style: const TextStyle(
-                                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                    //fontWeight: FontWeight.bold,
-                                                                                    fontFamily: Font_.Fonts_T),
+                                                                              title: Row(
+                                                                            mainAxisAlignment:
+                                                                                MainAxisAlignment.center,
+                                                                            children: [
+                                                                              Expanded(
+                                                                                flex: 1,
+                                                                                child: Translate.TranslateAndSetText('${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)', ReportScreen_Color.Colors_Text1_, TextAlign.start, null, Font_.Fonts_T, 14, 1),
+                                                                                //     AutoSizeText(
+                                                                                //   maxLines:
+                                                                                //       2,
+                                                                                //   minFontSize:
+                                                                                //       8,
+                                                                                //   // maxFontSize: 15,
+                                                                                //   '${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)',
+                                                                                //   textAlign:
+                                                                                //       TextAlign.start,
+                                                                                //   style: const TextStyle(
+                                                                                //       color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                //       //fontWeight: FontWeight.bold,
+                                                                                //       fontFamily: Font_.Fonts_T),
+                                                                                // ),
                                                                               ),
-                                                                            ),
-                                                                            Expanded(
-                                                                              flex: 1,
-                                                                              child: Tooltip(
-                                                                                richMessage: TextSpan(
-                                                                                  text: '${quotxSelectModels_Select[index2].expname}',
-                                                                                  style: const TextStyle(
-                                                                                    color: HomeScreen_Color.Colors_Text1_,
-                                                                                    fontWeight: FontWeight.bold,
-                                                                                    fontFamily: FontWeight_.Fonts_T,
-                                                                                    //fontSize: 10.0
-                                                                                  ),
-                                                                                ),
-                                                                                decoration: BoxDecoration(
-                                                                                  borderRadius: BorderRadius.circular(5),
-                                                                                  color: Colors.grey[200],
-                                                                                ),
+                                                                              Expanded(
+                                                                                flex: 1,
                                                                                 child: AutoSizeText(
                                                                                   maxLines: 2,
                                                                                   minFontSize: 8,
                                                                                   // maxFontSize: 15,
-                                                                                  '${quotxSelectModels_Select[index2].expname}',
+                                                                                  '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].sdate!} 00:00:00'))} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].ldate!} 00:00:00'))}',
                                                                                   textAlign: TextAlign.start,
                                                                                   style: const TextStyle(
                                                                                       color: PeopleChaoScreen_Color.Colors_Text2_,
@@ -5023,443 +5173,537 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                                       fontFamily: Font_.Fonts_T),
                                                                                 ),
                                                                               ),
-                                                                            ),
-                                                                            quotxSelectModels_Select[index2].ele_ty == '0'
-                                                                                ? Expanded(
-                                                                                    flex: 1,
-                                                                                    child: Translate.TranslateAndSetText(quotxSelectModels_Select[index2].qty == '0.00' ? '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))} / งวด' : '${nFormat.format(double.parse(quotxSelectModels_Select[index2].qty!))} / หน่วย', PeopleChaoScreen_Color.Colors_Text2_, TextAlign.end, null, Font_.Fonts_T, 14, 1),
-                                                                                    //  AutoSizeText(
-                                                                                    //   maxLines: 2,
-                                                                                    //   minFontSize: 8,
-                                                                                    //   // maxFontSize: 15,
-                                                                                    //   quotxSelectModels_Select[index2].qty == '0.00' ? '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))} / งวด' : '${nFormat.format(double.parse(quotxSelectModels_Select[index2].qty!))} / หน่วย',
-                                                                                    //   // '${nFormat.format(double.parse(quotxSelectModels[index].total!))}',
-                                                                                    //   textAlign: TextAlign.end,
-                                                                                    //   style: const TextStyle(
-                                                                                    //       color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                    //       //fontWeight: FontWeight.bold,
-                                                                                    //       fontFamily: Font_.Fonts_T),
-                                                                                    // ),
-                                                                                  )
-                                                                                : Expanded(
-                                                                                    flex: 1,
-                                                                                    child: Translate.TranslateAndSetText('อัตราพิเศษ', ReportScreen_Color.Colors_Text1_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                  ),
-                                                                            quotxSelectModels_Select[index2].ele_ty == '0'
-                                                                                ? Expanded(
-                                                                                    flex: 1,
-                                                                                    child: AutoSizeText(
-                                                                                      maxLines: 2,
-                                                                                      minFontSize: 8,
-                                                                                      // maxFontSize: 15,
-                                                                                      '${nFormat.format(int.parse(quotxSelectModels_Select[index2].term!) * double.parse(quotxSelectModels_Select[index2].total!))}',
-                                                                                      textAlign: TextAlign.end,
-                                                                                      style: const TextStyle(
-                                                                                          color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                                          //fontWeight: FontWeight.bold,
-                                                                                          fontFamily: Font_.Fonts_T),
+                                                                              Expanded(
+                                                                                flex: 1,
+                                                                                child: Tooltip(
+                                                                                  richMessage: TextSpan(
+                                                                                    text: '${quotxSelectModels_Select[index2].expname}',
+                                                                                    style: const TextStyle(
+                                                                                      color: HomeScreen_Color.Colors_Text1_,
+                                                                                      fontWeight: FontWeight.bold,
+                                                                                      fontFamily: FontWeight_.Fonts_T,
+                                                                                      //fontSize: 10.0
                                                                                     ),
-                                                                                  )
-                                                                                : Expanded(
-                                                                                    flex: 1,
-                                                                                    child: GestureDetector(
-                                                                                      onTap: () {
-                                                                                        showcountmiter(index2).then((value) => showDialog(
-                                                                                            context: context,
-                                                                                            builder: (_) {
-                                                                                              return Dialog(
-                                                                                                child: Container(
-                                                                                                  width: MediaQuery.of(context).size.width * 0.5,
-                                                                                                  height: MediaQuery.of(context).size.width * 0.2,
-                                                                                                  child: SingleChildScrollView(
-                                                                                                    child: Column(
-                                                                                                      children: [
-                                                                                                        Row(
-                                                                                                          children: [
-                                                                                                            Expanded(
-                                                                                                              child: Padding(
-                                                                                                                padding: const EdgeInsets.all(15.0),
-                                                                                                                child: Translate.TranslateAndSetText('อัตราการคำนวณปัจจุบัน', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                  ),
+                                                                                  decoration: BoxDecoration(
+                                                                                    borderRadius: BorderRadius.circular(5),
+                                                                                    color: Colors.grey[200],
+                                                                                  ),
+                                                                                  child: AutoSizeText(
+                                                                                    maxLines: 2,
+                                                                                    minFontSize: 8,
+                                                                                    // maxFontSize: 15,
+                                                                                    '${quotxSelectModels_Select[index2].expname}',
+                                                                                    textAlign: TextAlign.start,
+                                                                                    style: const TextStyle(
+                                                                                        color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                        //fontWeight: FontWeight.bold,
+                                                                                        fontFamily: Font_.Fonts_T),
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                              quotxSelectModels_Select[index2].ele_ty == '0'
+                                                                                  ? Expanded(
+                                                                                      flex: 1,
+                                                                                      child: Translate.TranslateAndSetText(quotxSelectModels_Select[index2].qty == '0.00' ? '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))} / งวด' : '${nFormat.format(double.parse(quotxSelectModels_Select[index2].qty!))} / หน่วย', PeopleChaoScreen_Color.Colors_Text2_, TextAlign.end, null, Font_.Fonts_T, 14, 1),
+                                                                                      //  AutoSizeText(
+                                                                                      //   maxLines: 2,
+                                                                                      //   minFontSize: 8,
+                                                                                      //   // maxFontSize: 15,
+                                                                                      //   quotxSelectModels_Select[index2].qty == '0.00' ? '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))} / งวด' : '${nFormat.format(double.parse(quotxSelectModels_Select[index2].qty!))} / หน่วย',
+                                                                                      //   // '${nFormat.format(double.parse(quotxSelectModels[index].total!))}',
+                                                                                      //   textAlign: TextAlign.end,
+                                                                                      //   style: const TextStyle(
+                                                                                      //       color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                      //       //fontWeight: FontWeight.bold,
+                                                                                      //       fontFamily: Font_.Fonts_T),
+                                                                                      // ),
+                                                                                    )
+                                                                                  : Expanded(
+                                                                                      flex: 1,
+                                                                                      child: Translate.TranslateAndSetText('อัตราพิเศษ', ReportScreen_Color.Colors_Text1_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                    ),
+                                                                              quotxSelectModels_Select[index2].ele_ty == '0'
+                                                                                  ? Expanded(
+                                                                                      flex: 1,
+                                                                                      child: AutoSizeText(
+                                                                                        maxLines: 2,
+                                                                                        minFontSize: 8,
+                                                                                        // maxFontSize: 15,
+                                                                                        '${nFormat.format(int.parse(quotxSelectModels_Select[index2].term!) * double.parse(quotxSelectModels_Select[index2].total!))}',
+                                                                                        textAlign: TextAlign.end,
+                                                                                        style: const TextStyle(
+                                                                                            color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                                            //fontWeight: FontWeight.bold,
+                                                                                            fontFamily: Font_.Fonts_T),
+                                                                                      ),
+                                                                                    )
+                                                                                  : Expanded(
+                                                                                      flex: 1,
+                                                                                      child: GestureDetector(
+                                                                                        onTap: () {
+                                                                                          showcountmiter(index2).then((value) => showDialog(
+                                                                                              context: context,
+                                                                                              builder: (_) {
+                                                                                                return Dialog(
+                                                                                                  child: Container(
+                                                                                                    width: MediaQuery.of(context).size.width * 0.5,
+                                                                                                    height: MediaQuery.of(context).size.width * 0.2,
+                                                                                                    child: SingleChildScrollView(
+                                                                                                      child: Column(
+                                                                                                        children: [
+                                                                                                          Row(
+                                                                                                            children: [
+                                                                                                              Expanded(
+                                                                                                                child: Padding(
+                                                                                                                  padding: const EdgeInsets.all(15.0),
+                                                                                                                  child: Translate.TranslateAndSetText('อัตราการคำนวณปัจจุบัน', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                ),
                                                                                                               ),
-                                                                                                            ),
-                                                                                                          ],
-                                                                                                        ),
-                                                                                                        Divider(),
-                                                                                                        (double.parse(electricityModels[0].eleMitOne!) + double.parse(electricityModels[0].eleGobOne!)) == 0.00
-                                                                                                            ? SizedBox()
-                                                                                                            : Row(
-                                                                                                                children: [
-                                                                                                                  Expanded(flex: 1, child: Text('')),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText('หน่วยที่ 0 - ${electricityModels[0].eleOne}', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitOne!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Text(
-                                                                                                                      double.parse(electricityModels[0].eleMitOne!) == 0.00 ? '${electricityModels[0].eleGobOne}' : '${electricityModels[0].eleMitOne}',
-                                                                                                                      textAlign: TextAlign.end,
-                                                                                                                      style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                            ],
+                                                                                                          ),
+                                                                                                          Divider(),
+                                                                                                          (double.parse(electricityModels[0].eleMitOne!) + double.parse(electricityModels[0].eleGobOne!)) == 0.00
+                                                                                                              ? SizedBox()
+                                                                                                              : Row(
+                                                                                                                  children: [
+                                                                                                                    Expanded(flex: 1, child: Text('')),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText('หน่วยที่ 0 - ${electricityModels[0].eleOne}', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
                                                                                                                     ),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 1,
-                                                                                                                    child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                ],
-                                                                                                              ),
-                                                                                                        SizedBox(
-                                                                                                          height: 10,
-                                                                                                        ),
-                                                                                                        (double.parse(electricityModels[0].eleMitTwo!) + double.parse(electricityModels[0].eleGobTwo!)) == 0.00
-                                                                                                            ? SizedBox()
-                                                                                                            : Row(
-                                                                                                                children: [
-                                                                                                                  Expanded(flex: 1, child: Text('')),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleOne!) + 1} - ${electricityModels[0].eleTwo}', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitTwo!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Text(
-                                                                                                                      double.parse(electricityModels[0].eleMitTwo!) == 0.00 ? '${electricityModels[0].eleGobTwo}' : '${electricityModels[0].eleMitTwo}',
-                                                                                                                      textAlign: TextAlign.end,
-                                                                                                                      style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitOne!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
                                                                                                                     ),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 1,
-                                                                                                                    child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                ],
-                                                                                                              ),
-                                                                                                        SizedBox(
-                                                                                                          height: 10,
-                                                                                                        ),
-                                                                                                        (double.parse(electricityModels[0].eleMitThree!) + double.parse(electricityModels[0].eleGobThree!)) == 0.00
-                                                                                                            ? SizedBox()
-                                                                                                            : Row(
-                                                                                                                children: [
-                                                                                                                  Expanded(flex: 1, child: Text('')),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleTwo!) + 1} - ${electricityModels[0].eleThree}', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitThree!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Text(
-                                                                                                                      double.parse(electricityModels[0].eleMitThree!) == 0.00 ? '${electricityModels[0].eleGobThree}' : '${electricityModels[0].eleMitThree}',
-                                                                                                                      textAlign: TextAlign.end,
-                                                                                                                      style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Text(
+                                                                                                                        double.parse(electricityModels[0].eleMitOne!) == 0.00 ? '${electricityModels[0].eleGobOne}' : '${electricityModels[0].eleMitOne}',
+                                                                                                                        textAlign: TextAlign.end,
+                                                                                                                        style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                      ),
                                                                                                                     ),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 1,
-                                                                                                                    child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                ],
-                                                                                                              ),
-                                                                                                        SizedBox(
-                                                                                                          height: 10,
-                                                                                                        ),
-                                                                                                        (double.parse(electricityModels[0].eleMitTour!) + double.parse(electricityModels[0].eleGobTour!)) == 0.00
-                                                                                                            ? SizedBox()
-                                                                                                            : Row(
-                                                                                                                children: [
-                                                                                                                  Expanded(flex: 1, child: Text('')),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleThree!) + 1} - ${electricityModels[0].eleTour}', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitTour!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Text(
-                                                                                                                      double.parse(electricityModels[0].eleMitTour!) == 0.00 ? '${electricityModels[0].eleGobTour}' : '${electricityModels[0].eleMitTour}',
-                                                                                                                      textAlign: TextAlign.end,
-                                                                                                                      style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 1,
+                                                                                                                      child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
                                                                                                                     ),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 1,
-                                                                                                                    child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                ],
-                                                                                                              ),
-                                                                                                        SizedBox(
-                                                                                                          height: 10,
-                                                                                                        ),
-                                                                                                        (double.parse(electricityModels[0].eleMitFive!) + double.parse(electricityModels[0].eleGobFive!)) == 0.00
-                                                                                                            ? SizedBox()
-                                                                                                            : Row(
-                                                                                                                children: [
-                                                                                                                  Expanded(flex: 1, child: Text('')),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleTour!) + 1} - ${electricityModels[0].eleFive}', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitFive!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Text(
-                                                                                                                      double.parse(electricityModels[0].eleMitFive!) == 0.00 ? '${electricityModels[0].eleGobFive}' : '${electricityModels[0].eleMitFive}',
-                                                                                                                      textAlign: TextAlign.end,
-                                                                                                                      style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                          SizedBox(
+                                                                                                            height: 10,
+                                                                                                          ),
+                                                                                                          (double.parse(electricityModels[0].eleMitTwo!) + double.parse(electricityModels[0].eleGobTwo!)) == 0.00
+                                                                                                              ? SizedBox()
+                                                                                                              : Row(
+                                                                                                                  children: [
+                                                                                                                    Expanded(flex: 1, child: Text('')),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleOne!) + 1} - ${electricityModels[0].eleTwo}', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
                                                                                                                     ),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 1,
-                                                                                                                    child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                ],
-                                                                                                              ),
-                                                                                                        SizedBox(
-                                                                                                          height: 10,
-                                                                                                        ),
-                                                                                                        (double.parse(electricityModels[0].eleMitSix!) + double.parse(electricityModels[0].eleGobSix!)) == 0.00
-                                                                                                            ? SizedBox()
-                                                                                                            : Row(
-                                                                                                                children: [
-                                                                                                                  Expanded(flex: 1, child: Text('')),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText('หน่วยที่ ${electricityModels[0].eleSix} ขึ้นไป', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitSix!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 2,
-                                                                                                                    child: Text(
-                                                                                                                      double.parse(electricityModels[0].eleMitSix!) == 0.00 ? '${electricityModels[0].eleGobSix}' : '${electricityModels[0].eleMitSix}',
-                                                                                                                      textAlign: TextAlign.end,
-                                                                                                                      style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitTwo!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
                                                                                                                     ),
-                                                                                                                  ),
-                                                                                                                  Expanded(
-                                                                                                                    flex: 1,
-                                                                                                                    child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                                  ),
-                                                                                                                ],
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Text(
+                                                                                                                        double.parse(electricityModels[0].eleMitTwo!) == 0.00 ? '${electricityModels[0].eleGobTwo}' : '${electricityModels[0].eleMitTwo}',
+                                                                                                                        textAlign: TextAlign.end,
+                                                                                                                        style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 1,
+                                                                                                                      child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                          SizedBox(
+                                                                                                            height: 10,
+                                                                                                          ),
+                                                                                                          (double.parse(electricityModels[0].eleMitThree!) + double.parse(electricityModels[0].eleGobThree!)) == 0.00
+                                                                                                              ? SizedBox()
+                                                                                                              : Row(
+                                                                                                                  children: [
+                                                                                                                    Expanded(flex: 1, child: Text('')),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleTwo!) + 1} - ${electricityModels[0].eleThree}', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitThree!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Text(
+                                                                                                                        double.parse(electricityModels[0].eleMitThree!) == 0.00 ? '${electricityModels[0].eleGobThree}' : '${electricityModels[0].eleMitThree}',
+                                                                                                                        textAlign: TextAlign.end,
+                                                                                                                        style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 1,
+                                                                                                                      child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                          SizedBox(
+                                                                                                            height: 10,
+                                                                                                          ),
+                                                                                                          (double.parse(electricityModels[0].eleMitTour!) + double.parse(electricityModels[0].eleGobTour!)) == 0.00
+                                                                                                              ? SizedBox()
+                                                                                                              : Row(
+                                                                                                                  children: [
+                                                                                                                    Expanded(flex: 1, child: Text('')),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleThree!) + 1} - ${electricityModels[0].eleTour}', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitTour!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Text(
+                                                                                                                        double.parse(electricityModels[0].eleMitTour!) == 0.00 ? '${electricityModels[0].eleGobTour}' : '${electricityModels[0].eleMitTour}',
+                                                                                                                        textAlign: TextAlign.end,
+                                                                                                                        style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 1,
+                                                                                                                      child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                          SizedBox(
+                                                                                                            height: 10,
+                                                                                                          ),
+                                                                                                          (double.parse(electricityModels[0].eleMitFive!) + double.parse(electricityModels[0].eleGobFive!)) == 0.00
+                                                                                                              ? SizedBox()
+                                                                                                              : Row(
+                                                                                                                  children: [
+                                                                                                                    Expanded(flex: 1, child: Text('')),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText('หน่วยที่ ${int.parse(electricityModels[0].eleTour!) + 1} - ${electricityModels[0].eleFive}', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitFive!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Text(
+                                                                                                                        double.parse(electricityModels[0].eleMitFive!) == 0.00 ? '${electricityModels[0].eleGobFive}' : '${electricityModels[0].eleMitFive}',
+                                                                                                                        textAlign: TextAlign.end,
+                                                                                                                        style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 1,
+                                                                                                                      child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                          SizedBox(
+                                                                                                            height: 10,
+                                                                                                          ),
+                                                                                                          (double.parse(electricityModels[0].eleMitSix!) + double.parse(electricityModels[0].eleGobSix!)) == 0.00
+                                                                                                              ? SizedBox()
+                                                                                                              : Row(
+                                                                                                                  children: [
+                                                                                                                    Expanded(flex: 1, child: Text('')),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText('หน่วยที่ ${electricityModels[0].eleSix} ขึ้นไป', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Translate.TranslateAndSetText(double.parse(electricityModels[0].eleMitSix!) == 0.00 ? 'เหมาจ่าย' : 'หน่วยละ', ReportScreen_Color.Colors_Text1_, TextAlign.start, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 2,
+                                                                                                                      child: Text(
+                                                                                                                        double.parse(electricityModels[0].eleMitSix!) == 0.00 ? '${electricityModels[0].eleGobSix}' : '${electricityModels[0].eleMitSix}',
+                                                                                                                        textAlign: TextAlign.end,
+                                                                                                                        style: const TextStyle(color: PeopleChaoScreen_Color.Colors_Text2_, fontFamily: Font_.Fonts_T),
+                                                                                                                      ),
+                                                                                                                    ),
+                                                                                                                    Expanded(
+                                                                                                                      flex: 1,
+                                                                                                                      child: Translate.TranslateAndSetText('บาท', ReportScreen_Color.Colors_Text1_, TextAlign.center, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                    ),
+                                                                                                                  ],
+                                                                                                                ),
+                                                                                                          Divider(),
+                                                                                                          Row(
+                                                                                                            mainAxisAlignment: MainAxisAlignment.end,
+                                                                                                            children: [
+                                                                                                              Expanded(
+                                                                                                                child: Padding(
+                                                                                                                  padding: const EdgeInsets.all(15.0),
+                                                                                                                  child: Translate.TranslateAndSetText('* อัตราคำนวณปัจจุบันอาจไม่ตรงกับยอดชำระ ณ วันที่บันทึก', Colors.red, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                                ),
                                                                                                               ),
-                                                                                                        Divider(),
-                                                                                                        Row(
-                                                                                                          mainAxisAlignment: MainAxisAlignment.end,
-                                                                                                          children: [
-                                                                                                            Expanded(
-                                                                                                              child: Padding(
-                                                                                                                padding: const EdgeInsets.all(15.0),
-                                                                                                                child: Translate.TranslateAndSetText('* อัตราคำนวณปัจจุบันอาจไม่ตรงกับยอดชำระ ณ วันที่บันทึก', Colors.red, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
-                                                                                                              ),
-                                                                                                            ),
-                                                                                                          ],
-                                                                                                        ),
-                                                                                                        SizedBox(
-                                                                                                          height: 50,
-                                                                                                        )
-                                                                                                      ],
+                                                                                                            ],
+                                                                                                          ),
+                                                                                                          SizedBox(
+                                                                                                            height: 50,
+                                                                                                          )
+                                                                                                        ],
+                                                                                                      ),
                                                                                                     ),
                                                                                                   ),
-                                                                                                ),
-                                                                                              );
-                                                                                            }));
-                                                                                      },
-                                                                                      child: Translate.TranslateAndSetText('ดูอัตราคำนวณ', PeopleChaoScreen_Color.Colors_Text2_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                                );
+                                                                                              }));
+                                                                                        },
+                                                                                        child: Translate.TranslateAndSetText('ดูอัตราคำนวณ', PeopleChaoScreen_Color.Colors_Text2_, TextAlign.end, FontWeight.bold, FontWeight_.Fonts_T, 14, 1),
+                                                                                      ),
                                                                                     ),
-                                                                                  ),
-                                                                            // Expanded(
-                                                                            //   flex: 1,
-                                                                            //   child:
-                                                                            //       AutoSizeText(
-                                                                            //     maxLines:
-                                                                            //         2,
-                                                                            //     minFontSize:
-                                                                            //         8,
-                                                                            //     // maxFontSize: 15,
-                                                                            //     '${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)',
-                                                                            //     textAlign:
-                                                                            //         TextAlign.start,
-                                                                            //     style: const TextStyle(
-                                                                            //         color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                            //         //fontWeight: FontWeight.bold,
-                                                                            //         fontFamily: Font_.Fonts_T),
-                                                                            //   ),
-                                                                            // ),
-                                                                            // Expanded(
-                                                                            //   flex: 1,
-                                                                            //   child:
-                                                                            //       AutoSizeText(
-                                                                            //     maxLines:
-                                                                            //         2,
-                                                                            //     minFontSize:
-                                                                            //         8,
-                                                                            //     // maxFontSize: 15,
-                                                                            //     '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].sdate!} 00:00:00'))} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].ldate!} 00:00:00'))}',
-                                                                            //     textAlign:
-                                                                            //         TextAlign.start,
-                                                                            //     style: const TextStyle(
-                                                                            //         color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                            //         //fontWeight: FontWeight.bold,
-                                                                            //         fontFamily: Font_.Fonts_T),
-                                                                            //   ),
-                                                                            // ),
-                                                                            // Expanded(
-                                                                            //   flex: 1,
-                                                                            //   child:
-                                                                            //       Tooltip(
-                                                                            //     richMessage:
-                                                                            //         TextSpan(
-                                                                            //       text:
-                                                                            //           '${quotxSelectModels_Select[index2].expname}',
-                                                                            //       style:
-                                                                            //           const TextStyle(
-                                                                            //         color:
-                                                                            //             HomeScreen_Color.Colors_Text1_,
-                                                                            //         fontWeight:
-                                                                            //             FontWeight.bold,
-                                                                            //         fontFamily:
-                                                                            //             FontWeight_.Fonts_T,
-                                                                            //         //fontSize: 10.0
-                                                                            //       ),
-                                                                            //     ),
-                                                                            //     decoration:
-                                                                            //         BoxDecoration(
-                                                                            //       borderRadius:
-                                                                            //           BorderRadius.circular(5),
-                                                                            //       color:
-                                                                            //           Colors.grey[200],
-                                                                            //     ),
-                                                                            //     child:
-                                                                            //         AutoSizeText(
-                                                                            //       maxLines:
-                                                                            //           2,
-                                                                            //       minFontSize:
-                                                                            //           8,
-                                                                            //       // maxFontSize: 15,
-                                                                            //       '${quotxSelectModels_Select[index2].expname}',
-                                                                            //       textAlign:
-                                                                            //           TextAlign.start,
-                                                                            //       style: const TextStyle(
-                                                                            //           color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                            //           //fontWeight: FontWeight.bold,
-                                                                            //           fontFamily: Font_.Fonts_T),
-                                                                            //     ),
-                                                                            //   ),
-                                                                            // ),
-                                                                            // Expanded(
-                                                                            //   flex: 1,
-                                                                            //   child:
-                                                                            //       AutoSizeText(
-                                                                            //     maxLines:
-                                                                            //         2,
-                                                                            //     minFontSize:
-                                                                            //         8,
-                                                                            //     // maxFontSize: 15,
-                                                                            //     '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))}',
-                                                                            //     textAlign:
-                                                                            //         TextAlign.end,
-                                                                            //     style: const TextStyle(
-                                                                            //         color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                            //         //fontWeight: FontWeight.bold,
-                                                                            //         fontFamily: Font_.Fonts_T),
-                                                                            //   ),
-                                                                            // ),
-                                                                            // Expanded(
-                                                                            //   flex: 1,
-                                                                            //   child:
-                                                                            //       AutoSizeText(
-                                                                            //     maxLines:
-                                                                            //         2,
-                                                                            //     minFontSize:
-                                                                            //         8,
-                                                                            //     // maxFontSize: 15,
-                                                                            //     '${nFormat.format(int.parse(quotxSelectModels_Select[index2].term!) * double.parse(quotxSelectModels_Select[index2].total!))}',
-                                                                            //     textAlign:
-                                                                            //         TextAlign.end,
-                                                                            //     style: const TextStyle(
-                                                                            //         color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                            //         //fontWeight: FontWeight.bold,
-                                                                            //         fontFamily: Font_.Fonts_T),
-                                                                            //   ),
-                                                                            // ),
-                                                                          ],
-                                                                        )),
-                                                                      ),
-                                                                    SizedBox(
-                                                                      height:
-                                                                          30,
-                                                                    )
-                                                                  ],
+                                                                              // Expanded(
+                                                                              //   flex: 1,
+                                                                              //   child:
+                                                                              //       AutoSizeText(
+                                                                              //     maxLines:
+                                                                              //         2,
+                                                                              //     minFontSize:
+                                                                              //         8,
+                                                                              //     // maxFontSize: 15,
+                                                                              //     '${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)',
+                                                                              //     textAlign:
+                                                                              //         TextAlign.start,
+                                                                              //     style: const TextStyle(
+                                                                              //         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                              //         //fontWeight: FontWeight.bold,
+                                                                              //         fontFamily: Font_.Fonts_T),
+                                                                              //   ),
+                                                                              // ),
+                                                                              // Expanded(
+                                                                              //   flex: 1,
+                                                                              //   child:
+                                                                              //       AutoSizeText(
+                                                                              //     maxLines:
+                                                                              //         2,
+                                                                              //     minFontSize:
+                                                                              //         8,
+                                                                              //     // maxFontSize: 15,
+                                                                              //     '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].sdate!} 00:00:00'))} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].ldate!} 00:00:00'))}',
+                                                                              //     textAlign:
+                                                                              //         TextAlign.start,
+                                                                              //     style: const TextStyle(
+                                                                              //         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                              //         //fontWeight: FontWeight.bold,
+                                                                              //         fontFamily: Font_.Fonts_T),
+                                                                              //   ),
+                                                                              // ),
+                                                                              // Expanded(
+                                                                              //   flex: 1,
+                                                                              //   child:
+                                                                              //       Tooltip(
+                                                                              //     richMessage:
+                                                                              //         TextSpan(
+                                                                              //       text:
+                                                                              //           '${quotxSelectModels_Select[index2].expname}',
+                                                                              //       style:
+                                                                              //           const TextStyle(
+                                                                              //         color:
+                                                                              //             HomeScreen_Color.Colors_Text1_,
+                                                                              //         fontWeight:
+                                                                              //             FontWeight.bold,
+                                                                              //         fontFamily:
+                                                                              //             FontWeight_.Fonts_T,
+                                                                              //         //fontSize: 10.0
+                                                                              //       ),
+                                                                              //     ),
+                                                                              //     decoration:
+                                                                              //         BoxDecoration(
+                                                                              //       borderRadius:
+                                                                              //           BorderRadius.circular(5),
+                                                                              //       color:
+                                                                              //           Colors.grey[200],
+                                                                              //     ),
+                                                                              //     child:
+                                                                              //         AutoSizeText(
+                                                                              //       maxLines:
+                                                                              //           2,
+                                                                              //       minFontSize:
+                                                                              //           8,
+                                                                              //       // maxFontSize: 15,
+                                                                              //       '${quotxSelectModels_Select[index2].expname}',
+                                                                              //       textAlign:
+                                                                              //           TextAlign.start,
+                                                                              //       style: const TextStyle(
+                                                                              //           color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                              //           //fontWeight: FontWeight.bold,
+                                                                              //           fontFamily: Font_.Fonts_T),
+                                                                              //     ),
+                                                                              //   ),
+                                                                              // ),
+                                                                              // Expanded(
+                                                                              //   flex: 1,
+                                                                              //   child:
+                                                                              //       AutoSizeText(
+                                                                              //     maxLines:
+                                                                              //         2,
+                                                                              //     minFontSize:
+                                                                              //         8,
+                                                                              //     // maxFontSize: 15,
+                                                                              //     '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))}',
+                                                                              //     textAlign:
+                                                                              //         TextAlign.end,
+                                                                              //     style: const TextStyle(
+                                                                              //         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                              //         //fontWeight: FontWeight.bold,
+                                                                              //         fontFamily: Font_.Fonts_T),
+                                                                              //   ),
+                                                                              // ),
+                                                                              // Expanded(
+                                                                              //   flex: 1,
+                                                                              //   child:
+                                                                              //       AutoSizeText(
+                                                                              //     maxLines:
+                                                                              //         2,
+                                                                              //     minFontSize:
+                                                                              //         8,
+                                                                              //     // maxFontSize: 15,
+                                                                              //     '${nFormat.format(int.parse(quotxSelectModels_Select[index2].term!) * double.parse(quotxSelectModels_Select[index2].total!))}',
+                                                                              //     textAlign:
+                                                                              //         TextAlign.end,
+                                                                              //     style: const TextStyle(
+                                                                              //         color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                              //         //fontWeight: FontWeight.bold,
+                                                                              //         fontFamily: Font_.Fonts_T),
+                                                                              //   ),
+                                                                              // ),
+                                                                            ],
+                                                                          )),
+                                                                        ),
+                                                                      SizedBox(
+                                                                        height:
+                                                                            30,
+                                                                      )
+                                                                    ],
+                                                                  ),
                                                                 ),
                                                               ),
-                                                            ),
-                                                        ],
-                                                      );
-                                                    },
-                                                  ),
-                                          ),
-                                          Container(
-                                              width: MediaQuery.of(context)
-                                                  .size
-                                                  .width,
-                                              decoration: const BoxDecoration(
-                                                color: AppbackgroundColor
-                                                    .Sub_Abg_Colors,
-                                                borderRadius: BorderRadius.only(
-                                                    topLeft: Radius.circular(0),
-                                                    topRight:
-                                                        Radius.circular(0),
-                                                    bottomLeft:
-                                                        Radius.circular(10),
-                                                    bottomRight:
-                                                        Radius.circular(10)),
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerLeft,
-                                                    child: Row(
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: InkWell(
-                                                            onTap: () {
-                                                              _scrollController1
-                                                                  .animateTo(
-                                                                0,
-                                                                duration:
-                                                                    const Duration(
-                                                                        seconds:
+                                                          ],
+                                                        );
+                                                      },
+                                                    ),
+                                            ),
+                                            Container(
+                                                width: MediaQuery.of(context)
+                                                    .size
+                                                    .width,
+                                                decoration: const BoxDecoration(
+                                                  color: AppbackgroundColor
+                                                      .Sub_Abg_Colors,
+                                                  borderRadius:
+                                                      BorderRadius.only(
+                                                          topLeft: Radius
+                                                              .circular(0),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  0),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  10)),
+                                                ),
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment
+                                                          .spaceBetween,
+                                                  children: [
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerLeft,
+                                                      child: Row(
+                                                        children: [
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                    .all(8.0),
+                                                            child: InkWell(
+                                                              onTap: () {
+                                                                _scrollController1
+                                                                    .animateTo(
+                                                                  0,
+                                                                  duration:
+                                                                      const Duration(
+                                                                          seconds:
+                                                                              1),
+                                                                  curve: Curves
+                                                                      .easeOut,
+                                                                );
+                                                              },
+                                                              child: Container(
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    // color: AppbackgroundColor
+                                                                    //     .TiTile_Colors,
+                                                                    borderRadius: const BorderRadius
+                                                                            .only(
+                                                                        topLeft:
+                                                                            Radius.circular(
+                                                                                6),
+                                                                        topRight:
+                                                                            Radius.circular(
+                                                                                6),
+                                                                        bottomLeft:
+                                                                            Radius.circular(
+                                                                                6),
+                                                                        bottomRight:
+                                                                            Radius.circular(8)),
+                                                                    border: Border.all(
+                                                                        color: Colors
+                                                                            .grey,
+                                                                        width:
                                                                             1),
-                                                                curve: Curves
-                                                                    .easeOut,
-                                                              );
+                                                                  ),
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .all(
+                                                                          3.0),
+                                                                  child:
+                                                                      const Text(
+                                                                    'Top',
+                                                                    style: TextStyle(
+                                                                        color: Colors
+                                                                            .grey,
+                                                                        fontSize:
+                                                                            10.0,
+                                                                        fontFamily:
+                                                                            FontWeight_.Fonts_T),
+                                                                  )),
+                                                            ),
+                                                          ),
+                                                          InkWell(
+                                                            onTap: () {
+                                                              if (_scrollController1
+                                                                  .hasClients) {
+                                                                final position =
+                                                                    _scrollController1
+                                                                        .position
+                                                                        .maxScrollExtent;
+                                                                _scrollController1
+                                                                    .animateTo(
+                                                                  position,
+                                                                  duration:
+                                                                      const Duration(
+                                                                          seconds:
+                                                                              1),
+                                                                  curve: Curves
+                                                                      .easeOut,
+                                                                );
+                                                              }
                                                             },
                                                             child: Container(
                                                                 decoration:
@@ -5479,7 +5723,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                               6),
                                                                       bottomRight:
                                                                           Radius.circular(
-                                                                              8)),
+                                                                              6)),
                                                                   border: Border.all(
                                                                       color: Colors
                                                                           .grey,
@@ -5491,7 +5735,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                         3.0),
                                                                 child:
                                                                     const Text(
-                                                                  'Top',
+                                                                  'Down',
                                                                   style: TextStyle(
                                                                       color: Colors
                                                                           .grey,
@@ -5502,28 +5746,36 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                               .Fonts_T),
                                                                 )),
                                                           ),
-                                                        ),
-                                                        InkWell(
-                                                          onTap: () {
-                                                            if (_scrollController1
-                                                                .hasClients) {
-                                                              final position =
-                                                                  _scrollController1
-                                                                      .position
-                                                                      .maxScrollExtent;
-                                                              _scrollController1
-                                                                  .animateTo(
-                                                                position,
-                                                                duration:
-                                                                    const Duration(
-                                                                        seconds:
-                                                                            1),
-                                                                curve: Curves
-                                                                    .easeOut,
-                                                              );
-                                                            }
-                                                          },
-                                                          child: Container(
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    Align(
+                                                      alignment:
+                                                          Alignment.centerRight,
+                                                      child: Row(
+                                                        children: [
+                                                          InkWell(
+                                                            onTap: _moveUp1,
+                                                            child:
+                                                                const Padding(
+                                                                    padding:
+                                                                        EdgeInsets.all(
+                                                                            8.0),
+                                                                    child:
+                                                                        Align(
+                                                                      alignment:
+                                                                          Alignment
+                                                                              .centerLeft,
+                                                                      child:
+                                                                          Icon(
+                                                                        Icons
+                                                                            .arrow_upward,
+                                                                        color: Colors
+                                                                            .grey,
+                                                                      ),
+                                                                    )),
+                                                          ),
+                                                          Container(
                                                               decoration:
                                                                   BoxDecoration(
                                                                 // color: AppbackgroundColor
@@ -5551,7 +5803,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                   const EdgeInsets
                                                                       .all(3.0),
                                                               child: const Text(
-                                                                'Down',
+                                                                'Scroll',
                                                                 style: TextStyle(
                                                                     color: Colors
                                                                         .grey,
@@ -5561,752 +5813,574 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                         FontWeight_
                                                                             .Fonts_T),
                                                               )),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Align(
-                                                    alignment:
-                                                        Alignment.centerRight,
-                                                    child: Row(
-                                                      children: [
-                                                        InkWell(
-                                                          onTap: _moveUp1,
-                                                          child: const Padding(
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Align(
-                                                                alignment: Alignment
-                                                                    .centerLeft,
-                                                                child: Icon(
-                                                                  Icons
-                                                                      .arrow_upward,
-                                                                  color: Colors
-                                                                      .grey,
-                                                                ),
-                                                              )),
-                                                        ),
-                                                        Container(
-                                                            decoration:
-                                                                BoxDecoration(
-                                                              // color: AppbackgroundColor
-                                                              //     .TiTile_Colors,
-                                                              borderRadius: const BorderRadius
-                                                                      .only(
-                                                                  topLeft: Radius
-                                                                      .circular(
-                                                                          6),
-                                                                  topRight: Radius
-                                                                      .circular(
-                                                                          6),
-                                                                  bottomLeft: Radius
-                                                                      .circular(
-                                                                          6),
-                                                                  bottomRight: Radius
-                                                                      .circular(
-                                                                          6)),
-                                                              border: Border.all(
-                                                                  color: Colors
-                                                                      .grey,
-                                                                  width: 1),
-                                                            ),
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(3.0),
-                                                            child: const Text(
-                                                              'Scroll',
-                                                              style: TextStyle(
-                                                                  color: Colors
-                                                                      .grey,
-                                                                  fontSize:
-                                                                      10.0,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T),
-                                                            )),
-                                                        InkWell(
-                                                          onTap: _moveDown1,
-                                                          child: const Padding(
-                                                              padding:
-                                                                  EdgeInsets
-                                                                      .all(8.0),
-                                                              child: Align(
-                                                                alignment: Alignment
-                                                                    .centerRight,
-                                                                child: Icon(
-                                                                  Icons
-                                                                      .arrow_downward,
-                                                                  color: Colors
-                                                                      .grey,
-                                                                ),
-                                                              )),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )
-                                                ],
-                                              )),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-  }
-
-  Widget BodyHome_TenantCancel() {
-    return ScrollConfiguration(
-      behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-      }),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        dragStartBehavior: DragStartBehavior.start,
-        child: Row(
-          children: [
-            SizedBox(
-              width: (Responsive.isDesktop(context))
-                  ? MediaQuery.of(context).size.width * 0.858
-                  : 1200,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                    child: Container(
-                        width: (Responsive.isDesktop(context))
-                            ? MediaQuery.of(context).size.width * 0.858
-                            : 1200,
-                        decoration: BoxDecoration(
-                          color: AppbackgroundColor.TiTile_Colors,
-                          borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(10),
-                              topRight: Radius.circular(10),
-                              bottomLeft: Radius.circular(0),
-                              bottomRight: Radius.circular(0)),
-                        ),
-                        padding: const EdgeInsets.all(8.0),
-                        child: Column(
-                          children: [
-                            Row(
-                              // mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Padding(
-                                  padding: EdgeInsets.all(2.0),
-                                  child: Translate.TranslateAndSetText(
-                                      'ค้นหา :',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      1),
-                                ),
-                                Expanded(
-                                  // flex: 1,
-                                  child: Container(
-                                    height: 35, //Date_ser
-                                    // width: 150,
-                                    decoration: BoxDecoration(
-                                      color: AppbackgroundColor.Sub_Abg_Colors,
-                                      borderRadius: const BorderRadius.only(
-                                          topLeft: Radius.circular(8),
-                                          topRight: Radius.circular(8),
-                                          bottomLeft: Radius.circular(8),
-                                          bottomRight: Radius.circular(8)),
-                                      border: Border.all(
-                                          color: Colors.grey, width: 1),
-                                    ),
-                                    child: _searchBar(),
-                                  ),
-                                ),
-                                Container(width: 150, child: Next_page_Web())
-                              ],
-                            ),
-                            const Divider(),
-                            // Row(
-                            //   mainAxisAlignment: MainAxisAlignment.end,
-                            //   children: [
-                            //     Expanded(child: Next_page_Web()),
-                            //   ],
-                            // ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'เลขที่สัญญา/เสนอราคา',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.left,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'ชื่อผู้ติดต่อ',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.left,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                // Expanded(
-                                //   flex: 1,
-                                //   child: Translate.TranslateAndSetText(
-                                //       'ชื่อร้านค้า',
-                                //       PeopleChaoScreen_Color.Colors_Text1_,
-                                //       TextAlign.left,
-                                //       FontWeight.bold,
-                                //       FontWeight_.Fonts_T,
-                                //       14,
-                                //       2),
-                                // ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'โซนพื้นที่',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.left,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'รหัสพื้นที่',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.left,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: AutoSizeText(
-                                    minFontSize: 10,
-                                    maxFontSize: 25,
-                                    maxLines: 2,
-                                    'ประเภท',
-                                    textAlign: TextAlign.left,
-                                    style: TextStyle(
-                                        color: PeopleChaoScreen_Color
-                                            .Colors_Text1_,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: FontWeight_.Fonts_T
-                                        //fontSize: 10.0
+                                                          InkWell(
+                                                            onTap: _moveDown1,
+                                                            child:
+                                                                const Padding(
+                                                                    padding:
+                                                                        EdgeInsets.all(
+                                                                            8.0),
+                                                                    child:
+                                                                        Align(
+                                                                      alignment:
+                                                                          Alignment
+                                                                              .centerRight,
+                                                                      child:
+                                                                          Icon(
+                                                                        Icons
+                                                                            .arrow_downward,
+                                                                        color: Colors
+                                                                            .grey,
+                                                                      ),
+                                                                    )),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    )
+                                                  ],
+                                                )),
+                                          ],
                                         ),
-                                  ),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'วันที่ยกเลิก/ทำรายการ',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.left,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'เหตุผล',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.left,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: Translate.TranslateAndSetText(
-                                      'สถานะ',
-                                      PeopleChaoScreen_Color.Colors_Text1_,
-                                      TextAlign.center,
-                                      FontWeight.bold,
-                                      FontWeight_.Fonts_T,
-                                      14,
-                                      2),
-                                ),
-                                Expanded(
-                                  flex: 1,
-                                  child: AutoSizeText(
-                                    minFontSize: 10,
-                                    maxFontSize: 25,
-                                    maxLines: 2,
-                                    '...',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        color: PeopleChaoScreen_Color
-                                            .Colors_Text1_,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: FontWeight_.Fonts_T
-                                        //fontSize: 10.0
-                                        ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        )),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-                    child: Column(
-                      children: [
-                        Container(
-                          height: MediaQuery.of(context).size.height * 0.65,
-                          width: (Responsive.isDesktop(context))
-                              ? MediaQuery.of(context).size.width * 0.858
-                              : 1200,
-                          decoration: const BoxDecoration(
-                            color: AppbackgroundColor.Sub_Abg_Colors,
-                            borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(0),
-                                topRight: Radius.circular(0),
-                                bottomLeft: Radius.circular(0),
-                                bottomRight: Radius.circular(0)),
-                            // border: Border.all(color: Colors.grey, width: 1),
-                          ),
-                          child: teNantModels.isEmpty
-                              ? SizedBox(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      const CircularProgressIndicator(),
-                                      StreamBuilder(
-                                        stream: Stream.periodic(
-                                            const Duration(milliseconds: 25),
-                                            (i) => i),
-                                        builder: (context, snapshot) {
-                                          if (!snapshot.hasData)
-                                            return const Text('');
-                                          double elapsed = double.parse(
-                                                  snapshot.data.toString()) *
-                                              0.05;
-                                          return Padding(
-                                            padding: const EdgeInsets.all(8.0),
-                                            child: (elapsed > 8.00)
-                                                ? const Text(
-                                                    'ไม่พบข้อมูล',
-                                                    style: TextStyle(
-                                                        color:
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontSize: 10.0
-                                                        ),
-                                                  )
-                                                : Text(
-                                                    'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
-                                                    // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
-                                                    style: const TextStyle(
-                                                        color:
-                                                            PeopleChaoScreen_Color
-                                                                .Colors_Text2_,
-                                                        fontFamily:
-                                                            Font_.Fonts_T
-                                                        //fontSize: 10.0
-                                                        ),
-                                                  ),
-                                          );
-                                        },
                                       ),
                                     ],
                                   ),
-                                )
-                              : ListView.builder(
-                                  controller: _scrollController1,
-                                  // itemExtent: 50,
-                                  physics:
-                                      const AlwaysScrollableScrollPhysics(),
-                                  shrinkWrap: true,
-                                  itemCount: teNantModels.length,
-                                  itemBuilder:
-                                      (BuildContext context, int index) {
-                                    return Material(
-                                      color: tappedIndex_ == index.toString()
-                                          ? tappedIndex_Color.tappedIndex_Colors
-                                              .withOpacity(0.5)
-                                          : AppbackgroundColor.Sub_Abg_Colors,
-                                      child: Container(
-                                        // color: Colors.white,
-                                        // color: tappedIndex_ == index.toString()
-                                        //     ? tappedIndex_Color.tappedIndex_Colors
-                                        //         .withOpacity(0.5)
-                                        //     : null,
-                                        child: ListTile(
-                                            onTap: () {
-                                              setState(() {
-                                                tappedIndex_ = index.toString();
-                                              });
-                                            },
-                                            title: Container(
-                                              decoration: const BoxDecoration(
-                                                // color: Colors.green[100]!
-                                                //     .withOpacity(0.5),
-                                                border: Border(
-                                                  bottom: BorderSide(
-                                                    color: Colors.black12,
-                                                    width: 1,
+                                ),
+                              ),
+                            );
+    });
+  }
+
+  Widget BodyHome_TenantCancel() {
+    return LayoutBuilder(builder: (context, cts) {
+      final screenW = cts.maxWidth;
+      final tableMinW = Responsive.isDesktop(context) ? screenW : 980.0;
+
+      return ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+        }),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          dragStartBehavior: DragStartBehavior.start,
+          child: Row(
+            children: [
+              SizedBox(
+                width: tableMinW,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                      child: Container(
+                          width: tableMinW,
+                          decoration: BoxDecoration(
+                            color: AppbackgroundColor.TiTile_Colors,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(0),
+                                bottomRight: Radius.circular(0)),
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: Column(
+                            children: [
+                              Row(
+                                // mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.all(2.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'ค้นหา :',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.center,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        1),
+                                  ),
+                                  Expanded(
+                                    // flex: 1,
+                                    child: Container(
+                                      height: 35, //Date_ser
+                                      // width: 150,
+                                      decoration: BoxDecoration(
+                                        color:
+                                            AppbackgroundColor.Sub_Abg_Colors,
+                                        borderRadius: const BorderRadius.only(
+                                            topLeft: Radius.circular(8),
+                                            topRight: Radius.circular(8),
+                                            bottomLeft: Radius.circular(8),
+                                            bottomRight: Radius.circular(8)),
+                                        border: Border.all(
+                                            color: Colors.grey, width: 1),
+                                      ),
+                                      child: _searchBar(),
+                                    ),
+                                  ),
+                                  Container(width: 150, child: Next_page_Web())
+                                ],
+                              ),
+                              const Divider(),
+                              // Row(
+                              //   mainAxisAlignment: MainAxisAlignment.end,
+                              //   children: [
+                              //     Expanded(child: Next_page_Web()),
+                              //   ],
+                              // ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'เลขที่สัญญา/เสนอราคา',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'ชื่อผู้ติดต่อ',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  // Expanded(
+                                  //   flex: 1,
+                                  //   child: Translate.TranslateAndSetText(
+                                  //       'ชื่อร้านค้า',
+                                  //       PeopleChaoScreen_Color.Colors_Text1_,
+                                  //       TextAlign.left,
+                                  //       FontWeight.bold,
+                                  //       FontWeight_.Fonts_T,
+                                  //       14,
+                                  //       2),
+                                  // ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'โซนพื้นที่',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'รหัสพื้นที่',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  // Expanded(
+                                  //   flex: 1,
+                                  //   child: AutoSizeText(
+                                  //     minFontSize: 10,
+                                  //     maxFontSize: 25,
+                                  //     maxLines: 2,
+                                  //     'ประเภท',
+                                  //     textAlign: TextAlign.left,
+                                  //     style: TextStyle(
+                                  //         color: PeopleChaoScreen_Color
+                                  //             .Colors_Text1_,
+                                  //         fontWeight: FontWeight.bold,
+                                  //         fontFamily: FontWeight_.Fonts_T
+                                  //         //fontSize: 10.0
+                                  //         ),
+                                  //   ),
+                                  // ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'กำหนดยกเลิกล่วงหน้า',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'วันที่ยกเลิก',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'วันที่บันทึกยกเลิก',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'เหตุผล',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.left,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: Translate.TranslateAndSetText(
+                                        'สถานะ',
+                                        PeopleChaoScreen_Color.Colors_Text1_,
+                                        TextAlign.center,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        2),
+                                  ),
+                                  Expanded(
+                                    flex: 1,
+                                    child: AutoSizeText(
+                                      minFontSize: 10,
+                                      maxFontSize: 25,
+                                      maxLines: 2,
+                                      '...',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          color: PeopleChaoScreen_Color
+                                              .Colors_Text1_,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: FontWeight_.Fonts_T
+                                          //fontSize: 10.0
+                                          ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          )),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                      child: Column(
+                        children: [
+                          Container(
+                            height: MediaQuery.of(context).size.height * 0.78,
+                            width: tableMinW,
+                            decoration: const BoxDecoration(
+                              color: AppbackgroundColor.Sub_Abg_Colors,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(0),
+                                  topRight: Radius.circular(0),
+                                  bottomLeft: Radius.circular(0),
+                                  bottomRight: Radius.circular(0)),
+                              // border: Border.all(color: Colors.grey, width: 1),
+                            ),
+                            child: teNantModels.isEmpty
+                                ? SizedBox(
+                                    child: Column(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        const CircularProgressIndicator(),
+                                        StreamBuilder(
+                                          stream: Stream.periodic(
+                                              const Duration(milliseconds: 25),
+                                              (i) => i),
+                                          builder: (context, snapshot) {
+                                            if (!snapshot.hasData)
+                                              return const Text('');
+                                            double elapsed = double.parse(
+                                                    snapshot.data.toString()) *
+                                                0.05;
+                                            return Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: (elapsed > 8.00)
+                                                  ? const Text(
+                                                      'ไม่พบข้อมูล',
+                                                      style: TextStyle(
+                                                          color:
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    )
+                                                  : Text(
+                                                      'ดาวน์โหลด : ${elapsed.toStringAsFixed(2)} s.',
+                                                      // 'Time : ${elapsed.toStringAsFixed(2)} seconds',
+                                                      style: const TextStyle(
+                                                          color:
+                                                              PeopleChaoScreen_Color
+                                                                  .Colors_Text2_,
+                                                          fontFamily:
+                                                              Font_.Fonts_T
+                                                          //fontSize: 10.0
+                                                          ),
+                                                    ),
+                                            );
+                                          },
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : ListView.builder(
+                                    controller: _scrollController1,
+                                    // itemExtent: 50,
+                                    physics:
+                                        const AlwaysScrollableScrollPhysics(),
+                                    shrinkWrap: true,
+                                    itemCount: teNantModels.length,
+                                    itemBuilder:
+                                        (BuildContext context, int index) {
+                                      return Material(
+                                        color: tappedIndex_ == index.toString()
+                                            ? tappedIndex_Color
+                                                .tappedIndex_Colors
+                                                .withOpacity(0.5)
+                                            : AppbackgroundColor.Sub_Abg_Colors,
+                                        child: Container(
+                                          // color: Colors.white,
+                                          // color: tappedIndex_ == index.toString()
+                                          //     ? tappedIndex_Color.tappedIndex_Colors
+                                          //         .withOpacity(0.5)
+                                          //     : null,
+                                          child: ListTile(
+                                              onTap: () {
+                                                setState(() {
+                                                  tappedIndex_ =
+                                                      index.toString();
+                                                });
+                                              },
+                                              title: Container(
+                                                decoration: const BoxDecoration(
+                                                  // color: Colors.green[100]!
+                                                  //     .withOpacity(0.5),
+                                                  border: Border(
+                                                    bottom: BorderSide(
+                                                      color: Colors.black12,
+                                                      width: 1,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Row(
-                                                      children: [
-                                                        Copy_Text(
-                                                            context,
-                                                            teNantModels[index]
-                                                                        .docno ==
-                                                                    null
-                                                                ? teNantModels[index]
-                                                                            .cid ==
-                                                                        null
-                                                                    ? ''
-                                                                    : '${teNantModels[index].cid}'
-                                                                : '${teNantModels[index].docno}'),
-                                                        Expanded(
-                                                          child: Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                    .all(0.0),
-                                                            child: Tooltip(
-                                                              richMessage:
-                                                                  TextSpan(
-                                                                text: teNantModels[index]
-                                                                            .docno ==
-                                                                        null
-                                                                    ? teNantModels[index].cid ==
-                                                                            null
-                                                                        ? ''
-                                                                        : '${teNantModels[index].cid}'
-                                                                    : '${teNantModels[index].docno}',
-                                                                style:
-                                                                    const TextStyle(
-                                                                  color: HomeScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  fontWeight:
-                                                                      FontWeight
-                                                                          .bold,
-                                                                  fontFamily:
-                                                                      FontWeight_
-                                                                          .Fonts_T,
-                                                                  //fontSize: 10.0
+                                                child: Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Row(
+                                                        children: [
+                                                          Copy_Text(
+                                                              context,
+                                                              teNantModels[index]
+                                                                          .docno ==
+                                                                      null
+                                                                  ? teNantModels[index]
+                                                                              .cid ==
+                                                                          null
+                                                                      ? ''
+                                                                      : '${teNantModels[index].cid}'
+                                                                  : '${teNantModels[index].docno}'),
+                                                          Expanded(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(0.0),
+                                                              child: Tooltip(
+                                                                richMessage:
+                                                                    TextSpan(
+                                                                  text: teNantModels[index]
+                                                                              .docno ==
+                                                                          null
+                                                                      ? teNantModels[index].cid ==
+                                                                              null
+                                                                          ? ''
+                                                                          : '${teNantModels[index].cid}'
+                                                                      : '${teNantModels[index].docno}',
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    color: HomeScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                    //fontSize: 10.0
+                                                                  ),
                                                                 ),
-                                                              ),
-                                                              decoration:
-                                                                  BoxDecoration(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            5),
-                                                                color: Colors
-                                                                    .grey[200],
-                                                              ),
-                                                              child:
-                                                                  AutoSizeText(
-                                                                minFontSize: 10,
-                                                                maxFontSize: 25,
-                                                                maxLines: 1,
-                                                                teNantModels[index]
-                                                                            .docno ==
-                                                                        null
-                                                                    ? teNantModels[index].cid ==
-                                                                            null
-                                                                        ? ''
-                                                                        : '${teNantModels[index].cid}'
-                                                                    : '${teNantModels[index].docno}',
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .left,
-                                                                overflow:
-                                                                    TextOverflow
-                                                                        .ellipsis,
-                                                                style: const TextStyle(
-                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                    //fontWeight: FontWeight.bold,
-                                                                    fontFamily: Font_.Fonts_T),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              5),
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      200],
+                                                                ),
+                                                                child:
+                                                                    AutoSizeText(
+                                                                  minFontSize:
+                                                                      12,
+                                                                  maxFontSize:
+                                                                      16,
+                                                                  maxLines: 1,
+                                                                  teNantModels[index]
+                                                                              .docno ==
+                                                                          null
+                                                                      ? teNantModels[index].cid ==
+                                                                              null
+                                                                          ? ''
+                                                                          : '${teNantModels[index].cid}'
+                                                                      : '${teNantModels[index].docno}',
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .left,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  style: const TextStyle(
+                                                                      color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily: Font_.Fonts_T),
+                                                                ),
                                                               ),
                                                             ),
                                                           ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Padding(
-                                                      padding:
-                                                          const EdgeInsets.all(
-                                                              8.0),
-                                                      child: AutoSizeText(
-                                                        minFontSize: 10,
-                                                        maxFontSize: 25,
-                                                        maxLines: 1,
-                                                        teNantModels[index]
-                                                                    .cname ==
-                                                                null
-                                                            ? teNantModels[index]
-                                                                        .cname_q ==
-                                                                    null
-                                                                ? ''
-                                                                : '${teNantModels[index].cname_q}'
-                                                            : '${teNantModels[index].cname}',
-                                                        textAlign:
-                                                            TextAlign.left,
-                                                        overflow: TextOverflow
-                                                            .ellipsis,
-                                                        style: const TextStyle(
-                                                            color: PeopleChaoScreen_Color
-                                                                .Colors_Text2_,
-                                                            //fontWeight: FontWeight.bold,
-                                                            fontFamily:
-                                                                Font_.Fonts_T),
+                                                        ],
                                                       ),
                                                     ),
-                                                  ),
-                                                  // Expanded(
-                                                  //   flex: 1,
-                                                  //   child: Padding(
-                                                  //     padding:
-                                                  //         const EdgeInsets.all(
-                                                  //             8.0),
-                                                  //     child: Tooltip(
-                                                  //       richMessage: TextSpan(
-                                                  //         text: teNantModels[
-                                                  //                         index]
-                                                  //                     .sname ==
-                                                  //                 null
-                                                  //             ? teNantModels[index]
-                                                  //                         .sname_q ==
-                                                  //                     null
-                                                  //                 ? ''
-                                                  //                 : '${teNantModels[index].sname_q}'
-                                                  //             : '${teNantModels[index].sname}',
-                                                  //         style:
-                                                  //             const TextStyle(
-                                                  //           color: HomeScreen_Color
-                                                  //               .Colors_Text1_,
-                                                  //           fontWeight:
-                                                  //               FontWeight.bold,
-                                                  //           fontFamily:
-                                                  //               FontWeight_
-                                                  //                   .Fonts_T,
-                                                  //           //fontSize: 10.0
-                                                  //         ),
-                                                  //       ),
-                                                  //       decoration:
-                                                  //           BoxDecoration(
-                                                  //         borderRadius:
-                                                  //             BorderRadius
-                                                  //                 .circular(5),
-                                                  //         color:
-                                                  //             Colors.grey[200],
-                                                  //       ),
-                                                  //       child: AutoSizeText(
-                                                  //         minFontSize: 10,
-                                                  //         maxFontSize: 25,
-                                                  //         maxLines: 1,
-                                                  //         teNantModels[index]
-                                                  //                     .sname ==
-                                                  //                 null
-                                                  //             ? teNantModels[index]
-                                                  //                         .sname_q ==
-                                                  //                     null
-                                                  //                 ? ''
-                                                  //                 : '${teNantModels[index].sname_q}'
-                                                  //             : '${teNantModels[index].sname}',
-                                                  //         textAlign:
-                                                  //             TextAlign.left,
-                                                  //         overflow: TextOverflow
-                                                  //             .ellipsis,
-                                                  //         style:
-                                                  //             const TextStyle(
-                                                  //                 color: PeopleChaoScreen_Color
-                                                  //                     .Colors_Text2_,
-                                                  //                 //fontWeight: FontWeight.bold,
-                                                  //                 fontFamily: Font_
-                                                  //                     .Fonts_T),
-                                                  //       ),
-                                                  //     ),
-                                                  //   ),
-                                                  // ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: AutoSizeText(
-                                                      minFontSize: 10,
-                                                      maxFontSize: 25,
-                                                      maxLines: 1,
-                                                      '${teNantModels[index].zn}',
-                                                      textAlign: TextAlign.left,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          //fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Tooltip(
-                                                      richMessage: TextSpan(
-                                                        text:
-                                                            '${teNantModels[index].ln}',
-                                                        style: const TextStyle(
-                                                          color: HomeScreen_Color
-                                                              .Colors_Text1_,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontFamily:
-                                                              FontWeight_
-                                                                  .Fonts_T,
-                                                          //fontSize: 10.0
-                                                        ),
-                                                      ),
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5),
-                                                        color: Colors.grey[200],
-                                                      ),
-                                                      child: AutoSizeText(
-                                                        minFontSize: 10,
-                                                        maxFontSize: 25,
-                                                        maxLines: 1,
-                                                        '${teNantModels[index].ln}',
-                                                        textAlign:
-                                                            TextAlign.left,
-                                                        style: const TextStyle(
-                                                            color: PeopleChaoScreen_Color
-                                                                .Colors_Text2_,
-                                                            //fontWeight: FontWeight.bold,
-                                                            fontFamily:
-                                                                Font_.Fonts_T),
-                                                      ),
-                                                    ),
-                                                  ),
-                                                  Expanded(
+                                                    Expanded(
                                                       flex: 1,
-                                                      child: Translate
-                                                          .TranslateAndSetText(
-                                                              '${teNantModels[index].rtname}',
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text1_,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 12,
+                                                          maxFontSize: 16,
+                                                          maxLines: 1,
+                                                          teNantModels[index]
+                                                                      .cname ==
+                                                                  null
+                                                              ? teNantModels[index]
+                                                                          .cname_q ==
+                                                                      null
+                                                                  ? ''
+                                                                  : '${teNantModels[index].cname_q}'
+                                                              : '${teNantModels[index].cname}',
+                                                          textAlign:
                                                               TextAlign.left,
-                                                              null,
-                                                              Font_.Fonts_T,
-                                                              14,
-                                                              1)
-
-                                                      //  AutoSizeText(
-                                                      //   minFontSize: 10,
-                                                      //   maxFontSize: 25,
-                                                      //   maxLines: 1,
-                                                      //   '${teNantModels[index].rtname}',
-                                                      //   textAlign: TextAlign.left,
-                                                      //   overflow:
-                                                      //       TextOverflow.ellipsis,
-                                                      //   style: const TextStyle(
-                                                      //       color:
-                                                      //           PeopleChaoScreen_Color
-                                                      //               .Colors_Text2_,
-                                                      //       //fontWeight: FontWeight.bold,
-                                                      //       fontFamily:
-                                                      //           Font_.Fonts_T),
-                                                      // ),
-                                                      ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: AutoSizeText(
-                                                      minFontSize: 10,
-                                                      maxFontSize: 25,
-                                                      maxLines: 1,
-                                                      (renTal_user.toString() ==
-                                                              '106')
-                                                          ? (teNantModels[index]
-                                                                          .w1 ==
-                                                                      null ||
-                                                                  teNantModels[
-                                                                              index]
-                                                                          .w1
-                                                                          .toString() ==
-                                                                      '0000-00-00')
-                                                              ? (teNantModels[index]
-                                                                          .cc_date ==
-                                                                      null)
-                                                                  ? ' - '
-                                                                  : '${DateFormat('dd-MM').format(DateTime.parse('${teNantModels[index].cc_date} 00:00:00'))}-${DateTime.parse('${teNantModels[index].cc_date} 00:00:00').year + 543}'
-                                                              : '${DateFormat('dd-MM').format(DateTime.parse('${teNantModels[index].w1} 00:00:00'))}-${DateTime.parse('${teNantModels[index].w1} 00:00:00').year + 543}'
-                                                          : (teNantModels[index]
-                                                                      .cc_date ==
-                                                                  null)
-                                                              ? ' - '
-                                                              : '${DateFormat('dd-MM').format(DateTime.parse('${teNantModels[index].cc_date} 00:00:00'))}-${DateTime.parse('${teNantModels[index].cc_date} 00:00:00').year + 543}',
-                                                      // '${teNantModels[index].cc_date}',
-                                                      textAlign: TextAlign.left,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text2_,
-                                                          //fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Tooltip(
-                                                      richMessage: TextSpan(
-                                                        text:
-                                                            '${teNantModels[index].cc_remark}',
-                                                        style: TextStyle(
-                                                          color: HomeScreen_Color
-                                                              .Colors_Text1_,
-                                                          fontWeight:
-                                                              FontWeight.bold,
-                                                          fontFamily:
-                                                              FontWeight_
-                                                                  .Fonts_T,
-                                                          //fontSize: 10.0
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
                                                         ),
                                                       ),
-                                                      decoration: BoxDecoration(
-                                                        borderRadius:
-                                                            BorderRadius
-                                                                .circular(5),
-                                                        color: Colors.grey[200],
-                                                      ),
+                                                    ),
+                                                    // Expanded(
+                                                    //   flex: 1,
+                                                    //   child: Padding(
+                                                    //     padding:
+                                                    //         const EdgeInsets.all(
+                                                    //             8.0),
+                                                    //     child: Tooltip(
+                                                    //       richMessage: TextSpan(
+                                                    //         text: teNantModels[
+                                                    //                         index]
+                                                    //                     .sname ==
+                                                    //                 null
+                                                    //             ? teNantModels[index]
+                                                    //                         .sname_q ==
+                                                    //                     null
+                                                    //                 ? ''
+                                                    //                 : '${teNantModels[index].sname_q}'
+                                                    //             : '${teNantModels[index].sname}',
+                                                    //         style:
+                                                    //             const TextStyle(
+                                                    //           color: HomeScreen_Color
+                                                    //               .Colors_Text1_,
+                                                    //           fontWeight:
+                                                    //               FontWeight.bold,
+                                                    //           fontFamily:
+                                                    //               FontWeight_
+                                                    //                   .Fonts_T,
+                                                    //           //fontSize: 10.0
+                                                    //         ),
+                                                    //       ),
+                                                    //       decoration:
+                                                    //           BoxDecoration(
+                                                    //         borderRadius:
+                                                    //             BorderRadius
+                                                    //                 .circular(5),
+                                                    //         color:
+                                                    //             Colors.grey[200],
+                                                    //       ),
+                                                    //       child: AutoSizeText(
+                                                    //         minFontSize: 10,
+                                                    //         maxFontSize: 25,
+                                                    //         maxLines: 1,
+                                                    //         teNantModels[index]
+                                                    //                     .sname ==
+                                                    //                 null
+                                                    //             ? teNantModels[index]
+                                                    //                         .sname_q ==
+                                                    //                     null
+                                                    //                 ? ''
+                                                    //                 : '${teNantModels[index].sname_q}'
+                                                    //             : '${teNantModels[index].sname}',
+                                                    //         textAlign:
+                                                    //             TextAlign.left,
+                                                    //         overflow: TextOverflow
+                                                    //             .ellipsis,
+                                                    //         style:
+                                                    //             const TextStyle(
+                                                    //                 color: PeopleChaoScreen_Color
+                                                    //                     .Colors_Text2_,
+                                                    //                 //fontWeight: FontWeight.bold,
+                                                    //                 fontFamily: Font_
+                                                    //                     .Fonts_T),
+                                                    //       ),
+                                                    //     ),
+                                                    //   ),
+                                                    // ),
+                                                    Expanded(
+                                                      flex: 1,
                                                       child: AutoSizeText(
-                                                        minFontSize: 10,
-                                                        maxFontSize: 25,
+                                                        minFontSize: 12,
+                                                        maxFontSize: 16,
                                                         maxLines: 1,
-                                                        '${teNantModels[index].cc_remark}',
+                                                        '${teNantModels[index].zn}',
                                                         textAlign:
                                                             TextAlign.left,
                                                         overflow: TextOverflow
@@ -6319,121 +6393,309 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                 Font_.Fonts_T),
                                                       ),
                                                     ),
-                                                  ),
-                                                  Expanded(
+                                                    Expanded(
                                                       flex: 1,
-                                                      child: Translate
-                                                          .TranslateAndSetText(
-                                                              '${teNantModels[index].st}',
-                                                              PeopleChaoScreen_Color
-                                                                  .Colors_Text1_,
-                                                              TextAlign.center,
-                                                              null,
-                                                              Font_.Fonts_T,
-                                                              14,
-                                                              1)
-                                                      // AutoSizeText(
-                                                      //   minFontSize: 10,
-                                                      //   maxFontSize: 25,
-                                                      //   maxLines: 1,
-                                                      //   '${teNantModels[index].st}',
-                                                      //   textAlign:
-                                                      //       TextAlign.center,
-                                                      //   overflow:
-                                                      //       TextOverflow.ellipsis,
-                                                      //   style: const TextStyle(
-                                                      //       color:
-                                                      //           PeopleChaoScreen_Color
-                                                      //               .Colors_Text2_,
-                                                      //       //fontWeight: FontWeight.bold,
-                                                      //       fontFamily:
-                                                      //           Font_.Fonts_T),
-                                                      // ),
+                                                      child: Tooltip(
+                                                        richMessage: TextSpan(
+                                                          text:
+                                                              '${teNantModels[index].ln}',
+                                                          style:
+                                                              const TextStyle(
+                                                            color: HomeScreen_Color
+                                                                .Colors_Text1_,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontFamily:
+                                                                FontWeight_
+                                                                    .Fonts_T,
+                                                            //fontSize: 10.0
+                                                          ),
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(5),
+                                                          color:
+                                                              Colors.grey[200],
+                                                        ),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 12,
+                                                          maxFontSize: 16,
+                                                          maxLines: 1,
+                                                          '${teNantModels[index].ln}',
+                                                          textAlign:
+                                                              TextAlign.left,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
                                                       ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Row(
-                                                      mainAxisAlignment:
-                                                          MainAxisAlignment.end,
-                                                      children: [
-                                                        Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: InkWell(
-                                                            onTap: () async {
-                                                              if (renTal_lavel <=
-                                                                  2) {
-                                                                // Navigator.pop(
-                                                                //     context);
-                                                                infomation();
-                                                              } else {
-                                                                setState(() {
-                                                                  tappedIndex_ =
-                                                                      index
-                                                                          .toString();
-                                                                });
-                                                                List
-                                                                    newValuePDFimg =
-                                                                    [];
-                                                                for (int index =
-                                                                        0;
-                                                                    index < 1;
-                                                                    index++) {
-                                                                  if (renTalModels[
-                                                                              0]
-                                                                          .imglogo!
-                                                                          .trim() ==
-                                                                      '') {
-                                                                    // newValuePDFimg.add(
-                                                                    //     'https://png.pngtree.com/png-vector/20190820/ourmid/pngtree-no-image-vector-illustration-isolated-png-image_1694547.jpg');
+                                                    ),
+                                                    // Expanded(
+                                                    //     flex: 1,
+                                                    //     child: Translate
+                                                    //         .TranslateAndSetText(
+                                                    //             '${teNantModels[index].rtname}',
+                                                    //             PeopleChaoScreen_Color
+                                                    //                 .Colors_Text1_,
+                                                    //             TextAlign.left,
+                                                    //             null,
+                                                    //             Font_.Fonts_T,
+                                                    //             14,
+                                                    //             1)
+
+                                                    //     //  AutoSizeText(
+                                                    //     //   minFontSize: 10,
+                                                    //     //   maxFontSize: 25,
+                                                    //     //   maxLines: 1,
+                                                    //     //   '${teNantModels[index].rtname}',
+                                                    //     //   textAlign: TextAlign.left,
+                                                    //     //   overflow:
+                                                    //     //       TextOverflow.ellipsis,
+                                                    //     //   style: const TextStyle(
+                                                    //     //       color:
+                                                    //     //           PeopleChaoScreen_Color
+                                                    //     //               .Colors_Text2_,
+                                                    //     //       //fontWeight: FontWeight.bold,
+                                                    //     //       fontFamily:
+                                                    //     //           Font_.Fonts_T),
+                                                    //     // ),
+                                                    //     ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 12,
+                                                        maxFontSize: 16,
+                                                        maxLines: 1,
+                                                        (teNantModels[index]
+                                                                    .cc_date ==
+                                                                null)
+                                                            ? ' - '
+                                                            : '${DateFormat('dd-MM').format(DateTime.parse('${teNantModels[index].cc_date} 00:00:00'))}-${DateTime.parse('${teNantModels[index].cc_date} 00:00:00').year + 0}',
+                                                        // '${teNantModels[index].cc_date}',
+                                                        textAlign:
+                                                            TextAlign.left,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            //fontWeight: FontWeight.bold,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 12,
+                                                        maxFontSize: 16,
+                                                        maxLines: 1,
+                                                        (teNantModels[index]
+                                                                    .cdate ==
+                                                                null)
+                                                            ? ' - '
+                                                            : '${DateFormat('dd-MM').format(DateTime.parse('${teNantModels[index].cdate} 00:00:00'))}-${DateTime.parse('${teNantModels[index].cdate} 00:00:00').year + 0}',
+                                                        // '${teNantModels[index].cc_date}',
+                                                        textAlign:
+                                                            TextAlign.left,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            //fontWeight: FontWeight.bold,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 12,
+                                                        maxFontSize: 16,
+                                                        maxLines: 1,
+                                                        (teNantModels[index]
+                                                                    .w1 ==
+                                                                null)
+                                                            ? ' - '
+                                                            : '${DateFormat('dd-MM').format(DateTime.parse('${teNantModels[index].w1} 00:00:00'))}-${DateTime.parse('${teNantModels[index].w1} 00:00:00').year + 0}',
+                                                        // '${teNantModels[index].cc_date}',
+                                                        textAlign:
+                                                            TextAlign.left,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            //fontWeight: FontWeight.bold,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Tooltip(
+                                                        richMessage: TextSpan(
+                                                          text:
+                                                              '${teNantModels[index].cc_remark}',
+                                                          style: TextStyle(
+                                                            color: HomeScreen_Color
+                                                                .Colors_Text1_,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontFamily:
+                                                                FontWeight_
+                                                                    .Fonts_T,
+                                                            //fontSize: 10.0
+                                                          ),
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(5),
+                                                          color:
+                                                              Colors.grey[200],
+                                                        ),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 12,
+                                                          maxFontSize: 16,
+                                                          maxLines: 1,
+                                                          '${teNantModels[index].cc_remark}',
+                                                          textAlign:
+                                                              TextAlign.left,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                        flex: 1,
+                                                        child: Translate
+                                                            .TranslateAndSetText(
+                                                                '${teNantModels[index].st}',
+                                                                PeopleChaoScreen_Color
+                                                                    .Colors_Text1_,
+                                                                TextAlign
+                                                                    .center,
+                                                                null,
+                                                                Font_.Fonts_T,
+                                                                14,
+                                                                1)
+                                                        // AutoSizeText(
+                                                        //   minFontSize: 10,
+                                                        //   maxFontSize: 25,
+                                                        //   maxLines: 1,
+                                                        //   '${teNantModels[index].st}',
+                                                        //   textAlign:
+                                                        //       TextAlign.center,
+                                                        //   overflow:
+                                                        //       TextOverflow.ellipsis,
+                                                        //   style: const TextStyle(
+                                                        //       color:
+                                                        //           PeopleChaoScreen_Color
+                                                        //               .Colors_Text2_,
+                                                        //       //fontWeight: FontWeight.bold,
+                                                        //       fontFamily:
+                                                        //           Font_.Fonts_T),
+                                                        // ),
+                                                        ),
+
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .end,
+                                                        children: [
+                                                          Flexible(
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(4),
+                                                              child:
+                                                                  ElevatedButton(
+                                                                onPressed:
+                                                                    () async {
+                                                                  if (renTal_lavel <=
+                                                                      2) {
+                                                                    infomation();
                                                                   } else {
-                                                                    newValuePDFimg
-                                                                        .add(
-                                                                            '${MyConstant().domain}/files/$foder/logo/${renTalModels[0].imglogo!.trim()}');
+                                                                    setState(
+                                                                        () {
+                                                                      tappedIndex_ =
+                                                                          index
+                                                                              .toString();
+                                                                    });
+
+                                                                    final List<
+                                                                            String>
+                                                                        newValuePDFimg =
+                                                                        [];
+                                                                    final logo =
+                                                                        renTalModels[0].imglogo?.trim() ??
+                                                                            '';
+
+                                                                    if (logo
+                                                                        .isNotEmpty) {
+                                                                      newValuePDFimg
+                                                                          .add(
+                                                                        '${MyConstant().domain}/files/$foder/logo/$logo',
+                                                                      );
+                                                                    }
+
+                                                                    final serTenant =
+                                                                        teNantModels[index]
+                                                                            .quantity;
+
+                                                                    final Cid = teNantModels[index].docno ==
+                                                                            null
+                                                                        ? '${teNantModels[index].cid}'
+                                                                        : '${teNantModels[index].docno}';
+
+                                                                    _showMyDialog_SAVE(
+                                                                        Cid,
+                                                                        newValuePDFimg);
                                                                   }
-                                                                }
-                                                                var ser_teNant =
-                                                                    teNantModels[
-                                                                            index]
-                                                                        .quantity;
-                                                                var Cid = teNantModels[index]
-                                                                            .docno ==
-                                                                        null
-                                                                    ? '${teNantModels[index].cid}'
-                                                                    : '${teNantModels[index].docno}';
-                                                                _showMyDialog_SAVE(
-                                                                    Cid,
-                                                                    newValuePDFimg);
-                                                              }
-                                                            },
-                                                            child: Container(
-                                                                width: 130,
-                                                                decoration:
-                                                                    BoxDecoration(
-                                                                  color: Colors
-                                                                      .red
-                                                                      .shade200,
-                                                                  borderRadius: const BorderRadius
-                                                                          .only(
-                                                                      topLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      topRight:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomLeft:
-                                                                          Radius.circular(
-                                                                              10),
-                                                                      bottomRight:
-                                                                          Radius.circular(
-                                                                              10)),
+                                                                },
+                                                                style: ElevatedButton
+                                                                    .styleFrom(
+                                                                  backgroundColor:
+                                                                      Colors.red
+                                                                          .shade200,
+                                                                  padding: const EdgeInsets
+                                                                          .symmetric(
+                                                                      horizontal:
+                                                                          10,
+                                                                      vertical:
+                                                                          6),
+                                                                  shape:
+                                                                      RoundedRectangleBorder(
+                                                                    borderRadius:
+                                                                        BorderRadius
+                                                                            .circular(5),
+                                                                  ),
                                                                 ),
-                                                                padding:
-                                                                    const EdgeInsets
-                                                                            .all(
-                                                                        2.0),
-                                                                child: Translate.TranslateAndSetText(
+                                                                child:
+                                                                    FittedBox(
+                                                                  fit: BoxFit
+                                                                      .scaleDown,
+                                                                  child: Translate
+                                                                      .TranslateAndSetText(
                                                                     'เรียกดู',
                                                                     PeopleChaoScreen_Color
                                                                         .Colors_Text1_,
@@ -6443,64 +6705,99 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                                     Font_
                                                                         .Fonts_T,
                                                                     14,
-                                                                    1)
-                                                                //     AutoSizeText(
-                                                                //   minFontSize: 10,
-                                                                //   maxFontSize: 25,
-                                                                //   maxLines: 1,
-                                                                //   'เรียกดู',
-                                                                //   textAlign:
-                                                                //       TextAlign
-                                                                //           .center,
-                                                                //   overflow:
-                                                                //       TextOverflow
-                                                                //           .ellipsis,
-                                                                //   style: const TextStyle(
-                                                                //       color: PeopleChaoScreen_Color.Colors_Text2_,
-                                                                //       //fontWeight: FontWeight.bold,
-                                                                //       fontFamily: Font_.Fonts_T),
-                                                                // ),
+                                                                    1,
+                                                                  ),
                                                                 ),
+                                                              ),
+                                                            ),
                                                           ),
-                                                        ),
-                                                      ],
+                                                        ],
+                                                      ),
                                                     ),
-                                                  ),
-                                                ],
-                                              ),
-                                            )),
-                                      ),
-                                    );
-                                  },
-                                ),
-                        ),
-                        Container(
-                            width: MediaQuery.of(context).size.width,
-                            decoration: const BoxDecoration(
-                              color: AppbackgroundColor.Sub_Abg_Colors,
-                              borderRadius: BorderRadius.only(
-                                  topLeft: Radius.circular(0),
-                                  topRight: Radius.circular(0),
-                                  bottomLeft: Radius.circular(10),
-                                  bottomRight: Radius.circular(10)),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Align(
-                                  alignment: Alignment.centerLeft,
-                                  child: Row(
-                                    children: [
-                                      Padding(
-                                        padding: const EdgeInsets.all(8.0),
-                                        child: InkWell(
+                                                  ],
+                                                ),
+                                              )),
+                                        ),
+                                      );
+                                    },
+                                  ),
+                          ),
+                          Container(
+                              width: MediaQuery.of(context).size.width,
+                              decoration: const BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors,
+                                borderRadius: BorderRadius.only(
+                                    topLeft: Radius.circular(0),
+                                    topRight: Radius.circular(0),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Row(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: InkWell(
+                                            onTap: () {
+                                              _scrollController1.animateTo(
+                                                0,
+                                                duration:
+                                                    const Duration(seconds: 1),
+                                                curve: Curves.easeOut,
+                                              );
+                                            },
+                                            child: Container(
+                                                decoration: BoxDecoration(
+                                                  // color: AppbackgroundColor
+                                                  //     .TiTile_Colors,
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  6),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  6),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  6),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  8)),
+                                                  border: Border.all(
+                                                      color: Colors.grey,
+                                                      width: 1),
+                                                ),
+                                                padding:
+                                                    const EdgeInsets.all(3.0),
+                                                child: const Text(
+                                                  'Top',
+                                                  style: TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 10.0,
+                                                      fontFamily:
+                                                          FontWeight_.Fonts_T),
+                                                )),
+                                          ),
+                                        ),
+                                        InkWell(
                                           onTap: () {
-                                            _scrollController1.animateTo(
-                                              0,
-                                              duration:
-                                                  const Duration(seconds: 1),
-                                              curve: Curves.easeOut,
-                                            );
+                                            if (_scrollController1.hasClients) {
+                                              final position =
+                                                  _scrollController1
+                                                      .position.maxScrollExtent;
+                                              _scrollController1.animateTo(
+                                                position,
+                                                duration:
+                                                    const Duration(seconds: 1),
+                                                curve: Curves.easeOut,
+                                              );
+                                            }
                                           },
                                           child: Container(
                                               decoration: BoxDecoration(
@@ -6515,7 +6812,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                         bottomLeft:
                                                             Radius.circular(6),
                                                         bottomRight:
-                                                            Radius.circular(8)),
+                                                            Radius.circular(6)),
                                                 border: Border.all(
                                                     color: Colors.grey,
                                                     width: 1),
@@ -6523,7 +6820,7 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                               padding:
                                                   const EdgeInsets.all(3.0),
                                               child: const Text(
-                                                'Top',
+                                                'Down',
                                                 style: TextStyle(
                                                     color: Colors.grey,
                                                     fontSize: 10.0,
@@ -6531,21 +6828,26 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                                         FontWeight_.Fonts_T),
                                               )),
                                         ),
-                                      ),
-                                      InkWell(
-                                        onTap: () {
-                                          if (_scrollController1.hasClients) {
-                                            final position = _scrollController1
-                                                .position.maxScrollExtent;
-                                            _scrollController1.animateTo(
-                                              position,
-                                              duration:
-                                                  const Duration(seconds: 1),
-                                              curve: Curves.easeOut,
-                                            );
-                                          }
-                                        },
-                                        child: Container(
+                                      ],
+                                    ),
+                                  ),
+                                  Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Row(
+                                      children: [
+                                        InkWell(
+                                          onTap: _moveUp1,
+                                          child: const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Align(
+                                                alignment: Alignment.centerLeft,
+                                                child: Icon(
+                                                  Icons.arrow_upward,
+                                                  color: Colors.grey,
+                                                ),
+                                              )),
+                                        ),
+                                        Container(
                                             decoration: BoxDecoration(
                                               // color: AppbackgroundColor
                                               //     .TiTile_Colors,
@@ -6564,85 +6866,42 @@ class _PeopleChaoScreenState extends State<PeopleChaoScreen> {
                                             ),
                                             padding: const EdgeInsets.all(3.0),
                                             child: const Text(
-                                              'Down',
+                                              'Scroll',
                                               style: TextStyle(
                                                   color: Colors.grey,
                                                   fontSize: 10.0,
                                                   fontFamily:
                                                       FontWeight_.Fonts_T),
                                             )),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Align(
-                                  alignment: Alignment.centerRight,
-                                  child: Row(
-                                    children: [
-                                      InkWell(
-                                        onTap: _moveUp1,
-                                        child: const Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Align(
-                                              alignment: Alignment.centerLeft,
-                                              child: Icon(
-                                                Icons.arrow_upward,
-                                                color: Colors.grey,
-                                              ),
-                                            )),
-                                      ),
-                                      Container(
-                                          decoration: BoxDecoration(
-                                            // color: AppbackgroundColor
-                                            //     .TiTile_Colors,
-                                            borderRadius:
-                                                const BorderRadius.only(
-                                                    topLeft: Radius.circular(6),
-                                                    topRight:
-                                                        Radius.circular(6),
-                                                    bottomLeft:
-                                                        Radius.circular(6),
-                                                    bottomRight:
-                                                        Radius.circular(6)),
-                                            border: Border.all(
-                                                color: Colors.grey, width: 1),
-                                          ),
-                                          padding: const EdgeInsets.all(3.0),
-                                          child: const Text(
-                                            'Scroll',
-                                            style: TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 10.0,
-                                                fontFamily:
-                                                    FontWeight_.Fonts_T),
-                                          )),
-                                      InkWell(
-                                        onTap: _moveDown1,
-                                        child: const Padding(
-                                            padding: EdgeInsets.all(8.0),
-                                            child: Align(
-                                              alignment: Alignment.centerRight,
-                                              child: Icon(
-                                                Icons.arrow_downward,
-                                                color: Colors.grey,
-                                              ),
-                                            )),
-                                      ),
-                                    ],
-                                  ),
-                                )
-                              ],
-                            )),
-                      ],
+                                        InkWell(
+                                          onTap: _moveDown1,
+                                          child: const Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child: Align(
+                                                alignment:
+                                                    Alignment.centerRight,
+                                                child: Icon(
+                                                  Icons.arrow_downward,
+                                                  color: Colors.grey,
+                                                ),
+                                              )),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                ],
+                              )),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   ////////////------------------------------------------------------>(Export file)

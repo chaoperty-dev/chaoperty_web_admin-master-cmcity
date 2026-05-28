@@ -2,6 +2,7 @@ class ExpModel {
   String? ser;
   String? user;
   String? etype;
+    String? dtype;
   String? exptser;
   String? expname;
   String? st;
@@ -37,6 +38,7 @@ class ExpModel {
       {this.ser,
       this.user,
       this.etype,
+      this.dtype,
       this.exptser,
       this.expname,
       this.st,
@@ -71,6 +73,7 @@ class ExpModel {
     ser = json['ser'];
     user = json['user'];
     etype = json['etype'];
+     dtype = json['dtype'];
     exptser = json['exptser'];
     expname = json['expname'];
     st = json['st'];
@@ -108,6 +111,7 @@ class ExpModel {
     data['ser'] = this.ser;
     data['user'] = this.user;
     data['etype'] = this.etype;
+     data['dtype'] = this.dtype;
     data['exptser'] = this.exptser;
     data['expname'] = this.expname;
     data['st'] = this.st;

@@ -105,6 +105,7 @@ class TeNantRenewChoiceModel {
   String? pakan_new;
   String? pdate_pakan_new;
   String? pakan_new_docno;
+  String? zn_code;
 
   TeNantRenewChoiceModel({
     this.ser,
@@ -211,6 +212,7 @@ class TeNantRenewChoiceModel {
     this.pakan_new,
     this.pdate_pakan_new,
     this.pakan_new_docno,
+    this.zn_code,
   });
 
   TeNantRenewChoiceModel.fromJson(Map<String, dynamic> json) {
@@ -323,6 +325,7 @@ class TeNantRenewChoiceModel {
     pakan_new = json['pakan_new'];
     pdate_pakan_new = json['pdate_pakan_new'];
     pakan_new_docno = json['pakan_new_docno'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -437,6 +440,7 @@ class TeNantRenewChoiceModel {
     data['pakan_new'] = this.pakan_new;
     data['pdate_pakan_new'] = this.pdate_pakan_new;
     data['pakan_new_docno'] = this.pakan_new_docno;
+    data['zn_code'] = this.zn_code;
 
     return data;
   }

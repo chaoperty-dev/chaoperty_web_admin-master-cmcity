@@ -549,7 +549,7 @@ class _ReportScreen7State extends State<ReportScreen7> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      // print(result);
       if (result != null) {
         for (var map in result) {
           AreaModel areaModel = AreaModel.fromJson(map);
@@ -1428,8 +1428,8 @@ class _ReportScreen7State extends State<ReportScreen7> {
         Mon_maintenance_Mon = DateFormat('MM').format(selectedDate);
         YE_maintenance_Mon = DateFormat('yyyy').format(selectedDate);
       });
-      print(
-          'Selected month: ${Mon_maintenance_Mon}, Year: ${YE_maintenance_Mon}');
+      // print(
+      //     'Selected month: ${Mon_maintenance_Mon}, Year: ${YE_maintenance_Mon}');
     }
   }
 

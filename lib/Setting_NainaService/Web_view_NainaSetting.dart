@@ -107,7 +107,7 @@ class _WebView_NainaSettingState extends State<WebView_NainaSetting> {
           DartCallback(
             name: 'TestDartCallback',
             callBack: (msg) {
-              print(msg);
+              // print(msg);
             },
           )
         },

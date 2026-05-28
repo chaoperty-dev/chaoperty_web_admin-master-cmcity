@@ -432,8 +432,8 @@ class _Verifi_Exc_PayState extends State<Verifi_Exc_Pay> {
                 map['chqno'] = CHQ_NO.toString().trim();
                 map['bc'] = BC.toString().trim();
                 map['rc'] = RC.toString().trim();
-                print(
-                    '$EX_No /$PAY_TIME /$CUSTOMER_NO /$CUSTOMER_NAME /$PAY_DATE /$REFERENCE_NO /$AMOUNT');
+                // print(
+                //     '$EX_No /$PAY_TIME /$CUSTOMER_NO /$CUSTOMER_NAME /$PAY_DATE /$REFERENCE_NO /$AMOUNT');
                 // BankExcBilling_Model bankExcBillingss =
                 //     BankExcBilling_Model.fromJson(map);
                 // setState(() {
@@ -446,7 +446,7 @@ class _Verifi_Exc_PayState extends State<Verifi_Exc_Pay> {
                 try {
                   BankExcBilling_Model bankExcBillingss =
                       BankExcBilling_Model.fromJson(map);
-                  print(map);
+                  //  print(map);
                   setState(() {
                     limitedList_bankExcBilling.add(bankExcBillingss);
                     // bankExcBilling.add(bankExcBillingss);
@@ -481,11 +481,11 @@ class _Verifi_Exc_PayState extends State<Verifi_Exc_Pay> {
         } else {}
       } else {
         // User canceled the file selection.
-        print('File selection canceled.');
+        // print('File selection canceled.');
       }
     } catch (e) {
-      print(limitedList_bankExcBilling.length);
-      print('Error selecting or reading the file: $e');
+      // print(limitedList_bankExcBilling.length);
+      // print('Error selecting or reading the file: $e');
     }
   }
 
@@ -520,7 +520,7 @@ class _Verifi_Exc_PayState extends State<Verifi_Exc_Pay> {
               ),
               width: (Responsive.isDesktop(context))
                   ? MediaQuery.of(context).size.width * 0.88
-                  : 1200,
+                  : 1400,
               child: Column(children: [
                 ScrollConfiguration(
                     behavior:
@@ -535,12 +535,12 @@ class _Verifi_Exc_PayState extends State<Verifi_Exc_Pay> {
                           SizedBox(
                               width: (Responsive.isDesktop(context))
                                   ? MediaQuery.of(context).size.width * 0.88
-                                  : 1200,
+                                  : 1400,
                               child: Column(children: [
                                 Container(
                                   width: (Responsive.isDesktop(context))
                                       ? MediaQuery.of(context).size.width * 0.88
-                                      : 1200,
+                                      : 1400,
                                   decoration: BoxDecoration(
                                     color: AppbackgroundColor.TiTile_Colors,
                                     borderRadius: BorderRadius.only(
@@ -1184,7 +1184,7 @@ class _Verifi_Exc_PayState extends State<Verifi_Exc_Pay> {
                                     width: (Responsive.isDesktop(context))
                                         ? MediaQuery.of(context).size.width *
                                             0.88
-                                        : 1200,
+                                        : 1400,
                                     decoration: const BoxDecoration(
                                       color: AppbackgroundColor.Sub_Abg_Colors,
                                       borderRadius: BorderRadius.only(

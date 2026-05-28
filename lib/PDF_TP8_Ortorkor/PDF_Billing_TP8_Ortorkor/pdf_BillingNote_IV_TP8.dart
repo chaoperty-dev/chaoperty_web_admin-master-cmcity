@@ -12,6 +12,8 @@ import 'package:printing/printing.dart';
 import '../../CRC_16_Prompay/generate_qrcode.dart';
 import '../../ChaoArea/ChaoAreaRenew_Screen.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/PreviewPdfgen_Bills_INV.dart';
+import '../../Model/GetInvoice_history_Model.dart';
 import '../../PeopleChao/Bills_.dart';
 import '../../Style/File_s.dart';
 import '../../Style/ThaiBaht.dart';
@@ -20,6 +22,7 @@ import '../../Style/loadAndCacheImage.dart';
 class Pdfgen_BillingNoteInvlice_TP8_Ortorkor {
   //////////---------------------------------------------------->(ใบวางบิล แจ้งหนี้)  ใช้  ++
   static void exportPDF_BillingNoteInvlice_TP8_Ortorkor(
+      List<InvoiceHistoryModel> _InvoiceHistoryModels,
       foder,
       Cust_no,
       cid_,
@@ -66,7 +69,8 @@ class Pdfgen_BillingNoteInvlice_TP8_Ortorkor {
       Preview_ser,
       End_Bill_Paydate,
       fonts_pdf,
-      Con_remark) async {
+      Con_remark,
+      customer_name) async {
     int YearQRthai = await int.parse(DateFormat('yyyy')
             .format(DateTime.parse(End_Bill_Paydate))
             .toString()) +
@@ -407,11 +411,12 @@ class Pdfgen_BillingNoteInvlice_TP8_Ortorkor {
                                       pw.Text(
                                         //  'นามลูกค้า /Name : ${(sname_.toString() == '' || sname_ == null || sname_.toString() == 'null') ? '-' : sname_} (${(cname_.toString() == '' || cname_ == null || cname_.toString() == 'null') ? '-' : cname_})',
 
-                                        (sname_.toString() == null ||
-                                                sname_.toString() == '' ||
-                                                sname_.toString() == 'null')
-                                            ? 'นามลูกค้า /Name : -'
-                                            : 'นามลูกค้า /Name : $sname_',
+                                        // (sname_.toString() == null ||
+                                        //         sname_.toString() == '' ||
+                                        //         sname_.toString() == 'null')
+                                        //     ? 'นามลูกค้า /Name : -'
+                                        // :
+                                        'นามลูกค้า /Name : $customer_name',
                                         textAlign: pw.TextAlign.left,
                                         style: pw.TextStyle(
                                           fontSize: font_Size,

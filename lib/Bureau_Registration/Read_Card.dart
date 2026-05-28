@@ -308,7 +308,7 @@ class _ReadCardState extends State<ReadCard> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print('object>>>>>>>>>>>123>>>>>$result');
+      // print('object>>>>>>>>>>>123>>>>>$result');
       if (result != null) {
         customerTexModels.clear();
         for (var map in result) {
@@ -361,7 +361,7 @@ class _ReadCardState extends State<ReadCard> {
     final imagePicker = ImagePicker();
     final pickedFile = await imagePicker.getImage(source: source);
     if (pickedFile == null) {
-      print('User canceled image selection');
+      // print('User canceled image selection');
       return;
     } // 2. Read the image as bytes
     final imageBytes = await pickedFile.readAsBytes();
@@ -394,15 +394,15 @@ class _ReadCardState extends State<ReadCard> {
       );
 
       if (response.statusCode == 200) {
-        print('Image uploaded successfully');
+        // print('Image uploaded successfully');
 
         await Future.delayed(Duration(milliseconds: 100));
         up_photo_string();
       } else {
-        print('Image upload failed');
+        //  print('Image upload failed');
       }
     } catch (e) {
-      print('Error during image processing: $e');
+      // print('Error during image processing: $e');
     }
   }
 
@@ -421,9 +421,9 @@ class _ReadCardState extends State<ReadCard> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       if (result.toString() == 'true') {
-        print('true :-$custno_--> ${fileName_Slip}');
+        // print('true :-$custno_--> ${fileName_Slip}');
       }
     } catch (e) {
       // print(e);
@@ -1093,7 +1093,7 @@ class _ReadCardState extends State<ReadCard> {
                                                               value.type!;
                                                           _TransModels = [];
                                                         });
-                                                        print(Value_AreaSer_);
+                                                        //   print(Value_AreaSer_);
                                                       },
                                                       items: typeModels,
                                                       textStyle:
@@ -2250,12 +2250,12 @@ class _ReadCardState extends State<ReadCard> {
                                                                     CustomerModel
                                                                         .fromJson(
                                                                             map);
-                                                                print(
-                                                                    CustomerModels
-                                                                        .custno);
-                                                                print(
-                                                                    CustomerModels
-                                                                        .custno);
+                                                                // print(
+                                                                //     CustomerModels
+                                                                //         .custno);
+                                                                // print(
+                                                                //     CustomerModels
+                                                                //         .custno);
                                                                 setState(() {
                                                                   cust_no_ =
                                                                       CustomerModels

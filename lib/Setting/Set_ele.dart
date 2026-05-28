@@ -41,7 +41,7 @@ class _SetEleState extends State<SetEle> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  //print(result);
       if (result != null) {
         for (var map in result) {
           ElectricityModel electricityModel = ElectricityModel.fromJson(map);
@@ -104,7 +104,7 @@ class _SetEleState extends State<SetEle> {
                     var response = await http.get(Uri.parse(url));
 
                     var result = json.decode(response.body);
-                    print(result);
+                    // //print(result);
                     if (result.toString() == 'Yes') {
                       setState(() {
                         read_Electricity();
@@ -137,7 +137,7 @@ class _SetEleState extends State<SetEle> {
                           });
                     }
                   } catch (e) {
-                    print(e);
+                    //  //print(e);
                   }
                 },
                 child: Container(
@@ -574,12 +574,12 @@ class _SetEleState extends State<SetEle> {
 
                         String url =
                             '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                        print(url);
+                        // //print(url);
                         try {
                           var response = await http.get(Uri.parse(url));
 
                           var result = json.decode(response.body);
-                          print(result);
+                          //   //print(result);
                           if (result.toString() == 'Yes') {
                             setState(() {
                               read_Electricity();
@@ -588,7 +588,7 @@ class _SetEleState extends State<SetEle> {
                             noAdd(context);
                           }
                         } catch (e) {
-                          print(e);
+                          //    //print(e);
                         }
                       },
                       decoration: InputDecoration(
@@ -641,12 +641,12 @@ class _SetEleState extends State<SetEle> {
 
                         String url =
                             '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                        print(url);
+                        //  //print(url);
                         try {
                           var response = await http.get(Uri.parse(url));
 
                           var result = json.decode(response.body);
-                          print(result);
+                          //     //print(result);
                           if (result.toString() == 'Yes') {
                             setState(() {
                               read_Electricity();
@@ -655,7 +655,7 @@ class _SetEleState extends State<SetEle> {
                             noAdd(context);
                           }
                         } catch (e) {
-                          print(e);
+                          //  //print(e);
                         }
                       },
                       decoration: InputDecoration(
@@ -715,12 +715,12 @@ class _SetEleState extends State<SetEle> {
 
                         String url =
                             '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                        print(url);
+                        //   //print(url);
                         try {
                           var response = await http.get(Uri.parse(url));
 
                           var result = json.decode(response.body);
-                          print(result);
+                          //    //print(result);
                           if (result.toString() == 'Yes') {
                             setState(() {
                               read_Electricity();
@@ -729,7 +729,7 @@ class _SetEleState extends State<SetEle> {
                             noAdd(context);
                           }
                         } catch (e) {
-                          print(e);
+                          //    //print(e);
                         }
                       },
                       decoration: InputDecoration(
@@ -789,12 +789,12 @@ class _SetEleState extends State<SetEle> {
 
                         String url =
                             '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                        print(url);
+                        //print(url);
                         try {
                           var response = await http.get(Uri.parse(url));
 
                           var result = json.decode(response.body);
-                          print(result);
+                          //print(result);
                           if (result.toString() == 'Yes') {
                             setState(() {
                               read_Electricity();
@@ -803,7 +803,7 @@ class _SetEleState extends State<SetEle> {
                             noAdd(context);
                           }
                         } catch (e) {
-                          print(e);
+                          //print(e);
                         }
                       },
                       decoration: InputDecoration(
@@ -896,13 +896,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -911,7 +911,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -992,13 +992,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1007,7 +1007,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1084,13 +1084,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1099,7 +1099,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1210,13 +1210,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1225,7 +1225,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1314,13 +1314,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1329,7 +1329,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1406,13 +1406,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1421,7 +1421,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1532,13 +1532,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1547,7 +1547,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1636,13 +1636,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1651,7 +1651,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1728,13 +1728,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1743,7 +1743,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1854,13 +1854,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1869,7 +1869,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -1958,13 +1958,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -1973,7 +1973,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2050,13 +2050,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2065,7 +2065,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2176,13 +2176,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2191,7 +2191,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2280,13 +2280,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2295,7 +2295,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2372,13 +2372,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2387,7 +2387,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2479,13 +2479,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2494,7 +2494,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2602,13 +2602,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2617,7 +2617,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2694,13 +2694,13 @@ class _SetEleState extends State<SetEle> {
 
                                     String url =
                                         '${MyConstant().domain}/UPC_electricity.php?isAdd=true&ren=$ren&ser_user=$ser_user&ele_ser=$ele_ser&ele_colum=$ele_colum&ele_value=$ele_value';
-                                    print(url);
+                                    //print(url);
                                     try {
                                       var response =
                                           await http.get(Uri.parse(url));
 
                                       var result = json.decode(response.body);
-                                      print(result);
+                                      //print(result);
                                       if (result.toString() == 'Yes') {
                                         setState(() {
                                           read_Electricity();
@@ -2709,7 +2709,7 @@ class _SetEleState extends State<SetEle> {
                                         noAdd(context);
                                       }
                                     } catch (e) {
-                                      print(e);
+                                      //print(e);
                                     }
                                   },
                                   decoration: InputDecoration(
@@ -2777,7 +2777,7 @@ class _SetEleState extends State<SetEle> {
                   flex: 1,
                   child: InkWell(
                     onTap: () async {
-                      print('ลบ ${index}');
+                      //print('ลบ ${index}');
 
                       SharedPreferences preferences =
                           await SharedPreferences.getInstance();
@@ -2793,7 +2793,7 @@ class _SetEleState extends State<SetEle> {
                         var response = await http.get(Uri.parse(url));
 
                         var result = json.decode(response.body);
-                        print(result);
+                        //print(result);
                         if (result.toString() == 'Yes') {
                           setState(() {
                             read_Electricity();
@@ -2819,7 +2819,7 @@ class _SetEleState extends State<SetEle> {
                               });
                         }
                       } catch (e) {
-                        print(e);
+                        //print(e);
                       }
                     },
                     child: Container(
@@ -2835,7 +2835,7 @@ class _SetEleState extends State<SetEle> {
                   ),
                   // GestureDetector(
                   //   onTap: () {
-                  //     print('ลบ ${index}');
+                  //     //print('ลบ ${index}');
                   //   },
                   //   child: Padding(
                   //     padding: EdgeInsets.all(8.0),

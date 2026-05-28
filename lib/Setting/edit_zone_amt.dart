@@ -57,7 +57,7 @@ class _EditZoneAmtState extends State<EditZoneAmt> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      // print(result);
       if (result != null) {
         for (var map in result) {
           VatModel vatModel = VatModel.fromJson(map);
@@ -83,7 +83,7 @@ class _EditZoneAmtState extends State<EditZoneAmt> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //  print(result);
       if (result != null) {
         for (var map in result) {
           ExpModel expModel = ExpModel.fromJson(map);
@@ -139,7 +139,7 @@ class _EditZoneAmtState extends State<EditZoneAmt> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //   print(result);
       if (result != null) {
         for (var map in result) {
           TransModel transModel = TransModel.fromJson(map);
@@ -436,7 +436,7 @@ class _EditZoneAmtState extends State<EditZoneAmt> {
                                                     price_text.clear();
                                                     read_GC_Exp_trans();
                                                   });
-                                                  print(ser_exp);
+                                                  //    print(ser_exp);
                                                 },
                                               ),
                                             ),
@@ -909,8 +909,8 @@ class _EditZoneAmtState extends State<EditZoneAmt> {
                                                           var vatName =
                                                               value.substring(
                                                                   zones + 1);
-                                                          print(
-                                                              'mmmmm ${vatSer.toString()} $vatName');
+                                                          // print(
+                                                          //     'mmmmm ${vatSer.toString()} $vatName');
 
                                                           setState(() {
                                                             vat_Ser = vatSer;
@@ -1012,7 +1012,7 @@ class _EditZoneAmtState extends State<EditZoneAmt> {
                                                                                     var response = await http.get(Uri.parse(url));
 
                                                                                     var result = json.decode(response.body);
-                                                                                    print(result);
+                                                                                    //   print(result);
                                                                                     if (result.toString() == 'true') {
                                                                                       // setState(() {
                                                                                       //   read_GC_rownum();

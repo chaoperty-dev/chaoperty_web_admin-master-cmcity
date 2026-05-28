@@ -266,7 +266,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           PrebookModel prebookModelss = PrebookModel.fromJson(map);
@@ -298,7 +298,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
         },
       );
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           PrebookModel prebookModelss = PrebookModel.fromJson(map);
@@ -326,7 +326,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           ExpModel expModel = ExpModel.fromJson(map);
@@ -353,7 +353,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       // Map<String, dynamic> map = Map();
       // map['ser'] = '0';
       // map['rser'] = '0';
@@ -399,7 +399,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       for (var map in result) {
         UserModel userModel = UserModel.fromJson(map);
         setState(() {
@@ -430,7 +430,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           AreaModel areaModel = AreaModel.fromJson(map);
@@ -455,7 +455,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -489,7 +489,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
     var ren = preferences.getString('renTalSer');
     var seruser = preferences.getString('ser');
     var utype = preferences.getString('utype');
-    // print('**$ren***ren****ren**renrenren***ren*******${ren}');
+    // //print('**$ren***ren****ren**renrenren***ren*******${ren}');
     String url = '${MyConstant().domain}/GC_rentaldata.php?isAdd=true&ser=$ren';
     if (renTaldataModels.length != 0) {
       renTaldataModels.clear();
@@ -502,7 +502,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       for (var map in result) {
         RenTaldataModel renTaldataModel = RenTaldataModel.fromJson(map);
 
@@ -612,7 +612,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       for (var map in result) {
         RenTalimgModel renTalimgModel = RenTalimgModel.fromJson(map);
 
@@ -674,7 +674,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
 
     var response = await http.get(Uri.parse(url));
     var result = json.decode(response.body);
-    // print(result.toString());
+    // //print(result.toString());
     setState(() {
       signInThread();
       read_GC_rental();
@@ -695,9 +695,9 @@ class _EditwebScreenState extends State<EditwebScreen> {
       });
       final response = deleteRequest.response;
       if (response == 'File deleted successfully.') {
-        print('File deleted successfully!');
+        // //print('File deleted successfully!');
       } else {
-        print('Failed to delete file: $response');
+         ////print('Failed to delete file: $response');
       }
     } else {
       setState(() {
@@ -707,7 +707,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
         read_GC_rentaldata();
         read_GC_rental_img();
       });
-      print('Failed to delete file!');
+      // //print('Failed to delete file!');
     }
     setState(() {
       signInThread();
@@ -734,12 +734,12 @@ class _EditwebScreenState extends State<EditwebScreen> {
     await reader.onLoadEnd.first;
     String fileName_ = file.name;
     String extension = fileName_.split('.').last;
-    // print('File name: $fileName_');
-    // print('Extension: $extension');
+    // //print('File name: $fileName_');
+    // //print('Extension: $extension');
     setState(() {
       base64_Imgman = base64Encode(reader.result as Uint8List);
     });
-    // print(base64_Imgmap);
+    // //print(base64_Imgmap);
     setState(() {
       extension_ = extension;
       file_ = file;
@@ -805,13 +805,13 @@ class _EditwebScreenState extends State<EditwebScreen> {
           '${MyConstant().domain}/File_upload_webfont_img.php?name=$fileName&Foder=$foder&Pathfoder=$Path_foder');
       request.send(formData);
 
-      // print(formData);
+      // //print(formData);
 
       // Handle the response
       await request.onLoad.first;
 
       if (request.status == 200) {
-        print('File uploaded successfully!');
+       //  //print('File uploaded successfully!');
         SharedPreferences preferences = await SharedPreferences.getInstance();
         String? ren = preferences.getString('renTalSer');
         String? ser_user = preferences.getString('ser');
@@ -844,14 +844,14 @@ class _EditwebScreenState extends State<EditwebScreen> {
         //     });
         //   } else {}
         // } catch (e) {
-        //   print(e);
+        //   //print(e);
         // }
         // UpImg(context, fileName, Path_, Ser_);
       } else {
-        print('File upload failed with status code: ${request.status}');
+        //print('File upload failed with status code: ${request.status}');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      //print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -1018,8 +1018,8 @@ class _EditwebScreenState extends State<EditwebScreen> {
                 //       .difference(DateTime.parse(selectsdate.toString()))
                 //       .inDays;
                 // }
-                // print(selectsdate);
-                // print(selectldate);
+                // //print(selectsdate);
+                // //print(selectldate);
                 setState(() {
                   if (selectldate == null) {
                     rangedate = false;
@@ -1075,7 +1075,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                   } catch (e) {}
                 }
 
-                // print('$type_value //// $SDay_Prebook1 //// $LDay_Prebook1');
+                // //print('$type_value //// $SDay_Prebook1 //// $LDay_Prebook1');
                 setState(() {
                   CG_Prebook();
                   Navigator.of(context).pop();
@@ -1476,7 +1476,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                             });
                                                           } else {}
                                                         } catch (e) {
-                                                          print(e);
+                                                          //print(e);
                                                         }
                                                       },
                                                       child: renTal_statusweb ==
@@ -2182,7 +2182,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                       });
                                                                     } else {}
                                                                   } catch (e) {
-                                                                    print(e);
+                                                                    //print(e);
                                                                   }
                                                                 },
                                                               )),
@@ -2696,7 +2696,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                         });
                                                                       } else {}
                                                                     } catch (e) {
-                                                                      print(e);
+                                                                      //print(e);
                                                                     }
                                                                   },
                                                                 ),
@@ -3480,7 +3480,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                       '${rental_UrlYoutube_text.text}';
                                                                   String telss =
                                                                       '${tel_text.text}';
-                                                                  // print(telss);
+                                                                  // //print(telss);
 
                                                                   ///-------------------------------->
                                                                   SharedPreferences
@@ -3523,7 +3523,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                       });
                                                                     } else {}
                                                                   } catch (e) {
-                                                                    print(e);
+                                                                    //print(e);
                                                                   }
                                                                 },
                                                                 child: Row(
@@ -3789,7 +3789,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                         });
                                                       } else {}
                                                     } catch (e) {
-                                                      print(e);
+                                                      //print(e);
                                                     }
                                                   },
                                                 ),
@@ -3962,21 +3962,21 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                               );
 
                                               if (pickedTime != null) {
-                                                print(pickedTime.format(
-                                                    context)); //output 10:51 PM
+                                                //print(pickedTime.format(
+                                                //     context)); //output 10:51 PM
                                                 DateTime parsedTime =
                                                     DateFormat.jm().parse(
                                                         pickedTime
                                                             .format(context)
                                                             .toString());
                                                 //converting to DateTime so that we can further format on different pattern.
-                                                print(
-                                                    parsedTime); //output 1970-01-01 22:53:00.000
+                                                //print(
+                                                   //  parsedTime); //output 1970-01-01 22:53:00.000
                                                 String formattedTime =
                                                     DateFormat('HH:mm:ss')
                                                         .format(parsedTime);
-                                                print(
-                                                    formattedTime); //output 14:59:00
+                                                //print(
+                                                  //  formattedTime); //output 14:59:00
                                                 //DateFormat() is from intl package, you can format the time on any pattern you need.
 
                                                 setState(() {
@@ -3984,7 +3984,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                       formattedTime; //set the value of text field.
                                                 });
                                               } else {
-                                                print("Time is not selected");
+                                                //print("Time is not selected");
                                               }
                                             },
                                           ),
@@ -4061,21 +4061,21 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                               );
 
                                               if (pickedTime != null) {
-                                                print(pickedTime.format(
-                                                    context)); //output 10:51 PM
+                                                //print(pickedTime.format(
+                                                   //  context)); //output 10:51 PM
                                                 DateTime parsedTime =
                                                     DateFormat.jm().parse(
                                                         pickedTime
                                                             .format(context)
                                                             .toString());
                                                 //converting to DateTime so that we can further format on different pattern.
-                                                print(
-                                                    parsedTime); //output 1970-01-01 22:53:00.000
+                                                //print(
+                                                   //  parsedTime); //output 1970-01-01 22:53:00.000
                                                 String formattedTime =
                                                     DateFormat('HH:mm:ss')
                                                         .format(parsedTime);
-                                                print(
-                                                    formattedTime); //output 14:59:00
+                                                //print(
+                                                   //  formattedTime); //output 14:59:00
                                                 //DateFormat() is from intl package, you can format the time on any pattern you need.
 
                                                 setState(() {
@@ -4083,7 +4083,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                       formattedTime; //set the value of text field.
                                                 });
                                               } else {
-                                                print("Time is not selected");
+                                                //print("Time is not selected");
                                               }
                                             },
                                           ),
@@ -4157,7 +4157,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                               });
                                             } else {}
                                           } catch (e) {
-                                            print(e);
+                                            //print(e);
                                           }
                                         },
                                       )),
@@ -4348,7 +4348,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                             });
                                           } else {}
                                         } catch (e) {
-                                          print(e);
+                                          //print(e);
                                         }
                                       },
                                     ),
@@ -4746,7 +4746,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                       });
                                                     } else {}
                                                   } catch (e) {
-                                                    print(e);
+                                                    //print(e);
                                                   }
                                                 },
                                               ),
@@ -4872,7 +4872,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                           });
                                                         } else {}
                                                       } catch (e) {
-                                                        print(e);
+                                                        //print(e);
                                                       }
                                                     },
                                                     child: Container(
@@ -5104,7 +5104,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                       });
                                                     } else {}
                                                   } catch (e) {
-                                                    print(e);
+                                                    //print(e);
                                                   }
                                                 },
                                               ),
@@ -5356,7 +5356,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   n_facilities_new +=
                                                                       new_value;
 
-                                                                  // print(
+                                                                  // //print(
                                                                   //     n_facilities_new);
 
                                                                   ///-------------------------------->
@@ -5401,7 +5401,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                           'OK');
                                                                     } else {}
                                                                   } catch (e) {
-                                                                    print(e);
+                                                                    //print(e);
                                                                   }
                                                                 },
                                                       child: Translate
@@ -5579,7 +5579,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                             });
                                           } else {}
                                         } catch (e) {
-                                          print(e);
+                                          //print(e);
                                         }
                                       },
                                       child: const Icon(
@@ -5830,7 +5830,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   n_places_new +=
                                                                       new_value;
 
-                                                                  // print(
+                                                                  // //print(
                                                                   //     n_places_new);
 
                                                                   ///-------------------------------->
@@ -5875,7 +5875,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                           'OK');
                                                                     } else {}
                                                                   } catch (e) {
-                                                                    print(e);
+                                                                    //print(e);
                                                                   }
                                                                 },
                                                       child: Translate
@@ -6055,7 +6055,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                             });
                                           } else {}
                                         } catch (e) {
-                                          print(e);
+                                          //print(e);
                                         }
                                       },
                                       child: const Icon(
@@ -6162,7 +6162,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                             });
                                           } else {}
                                         } catch (e) {
-                                          print(e);
+                                          //print(e);
                                         }
                                       },
                                       child: Row(
@@ -6493,14 +6493,14 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                             // int timestamp =
                                                                             //     parsedDateTime.millisecondsSinceEpoch;
 
-                                                                            // print(timestamp);
+                                                                            // //print(timestamp);
                                                                             // DateTime
                                                                             //     dateTimeFromTimestamp =
                                                                             //     DateTime.fromMillisecondsSinceEpoch(timestamp);
 
-                                                                            // print(dateTimeFromTimestamp);
-                                                                            // print(prebookModels2.length);
-                                                                            print(parsedDateTime);
+                                                                            // //print(dateTimeFromTimestamp);
+                                                                            // //print(prebookModels2.length);
+                                                                            //print(parsedDateTime);
 
                                                                             CG_Prebook_Recheck(
                                                                               '${prebookModels[index].ser}',
@@ -6536,10 +6536,10 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                                   CG_Prebook();
                                                                                 });
                                                                                 Dia_log();
-                                                                                // print('${result.startTime}');
+                                                                                // //print('${result.startTime}');
                                                                               } else {
-                                                                                //  print('prebookModels2.length ');
-                                                                                // print(prebookModels2.length );
+                                                                                //  //print('prebookModels2.length ');
+                                                                                // //print(prebookModels2.length );
                                                                                 showDialog<void>(
                                                                                   context: context,
                                                                                   barrierDismissible: false, // user must tap button!
@@ -6717,14 +6717,14 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                             // int timestamp =
                                                                             //     parsedDateTime.millisecondsSinceEpoch;
 
-                                                                            // print(timestamp);
+                                                                            // //print(timestamp);
                                                                             // DateTime
                                                                             //     dateTimeFromTimestamp =
                                                                             //     DateTime.fromMillisecondsSinceEpoch(timestamp);
 
-                                                                            // print(dateTimeFromTimestamp);
-                                                                            // print(prebookModels2.length);
-                                                                            print(parsedDateTime);
+                                                                            // //print(dateTimeFromTimestamp);
+                                                                            // //print(prebookModels2.length);
+                                                                            //print(parsedDateTime);
 
                                                                             CG_Prebook_Recheck(
                                                                               '${prebookModels[index].ser}',
@@ -6760,10 +6760,10 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                                   CG_Prebook();
                                                                                 });
                                                                                 Dia_log();
-                                                                                // print('${result.startTime}');
+                                                                                // //print('${result.startTime}');
                                                                               } else {
-                                                                                //  print('prebookModels2.length ');
-                                                                                // print(prebookModels2.length );
+                                                                                //  //print('prebookModels2.length ');
+                                                                                // //print(prebookModels2.length );
                                                                                 showDialog<void>(
                                                                                   context: context,
                                                                                   barrierDismissible: false, // user must tap button!
@@ -6887,13 +6887,13 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                     //     int timestamp =
                                                                     //         parsedDateTime.millisecondsSinceEpoch;
 
-                                                                    //     print(
+                                                                    //     //print(
                                                                     //         timestamp);
                                                                     //     DateTime
                                                                     //         dateTimeFromTimestamp =
                                                                     //         DateTime.fromMillisecondsSinceEpoch(timestamp);
 
-                                                                    //     print(
+                                                                    //     //print(
                                                                     //         dateTimeFromTimestamp);
                                                                     //     // TimeRange
                                                                     //     //     result =
@@ -6998,10 +6998,10 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                     //     //       CG_Prebook();
                                                                     //     //     });
                                                                     //     //     Dia_log();
-                                                                    //     //     // print('${result.startTime}');
+                                                                    //     //     // //print('${result.startTime}');
                                                                     //     //   } else {
-                                                                    //     //     //  print('prebookModels2.length ');
-                                                                    //     //     // print(prebookModels2.length );
+                                                                    //     //     //  //print('prebookModels2.length ');
+                                                                    //     //     // //print(prebookModels2.length );
                                                                     //     //     showDialog<void>(
                                                                     //     //       context: context,
                                                                     //     //       barrierDismissible: false, // user must tap button!
@@ -7227,7 +7227,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   });
                                                                 } else {}
                                                               } catch (e) {
-                                                                print(e);
+                                                                //print(e);
                                                               }
                                                             },
                                                             child: Icon(
@@ -7663,7 +7663,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                               });
                                                                             } else {}
                                                                           } catch (e) {
-                                                                            print(e);
+                                                                            //print(e);
                                                                           }
                                                                         },
                                                                       )),
@@ -7913,7 +7913,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   });
                                                                 } else {}
                                                               } catch (e) {
-                                                                print(e);
+                                                                //print(e);
                                                               }
                                                             });
                                                           },
@@ -8084,7 +8084,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   });
                                                                 } else {}
                                                               } catch (e) {
-                                                                print(e);
+                                                                //print(e);
                                                               }
                                                             },
                                                             child: Icon(
@@ -8292,7 +8292,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   json.decode(
                                                                       response
                                                                           .body);
-                                                              // print(result);
+                                                              // //print(result);
                                                               if (result
                                                                       .toString() ==
                                                                   'true') {
@@ -8406,7 +8406,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   json.decode(
                                                                       response
                                                                           .body);
-                                                              // print(result);
+                                                              // //print(result);
                                                               if (result
                                                                       .toString() ==
                                                                   'true') {
@@ -8778,7 +8778,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
 
                                                           Titel_webmarket_new +=
                                                               new_value;
-                                                          // print(
+                                                          // //print(
                                                           //     Titel_webmarket_new);
 
                                                           ///-------------------------------->
@@ -8821,7 +8821,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                               });
                                                             } else {}
                                                           } catch (e) {
-                                                            print(e);
+                                                            //print(e);
                                                           }
                                                         },
                                                       )),
@@ -9050,7 +9050,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                                                   json.decode(
                                                                       response
                                                                           .body);
-                                                              // print(result);
+                                                              // //print(result);
                                                               if (result
                                                                       .toString() ==
                                                                   'true') {
@@ -9460,7 +9460,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                     });
                                   } else {}
                                 } catch (e) {
-                                  print(e);
+                                  //print(e);
                                 }
                               },
                             ),
@@ -9665,7 +9665,7 @@ class _EditwebScreenState extends State<EditwebScreen> {
                                     });
                                   } else {}
                                 } catch (e) {
-                                  print(e);
+                                  //print(e);
                                 }
                               },
                             ),

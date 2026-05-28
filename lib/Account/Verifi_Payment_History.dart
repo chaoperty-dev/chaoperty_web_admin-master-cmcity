@@ -466,7 +466,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
         '${MyConstant().domain}/GC_bill_pay_BC_Verifi.php?isAdd=true&ren=$ren&mont_h=$MONTH_Now&yea_r=$YEAR_Now&serpang=$sertype';
     try {
       var response = await http.get(Uri.parse(url));
-      print('GC_bill_pay_BC_Verifi $url');
+      //print('GC_bill_pay_BC_Verifi $url');
       var result = json.decode(response.body);
       // print('result $ciddoc');
       if (result.toString() != 'null') {
@@ -521,7 +521,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
 
     String url =
         '${MyConstant().domain}/GC_bill_pay_BC_Verifi_chack.php?isAdd=true&ren=$ren&user=$user&mont_h=$MONTH_Now&yea_r=$YEAR_Now&serpang=$sertype';
-    print('result $url');
+    // print('result $url');
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -686,7 +686,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
     var docnoin = _TransReBillModels[index].docno;
     String url =
         '${MyConstant().domain}/GC_bill_payVerifi_history.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docnoin=$docnoin';
-    print('GC_bill_payVerifi_history>> $url');
+    // print('GC_bill_payVerifi_history>> $url');
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -3666,7 +3666,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
     return Container(
       width: (Responsive.isDesktop(context))
           ? MediaQuery.of(context).size.width * 0.88
-          : 1200,
+          : 1400,
       height: MediaQuery.of(context).size.height * 0.8,
       child: Column(
         children: [
@@ -5263,7 +5263,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
       child: Column(
         children: [
           Container(
-            width: (Responsive.isDesktop(context)) ? calculatedWidth : 1300,
+            width: (Responsive.isDesktop(context)) ? calculatedWidth : 1400,
             decoration: const BoxDecoration(
               color: AppbackgroundColor.Sub_Abg_Colors,
               borderRadius: BorderRadius.only(
@@ -5278,7 +5278,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
                 Container(
                     width: (Responsive.isDesktop(context))
                         ? calculatedWidth
-                        : 1200,
+                        : 1400,
                     child: Column(
                       children: [
                         Row(
@@ -11212,13 +11212,13 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
                                                                                   // '${_TransReBillModels[index].docno}';
 
                                                                                   String url = '${MyConstant().domain}/OK_Verifi_Payment_con.php?isAdd=true&ren=$ren&ciddoc=$docno&Re_mark=$Remark&ser_user=$ser_userVerifi';
-                                                                                  print(url);
+                                                                                  // print(url);
                                                                                   try {
                                                                                     var response = await http.get(Uri.parse(url));
 
                                                                                     var result = json.decode(response.body);
 
-                                                                                    print(result.toString());
+                                                                                    // print(result.toString());
                                                                                     if (result.toString() == 'true') {
                                                                                       Navigator.pop(context, 'OK');
                                                                                       Navigator.pop(context, 'OK');
@@ -12969,8 +12969,8 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
                 map['chqno'] = CHQ_NO.toString().trim();
                 map['bc'] = BC.toString().trim();
                 map['rc'] = RC.toString().trim();
-                print(
-                    '$EX_No /$PAY_TIME /$CUSTOMER_NO /$CUSTOMER_NAME /$PAY_DATE /$REFERENCE_NO /$AMOUNT');
+                // print(
+                //     '$EX_No /$PAY_TIME /$CUSTOMER_NO /$CUSTOMER_NAME /$PAY_DATE /$REFERENCE_NO /$AMOUNT');
                 // BankExcBilling_Model bankExcBillingss =
                 //     BankExcBilling_Model.fromJson(map);
                 // setState(() {
@@ -12983,7 +12983,7 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
                 try {
                   BankExcBilling_Model bankExcBillingss =
                       BankExcBilling_Model.fromJson(map);
-                  print(map);
+                  //print(map);
                   setState(() {
                     limitedList_bankExcBilling.add(bankExcBillingss);
                     // bankExcBilling.add(bankExcBillingss);
@@ -13018,11 +13018,11 @@ class _Verifi_Payment_HistoryState extends State<Verifi_Payment_History> {
         } else {}
       } else {
         // User canceled the file selection.
-        print('File selection canceled.');
+        // print('File selection canceled.');
       }
     } catch (e) {
-      print(limitedList_bankExcBilling.length);
-      print('Error selecting or reading the file: $e');
+      // print(limitedList_bankExcBilling.length);
+      // print('Error selecting or reading the file: $e');
     }
   }
   // Future<Null> read_Excel_limit() async {

@@ -30,7 +30,7 @@ Future<List<AreaModel>> loadSvgImage(
 
       int index =
           areaModels.indexWhere((area) => area.ln.toString().trim() == name);
-          
+
       maps.add(AreaModel(
           ser: areaModels[index].ser.toString(),
           rser: areaModels[index].rser.toString(),
@@ -73,7 +73,7 @@ Future<List<AreaModel>> loadSvgImage(
           name: name));
       index++;
     }
-    print('partId   index++ ///// ${maps.length}');
+    //print('partId   index++ ///// ${maps.length}');
   }
 
   return maps;

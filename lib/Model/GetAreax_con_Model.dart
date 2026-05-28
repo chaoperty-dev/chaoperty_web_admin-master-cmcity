@@ -12,6 +12,9 @@ class AreaxConModel {
   String? data_update;
   String? cname;
   String? mainten;
+  String? fid;
+  String? st;
+  String? cc_date;
 
   AreaxConModel(
       {this.ser,
@@ -26,7 +29,10 @@ class AreaxConModel {
       this.type,
       this.sdate,
       this.cname,
-       this.mainten});
+      this.mainten,
+      this.fid,
+      this.st,
+      this.cc_date});
 
   AreaxConModel.fromJson(Map<String, dynamic> json) {
     ser = json['ser'];
@@ -42,6 +48,9 @@ class AreaxConModel {
     sdate = json['sdate'];
     cname = json['cname'];
     mainten = json['mainten'];
+    fid = json['fid'];
+    st = json['st'];
+    cc_date = json['cc_date'];
   }
 
   Map<String, dynamic> toJson() {
@@ -59,6 +68,9 @@ class AreaxConModel {
     data['sdate'] = this.sdate;
     data['cname'] = this.cname;
     data['mainten'] = this.mainten;
+    data['fid'] = this.fid;
+    data['st'] = this.st;
+    data['cc_date'] = this.cc_date;
     return data;
   }
 }

@@ -89,6 +89,7 @@ class TeNantChoiceModel {
   String? pvat_pakan;
 
   String? total_pakan;
+  String? zn_code;
 
   TeNantChoiceModel({
     this.ser,
@@ -179,6 +180,7 @@ class TeNantChoiceModel {
     this.exp_array,
     this.pvat_pakan,
     this.total_pakan,
+    this.zn_code,
   });
   TeNantChoiceModel.fromJson(Map<String, dynamic> json) {
     ser = json['ser'];
@@ -275,6 +277,7 @@ class TeNantChoiceModel {
     exp_array = json['exp_array'];
     pvat_pakan = json['pvat_pakan'];
     total_pakan = json['total_pakan'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -370,6 +373,7 @@ class TeNantChoiceModel {
     data['exp_array'] = this.exp_array;
     data['pvat_pakan'] = this.pvat_pakan;
     data['total_pakan'] = this.total_pakan;
+    data['zn_code'] = this.zn_code;
     return data;
   }
 }

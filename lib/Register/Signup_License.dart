@@ -179,7 +179,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
         }
       } else {}
     } catch (e) {}
-    print('pkname>> $pkname');
+    // print('pkname>> $pkname');
     setState(() {
       read_GC_package_user().then((value) => read_GC_package());
     });
@@ -498,7 +498,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                             color: Colors.orange
                                                                 .shade100,
                                                             borderRadius: const BorderRadius
-                                                                .only(
+                                                                    .only(
                                                                 topLeft: Radius
                                                                     .circular(
                                                                         10),
@@ -834,7 +834,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                         .green
                                                                         .shade900,
                                                                     borderRadius: const BorderRadius
-                                                                        .only(
+                                                                            .only(
                                                                         topLeft:
                                                                             Radius.circular(
                                                                                 10),
@@ -854,7 +854,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                   ),
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child: Center(
                                                                     child:
@@ -1017,7 +1017,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                           : Colors
                                                                               .white38,
                                                                       borderRadius: const BorderRadius
-                                                                          .only(
+                                                                              .only(
                                                                           topLeft: Radius.circular(
                                                                               10),
                                                                           topRight: Radius.circular(
@@ -1039,8 +1039,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                               width: 1),
                                                                     ),
                                                                     padding:
-                                                                        const EdgeInsets
-                                                                            .all(
+                                                                        const EdgeInsets.all(
                                                                             8.0),
                                                                     child:
                                                                         Center(
@@ -1952,7 +1951,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                 Padding(
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       InkWell(
@@ -1961,8 +1960,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                         decoration: BoxDecoration(
                                                                           color:
                                                                               Colors.red[600],
-                                                                          borderRadius: const BorderRadius
-                                                                              .only(
+                                                                          borderRadius: const BorderRadius.only(
                                                                               topLeft: Radius.circular(10),
                                                                               topRight: Radius.circular(10),
                                                                               bottomLeft: Radius.circular(10),
@@ -1996,7 +1994,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                 Padding(
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       InkWell(
@@ -2299,8 +2297,8 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                             int.parse(Form1_text.text)) *
                                         12)
                                     .toString();
-                            print(
-                                'serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
+                            // print(
+                            //     'serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
                             String url =
                                 '${MyConstant().domain}/In_Package_put.php?isAdd=true&serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld&sta=$sta&ema=$ema&pack=$pack&Slip=$fileName_Slip_&pri=$pri';
 
@@ -2308,12 +2306,12 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                               var response = await http.get(Uri.parse(url));
 
                               var result = json.decode(response.body);
-                              print(result);
+                              // print(result);
                               if (result.toString() == 'true') {}
                             } catch (e) {}
                             final response = await SendEmail(
                                 '$renname', Form2_text.text, vv); //ส่งเมล์
-                            print(response);
+                            // print(response);
                             OKuploadFile_Slip(fileName_Slip_);
                             sess();
                           } else {
@@ -3171,7 +3169,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                 Padding(
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       InkWell(
@@ -3180,8 +3178,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                         decoration: BoxDecoration(
                                                                           color:
                                                                               Colors.red[600],
-                                                                          borderRadius: const BorderRadius
-                                                                              .only(
+                                                                          borderRadius: const BorderRadius.only(
                                                                               topLeft: Radius.circular(10),
                                                                               topRight: Radius.circular(10),
                                                                               bottomLeft: Radius.circular(10),
@@ -3215,7 +3212,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                                                 Padding(
                                                                   padding:
                                                                       const EdgeInsets
-                                                                          .all(
+                                                                              .all(
                                                                           8.0),
                                                                   child:
                                                                       InkWell(
@@ -3518,8 +3515,8 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                                             int.parse(Form1_text.text)) *
                                         12)
                                     .toString();
-                            print(
-                                'serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
+                            // print(
+                            //     'serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld');
                             String url =
                                 '${MyConstant().domain}/In_Package_put.php?isAdd=true&serren=$ser&lisen=$vv&num_date=$nd&day_date=$dd&ldate=$ld&sta=$sta&ema=$ema&pack=$pack&Slip=$fileName_Slip_&pri=$pri';
 
@@ -3527,13 +3524,13 @@ class _SignUPLicenseState extends State<SignUPLicense> {
                               var response = await http.get(Uri.parse(url));
 
                               var result = json.decode(response.body);
-                              print(result);
+                              //  print(result);
                               if (result.toString() == 'true') {}
                             } catch (e) {}
 
                             final response = await SendEmail(
                                 '$renname', Form2_text.text, vv); //ส่งเมล์
-                            print(response);
+                            //  print(response);
                             OKuploadFile_Slip(fileName_Slip_);
                             sess();
                           } else {
@@ -3707,15 +3704,15 @@ class _SignUPLicenseState extends State<SignUPLicense> {
         );
 
         if (response.statusCode == 200) {
-          print('Image uploaded successfully');
+          //      print('Image uploaded successfully');
         } else {
-          print('Image upload failed');
+          //   print('Image upload failed');
         }
       } catch (e) {
-        print('Error during image processing: $e');
+        // print('Error during image processing: $e');
       }
     } else {
-      print('ยังไม่ได้เลือกรูปภาพ');
+      //  print('ยังไม่ได้เลือกรูปภาพ');
     }
   }
 
@@ -3731,7 +3728,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
         source: ImageSource.gallery, maxHeight: 100, maxWidth: 100);
 
     if (pickedFile == null) {
-      print('User canceled image selection');
+      //  print('User canceled image selection');
       return;
     } else {
       // 2. Read the image as bytes
@@ -3748,7 +3745,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
         extension_ = 'png';
         // file_ = file;
       });
-      print(extension_);
+      //  print(extension_);
     }
   }
 
@@ -3795,7 +3792,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
       // print(result);
       if (result.toString() == 'true') {
       } else if (result.toString() == 'false') {
-        print('rrrrrrrrrrrrrrfalse');
+        //   print('rrrrrrrrrrrrrrfalse');
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3821,7 +3818,7 @@ class _SignUPLicenseState extends State<SignUPLicense> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      print(result);
+      //   print(result);
       if (result.toString() == 'true') {
         Insert_log.Insert_logs('Update Licens', 'License Key');
         String? _route = preferences.getString('route');

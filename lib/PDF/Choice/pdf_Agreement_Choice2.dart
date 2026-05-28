@@ -13,6 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../PeopleChao/Rental_Information.dart';
 import '../../../../Style/ThaiBaht.dart';
 import '../../Constant/Myconstant.dart';
+import '../../Man_PDF/Preview_PDF/Preview_Agreement.dart';
 import '../../Style/loadAndCacheImage.dart';
 
 class Expense {
@@ -458,15 +459,19 @@ class Pdfgen_Agreement_Choice2 {
                             font: ttf,
                           ),
                         )
-                      : pw.Text(
-                          '${context.pageNumber} / ${context.pagesCount}',
-                          textAlign: pw.TextAlign.center,
-                          style: pw.TextStyle(
-                            color: Colors_pd,
-                            fontSize: font_Size,
-                            fontWeight: pw.FontWeight.bold,
-                            font: ttf,
-                          ),
+                      // : pw.Text(
+                      //     '${context.pageNumber} / ${context.pagesCount}',
+
+                      //     textAlign: pw.TextAlign.center,
+                      //     style: pw.TextStyle(
+                      //       color: Colors_pd,
+                      //       fontSize: font_Size,
+                      //       fontWeight: pw.FontWeight.bold,
+                      //       font: ttf,
+                      //     ),
+                      //   ),
+                      : pw.Container(
+                          height: font_Size + 5,
                         ),
                 ],
               ),
@@ -594,6 +599,7 @@ class Pdfgen_Agreement_Choice2 {
                                 ? 'วันที่ 00-00-0000'
                                 : 'วันที่ ${DateFormat('dd MMM', 'TH').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('${Datex_text.text} 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('${Datex_text.text} 00:00:00')}").year + 543}',
                             //  'วันที่ ${thaiDate}',
+                            // 'วันที่ ${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$Form_sdate 00:00:00')}").year + 543}',
                             textAlign: pw.TextAlign.center,
                             style: pw.TextStyle(
                               color: Colors_pd,
@@ -1226,6 +1232,7 @@ class Pdfgen_Agreement_Choice2 {
                                   (DatexChoice_Sub2_3text == null)
                                       ? '-'
                                       : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}").year + 543}',
+                                  // : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}"))} ${DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('$DatexChoice_Sub2_3text 00:00:00')}").year + 543}',
                                   textAlign: pw.TextAlign.center,
                                   style: pw.TextStyle(
                                     color: Colors_pd,
@@ -1455,7 +1462,7 @@ class Pdfgen_Agreement_Choice2 {
                                                 0)
                                             ? 'หักภาษี ณ ที่จ่าย '
                                             : 'หักภาษี ณ ที่จ่าย ' +
-                                                '( ${quotxSelectModels.where((e) => e.expser.toString() == '1').map((e) => e.nwht != null ? double.parse(e.nwht.toString()) : 0.00).fold(0.00, (a, b) => a + b)} ) % ',
+                                                '( ${quotxSelectModels.where((e) => e.expser.toString() == '1' && e.unitser.toString() != '4').map((e) => e.nwht != null ? double.parse(e.nwht.toString()) : 0.00).fold(0.00, (a, b) => a + b)} ) % ',
                                     textAlign: pw.TextAlign.left,
                                     style: pw.TextStyle(
                                       fontSize: font_Size,
@@ -2370,8 +2377,9 @@ class Pdfgen_Agreement_Choice2 {
                                               .length ==
                                           0)
                                       ? '0.00 บาท (~${convertToThaiBaht(0.00)}~)'
-                                      : '${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '2').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท ' +
-                                          '(~${convertToThaiBaht(quotxSelectModels.where((e) => e.expser.toString() == '2').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))}~)',
+                                      : '0.00 บาท (~${convertToThaiBaht(0.00)}~)',
+                                  // : '${nFormat.format(quotxSelectModels.where((e) => e.expser.toString() == '2').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))} บาท ' +
+                                  // '(~${convertToThaiBaht(quotxSelectModels.where((e) => e.expser.toString() == '2').map((e) => e.total != null ? double.parse(e.total.toString()) : 0.00).fold(0.00, (a, b) => a + b))}~)',
                                   textAlign: pw.TextAlign.center,
                                   style: pw.TextStyle(
                                     color: Colors_pd,
@@ -2404,12 +2412,13 @@ class Pdfgen_Agreement_Choice2 {
                                               (e) => e.expser.toString() == '2')
                                           .length ==
                                       0)
-                                  ? '-'
+                                  ? ''
                                   : '${quotxSelectModels.where((model) => model.expser.toString() == '2').map(
                                         (model) => (model.pdate == null)
-                                            ? '-'
-                                            : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("dd-MM-yyyy HH:mm:ss").parse('${model.pdate} 00:00:00')}"))} ${DateTime.parse('${model.pdate} 00:00:00').year + 543}',
-                                      ).join(', ')}',
+                                            ? ''
+                                            : '${DateFormat('dd MMM', 'th').format(DateTime.parse("${DateFormat("yyyy-MM-dd HH:mm:ss").parse('${model.pdate} 00:00:00')}"))} ${DateTime.parse('${model.pdate} 00:00:00').year + 543}',
+                                        // : '${model.pdate}',
+                                      ).join('')}',
                               textAlign: pw.TextAlign.center,
                               style: pw.TextStyle(
                                 color: Colors_pd,
@@ -3765,7 +3774,7 @@ class Pdfgen_Agreement_Choice2 {
                                 ),
                                 pw.SizedBox(height: 1 * PdfPageFormat.mm),
                                 pw.Text(
-                                  '10.8 หากผู้ให้เช่าช่วงมีความจำเป็นต้องใช้ประโยชน์ในสถานที่เช่าช่วงผู้ให้เช่าช่วงสามารถใช้สิทธิบอกเลิกสัญญาเช่าก่อนครบกำหนดสัญญานี้ได้\nโดยจะแจ้งให้ผู้เช่าทราบล่วงหน้าไม่น้อยกว่า 1 เดือน',
+                                  '12.8 หากผู้ให้เช่าช่วงมีความจำเป็นต้องใช้ประโยชน์ในสถานที่เช่าช่วงผู้ให้เช่าช่วงสามารถใช้สิทธิบอกเลิกสัญญาเช่าก่อนครบกำหนดสัญญานี้ได้\nโดยจะแจ้งให้ผู้เช่าทราบล่วงหน้าไม่น้อยกว่า 1 เดือน',
                                   textAlign: pw.TextAlign.left,
                                   style: pw.TextStyle(
                                     fontSize: font_Size,
@@ -3775,142 +3784,142 @@ class Pdfgen_Agreement_Choice2 {
                                 ),
                               ])),
 
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        'ข้อ 13. การแจ้งการประมวลผลข้อมูลส่วนบุคคล   ',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Container(
-                          padding: pw.EdgeInsets.fromLTRB(35, 0, 0, 0),
-                          child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              mainAxisAlignment: pw.MainAxisAlignment.start,
-                              children: [
-                                // pw.Text(
-                                //   '12.1 การเก็บ และใช้ข้อมูลส่วนบุคคล',
-                                //   textAlign: pw.TextAlign.left,
-                                //   style: pw.TextStyle(
-                                //     fontSize: font_Size,
-                                //     font: ttf,
-                                //     color: Colors_pd,
-                                //   ),
-                                // ),
-                                // pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                                pw.Text(
-                                  '13.1 การเก็บ และใช้ข้อมูลส่วนบุคคล ผู้ให้เช่าได้เก็บรวบรวมและหรือใช้ข้อมูลส่วนบุคคลของผู้เช่าได้แก่ สำเนาบัตรประจำตัวประชาชน,สำเนา\nทะเบียนบ้าน,สำเนาบัญชีธนาคารเอกสารสำคัญใดๆที่มีข้อมูลส่วนบุคคล (“ข้อมูลส่วนบุคคล”) เป็นระยะเวลาทั้งหมด 10 ปี (สิบปี) นับจากวันที่\nสัญญาฉบับนี้สิ้นสุดลงโดยมีวัตถุประสงค์เพื่อตรวจสอบความเป็นตัวตนของผู้เช่าเป็นหลักฐานในการก่อตั้งสิทธิเรียกร้องและเพื่อใช้ตามวัตถุประ\nสงค์ตามสัญญาฉบับนี้เรียกร้องและเพื่อใช้ตามวัตถุประสงค์ตามสัญญาฉบับนี้เท่านั้นโดยไม่นำข้อมูลส่วนบุคคลดังกล่าวไปใช้เพื่อวัตถุประสงค์อื่น\nใดนอกจากสัญญาฉบับนี้แต่อย่างใด',
-                                  textAlign: pw.TextAlign.left,
-                                  style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: Colors_pd,
-                                  ),
-                                ),
-                              ])),
-                      pw.Container(
-                          padding: pw.EdgeInsets.fromLTRB(35, 0, 0, 0),
-                          child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              mainAxisAlignment: pw.MainAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                  'ทั้งนี้ หากผู้เช่าไม่ส่งมอบข้อมูลส่วนบุคคลดังกล่าวแก่ผู้ให้เช่า จะทำให้การจัดทำสัญญาฉบับนี้ไม่สมบูรณ์อันเป็นฐานการประมวลผลเพื่อเป็น\nการจำเป็นเพื่อการปฏิบัติตามสัญญาและเป็นการจำเป็นเพื่อประโยชน์โดยชอบด้วยกฎหมาย ตามมาตรา24(3),(5)ของพระราชบัญญัติคุ้มครอง\nข้อมูลส่วนบุคคล พ.ศ. 2562',
-                                  textAlign: pw.TextAlign.left,
-                                  style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: Colors_pd,
-                                  ),
-                                ),
-                                pw.Text(
-                                  'ทั้งนี้ผู้เช่าในฐานะเจ้าของข้อมูลส่วนบุคคลรับทราบว่าตนเองมีสิทธิดังนี้ (1) สิทธิในการเข้าถึงและรับสำเนาข้อมูลส่วนบุคคลที่ผู้ให้เช่าได้ทำการ\nเก็บรวบรวมและหรือใช้ได้ตลอดจนสิทธิในการคัดค้านการประมวลผลข้อมูลส่วนบุคคล (2) เมื่อพ้นระยะเวลาทั้งหมด 10 ปี (สิบปี) นับจากวัน\nที่สัญญาฉบับนี้สิ้นสุดลงผู้ให้เช่าจะทำการลบหรือทำลายข้อมูลส่วนบุคคล (3)สิทธิในการขอให้ผู้ให้เช่าระงับการใช้ข้อมูลส่วนบุคคล หากผู้ให้เช่า\nได้ใช้ข้อมูลส่วนบุคคลไม่เป็นไป ตามวัตถุประสงค์ตามวรรคแรกข้างต้น (4) สิทธิในการขอแก้ไขข้อมูลส่วนบุคคลให้ถูกต้องเป็นปัจจุบันสมบูรณ์\nและไม่ก่อให้เกิดความเข้าใจผิด(5) สิทธิในการร้องเรียนผู้ให้เช่า การใช้สิทธิข้างต้นจะต้องจัดทำเป็นลายลักษณ์อักษรและแจ้งต่อผู้ให้เช่าภายใน\nระยะเวลาอันสมควร และไม่เกินระยะเวลาที่กฎหมายกำหนดโดยผู้ให้เช่าจะปฏิบัติตามข้อกำหนดทางกฎหมายที่เกี่ยวข้องกับสิทธิของเจ้าของ\nข้อมูลส่วนบุคคลและผู้ให้เช่าขอสงวนสิทธิ์ในการคิดค่าบริการใดๆที่เกี่ยวข้องและจำเป็นต่อการใช้สิทธิดังกล่าว',
-                                  textAlign: pw.TextAlign.left,
-                                  style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: Colors_pd,
-                                  ),
-                                ),
-                              ])),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   'ข้อ 13. การแจ้งการประมวลผลข้อมูลส่วนบุคคล   ',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Container(
+                      //     padding: pw.EdgeInsets.fromLTRB(35, 0, 0, 0),
+                      //     child: pw.Column(
+                      //         crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      //         mainAxisAlignment: pw.MainAxisAlignment.start,
+                      //         children: [
+                      //           // pw.Text(
+                      //           //   '12.1 การเก็บ และใช้ข้อมูลส่วนบุคคล',
+                      //           //   textAlign: pw.TextAlign.left,
+                      //           //   style: pw.TextStyle(
+                      //           //     fontSize: font_Size,
+                      //           //     font: ttf,
+                      //           //     color: Colors_pd,
+                      //           //   ),
+                      //           // ),
+                      //           // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      //           pw.Text(
+                      //             '13.1 การเก็บ และใช้ข้อมูลส่วนบุคคล ผู้ให้เช่าได้เก็บรวบรวมและหรือใช้ข้อมูลส่วนบุคคลของผู้เช่าได้แก่ สำเนาบัตรประจำตัวประชาชน,สำเนา\nทะเบียนบ้าน,สำเนาบัญชีธนาคารเอกสารสำคัญใดๆที่มีข้อมูลส่วนบุคคล (“ข้อมูลส่วนบุคคล”) เป็นระยะเวลาทั้งหมด 10 ปี (สิบปี) นับจากวันที่\nสัญญาฉบับนี้สิ้นสุดลงโดยมีวัตถุประสงค์เพื่อตรวจสอบความเป็นตัวตนของผู้เช่าเป็นหลักฐานในการก่อตั้งสิทธิเรียกร้องและเพื่อใช้ตามวัตถุประ\nสงค์ตามสัญญาฉบับนี้เรียกร้องและเพื่อใช้ตามวัตถุประสงค์ตามสัญญาฉบับนี้เท่านั้นโดยไม่นำข้อมูลส่วนบุคคลดังกล่าวไปใช้เพื่อวัตถุประสงค์อื่น\nใดนอกจากสัญญาฉบับนี้แต่อย่างใด',
+                      //             textAlign: pw.TextAlign.left,
+                      //             style: pw.TextStyle(
+                      //               fontSize: font_Size,
+                      //               font: ttf,
+                      //               color: Colors_pd,
+                      //             ),
+                      //           ),
+                      //         ])),
+                      // pw.Container(
+                      //     padding: pw.EdgeInsets.fromLTRB(35, 0, 0, 0),
+                      //     child: pw.Column(
+                      //         crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      //         mainAxisAlignment: pw.MainAxisAlignment.start,
+                      //         children: [
+                      //           pw.Text(
+                      //             'ทั้งนี้ หากผู้เช่าไม่ส่งมอบข้อมูลส่วนบุคคลดังกล่าวแก่ผู้ให้เช่า จะทำให้การจัดทำสัญญาฉบับนี้ไม่สมบูรณ์อันเป็นฐานการประมวลผลเพื่อเป็น\nการจำเป็นเพื่อการปฏิบัติตามสัญญาและเป็นการจำเป็นเพื่อประโยชน์โดยชอบด้วยกฎหมาย ตามมาตรา24(3),(5)ของพระราชบัญญัติคุ้มครอง\nข้อมูลส่วนบุคคล พ.ศ. 2562',
+                      //             textAlign: pw.TextAlign.left,
+                      //             style: pw.TextStyle(
+                      //               fontSize: font_Size,
+                      //               font: ttf,
+                      //               color: Colors_pd,
+                      //             ),
+                      //           ),
+                      //           pw.Text(
+                      //             'ทั้งนี้ผู้เช่าในฐานะเจ้าของข้อมูลส่วนบุคคลรับทราบว่าตนเองมีสิทธิดังนี้ (1) สิทธิในการเข้าถึงและรับสำเนาข้อมูลส่วนบุคคลที่ผู้ให้เช่าได้ทำการ\nเก็บรวบรวมและหรือใช้ได้ตลอดจนสิทธิในการคัดค้านการประมวลผลข้อมูลส่วนบุคคล (2) เมื่อพ้นระยะเวลาทั้งหมด 10 ปี (สิบปี) นับจากวัน\nที่สัญญาฉบับนี้สิ้นสุดลงผู้ให้เช่าจะทำการลบหรือทำลายข้อมูลส่วนบุคคล (3)สิทธิในการขอให้ผู้ให้เช่าระงับการใช้ข้อมูลส่วนบุคคล หากผู้ให้เช่า\nได้ใช้ข้อมูลส่วนบุคคลไม่เป็นไป ตามวัตถุประสงค์ตามวรรคแรกข้างต้น (4) สิทธิในการขอแก้ไขข้อมูลส่วนบุคคลให้ถูกต้องเป็นปัจจุบันสมบูรณ์\nและไม่ก่อให้เกิดความเข้าใจผิด(5) สิทธิในการร้องเรียนผู้ให้เช่า การใช้สิทธิข้างต้นจะต้องจัดทำเป็นลายลักษณ์อักษรและแจ้งต่อผู้ให้เช่าภายใน\nระยะเวลาอันสมควร และไม่เกินระยะเวลาที่กฎหมายกำหนดโดยผู้ให้เช่าจะปฏิบัติตามข้อกำหนดทางกฎหมายที่เกี่ยวข้องกับสิทธิของเจ้าของ\nข้อมูลส่วนบุคคลและผู้ให้เช่าขอสงวนสิทธิ์ในการคิดค่าบริการใดๆที่เกี่ยวข้องและจำเป็นต่อการใช้สิทธิดังกล่าว',
+                      //             textAlign: pw.TextAlign.left,
+                      //             style: pw.TextStyle(
+                      //               fontSize: font_Size,
+                      //               font: ttf,
+                      //               color: Colors_pd,
+                      //             ),
+                      //           ),
+                      //         ])),
 
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Container(
-                          padding: pw.EdgeInsets.fromLTRB(35, 0, 0, 0),
-                          child: pw.Column(
-                              crossAxisAlignment: pw.CrossAxisAlignment.start,
-                              mainAxisAlignment: pw.MainAxisAlignment.start,
-                              children: [
-                                pw.Text(
-                                  '13.2 การเปิดเผยข้อมูลส่วนบุคคล',
-                                  textAlign: pw.TextAlign.left,
-                                  style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: Colors_pd,
-                                  ),
-                                ),
-                                pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                                pw.Text(
-                                  'เพื่อประโยชน์ของผู้เช่าตามวัตถุประสงค์ในสัญญาเช่า ผู้ให้บริการอาจเปิดเผยข้อมูลของผู้เช่าให้กับหน่วยงานอื่นของผู้ให้เช่ารวมถึงบริษัทในเครือ\nและบริษัทย่อยเพื่อวัตถุประสงค์ในการปฏิบัติตามภาระผูกพันตามสัญญาประโยชน์ที่ชอบด้วยกฎหมายการปฏิบัติตามกฎหมายและวัตถุประสงค์\nอื่นๆภายใต้กฎหมายไทยผู้เช่ารับทราบว่าหากมีเหตุร้องเรียนเกี่ยวกับข้อมูลส่วนบุคคลสามารถติดต่อประสานงานมายังเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลได้ในช่องทางดังนี้',
-                                  textAlign: pw.TextAlign.left,
-                                  style: pw.TextStyle(
-                                    fontSize: font_Size,
-                                    font: ttf,
-                                    color: Colors_pd,
-                                  ),
-                                ),
-                              ])),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Container(
+                      //     padding: pw.EdgeInsets.fromLTRB(35, 0, 0, 0),
+                      //     child: pw.Column(
+                      //         crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      //         mainAxisAlignment: pw.MainAxisAlignment.start,
+                      //         children: [
+                      //           pw.Text(
+                      //             '13.2 การเปิดเผยข้อมูลส่วนบุคคล',
+                      //             textAlign: pw.TextAlign.left,
+                      //             style: pw.TextStyle(
+                      //               fontSize: font_Size,
+                      //               font: ttf,
+                      //               color: Colors_pd,
+                      //             ),
+                      //           ),
+                      //           pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      //           pw.Text(
+                      //             'เพื่อประโยชน์ของผู้เช่าตามวัตถุประสงค์ในสัญญาเช่า ผู้ให้บริการอาจเปิดเผยข้อมูลของผู้เช่าให้กับหน่วยงานอื่นของผู้ให้เช่ารวมถึงบริษัทในเครือ\nและบริษัทย่อยเพื่อวัตถุประสงค์ในการปฏิบัติตามภาระผูกพันตามสัญญาประโยชน์ที่ชอบด้วยกฎหมายการปฏิบัติตามกฎหมายและวัตถุประสงค์\nอื่นๆภายใต้กฎหมายไทยผู้เช่ารับทราบว่าหากมีเหตุร้องเรียนเกี่ยวกับข้อมูลส่วนบุคคลสามารถติดต่อประสานงานมายังเจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคลได้ในช่องทางดังนี้',
+                      //             textAlign: pw.TextAlign.left,
+                      //             style: pw.TextStyle(
+                      //               fontSize: font_Size,
+                      //               font: ttf,
+                      //               color: Colors_pd,
+                      //             ),
+                      //           ),
+                      //         ])),
 
-                      pw.SizedBox(height: 5 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (Data Protection Officer: DPO) / ผู้ควบคุมข้อมูลส่วนบุคคล (Data Controller)',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
+                      // pw.SizedBox(height: 5 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'เจ้าหน้าที่คุ้มครองข้อมูลส่วนบุคคล (Data Protection Officer: DPO) / ผู้ควบคุมข้อมูลส่วนบุคคล (Data Controller)',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 + 'บริษัท ชอยส์ มินิสโตร์ จำกัด ',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 +
+                      //       'เลขที่ 7/11 หมู่ที่ 5 ตำบลท่าศาลา อำเภอเมืองเชียงใหม่ จังหวัดเชียงใหม่ 50000',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
+                      // pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                      // pw.Text(
+                      //   ' ' * 12 + 'Email Address : privacy@choice.co.th',
+                      //   textAlign: pw.TextAlign.left,
+                      //   style: pw.TextStyle(
+                      //     fontSize: font_Size,
+                      //     font: ttf,
+                      //     color: Colors_pd,
+                      //   ),
+                      // ),
                       pw.SizedBox(height: 1 * PdfPageFormat.mm),
                       pw.Text(
-                        ' ' * 12 + 'บริษัท ชอยส์ มินิสโตร์ จำกัด ',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 +
-                            'เลขที่ 7/11 หมู่ที่ 5 ตำบลท่าศาลา อำเภอเมืองเชียงใหม่ จังหวัดเชียงใหม่ 50000',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        ' ' * 12 + 'Email Address : privacy@choice.co.th',
-                        textAlign: pw.TextAlign.left,
-                        style: pw.TextStyle(
-                          fontSize: font_Size,
-                          font: ttf,
-                          color: Colors_pd,
-                        ),
-                      ),
-                      pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                      pw.Text(
-                        'ข้อ 14. การบอกกล่าว',
+                        'ข้อ 13. การบอกกล่าว',
                         textAlign: pw.TextAlign.left,
                         style: pw.TextStyle(
                           fontSize: font_Size,
@@ -4351,23 +4360,61 @@ class Pdfgen_Agreement_Choice2 {
                       mainAxisAlignment: pw.MainAxisAlignment.start,
                       crossAxisAlignment: pw.CrossAxisAlignment.end,
                       children: [
-                        pw.Text(
-                          (context.pageNumber.toString() == '1')
-                              ? "${context.pageNumber} / ${context.pagesCount}...อนึ่ง การชำระค่าเช่ารายเดือน..."
-                              : (context.pageNumber.toString() == '2')
-                                  ? "${context.pageNumber} / ${context.pagesCount}...ข้อ 8. การต่ออายุสัญญา..."
-                                  : (context.pageNumber.toString() == '3')
-                                      ? "${context.pageNumber} / ${context.pagesCount}... ข้อ 10. กรณีบอกเลิกหรือสิ้นสุดสัญญา....."
-                                      : (context.pageNumber.toString() == '4')
-                                          ? "${context.pageNumber} / ${context.pagesCount}...ข้อ 12. การแจ้งการประมวลผลข้อมูลส่วนบุคคล ....."
-                                          : "${context.pageNumber} / ${context.pagesCount}",
-                          textAlign: pw.TextAlign.center,
-                          style: pw.TextStyle(
-                            fontWeight: pw.FontWeight.bold,
-                            color: Colors_pd,
-                            fontSize: font_Size - 2,
-                            font: ttf,
-                          ),
+                        // pw.Text(
+                        //   (context.pageNumber.toString() == '1')
+                        //       ? "${context.pageNumber} / ${context.pagesCount}...อนึ่ง การชำระค่าเช่ารายเดือน..."
+                        //       : (context.pageNumber.toString() == '2')
+                        //           ? "${context.pageNumber} / ${context.pagesCount}...ข้อ 8. การต่ออายุสัญญา..."
+                        //           : (context.pageNumber.toString() == '3')
+                        //               ? "${context.pageNumber} / ${context.pagesCount}... ข้อ 10. กรณีบอกเลิกหรือสิ้นสุดสัญญา....."
+                        //               : (context.pageNumber.toString() == '4')
+                        //                   ? "${context.pageNumber} / ${context.pagesCount}...ข้อ 12. การแจ้งการประมวลผลข้อมูลส่วนบุคคล ....."
+                        //                   : "${context.pageNumber} / ${context.pagesCount}",
+                        //   textAlign: pw.TextAlign.center,
+                        //   style: pw.TextStyle(
+                        //     fontWeight: pw.FontWeight.bold,
+                        //     color: Colors_pd,
+                        //     fontSize: font_Size - 2,
+                        //     font: ttf,
+                        //   ),
+                        // ),
+                        pw.Stack(
+                          children: [
+                            // กลางหน้ากระดาษ
+                            pw.Container(
+                              width: double.infinity,
+                              child: pw.Align(
+                                alignment: pw.Alignment.center,
+                                child: pw.Text(
+                                  "${context.pageNumber} / ${context.pagesCount}",
+                                  textAlign: pw.TextAlign.center,
+                                  style: pw.TextStyle(
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: Colors_pd,
+                                    fontSize: font_Size - 2,
+                                    font: ttf,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // ชิดขวา
+                            pw.Container(
+                              width: double.infinity,
+                              child: pw.Align(
+                                alignment: pw.Alignment.centerRight,
+                                child: pw.Text(
+                                  _getPageSuffix(context.pageNumber),
+                                  textAlign: pw.TextAlign.right,
+                                  style: pw.TextStyle(
+                                    fontWeight: pw.FontWeight.bold,
+                                    color: Colors_pd,
+                                    fontSize: font_Size - 2,
+                                    font: ttf,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ])),
               pw.Stack(
@@ -4473,35 +4520,53 @@ class Pdfgen_Agreement_Choice2 {
             context: context,
             ////////////------------------->
             ///
-            Get_Value_NameShop_index: Get_Value_NameShop_index,
-            Get_Value_cid: Get_Value_cid,
-            verticalGroupValue: _verticalGroupValue,
-            Form_nameshop: Form_nameshop,
-            Form_typeshop: Form_typeshop,
-            Form_bussshop: Form_bussshop,
-            Form_bussscontact: Form_bussscontact,
-            Form_address: Form_address,
-            Form_tel: Form_tel,
-            Form_email: Form_email,
-            Form_tax: Form_tax,
-            Form_ln: Form_ln,
-            Form_zn: Form_zn,
-            Form_area: Form_area,
-            Form_qty: Form_qty,
-            Form_sdate: Form_sdate,
-            Form_ldate: Form_ldate,
-            Form_period: Form_period,
-            Form_rtname: Form_rtname,
-            quotxSelectModels: quotxSelectModels,
-            TransModels: _TransModels,
-            renTal_name: renTal_name,
-            bill_addr: bill_addr,
-            bill_email: bill_email,
-            bill_tel: bill_tel,
-            bill_tax: bill_tax,
-            bill_name: bill_name,
-            newValuePDFimg: newValuePDFimg,
+            // Get_Value_NameShop_index: Get_Value_NameShop_index,
+            // Get_Value_cid: Get_Value_cid,
+            // verticalGroupValue: _verticalGroupValue,
+            // Form_nameshop: Form_nameshop,
+            // Form_typeshop: Form_typeshop,
+            // Form_bussshop: Form_bussshop,
+            // Form_bussscontact: Form_bussscontact,
+            // Form_address: Form_address,
+            // Form_tel: Form_tel,
+            // Form_email: Form_email,
+            // Form_tax: Form_tax,
+            // Form_ln: Form_ln,
+            // Form_zn: Form_zn,
+            // Form_area: Form_area,
+            // Form_qty: Form_qty,
+            // Form_sdate: Form_sdate,
+            // Form_ldate: Form_ldate,
+            // Form_period: Form_period,
+            // Form_rtname: Form_rtname,
+            // quotxSelectModels: quotxSelectModels,
+            // TransModels: _TransModels,
+            // renTal_name: renTal_name,
+            // bill_addr: bill_addr,
+            // bill_email: bill_email,
+            // bill_tel: bill_tel,
+            // bill_tax: bill_tax,
+            // bill_name: bill_name,
+            // newValuePDFimg: newValuePDFimg,
           ),
         ));
+  }
+}
+
+// -------------------------------> (คำท้ายเอกสารหน้าถัดไป)
+String _getPageSuffix(int page) {
+  switch (page) {
+    case 1:
+      return '...โดยเงินจำนวนดังกล่าวเป็นเงิน...';
+    case 2:
+      return '...ข้อ 8. ค่าบริการพื้นที่ส่วนกลาง...';
+    case 3:
+      return '...11.1 ผู้เช่าจะต้องดูแลรักษา....';
+    case 4:
+      return '...12.6 เมื่อสัญญาเช่านี้สิ้นสุด....';
+    // case 5:
+    //   return '...บริษัท ชอยส์ มินิสโตร์ จํากัด....';
+    default:
+      return '';
   }
 }

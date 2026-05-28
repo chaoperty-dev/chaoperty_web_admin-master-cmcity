@@ -238,7 +238,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -302,7 +302,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           PayMentModel _PayMentModel = PayMentModel.fromJson(map);
@@ -373,9 +373,9 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
         '${MyConstant().domain}/GC_bill_pay_BC_Verifi.php?isAdd=true&ren=$ren&mont_h=$MONTH_Now&yea_r=$YEAR_Now&serpang=$sertype&type_datex=$Type_datex';
     try {
       var response = await http.get(Uri.parse(url));
-      // print('GC_bill_pay_BC_Verifi $url');
+      // //print('GC_bill_pay_BC_Verifi $url');
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           TransReBillModel transReBillModel = TransReBillModel.fromJson(map);
@@ -495,10 +495,10 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       });
     } else {
       // Handle the case where contractxPakanModels is empty
-      // print("contractxPakanModels is empty, no data to add. $data");
+      // //print("contractxPakanModels is empty, no data to add. $data");
     }
 
-    // print("Data added: $data");
+    // //print("Data added: $data");
   }
 
   ///////////--------------------------------------------->
@@ -509,7 +509,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       /////////------------------------------------------------>
       String decodedPassword = retrieveDecodedPassword(Pay_Ke.toString());
       String basicAuth = generateBasicAuth(decodedPassword);
-      // print(basicAuth);
+      // //print(basicAuth);
       /////////------------------------------------------------>
 
       String url =
@@ -521,7 +521,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
 
       if (response.statusCode == 200) {
         // Request was successful
-        // print('Response: successful');
+        // //print('Response: successful');
         return PanaraInfoDialog.showAnimatedGrow(
           context,
           title: "Oops",
@@ -537,9 +537,9 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
           panaraDialogType: PanaraDialogType.success,
           barrierDismissible: false, // optional parameter (default is true)
         );
-        // print('Response: ${response.body}');
+        // //print('Response: ${response.body}');
       } else {
-        // print('Response: failed');
+        // //print('Response: failed');
         PanaraInfoDialog.showAnimatedGrow(
           context,
           title: "Oops",
@@ -556,10 +556,10 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
           barrierDismissible: false, // optional parameter (default is true)
         );
         // Request failed
-        // print('Failed with status code: ${response.statusCode}');
+        // //print('Failed with status code: ${response.statusCode}');
       }
     } catch (error) {
-      // print('Response: error');
+      // //print('Response: error');
       PanaraInfoDialog.showAnimatedGrow(
         context,
         title: "Oops",
@@ -573,7 +573,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
         barrierDismissible: false, // optional parameter (default is true)
       );
       // Error occurred during the request
-      // print('Error: $error');
+      // //print('Error: $error');
     }
   }
 
@@ -602,12 +602,12 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
 
     String url =
         '${MyConstant().domain}/GC_bill_pay_BC_Verifi_chack.php?isAdd=true&ren=$ren&user=$user&mont_h=$MONTH_Now&yea_r=$YEAR_Now&serpang=$sertype&type_datex=$Type_datex';
-    print('result $url');
+    // //print('result $url');
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           TransReChackBillModel transReChackBillModel =
@@ -617,7 +617,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
           });
         }
       }
-      // print('result ${transReChackBillModels.map((e) => e)}');
+      // //print('result ${transReChackBillModels.map((e) => e)}');
     } catch (e) {}
   }
 
@@ -809,7 +809,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
 
     // Check if the difference is greater than 15 minutes
     if (difference.inMinutes > int.parse('${time_check}')) {
-      // print('เกิน กำหนด.');
+      // //print('เกิน กำหนด.');
       // Count_time_check = Count_time_check + 1;
       return true;
     } else {
@@ -829,7 +829,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
 
     String url =
         '${MyConstant().domain}/UPC_finant_bill.php?isAdd=true&ren=$ren&user=$user&numin=$numin&because=$Formbecause';
-    // print(url); //ทดพลาดทดสอบระบบยอดเงินไม่ตรง
+    // //print(url); //ทดพลาดทดสอบระบบยอดเงินไม่ตรง
     try {
       var response = await http.get(Uri.parse(url));
 
@@ -857,7 +857,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
           // finnancetransModels.clear();
           // Navigator.pop(context);
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -872,12 +872,12 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
             10)
         ? (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.83
-            : 1200
+            : 1400
         : (Responsive.isDesktop(context))
             ? MediaQuery.of(context).size.width * 0.83 +
                 ((ac5.where((item) => item["st"] == '1').toList().length - 10) *
                     30)
-            : 1200 +
+            : 1400 +
                 ((ac5.where((item) => item["st"] == '1').toList().length - 10) *
                     30);
     // For the first round, use the extracted data as is, no need to sort.
@@ -1036,7 +1036,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
                                         int selectedIndex = ac5.indexWhere(
                                             (items) =>
                                                 items["ser"] == item["ser"]);
-                                        // print(ac1[selectedIndex]
+                                        // //print(ac1[selectedIndex]
                                         //     [
                                         //     "pn"]);
                                         // isSelected ? selectedItems.remove(item) : selectedItems.add(item);
@@ -1846,7 +1846,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
                                           });
                                           Loading_Trans_bill();
 
-                                          // // print(value);
+                                          // // //print(value);
                                           // red_Trans_bill();
                                           // // if (Value_Chang_Zone_Income !=
                                           // //     null) {
@@ -2237,19 +2237,19 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
                                                                                                                       : (int.parse('${time_check}') == 2880)
                                                                                                                           ? 'ยกเลิก: $numinvoice เกินกำหนด 2 วัน(ไม่แนบสลิป)'
                                                                                                                           : 'ยกเลิก: $numinvoice เกินกำหนด $time_check นาที(ไม่แนบสลิป)';
-                                                                                                  // print(Formbe_cause);
+                                                                                                  // //print(Formbe_cause);
                                                                                                   // 'ยกเลิกรับชำระ : $numinvoice  เกินกำหนด(ไม่แนบสลิป)';
                                                                                                   await pPC_finantIbill_TimeCheck(Formbe_cause).then((value) => {
-                                                                                                        // print('index1 + 1'),
-                                                                                                        // print(index1 + 1),
+                                                                                                        // //print('index1 + 1'),
+                                                                                                        // //print(index1 + 1),
                                                                                                       });
                                                                                                 }
                                                                                               }
                                                                                               Future.delayed(const Duration(milliseconds: 800));
                                                                                               if (index1 + 1 == TransReBillModels.length) {
                                                                                                 Future.delayed(const Duration(seconds: 1));
-                                                                                                // print('+++index1 + 1');
-                                                                                                // print(index1 + 1);
+                                                                                                // //print('+++index1 + 1');
+                                                                                                // //print(index1 + 1);
                                                                                                 Navigator.of(context).pop();
                                                                                                 Future.delayed(const Duration(milliseconds: 200));
                                                                                                 Navigator.pop(context);
@@ -3251,7 +3251,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
 
             //  InkWell(
             //                                                                         onTap: () {
-            //                                                                           print('red_easyslip_data');
+            //                                                                           //print('red_easyslip_data');
             //                                                                           red_easyslip_data(index);
             //                                                                         },
             //                                                                         // => downloadImage_slip('${MyConstant().domain}/files/$foder/slip/${Slip_history}', '${_TransReBillModels[index].docno}'),
@@ -3875,12 +3875,12 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
     var docnoin = _TransReBillModels[index].docno;
     String url =
         '${MyConstant().domain}/GC_bill_payVerifi_history.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docnoin=$docnoin';
-    // print('GC_bill_payVerifi_history>> $url');
+    // //print('GC_bill_payVerifi_history>> $url');
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() != 'null') {
         for (var map in result) {
           TransReBillHistoryModel _TransReBillHistoryModel =
@@ -3937,14 +3937,14 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
     var ciddoc = _TransReBillModels[index].ser;
     var qutser = _TransReBillModels[index].ser_in;
     var docnoin = _TransReBillModels[index].docno; //.toString().trim()
-    // print('>>>>>>>>>>>dd>>> in d  $docnoin');
+    // //print('>>>>>>>>>>>dd>>> in d  $docnoin');
 
     String url =
         '${MyConstant().domain}/GC_bill_pay_amt.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&docnoin=$docnoin';
     try {
       var response = await http.get(Uri.parse(url));
       var result = json.decode(response.body);
-      // print('BBBBBBBBBBBBBBBB>>>> $result');
+      // //print('BBBBBBBBBBBBBBBB>>>> $result');
       if (result.toString() != 'null') {
         for (var map in result) {
           FinnancetransModel finnancetransModel =
@@ -3970,7 +3970,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
               }
             }
           });
-          // print(
+          // //print(
           //     '>>>>> ${finnancetransModel.slip}>>>>>>dd>>> in $sidamt $siddisper  ');
         }
       }
@@ -6237,13 +6237,13 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
                                                                               // '${_TransReBillModels[index].docno}';
 
                                                                               String url = '${MyConstant().domain}/OK_Verifi_Payment_con.php?isAdd=true&ren=$ren&ciddoc=$docno&Re_mark=$Remark&ser_user=$ser_userVerifi';
-                                                                              print(url);
+                                                                              //print(url);
                                                                               try {
                                                                                 var response = await http.get(Uri.parse(url));
 
                                                                                 var result = json.decode(response.body);
 
-                                                                                print(result.toString());
+                                                                                //print(result.toString());
                                                                                 if (result.toString() == 'true') {
                                                                                   Navigator.pop(context, 'OK');
                                                                                   Navigator.pop(context, 'OK');
@@ -7838,7 +7838,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
                                                         ''
                                                     ? '${_TransReBillModels[index].docno}'
                                                     : '${_TransReBillModels[index].doctax}';
-                                                // print(cFinn_now);
+                                                // //print(cFinn_now);
                                                 ManPay_ReceiptMarket_PDF
                                                     .ManPayReceiptMarket_PDF(
                                                   context,
@@ -7939,12 +7939,12 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
 
     String url =
         '${MyConstant().domain}/UPC_finant_bill.php?isAdd=true&ren=$ren&user=$user&numin=$numin&because=$Formbecause';
-    // print(url); //ทดพลาดทดสอบระบบยอดเงินไม่ตรง
+    // //print(url); //ทดพลาดทดสอบระบบยอดเงินไม่ตรง
     try {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() == 'true') {
         Insert_log.Insert_logs('บัญชี',
             'ประวัติบิล>>ยกเลิกการรับชำระ($numin,เหตุผล:${Formbecause})');
@@ -7967,7 +7967,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
           finnancetransModels.clear();
           Navigator.pop(context);
         });
-        // print('rrrrrrrrrrrrrr');
+        // //print('rrrrrrrrrrrrrr');
       }
     } catch (e) {}
   }
@@ -8132,7 +8132,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
         source: ImageSource.gallery, maxHeight: 100, maxWidth: 100);
 
     if (pickedFile == null) {
-      // print('User canceled image selection');
+      print('User canceled image selection');
       return print(pickedFile);
     } else {
       // 2. Read the image as bytes
@@ -8143,13 +8143,13 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       setState(() {
         base64_Slip = base64Image;
       });
-      // print(base64_Slip);
+      // //print(base64_Slip);
       setState(() {
         extension_ = 'png';
         // file_ = file;
       });
-      // print(extension_);
-      // print(extension_);
+      // //print(extension_);
+      // //print(extension_);
     }
     OKuploadFile_Slip();
     // OKuploadFile_Slip();
@@ -8203,7 +8203,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           TransReBillModel transReBillModel = TransReBillModel.fromJson(map);
@@ -8231,7 +8231,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print('result $ciddoc');
+      // //print('result $ciddoc');
       if (result.toString() != 'null') {
         for (var map in result) {
           easyslipModel easyslipModelss = easyslipModel.fromJson(map);
@@ -8253,7 +8253,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
     //var result = json.decode(datadata);
     var fileName = 'files/$foder/slip/${Slip_history}';
     String url = '${MyConstant().domain}/easyslip.php?file=$fileName';
-    // print(url);
+    // //print(url);
 
     try {
       var response = await http.get(Uri.parse(url));
@@ -8262,15 +8262,15 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       if (response.statusCode == 200) {
         var result = jsonDecode(response.body);
         if (result != null && result.containsKey("sender")) {
-          print(result["sender"]);
+          //print(result["sender"]);
         } else {
-          print("Invalid response format: $result");
+          //print("Invalid response format: $result");
         }
       } else {
-        print("API Error: ${response.statusCode} - ${response.body}");
+        //print("API Error: ${response.statusCode} - ${response.body}");
       }
-      // print('fileName_Slip');
-      // print(fileName_Slip);
+      // //print('fileName_Slip');
+      // //print(fileName_Slip);
       var daterec = '';
       var date = '';
       var dateacc = '';
@@ -8293,7 +8293,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       var ref1 = result?['data']?['ref1'];
       var ref2 = result?['data']?['ref2'];
       var ref3 = result?['data']?['ref3'];
-      // print('**** 1');
+      // //print('**** 1');
       ///////------------------------------------------->
       var sender = result['data']['sender'];
       var sendername = result['data']['sender']['account']['name'];
@@ -8311,7 +8311,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       var sen_proxy_type = sender?['account']?['proxy']?['type'];
       var sen_proxy_accnumber = sender?['account']?['proxy']?['account'];
 
-      // print('**** 2');
+      // //print('**** 2');
       ///////------------------------------------------->
       var recei_bankid = result?['data']?['receiver']?['bank']?['id'];
       var recei_bankname = result?['data']?['receiver']?['bank']?['name'];
@@ -8328,7 +8328,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
           result?['data']?['receiver']?['account']?['proxy']?['type'];
       var recei_proxy_accnumber =
           result?['data']?['receiver']?['account']?['proxy']?['account'];
-      // print('**** 3');
+      // //print('**** 3');
       ///////------------------------------------------->
       var merchant_Id = result?['data']?['receiver']?['merchantId'];
       var slip_img = '';
@@ -8413,8 +8413,8 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       });
     }
 
-    // print('**** ');
-    // print('**** ${easyslipModels_.length}');
+    // //print('**** ');
+    // //print('**** ${easyslipModels_.length}');
     // setState(() {
     //   index_Test = index;
     // });
@@ -8574,7 +8574,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
         var payload, Sernow;
         for (var map in result) {
           easyslipModel easyslipModelss = easyslipModel.fromJson(map);
-          // print(easyslipModelss.payload);
+          // //print(easyslipModelss.payload);
           setState(() {
             payload = easyslipModelss.payload!;
             Sernow = easyslipModelss.ser!;
@@ -8616,7 +8616,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       'sernow': '$Sernow',
     }).then((value) async {
       var result = json.decode(value.body);
-      // print(result);
+      // //print(result);
       setState(() {
         ser_adddata = 0;
         index_Test = null;
@@ -8667,9 +8667,9 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       DateTime dateTime = DateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(rawDate);
       String formattedDate = DateFormat('dd-MM-yyyy').format(dateTime);
       rawDate = formattedDate;
-      print(formattedDate);
+      //print(formattedDate);
     } catch (e) {
-      print("Custom date parsing failed: $e");
+      //print("Custom date parsing failed: $e");
     }
 //////////------------------------->
     String rawTotal =
@@ -8682,10 +8682,10 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
       double total = double.parse(rawTotal);
       String formattedTotal = nFormat.format(total);
 
-      print("Formatted Total: $formattedTotal");
+      //print("Formatted Total: $formattedTotal");
       rawTotal = formattedTotal; // Update rawTotal with the formatted value
     } catch (e) {
-      print("Number parsing failed: $e");
+      //print("Number parsing failed: $e");
       rawTotal = "0.00"; // Fallback to a default safe value
     }
     //////////------------------------->

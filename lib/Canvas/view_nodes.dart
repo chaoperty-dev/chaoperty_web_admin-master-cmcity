@@ -6,7 +6,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:iconsax/iconsax.dart';
+// import 'package:iconsax/iconsax.dart';
 import 'package:infinite_canvas/infinite_canvas.dart';
 import 'package:popup_menu_plus/popup_menu_plus.dart';
 import 'package:random_color/random_color.dart';
@@ -16,6 +16,7 @@ import 'package:slide_switcher/slide_switcher.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../ChaoArea/ChaoAreaBid_Screen.dart';
 import '../ChaoArea/ChaoAreaRenew_Screen.dart';
+import '../ChiangMai_Municipality/Make_contract_CMM/new_contract_cmm.dart';
 import '../Constant/Myconstant.dart';
 import '../Model/GetArea_Model.dart';
 import '../Model/GetArea_quot.dart';
@@ -41,8 +42,18 @@ import 'Custom_Painter/CustomPainter_Triangle.dart';
 import 'Type_Node.dart';
 
 class NodeDataScreen2 extends StatefulWidget {
+  final data_uuid;
+  final requestStep;
+  final payment_uuid;
+  final payment_uuid_amount;
+  final payment_jsonx;
   const NodeDataScreen2({
     super.key,
+    required this.data_uuid,
+    required this.requestStep,
+    required this.payment_uuid,
+    required this.payment_uuid_amount,
+    required this.payment_jsonx,
   });
 
   @override
@@ -204,7 +215,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
         _updateNodes();
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      //  print('Error fetching data: $e');
     }
   }
   // Future<void> red_area() async {
@@ -287,7 +298,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
         _updateNodes();
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      // print('Error fetching data: $e');
     }
   }
 
@@ -320,7 +331,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
         // _updateNodes();
       }
     } catch (e) {
-      print('Error fetching data: $e');
+      // print('Error fetching data: $e');
     }
   }
 
@@ -567,210 +578,210 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
           lineColor: Colors.greenAccent,
           maxColumn: 10),
       items: [
-        if (areaModels[index].quantity == '1' &&
-            areaModels[index].docno != null)
-          PopUpMenuItem(
-              // title:
-              //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation(context);
-                    } else {
-                      SharedPreferences preferences =
-                          await SharedPreferences.getInstance();
-                      preferences.setString(
-                          'zoneSer', areaModels[index].zser.toString());
-                      preferences.setString(
-                          'zonesName', areaModels[index].zn.toString());
-                      setState(() {
-                        Ser_Body = 1;
-                        a_ln = areaModels[index].lncode;
-                        a_ser = areaModels[index].ser;
-                        a_area = areaModels[index].area;
-                        a_rent = areaModels[index].rent;
-                        a_page = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เสนอราคา:',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            null,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            '${areaModels[index].lncode} (${areaModels[index].ln})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
-        if (areaModels[index].quantity != '1')
-          PopUpMenuItem(
-              // title:
-              //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation(context);
-                    } else {
-                      SharedPreferences preferences =
-                          await SharedPreferences.getInstance();
-                      preferences.setString(
-                          'zoneSer', areaModels[index].zser.toString());
-                      preferences.setString(
-                          'zonesName', areaModels[index].zn.toString());
-                      setState(() {
-                        Ser_Body = 1;
-                        a_ln = areaModels[index].lncode;
-                        a_ser = areaModels[index].ser;
-                        a_area = areaModels[index].area;
-                        a_rent = areaModels[index].rent;
-                        a_page = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เสนอราคา:',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            null,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            '${areaModels[index].lncode} (${areaModels[index].ln})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
-        if (areaModels[index].quantity == '1' &&
-            areaModels[index].cc_date != null &&
-            areaModels[index].cc_date.toString() != "0000-00-00")
-          PopUpMenuItem(
-              // title:
-              //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
-              // textStyle: const TextStyle(
-              //     color: PeopleChaoScreen_Color.Colors_Text2_,
-              //     //fontWeight: FontWeight.bold,
-              //     fontFamily: Font_.Fonts_T),
-              image: InkWell(
-                  onTap: () async {
-                    if (renTal_lavel <= 2) {
-                      menu!.dismiss();
-                      infomation(context);
-                    } else {
-                      SharedPreferences preferences =
-                          await SharedPreferences.getInstance();
-                      preferences.setString(
-                          'zoneSer', areaModels[index].zser.toString());
-                      preferences.setString(
-                          'zonesName', areaModels[index].zn.toString());
-                      setState(() {
-                        Ser_Body = 1;
-                        a_ln = areaModels[index].lncode;
-                        a_ser = areaModels[index].ser;
-                        a_area = areaModels[index].area;
-                        a_rent = areaModels[index].rent;
-                        a_page = '1';
-                      });
-                      menu!.dismiss();
-                    }
-                    // Navigator.pop(context);
-                  },
-                  child: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Translate.TranslateAndSetText(
-                            'เสนอราคา:',
-                            PeopleChaoScreen_Color.Colors_Text2_,
-                            TextAlign.center,
-                            null,
-                            Font_.Fonts_T,
-                            14,
-                            1),
-                        Expanded(
-                          child: Text(
-                            '${areaModels[index].lncode} (${areaModels[index].ln})',
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                                color: PeopleChaoScreen_Color.Colors_Text2_,
-                                //fontWeight: FontWeight.bold,
-                                fontFamily: Font_.Fonts_T),
-                          ),
-                        ),
-                        Icon(Iconsax.arrow_circle_right,
-                            color: getRandomColor(index)),
-                      ],
-                    ),
-                  ))),
+        // if (areaModels[index].quantity == '1' &&
+        //     areaModels[index].docno != null)
+        //   PopUpMenuItem(
+        //       // title:
+        //       //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
+        //       // textStyle: const TextStyle(
+        //       //     color: PeopleChaoScreen_Color.Colors_Text2_,
+        //       //     //fontWeight: FontWeight.bold,
+        //       //     fontFamily: Font_.Fonts_T),
+        //       image: InkWell(
+        //           onTap: () async {
+        //             if (renTal_lavel <= 2) {
+        //               menu!.dismiss();
+        //               infomation(context);
+        //             } else {
+        //               SharedPreferences preferences =
+        //                   await SharedPreferences.getInstance();
+        //               preferences.setString(
+        //                   'zoneSer', areaModels[index].zser.toString());
+        //               preferences.setString(
+        //                   'zonesName', areaModels[index].zn.toString());
+        //               setState(() {
+        //                 Ser_Body = 1;
+        //                 a_ln = areaModels[index].lncode;
+        //                 a_ser = areaModels[index].ser;
+        //                 a_area = areaModels[index].area;
+        //                 a_rent = areaModels[index].rent;
+        //                 a_page = '1';
+        //               });
+        //               menu!.dismiss();
+        //             }
+        //             // Navigator.pop(context);
+        //           },
+        //           child: Container(
+        //             decoration: const BoxDecoration(
+        //                 border: Border(
+        //               bottom: BorderSide(
+        //                 //                    <--- top side
+        //                 width: 0.5,
+        //               ),
+        //             )),
+        //             padding: const EdgeInsets.all(4.0),
+        //             width: 270,
+        //             child: Row(
+        //               children: [
+        //                 Translate.TranslateAndSetText(
+        //                     'เสนอราคา:',
+        //                     PeopleChaoScreen_Color.Colors_Text2_,
+        //                     TextAlign.center,
+        //                     null,
+        //                     Font_.Fonts_T,
+        //                     14,
+        //                     1),
+        //                 Expanded(
+        //                   child: Text(
+        //                     '${areaModels[index].lncode} (${areaModels[index].ln})',
+        //                     overflow: TextOverflow.ellipsis,
+        //                     style: const TextStyle(
+        //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                         //fontWeight: FontWeight.bold,
+        //                         fontFamily: Font_.Fonts_T),
+        //                   ),
+        //                 ),
+        //                 Icon(Iconsax.arrow_circle_right,
+        //                     color: getRandomColor(index)),
+        //               ],
+        //             ),
+        //           ))),
+        // if (areaModels[index].quantity != '1')
+        //   PopUpMenuItem(
+        //       // title:
+        //       //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
+        //       // textStyle: const TextStyle(
+        //       //     color: PeopleChaoScreen_Color.Colors_Text2_,
+        //       //     //fontWeight: FontWeight.bold,
+        //       //     fontFamily: Font_.Fonts_T),
+        //       image: InkWell(
+        //           onTap: () async {
+        //             if (renTal_lavel <= 2) {
+        //               menu!.dismiss();
+        //               infomation(context);
+        //             } else {
+        //               SharedPreferences preferences =
+        //                   await SharedPreferences.getInstance();
+        //               preferences.setString(
+        //                   'zoneSer', areaModels[index].zser.toString());
+        //               preferences.setString(
+        //                   'zonesName', areaModels[index].zn.toString());
+        //               setState(() {
+        //                 Ser_Body = 1;
+        //                 a_ln = areaModels[index].lncode;
+        //                 a_ser = areaModels[index].ser;
+        //                 a_area = areaModels[index].area;
+        //                 a_rent = areaModels[index].rent;
+        //                 a_page = '1';
+        //               });
+        //               menu!.dismiss();
+        //             }
+        //             // Navigator.pop(context);
+        //           },
+        //           child: Container(
+        //             decoration: const BoxDecoration(
+        //                 border: Border(
+        //               bottom: BorderSide(
+        //                 //                    <--- top side
+        //                 width: 0.5,
+        //               ),
+        //             )),
+        //             padding: const EdgeInsets.all(4.0),
+        //             width: 270,
+        //             child: Row(
+        //               children: [
+        //                 Translate.TranslateAndSetText(
+        //                     'เสนอราคา:',
+        //                     PeopleChaoScreen_Color.Colors_Text2_,
+        //                     TextAlign.center,
+        //                     null,
+        //                     Font_.Fonts_T,
+        //                     14,
+        //                     1),
+        //                 Expanded(
+        //                   child: Text(
+        //                     '${areaModels[index].lncode} (${areaModels[index].ln})',
+        //                     overflow: TextOverflow.ellipsis,
+        //                     style: const TextStyle(
+        //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                         //fontWeight: FontWeight.bold,
+        //                         fontFamily: Font_.Fonts_T),
+        //                   ),
+        //                 ),
+        //                 Icon(Iconsax.arrow_circle_right,
+        //                     color: getRandomColor(index)),
+        //               ],
+        //             ),
+        //           ))),
+        // if (areaModels[index].quantity == '1' &&
+        //     areaModels[index].cc_date != null &&
+        //     areaModels[index].cc_date.toString() != "0000-00-00")
+        //   PopUpMenuItem(
+        //       // title:
+        //       //     'เสนอราคา: ${areaModels[index].lncode} (${areaModels[index].ln})',
+        //       // textStyle: const TextStyle(
+        //       //     color: PeopleChaoScreen_Color.Colors_Text2_,
+        //       //     //fontWeight: FontWeight.bold,
+        //       //     fontFamily: Font_.Fonts_T),
+        //       image: InkWell(
+        //           onTap: () async {
+        //             if (renTal_lavel <= 2) {
+        //               menu!.dismiss();
+        //               infomation(context);
+        //             } else {
+        //               SharedPreferences preferences =
+        //                   await SharedPreferences.getInstance();
+        //               preferences.setString(
+        //                   'zoneSer', areaModels[index].zser.toString());
+        //               preferences.setString(
+        //                   'zonesName', areaModels[index].zn.toString());
+        //               setState(() {
+        //                 Ser_Body = 1;
+        //                 a_ln = areaModels[index].lncode;
+        //                 a_ser = areaModels[index].ser;
+        //                 a_area = areaModels[index].area;
+        //                 a_rent = areaModels[index].rent;
+        //                 a_page = '1';
+        //               });
+        //               menu!.dismiss();
+        //             }
+        //             // Navigator.pop(context);
+        //           },
+        //           child: Container(
+        //             decoration: const BoxDecoration(
+        //                 border: Border(
+        //               bottom: BorderSide(
+        //                 //                    <--- top side
+        //                 width: 0.5,
+        //               ),
+        //             )),
+        //             padding: const EdgeInsets.all(4.0),
+        //             width: 270,
+        //             child: Row(
+        //               children: [
+        //                 Translate.TranslateAndSetText(
+        //                     'เสนอราคา:',
+        //                     PeopleChaoScreen_Color.Colors_Text2_,
+        //                     TextAlign.center,
+        //                     null,
+        //                     Font_.Fonts_T,
+        //                     14,
+        //                     1),
+        //                 Expanded(
+        //                   child: Text(
+        //                     '${areaModels[index].lncode} (${areaModels[index].ln})',
+        //                     overflow: TextOverflow.ellipsis,
+        //                     style: const TextStyle(
+        //                         color: PeopleChaoScreen_Color.Colors_Text2_,
+        //                         //fontWeight: FontWeight.bold,
+        //                         fontFamily: Font_.Fonts_T),
+        //                   ),
+        //                 ),
+        //                 Icon(Iconsax.arrow_circle_right,
+        //                     color: getRandomColor(index)),
+        //               ],
+        //             ),
+        //           ))),
 
 ////////////-------------------------->
         ///
@@ -838,7 +849,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                 fontFamily: Font_.Fonts_T),
                           ),
                         ),
-                        Icon(Iconsax.arrow_circle_right,
+                        Icon(Icons.arrow_circle_right,
                             color: getRandomColor(index)),
                       ],
                     ),
@@ -910,7 +921,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                 fontFamily: Font_.Fonts_T),
                           ),
                         ),
-                        Icon(Iconsax.arrow_circle_right,
+                        Icon(Icons.arrow_circle_right,
                             color: getRandomColor(index)),
                       ],
                     ),
@@ -963,7 +974,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                   fontFamily: Font_.Fonts_T),
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right,
                               color: getRandomColor(index)),
                         ],
                       ),
@@ -1042,7 +1053,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                   fontFamily: Font_.Fonts_T),
                             ),
                           ),
-                          Icon(Iconsax.arrow_circle_right,
+                          Icon(Icons.arrow_circle_right,
                               color: getRandomColor(index)),
                         ],
                       ),
@@ -1122,7 +1133,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                 fontFamily: Font_.Fonts_T),
                           ),
                         ),
-                        Icon(Iconsax.arrow_circle_right,
+                        Icon(Icons.arrow_circle_right,
                             color: getRandomColor(index)),
                       ],
                     ),
@@ -1203,7 +1214,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                 fontFamily: Font_.Fonts_T),
                           ),
                         ),
-                        Icon(Iconsax.arrow_circle_right,
+                        Icon(Icons.arrow_circle_right,
                             color: getRandomColor(index)),
                       ],
                     ),
@@ -1268,7 +1279,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                     fontFamily: Font_.Fonts_T),
                               ),
                             ),
-                            Icon(Iconsax.arrow_circle_right,
+                            Icon(Icons.arrow_circle_right,
                                 color: getRandomColor(index)),
                           ],
                         ),
@@ -1334,7 +1345,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                     fontFamily: Font_.Fonts_T),
                               ),
                             ),
-                            Icon(Iconsax.arrow_circle_right,
+                            Icon(Icons.arrow_circle_right,
                                 color: getRandomColor(index)),
                           ],
                         ),
@@ -1412,7 +1423,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                 fontFamily: Font_.Fonts_T),
                           ),
                         ),
-                        Icon(Iconsax.arrow_circle_right,
+                        Icon(Icons.arrow_circle_right,
                             color: getRandomColor(index)),
                       ],
                     ),
@@ -1620,21 +1631,39 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                     ),
                   ),
                 (Ser_Body == 1)
-                    ? ChaoAreaBidScreen(
-                        Get_Value_area_index: a_ser,
-                        Get_Value_area_ln: a_ln,
-                        Get_Value_area_sum: a_area,
-                        Get_Value_rent_sum: a_rent,
-                        Get_Value_page: a_page,
-                      )
+                    ? SizedBox()
+                    //  ChaoAreaBidScreen(
+                    //     Get_Value_area_index: a_ser,
+                    //     Get_Value_area_ln: a_ln,
+                    //     Get_Value_area_sum: a_area,
+                    //     Get_Value_rent_sum: a_rent,
+                    //     Get_Value_page: a_page,
+                    //   )
                     : (Ser_Body == 2)
-                        ? ChaoAreaRenewScreen(
+                        ? Newcontract_cmm(
                             Get_Value_area_index: a_ser,
                             Get_Value_area_ln: a_ln,
                             Get_Value_area_sum: a_area,
                             Get_Value_rent_sum: a_rent,
                             Get_Value_page: a_page,
+                            Get_Value_uuid: widget.data_uuid.toString(),
+                            Get_Value_step: widget.requestStep.toString(),
+                            Get_Value_payment_uuid:
+                                widget.payment_uuid.toString(),
+                            Get_Value_payment_amount:
+                                widget.payment_uuid_amount.toString(),
+                            paymentjsonx: widget.payment_jsonx,
+                            Get_TeNantModels: [],
+                            status_uuid: '',
                           )
+
+                        // ChaoAreaRenewScreen(
+                        //     Get_Value_area_index: a_ser,
+                        //     Get_Value_area_ln: a_ln,
+                        //     Get_Value_area_sum: a_area,
+                        //     Get_Value_rent_sum: a_rent,
+                        //     Get_Value_page: a_page,
+                        //   )
                         : (Ser_Body == 3)
                             ? PeopleChaoScreen2(
                                 Get_Value_cid: Value_cid,
@@ -1927,7 +1956,7 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
                                                             color: Colors.grey,
                                                             width: 1),
                                                       ),
-                                                       width: (Responsive
+                                                      width: (Responsive
                                                               .isDesktop(
                                                                   context))
                                                           ? MediaQuery.of(
@@ -2630,165 +2659,165 @@ class _NodeDataScreen2State extends State<NodeDataScreen2> {
   }
 
   String _text = '';
-  TypeNode2(context, color, color_text, nodeData, type) {
-    DateTime datex = DateTime.now();
+//   TypeNode2(context, color, color_text, nodeData, type) {
+//     DateTime datex = DateTime.now();
 
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            backgroundColor: AppbackgroundColor.Sub_Abg_Colors,
-            titlePadding: const EdgeInsets.all(0.0),
-            contentPadding: const EdgeInsets.all(10.0),
-            actionsPadding: const EdgeInsets.all(6.0),
-            shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(20.0))),
-            title: Center(
-                child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    InkWell(
-                      onTap: () async {
-                        Navigator.pop(context);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: Icon(Icons.highlight_off,
-                            size: 30, color: Colors.red[700]),
-                      ),
-                    ),
-                  ],
-                ),
-                Text(
-                  '${nodeData.ln}',
-                  style: const TextStyle(
-                      color: AdminScafScreen_Color.Colors_Text1_,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      fontFamily: FontWeight_.Fonts_T),
-                ),
-                Text(
-                  '(${_text})',
-                  style: const TextStyle(
-                      color: AdminScafScreen_Color.Colors_Text1_,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                      fontFamily: Font_.Fonts_T),
-                ),
-                const SizedBox(
-                  height: 2.0,
-                ),
-                Divider(
-                  color: Colors.grey[300],
-                  height: 3.0,
-                ),
-                const SizedBox(
-                  height: 2.0,
-                ),
-              ],
-            )),
-            content: SingleChildScrollView(
-                child: ListBody(children: <Widget>[
-              // Container(child: new Text("You have selected " + '$_text')),
-              // if (areaModels[index].quantity != '1')
-              ListTile(
-                  onTap: () async {
-                    // int index_ = int.parse(details.resource!.id.toString());
+//     return showDialog(
+//         context: context,
+//         builder: (BuildContext context) {
+//           return AlertDialog(
+//             backgroundColor: AppbackgroundColor.Sub_Abg_Colors,
+//             titlePadding: const EdgeInsets.all(0.0),
+//             contentPadding: const EdgeInsets.all(10.0),
+//             actionsPadding: const EdgeInsets.all(6.0),
+//             shape: const RoundedRectangleBorder(
+//                 borderRadius: BorderRadius.all(Radius.circular(20.0))),
+//             title: Center(
+//                 child: Column(
+//               crossAxisAlignment: CrossAxisAlignment.center,
+//               children: [
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.end,
+//                   children: [
+//                     InkWell(
+//                       onTap: () async {
+//                         Navigator.pop(context);
+//                       },
+//                       child: Padding(
+//                         padding: const EdgeInsets.all(4.0),
+//                         child: Icon(Icons.highlight_off,
+//                             size: 30, color: Colors.red[700]),
+//                       ),
+//                     ),
+//                   ],
+//                 ),
+//                 Text(
+//                   '${nodeData.ln}',
+//                   style: const TextStyle(
+//                       color: AdminScafScreen_Color.Colors_Text1_,
+//                       fontWeight: FontWeight.bold,
+//                       fontSize: 16,
+//                       fontFamily: FontWeight_.Fonts_T),
+//                 ),
+//                 Text(
+//                   '(${_text})',
+//                   style: const TextStyle(
+//                       color: AdminScafScreen_Color.Colors_Text1_,
+//                       fontWeight: FontWeight.w500,
+//                       fontSize: 14,
+//                       fontFamily: Font_.Fonts_T),
+//                 ),
+//                 const SizedBox(
+//                   height: 2.0,
+//                 ),
+//                 Divider(
+//                   color: Colors.grey[300],
+//                   height: 3.0,
+//                 ),
+//                 const SizedBox(
+//                   height: 2.0,
+//                 ),
+//               ],
+//             )),
+//             content: SingleChildScrollView(
+//                 child: ListBody(children: <Widget>[
+//               // Container(child: new Text("You have selected " + '$_text')),
+//               // if (areaModels[index].quantity != '1')
+//               ListTile(
+//                   onTap: () async {
+//                     // int index_ = int.parse(details.resource!.id.toString());
 
-                    // setState(() {
-                    //   Ser_Body = 1;
-                    //   a_ln = areaModels[index_].lncode;
-                    //   a_ser = areaModels[index_].ser;
-                    //   a_area = areaModels[index_].area;
-                    //   a_rent = areaModels[index_].rent;
-                    //   a_page = '1';
-                    // });
-                    Navigator.pop(context, 'OK');
-                    //   }
-                  },
-                  title: Container(
-                    decoration: const BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Translate.TranslateAndSetText(
-                              'เสนอราคา: ${nodeData.ln} ',
-                              ChaoAreaScreen_Color.Colors_Text1_,
-                              TextAlign.center,
-                              null,
-                              Font_.Fonts_T,
-                              16,
-                              1),
-                        ),
-                        Icon(
-                          Iconsax.arrow_circle_right,
-                          // color: getRandomColor(index)
-                        ),
-                      ],
-                    ),
-                  )),
-////////////-------------------------->
-              // if (areaModels[index].quantity != '1')
-              ListTile(
-                  onTap: () async {
-                    // int index_ = int.parse(details.resource!.id.toString());
+//                     // setState(() {
+//                     //   Ser_Body = 1;
+//                     //   a_ln = areaModels[index_].lncode;
+//                     //   a_ser = areaModels[index_].ser;
+//                     //   a_area = areaModels[index_].area;
+//                     //   a_rent = areaModels[index_].rent;
+//                     //   a_page = '1';
+//                     // });
+//                     Navigator.pop(context, 'OK');
+//                     //   }
+//                   },
+//                   title: Container(
+//                     decoration: const BoxDecoration(
+//                         border: Border(
+//                       bottom: BorderSide(
+//                         //                    <--- top side
+//                         width: 0.5,
+//                       ),
+//                     )),
+//                     padding: const EdgeInsets.all(4.0),
+//                     width: 270,
+//                     child: Row(
+//                       children: [
+//                         Expanded(
+//                           child: Translate.TranslateAndSetText(
+//                               'เสนอราคา: ${nodeData.ln} ',
+//                               ChaoAreaScreen_Color.Colors_Text1_,
+//                               TextAlign.center,
+//                               null,
+//                               Font_.Fonts_T,
+//                               16,
+//                               1),
+//                         ),
+//                         Icon(
+//                           Iconsax.arrow_circle_right,
+//                           // color: getRandomColor(index)
+//                         ),
+//                       ],
+//                     ),
+//                   )),
+// ////////////-------------------------->
+//               // if (areaModels[index].quantity != '1')
+//               ListTile(
+//                   onTap: () async {
+//                     // int index_ = int.parse(details.resource!.id.toString());
 
-                    // setState(() {
-                    //   Ser_Body = 2;
-                    //   a_ln = areaModels[index_].lncode;
-                    //   a_ser = areaModels[index_].ser;
-                    //   a_area = areaModels[index_].area;
-                    //   a_rent = areaModels[index_].rent;
-                    //   a_page = '1';
-                    // });
-                    Navigator.pop(context, 'OK');
-                    //     }
-                  },
-                  title: Container(
-                    decoration: BoxDecoration(
-                        border: Border(
-                      bottom: BorderSide(
-                        //                    <--- top side
-                        color: Colors.grey,
-                        width: 0.5,
-                      ),
-                    )),
-                    padding: const EdgeInsets.all(4.0),
-                    width: 270,
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Translate.TranslateAndSetText(
-                              'ทำสัญญา: ${nodeData.ln}',
-                              ChaoAreaScreen_Color.Colors_Text1_,
-                              TextAlign.center,
-                              null,
-                              Font_.Fonts_T,
-                              16,
-                              1),
-                        ),
-                        Icon(
-                          Iconsax.arrow_circle_right,
-                          // color: getRandomColor(index)
-                        ),
-                      ],
-                    ),
-                  )),
-            ])),
-          );
-        });
-  }
+//                     // setState(() {
+//                     //   Ser_Body = 2;
+//                     //   a_ln = areaModels[index_].lncode;
+//                     //   a_ser = areaModels[index_].ser;
+//                     //   a_area = areaModels[index_].area;
+//                     //   a_rent = areaModels[index_].rent;
+//                     //   a_page = '1';
+//                     // });
+//                     Navigator.pop(context, 'OK');
+//                     //     }
+//                   },
+//                   title: Container(
+//                     decoration: BoxDecoration(
+//                         border: Border(
+//                       bottom: BorderSide(
+//                         //                    <--- top side
+//                         color: Colors.grey,
+//                         width: 0.5,
+//                       ),
+//                     )),
+//                     padding: const EdgeInsets.all(4.0),
+//                     width: 270,
+//                     child: Row(
+//                       children: [
+//                         Expanded(
+//                           child: Translate.TranslateAndSetText(
+//                               'ทำสัญญา: ${nodeData.ln}',
+//                               ChaoAreaScreen_Color.Colors_Text1_,
+//                               TextAlign.center,
+//                               null,
+//                               Font_.Fonts_T,
+//                               16,
+//                               1),
+//                         ),
+//                         Icon(
+//                           Iconsax.arrow_circle_right,
+//                           // color: getRandomColor(index)
+//                         ),
+//                       ],
+//                     ),
+//                   )),
+//             ])),
+//           );
+//         });
+//   }
 }
 
 class InlineCustomPainter extends CustomPainter {

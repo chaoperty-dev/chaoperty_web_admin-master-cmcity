@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/pdf.dart';
 import '../AdminScaffold/AdminScaffold.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../Model/GetC_Syslog.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../Responsive/responsive.dart';
@@ -100,7 +101,7 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
         '${MyConstant().domain}/GC_rental.php?isAdd=true&ser=$seruser&type=$utype';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -148,7 +149,7 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
         : '${MyConstant().domain}/GC_Syslog.php?isAdd=true&ren=$ren&datex_=$Value_selectDate&status=$Status_&count_OFFSET=$Count_OFF_SET';
 
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -375,635 +376,322 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
 
 ///////////--------------------------------->
   Widget build(BuildContext context) {
-    return Expanded(
-        child: Padding(
-      padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              decoration: const BoxDecoration(
-                color: Colors.white60,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
-                // border: Border.all(color: Colors.white, width: 1),
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: InkWell(
-                          onTap: () async {
-                            setState(() {
-                              ser_type_TapMan = 0;
-                              Status_3_ = 0;
-                              Count_OFF_SET = 0;
-                            });
-                            red_Syslog();
-                          },
-                          child: Container(
-                              decoration: BoxDecoration(
-                                color: (ser_type_TapMan == 0)
-                                    ? Colors.black
-                                    : Colors.grey,
-                                borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10),
-                                    bottomLeft: Radius.circular(10),
-                                    bottomRight: Radius.circular(10)),
-                                border:
-                                    Border.all(color: Colors.grey, width: 1),
-                              ),
-                              padding: const EdgeInsets.all(8.0),
-                              child: Center(
-                                child: Translate.TranslateAndSetText(
-                                    'ระบบแอดมิน',
-                                    SettingScreen_Color.Colors_Text3_,
-                                    TextAlign.center,
-                                    FontWeight.bold,
-                                    FontWeight_.Fonts_T,
-                                    14,
-                                    1),
-                              )),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: InkWell(
-                          onTap: () async {
-                            setState(() {
-                              ser_type_TapMan = 1;
-                              Status_3_ = 0;
-                              Count_OFF_SET = 0;
-                            });
-                            red_Syslog();
-                          },
-                          child: Container(
-                              decoration: BoxDecoration(
-                                color: (ser_type_TapMan == 1)
-                                    ? Colors.black
-                                    : Colors.grey,
-                                borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(10),
-                                    topRight: Radius.circular(10),
-                                    bottomLeft: Radius.circular(10),
-                                    bottomRight: Radius.circular(10)),
-                                border:
-                                    Border.all(color: Colors.grey, width: 1),
-                              ),
-                              padding: const EdgeInsets.all(8.0),
-                              child: Center(
-                                child: Translate.TranslateAndSetText(
-                                    'ระบบผู้ใช้ทั่วไป',
-                                    SettingScreen_Color.Colors_Text3_,
-                                    TextAlign.center,
-                                    FontWeight.bold,
-                                    FontWeight_.Fonts_T,
-                                    14,
-                                    1),
-                              )),
-                        ),
-                      ),
-                    ],
+    return SizedBox(
+      width: double.infinity,
+      child: LayoutBuilder(builder: (context, cts) {
+        final screenW = cts.maxWidth;
+        final tableMinW = Responsive.isDesktop(context) ? screenW : 980.0;
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 0, 0, 8),
+                child: Container(
+                  width: tableMinW,
+                  decoration: const BoxDecoration(
+                    color: Colors.white60,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10)),
+                    // border: Border.all(color: Colors.white, width: 1),
                   ),
-                  Row(
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: ScrollConfiguration(
-                              behavior: ScrollConfiguration.of(context)
-                                  .copyWith(dragDevices: {
-                                PointerDeviceKind.touch,
-                                PointerDeviceKind.mouse,
-                              }),
-                              child: (ser_type_TapMan == 0)
-                                  ? SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(children: [
-                                        for (int i = 0;
-                                            i < Status_3.length;
-                                            i++)
-                                          Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    tappedIndex_ = '';
-                                                    Status_3_ = i;
-                                                    Count_OFF_SET = 0;
-                                                  });
-                                                  red_Syslog();
-                                                },
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    color: (i + 1 == 1)
-                                                        ? (Status_3_ == i)
-                                                            ? Colors.blue[700]
-                                                            : Colors.blue[200]
-                                                        : (i + 1 == 2)
-                                                            ? (Status_3_ == i)
-                                                                ? Colors.grey[
-                                                                    700]
-                                                                : Colors
-                                                                    .grey[300]
-                                                            : (i + 1 == 3)
-                                                                ? (Status_3_ ==
-                                                                        i)
-                                                                    ? Colors.purple[
-                                                                        700]
-                                                                    : Colors.purple[
-                                                                        200]
-                                                                : (i + 1 == 4)
-                                                                    ? (Status_3_ ==
-                                                                            i)
-                                                                        ? Colors.amber[
-                                                                            700]
-                                                                        : Colors.amber[
-                                                                            200]
-                                                                    : (i + 1 ==
-                                                                            5)
-                                                                        ? (Status_3_ ==
-                                                                                i)
-                                                                            ? Colors.lime[
-                                                                                700]
-                                                                            : Colors.lime[
-                                                                                200]
-                                                                        : (i + 1 ==
-                                                                                6)
-                                                                            ? (Status_3_ == i)
-                                                                                ? Colors.blueGrey[700]
-                                                                                : Colors.blueGrey[200]
-                                                                            : (i + 1 == 7)
-                                                                                ? (Status_3_ == i)
-                                                                                    ? Colors.brown[700]
-                                                                                    : Colors.brown[200]
-                                                                                : (Status_3_ == i)
-                                                                                    ? Colors.red[700]
-                                                                                    : Colors.red[200],
-                                                    borderRadius:
-                                                        const BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    10),
-                                                            topRight:
-                                                                Radius.circular(
-                                                                    10),
-                                                            bottomLeft:
-                                                                Radius.circular(
-                                                                    10),
-                                                            bottomRight:
-                                                                Radius.circular(
-                                                                    10)),
-                                                    border: (Status_3_ == i)
-                                                        ? Border.all(
-                                                            color: Colors.white,
-                                                            width: 1)
-                                                        : null,
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Center(
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            Status_3[i],
-                                                            (Status_3_ == i)
-                                                                ? Colors.white
-                                                                : Colors.black,
-                                                            TextAlign.center,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            1),
-                                                  ),
-                                                ),
-                                              )),
-                                      ]))
-                                  : SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(children: [
-                                        for (int i = 0;
-                                            i < Status_User.length;
-                                            i++)
-                                          Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: InkWell(
-                                                onTap: () {
-                                                  setState(() {
-                                                    tappedIndex_ = '';
-                                                    Status_3_ = i;
-                                                  });
-                                                  red_Syslog();
-                                                },
-                                                child: Container(
-                                                  decoration: BoxDecoration(
-                                                    color: (i + 1 == 1)
-                                                        ? Colors.blue[300]
-                                                        : (i + 1 == 2)
-                                                            ? Colors.grey[300]
-                                                            : (i + 1 == 3)
-                                                                ? Colors
-                                                                    .purple[300]
-                                                                : (i + 1 == 4)
-                                                                    ? Colors.amber[
-                                                                        300]
-                                                                    : (i + 1 ==
-                                                                            5)
-                                                                        ? Colors.lime[
-                                                                            300]
-                                                                        : (i + 1 ==
-                                                                                6)
-                                                                            ? Colors.blueGrey[300]
-                                                                            : (i + 1 == 7)
-                                                                                ? Colors.brown[300]
-                                                                                : Colors.red[300],
-                                                    borderRadius:
-                                                        const BorderRadius.only(
-                                                            topLeft:
-                                                                Radius.circular(
-                                                                    10),
-                                                            topRight:
-                                                                Radius.circular(
-                                                                    10),
-                                                            bottomLeft:
-                                                                Radius.circular(
-                                                                    10),
-                                                            bottomRight:
-                                                                Radius.circular(
-                                                                    10)),
-                                                    border: (Status_3_ == i)
-                                                        ? Border.all(
-                                                            color: Colors.white,
-                                                            width: 1)
-                                                        : null,
-                                                  ),
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Center(
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            Status_User[i],
-                                                            (Status_3_ == i)
-                                                                ? Colors.white
-                                                                : Colors.black,
-                                                            TextAlign.center,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            14,
-                                                            1),
-                                                  ),
-                                                ),
-                                              )),
-                                      ])),
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () async {
+                                setState(() {
+                                  ser_type_TapMan = 0;
+                                  Status_3_ = 0;
+                                  Count_OFF_SET = 0;
+                                });
+                                red_Syslog();
+                              },
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    color: (ser_type_TapMan == 0)
+                                        ? Colors.black
+                                        : Colors.grey,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(10),
+                                        bottomLeft: Radius.circular(10),
+                                        bottomRight: Radius.circular(10)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Center(
+                                    child: Translate.TranslateAndSetText(
+                                        'ระบบแอดมิน',
+                                        SettingScreen_Color.Colors_Text3_,
+                                        TextAlign.center,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        1),
+                                  )),
                             ),
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () async {
+                                setState(() {
+                                  ser_type_TapMan = 1;
+                                  Status_3_ = 0;
+                                  Count_OFF_SET = 0;
+                                });
+                                red_Syslog();
+                              },
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    color: (ser_type_TapMan == 1)
+                                        ? Colors.black
+                                        : Colors.grey,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(10),
+                                        topRight: Radius.circular(10),
+                                        bottomLeft: Radius.circular(10),
+                                        bottomRight: Radius.circular(10)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Center(
+                                    child: Translate.TranslateAndSetText(
+                                        'ระบบผู้ใช้ทั่วไป',
+                                        SettingScreen_Color.Colors_Text3_,
+                                        TextAlign.center,
+                                        FontWeight.bold,
+                                        FontWeight_.Fonts_T,
+                                        14,
+                                        1),
+                                  )),
+                            ),
+                          ),
+                        ],
                       ),
-                      // InkWell(
-                      //   onTap: () {
-                      //     if (Value_selectDate != null) {
-                      //       _displayPdf();
-                      //     } else {
-                      //       showDialog<String>(
-                      //         barrierDismissible: false,
-                      //         context: context,
-                      //         builder: (BuildContext context) => AlertDialog(
-                      //           shape: const RoundedRectangleBorder(
-                      //               borderRadius: BorderRadius.all(
-                      //                   Radius.circular(20.0))),
-                      //           title: const Center(
-                      //               child: Text(
-                      //             'กรุณาเลือกวันที่ !!',
-                      //             style: TextStyle(
-                      //               color: Colors.red,
-                      //               // fontWeight: FontWeight.bold,
-                      //               fontFamily: FontWeight_.Fonts_T,
-                      //               fontWeight: FontWeight.bold,
-                      //             ),
-                      //           )),
-                      //           content: const Padding(
-                      //             padding: EdgeInsets.all(8.0),
-                      //             child: Text(
-                      //               'กรุณาเลือกวันที่ แบบระบุวันที่',
-                      //               textAlign: TextAlign.center,
-                      //               style: TextStyle(
-                      //                   color:
-                      //                       CustomerScreen_Color.Colors_Text1_,
-                      //                   // fontWeight: FontWeight.bold,
-                      //                   fontFamily: Font_.Fonts_T),
-                      //             ),
-                      //           ),
-                      //           actions: [
-                      //             Padding(
-                      //               padding: const EdgeInsets.all(8.0),
-                      //               child: InkWell(
-                      //                 onTap: () {
-                      //                   Navigator.pop(context);
-                      //                 },
-                      //                 child: Container(
-                      //                     height: 50,
-                      //                     decoration: BoxDecoration(
-                      //                       color: Colors.black,
-                      //                       borderRadius: const BorderRadius
-                      //                               .only(
-                      //                           topLeft: Radius.circular(10),
-                      //                           topRight: Radius.circular(10),
-                      //                           bottomLeft: Radius.circular(10),
-                      //                           bottomRight:
-                      //                               Radius.circular(10)),
-                      //                       border: Border.all(
-                      //                           color: Colors.grey, width: 1),
-                      //                     ),
-                      //                     padding: const EdgeInsets.all(3.0),
-                      //                     child: const Center(
-                      //                       child: Text(
-                      //                         'ปิด',
-                      //                         style: TextStyle(
-                      //                             color: Colors.white,
-                      //                             // fontSize: 10.0,
-                      //                             fontFamily:
-                      //                                 FontWeight_.Fonts_T),
-                      //                       ),
-                      //                     )),
-                      //               ),
-                      //             ),
-                      //           ],
-                      //         ),
-                      //       );
-                      //     }
-                      //   },
-                      //   child: Container(
-                      //     // height: 50,
-                      //     width: 100,
-                      //     decoration: BoxDecoration(
-                      //       color: Colors.green[600],
-                      //       borderRadius: const BorderRadius.only(
-                      //           topLeft: Radius.circular(10),
-                      //           topRight: Radius.circular(10),
-                      //           bottomLeft: Radius.circular(10),
-                      //           bottomRight: Radius.circular(10)),
-                      //       border: Border.all(color: Colors.grey, width: 1),
-                      //     ),
-                      //     padding: const EdgeInsets.all(4.0),
-                      //     child: Center(
-                      //       child: Row(
-                      //         mainAxisAlignment: MainAxisAlignment.center,
-                      //         children: [
-                      //           Padding(
-                      //             padding: EdgeInsets.all(4.0),
-                      //             child: Icon(
-                      //               Icons.print,
-                      //               color: (Status_3_ + 1 == 1)
-                      //                   ? Colors.blue[100]
-                      //                   : (Status_3_ + 1 == 2)
-                      //                       ? Colors.grey[100]
-                      //                       : (Status_3_ + 1 == 3)
-                      //                           ? Colors.purple[100]
-                      //                           : (Status_3_ + 1 == 4)
-                      //                               ? Colors.amber[100]
-                      //                               : (Status_3_ + 1 == 5)
-                      //                                   ? Colors.lime[100]
-                      //                                   : (Status_3_ + 1 == 6)
-                      //                                       ? Colors
-                      //                                           .blueGrey[100]
-                      //                                       : (Status_3_ + 1 ==
-                      //                                               7)
-                      //                                           ? Colors
-                      //                                               .brown[100]
-                      //                                           : Colors
-                      //                                               .red[100],
-                      //             ),
-                      //           ),
-                      //           const Padding(
-                      //             padding: EdgeInsets.all(4.0),
-                      //             child: Text(
-                      //               'พิมพ์',
-                      //               style: TextStyle(
-                      //                 color:
-                      //                     PeopleChaoScreen_Color.Colors_Text1_,
-                      //                 fontWeight: FontWeight.bold,
-                      //                 fontFamily: FontWeight_.Fonts_T,
-                      //               ),
-                      //             ),
-                      //           ),
-                      //         ],
-                      //       ),
-                      //     ),
-                      //   ),
-                      // )
-                    ],
-                  ),
-                  Container(
-                    width: MediaQuery.of(context).size.width,
-                    child: (Responsive.isDesktop(context))
-                        ? Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              SizedBox(
-                                child: Row(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Translate.TranslateAndSetText(
-                                          'ค้นหา:',
-                                          CustomerScreen_Color.Colors_Text1_,
-                                          TextAlign.end,
-                                          FontWeight.bold,
-                                          FontWeight_.Fonts_T,
-                                          16,
-                                          1),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Container(
-                                        decoration: BoxDecoration(
-                                          color:
-                                              AppbackgroundColor.Sub_Abg_Colors,
-                                          borderRadius: const BorderRadius.only(
-                                              topLeft: Radius.circular(10),
-                                              topRight: Radius.circular(10),
-                                              bottomLeft: Radius.circular(10),
-                                              bottomRight: Radius.circular(10)),
-                                          border: Border.all(
-                                              color: Colors.grey, width: 1),
-                                        ),
-                                        width: 120,
-                                        height: 35,
-                                        child: _searchBar(),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Translate.TranslateAndSetText(
-                                    'ประวัติการใช้งาน',
-                                    CustomerScreen_Color.Colors_Text1_,
-                                    TextAlign.end,
-                                    FontWeight.bold,
-                                    FontWeight_.Fonts_T,
-                                    16,
-                                    1),
-                              ),
-                              SizedBox(
-                                child: Row(
-                                  children: [
-                                    Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: Translate.TranslateAndSetText(
-                                          'วันที่ :',
-                                          CustomerScreen_Color.Colors_Text1_,
-                                          TextAlign.end,
-                                          FontWeight.bold,
-                                          FontWeight_.Fonts_T,
-                                          16,
-                                          1),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: InkWell(
-                                        onTap: () {},
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: AppbackgroundColor
-                                                .Sub_Abg_Colors,
-                                            borderRadius: const BorderRadius
-                                                    .only(
-                                                topLeft: Radius.circular(10),
-                                                topRight: Radius.circular(10),
-                                                bottomLeft: Radius.circular(10),
-                                                bottomRight:
-                                                    Radius.circular(10)),
-                                            border: Border.all(
-                                                color: Colors.grey, width: 1),
-                                          ),
-                                          width: 120,
-                                          padding: const EdgeInsets.all(8.0),
-                                          child: PopupMenuButton(
-                                            child: Center(
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Center(
-                                                    child: Translate
-                                                        .TranslateAndSetText(
-                                                            (Value_selectDate ==
-                                                                    null)
-                                                                ? 'ทั้งหมด'
-                                                                : '$Value_selectDate',
-                                                            CustomerScreen_Color
-                                                                .Colors_Text1_,
-                                                            TextAlign.end,
-                                                            FontWeight.bold,
-                                                            FontWeight_.Fonts_T,
-                                                            16,
-                                                            1),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            itemBuilder:
-                                                (BuildContext context) => [
-                                              PopupMenuItem(
-                                                child: InkWell(
-                                                    onTap: () async {
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Center(
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: ScrollConfiguration(
+                                  behavior: ScrollConfiguration.of(context)
+                                      .copyWith(dragDevices: {
+                                    PointerDeviceKind.touch,
+                                    PointerDeviceKind.mouse,
+                                  }),
+                                  child: (ser_type_TapMan == 0)
+                                      ? SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(children: [
+                                            for (int i = 0;
+                                                i < Status_3.length;
+                                                i++)
+                                              Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: InkWell(
+                                                    onTap: () {
                                                       setState(() {
-                                                        Value_selectDate = null;
+                                                        tappedIndex_ = '';
+                                                        Status_3_ = i;
                                                         Count_OFF_SET = 0;
                                                       });
                                                       red_Syslog();
-                                                      Navigator.pop(context);
                                                     },
                                                     child: Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(10),
-                                                        width: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width,
-                                                        child: Row(
-                                                          children: [
-                                                            Expanded(
-                                                              child: Translate.TranslateAndSetText(
-                                                                  'เลือกทั้งหมด',
-                                                                  CustomerScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  TextAlign.end,
-                                                                  FontWeight
-                                                                      .bold,
-                                                                  FontWeight_
-                                                                      .Fonts_T,
-                                                                  16,
-                                                                  1),
-                                                            )
-                                                          ],
-                                                        ))),
-                                              ),
-                                              PopupMenuItem(
-                                                child: InkWell(
-                                                    onTap: () async {
-                                                      Navigator.pop(context);
-                                                      Count_OFF_SET = 0;
-                                                      _select_Date(context);
+                                                      decoration: BoxDecoration(
+                                                        color: (i + 1 == 1)
+                                                            ? (Status_3_ == i)
+                                                                ? Colors.blue[
+                                                                    700]
+                                                                : Colors
+                                                                    .blue[200]
+                                                            : (i + 1 == 2)
+                                                                ? (Status_3_ ==
+                                                                        i)
+                                                                    ? Colors.grey[
+                                                                        700]
+                                                                    : Colors.grey[
+                                                                        300]
+                                                                : (i + 1 == 3)
+                                                                    ? (Status_3_ ==
+                                                                            i)
+                                                                        ? Colors.purple[
+                                                                            700]
+                                                                        : Colors.purple[
+                                                                            200]
+                                                                    : (i + 1 ==
+                                                                            4)
+                                                                        ? (Status_3_ ==
+                                                                                i)
+                                                                            ? Colors.amber[
+                                                                                700]
+                                                                            : Colors.amber[
+                                                                                200]
+                                                                        : (i + 1 ==
+                                                                                5)
+                                                                            ? (Status_3_ == i)
+                                                                                ? Colors.lime[700]
+                                                                                : Colors.lime[200]
+                                                                            : (i + 1 == 6)
+                                                                                ? (Status_3_ == i)
+                                                                                    ? Colors.blueGrey[700]
+                                                                                    : Colors.blueGrey[200]
+                                                                                : (i + 1 == 7)
+                                                                                    ? (Status_3_ == i)
+                                                                                        ? Colors.brown[700]
+                                                                                        : Colors.brown[200]
+                                                                                    : (Status_3_ == i)
+                                                                                        ? Colors.red[700]
+                                                                                        : Colors.red[200],
+                                                        borderRadius: const BorderRadius
+                                                                .only(
+                                                            topLeft: Radius
+                                                                .circular(10),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    10)),
+                                                        border: (Status_3_ == i)
+                                                            ? Border.all(
+                                                                color: Colors
+                                                                    .white,
+                                                                width: 1)
+                                                            : null,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Center(
+                                                        child: Translate
+                                                            .TranslateAndSetText(
+                                                                Status_3[i],
+                                                                (Status_3_ == i)
+                                                                    ? Colors
+                                                                        .white
+                                                                    : Colors
+                                                                        .black,
+                                                                TextAlign
+                                                                    .center,
+                                                                FontWeight.bold,
+                                                                FontWeight_
+                                                                    .Fonts_T,
+                                                                14,
+                                                                1),
+                                                      ),
+                                                    ),
+                                                  )),
+                                          ]))
+                                      : SingleChildScrollView(
+                                          scrollDirection: Axis.horizontal,
+                                          child: Row(children: [
+                                            for (int i = 0;
+                                                i < Status_User.length;
+                                                i++)
+                                              Padding(
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: InkWell(
+                                                    onTap: () {
+                                                      setState(() {
+                                                        tappedIndex_ = '';
+                                                        Status_3_ = i;
+                                                      });
+                                                      red_Syslog();
                                                     },
                                                     child: Container(
-                                                        padding:
-                                                            const EdgeInsets
-                                                                .all(10),
-                                                        width: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width,
-                                                        child: Row(
-                                                          children: [
-                                                            Expanded(
-                                                              child: Translate.TranslateAndSetText(
-                                                                  'เลือกวันที่',
-                                                                  CustomerScreen_Color
-                                                                      .Colors_Text1_,
-                                                                  TextAlign.end,
-                                                                  FontWeight
-                                                                      .bold,
-                                                                  FontWeight_
-                                                                      .Fonts_T,
-                                                                  16,
-                                                                  1),
-                                                            )
-                                                          ],
-                                                        ))),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                                      decoration: BoxDecoration(
+                                                        color: (i + 1 == 1)
+                                                            ? Colors.blue[300]
+                                                            : (i + 1 == 2)
+                                                                ? Colors
+                                                                    .grey[300]
+                                                                : (i + 1 == 3)
+                                                                    ? Colors.purple[
+                                                                        300]
+                                                                    : (i + 1 ==
+                                                                            4)
+                                                                        ? Colors.amber[
+                                                                            300]
+                                                                        : (i + 1 ==
+                                                                                5)
+                                                                            ? Colors.lime[300]
+                                                                            : (i + 1 == 6)
+                                                                                ? Colors.blueGrey[300]
+                                                                                : (i + 1 == 7)
+                                                                                    ? Colors.brown[300]
+                                                                                    : Colors.red[300],
+                                                        borderRadius: const BorderRadius
+                                                                .only(
+                                                            topLeft: Radius
+                                                                .circular(10),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    10)),
+                                                        border: (Status_3_ == i)
+                                                            ? Border.all(
+                                                                color: Colors
+                                                                    .white,
+                                                                width: 1)
+                                                            : null,
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Center(
+                                                        child: Translate
+                                                            .TranslateAndSetText(
+                                                                Status_User[i],
+                                                                (Status_3_ == i)
+                                                                    ? Colors
+                                                                        .white
+                                                                    : Colors
+                                                                        .black,
+                                                                TextAlign
+                                                                    .center,
+                                                                FontWeight.bold,
+                                                                FontWeight_
+                                                                    .Fonts_T,
+                                                                14,
+                                                                1),
+                                                      ),
+                                                    ),
+                                                  )),
+                                          ])),
                                 ),
                               ),
-                            ],
-                          )
-                        : ScrollConfiguration(
-                            behavior: ScrollConfiguration.of(context)
-                                .copyWith(dragDevices: {
-                              PointerDeviceKind.touch,
-                              PointerDeviceKind.mouse,
-                            }),
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
+                            ),
+                          ),
+                        ],
+                      ),
+                      Container(
+                        width: tableMinW,
+                        child: (Responsive.isDesktop(context))
+                            ? Row(
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
@@ -1133,6 +821,7 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
                                                           setState(() {
                                                             Value_selectDate =
                                                                 null;
+                                                            Count_OFF_SET = 0;
                                                           });
                                                           red_Syslog();
                                                           Navigator.pop(
@@ -1171,6 +860,7 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
                                                         onTap: () async {
                                                           Navigator.pop(
                                                               context);
+                                                          Count_OFF_SET = 0;
                                                           _select_Date(context);
                                                         },
                                                         child: Container(
@@ -1210,425 +900,730 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
                                     ),
                                   ),
                                 ],
-                              ),
-                            ),
-                          ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Expanded(
-            child: Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(10),
-                    topRight: Radius.circular(10),
-                    bottomLeft: Radius.circular(0),
-                    bottomRight: Radius.circular(0)),
-                // border: Border.all(color: Colors.grey, width: 1),
-              ),
-              child: ScrollConfiguration(
-                behavior:
-                    ScrollConfiguration.of(context).copyWith(dragDevices: {
-                  PointerDeviceKind.touch,
-                  PointerDeviceKind.mouse,
-                }),
-                child: SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: (Responsive.isDesktop(context))
-                            ? MediaQuery.of(context).size.width / 1.165
-                            : 800,
-                        child: Column(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.fromLTRB(8, 8, 8, 0),
-                              child: Container(
-                                  decoration: BoxDecoration(
-                                    color: AppbackgroundColor.TiTile_Colors,
-                                    borderRadius: BorderRadius.only(
-                                        topLeft: Radius.circular(10),
-                                        topRight: Radius.circular(10),
-                                        bottomLeft: Radius.circular(0),
-                                        bottomRight: Radius.circular(0)),
-                                    // border: Border.all(color: Colors.grey, width: 1),
-                                  ),
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Column(
+                              )
+                            : ScrollConfiguration(
+                                behavior: ScrollConfiguration.of(context)
+                                    .copyWith(dragDevices: {
+                                  PointerDeviceKind.touch,
+                                  PointerDeviceKind.mouse,
+                                }),
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Next_page(),
-                                      Row(
-                                        children: [
-                                          // Expanded(
-                                          //   flex: 1,
-                                          //   child: Container(
-                                          //     child: const Center(
-                                          //       child: Text(
-                                          //         'atype',
-                                          //         style: TextStyle(
-                                          //             color: CustomerScreen_Color
-                                          //                 .Colors_Text1_,
-                                          //             fontWeight: FontWeight.bold,
-                                          //             fontFamily:
-                                          //                 FontWeight_.Fonts_T),
-                                          //       ),
-                                          //     ),
-                                          //   ),
-                                          // ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: Container(
-                                              child: Center(
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'วันที่',
-                                                        CustomerScreen_Color
-                                                            .Colors_Text1_,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        16,
-                                                        1),
+                                      SizedBox(
+                                        child: Row(
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child:
+                                                  Translate.TranslateAndSetText(
+                                                      'ค้นหา:',
+                                                      CustomerScreen_Color
+                                                          .Colors_Text1_,
+                                                      TextAlign.end,
+                                                      FontWeight.bold,
+                                                      FontWeight_.Fonts_T,
+                                                      16,
+                                                      1),
+                                            ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: AppbackgroundColor
+                                                      .Sub_Abg_Colors,
+                                                  borderRadius:
+                                                      const BorderRadius.only(
+                                                          topLeft:
+                                                              Radius.circular(
+                                                                  10),
+                                                          topRight:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomLeft:
+                                                              Radius.circular(
+                                                                  10),
+                                                          bottomRight:
+                                                              Radius.circular(
+                                                                  10)),
+                                                  border: Border.all(
+                                                      color: Colors.grey,
+                                                      width: 1),
+                                                ),
+                                                width: 120,
+                                                height: 35,
+                                                child: _searchBar(),
                                               ),
                                             ),
-                                          ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: Container(
-                                              child: Center(
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'เวลา',
-                                                        CustomerScreen_Color
-                                                            .Colors_Text1_,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        16,
-                                                        1),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Container(
-                                              child: Center(
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ไอพี(ip)',
-                                                        CustomerScreen_Color
-                                                            .Colors_Text1_,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        16,
-                                                        1),
-                                              ),
-                                            ),
-                                          ),
-                                          // Expanded(
-                                          //   flex: 1,
-                                          //   child: Container(
-                                          //     child: const Center(
-                                          //       child: Text(
-                                          //         'uid',
-                                          //         style: TextStyle(
-                                          //             color: CustomerScreen_Color
-                                          //                 .Colors_Text1_,
-                                          //             fontWeight: FontWeight.bold,
-                                          //             fontFamily:
-                                          //                 FontWeight_.Fonts_T),
-                                          //       ),
-                                          //     ),
-                                          //   ),
-                                          // ),
-                                          Expanded(
-                                            flex: 2,
-                                            child: Container(
-                                              child: Center(
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'ผู้ใช้',
-                                                        CustomerScreen_Color
-                                                            .Colors_Text1_,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        16,
-                                                        1),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 1,
-                                            child: Container(
-                                              child: Center(
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'เมนู',
-                                                        CustomerScreen_Color
-                                                            .Colors_Text1_,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        16,
-                                                        1),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
-                                            flex: 3,
-                                            child: Container(
-                                              child: Center(
-                                                child: Translate
-                                                    .TranslateAndSetText(
-                                                        'รายละเอียด',
-                                                        CustomerScreen_Color
-                                                            .Colors_Text1_,
-                                                        TextAlign.center,
-                                                        FontWeight.bold,
-                                                        FontWeight_.Fonts_T,
-                                                        16,
-                                                        1),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
                                       ),
-                                    ],
-                                  )),
-                            ),
-                            Expanded(
-                                child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Container(
-                                // color: Colors.black,
-                                child: ListView.builder(
-                                    controller: _scrollController1,
-                                    padding: const EdgeInsets.all(8),
-                                    itemCount: syslogModel.length,
-                                    itemBuilder:
-                                        (BuildContext context, int index) {
-                                      return Material(
-                                        color: tappedIndex_ == index.toString()
-                                            ? tappedIndex_Color
-                                                .tappedIndex_Colors
-                                            : AppbackgroundColor.Sub_Abg_Colors,
-                                        child: Container(
-                                          // color:
-                                          //     tappedIndex_ == index.toString()
-                                          //         ? Colors.grey.shade300
-                                          //         : null,
-                                          padding: const EdgeInsets.all(5),
-                                          child: ListTile(
-                                            onTap: () {
-                                              setState(() {
-                                                tappedIndex_ = index.toString();
-                                              });
-                                            },
-                                            title: Container(
-                                              decoration: BoxDecoration(
-                                                // color: Colors.green[100]!
-                                                //     .withOpacity(0.5),
-                                                border: Border(
-                                                  bottom: BorderSide(
-                                                    color: Colors.black12,
-                                                    width: 1,
+                                      Padding(
+                                        padding: EdgeInsets.all(8.0),
+                                        child: Translate.TranslateAndSetText(
+                                            'ประวัติการใช้งาน',
+                                            CustomerScreen_Color.Colors_Text1_,
+                                            TextAlign.end,
+                                            FontWeight.bold,
+                                            FontWeight_.Fonts_T,
+                                            16,
+                                            1),
+                                      ),
+                                      SizedBox(
+                                        child: Row(
+                                          children: [
+                                            Padding(
+                                              padding: EdgeInsets.all(8.0),
+                                              child:
+                                                  Translate.TranslateAndSetText(
+                                                      'วันที่ :',
+                                                      CustomerScreen_Color
+                                                          .Colors_Text1_,
+                                                      TextAlign.end,
+                                                      FontWeight.bold,
+                                                      FontWeight_.Fonts_T,
+                                                      16,
+                                                      1),
+                                            ),
+                                            Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: InkWell(
+                                                onTap: () {},
+                                                child: Container(
+                                                  decoration: BoxDecoration(
+                                                    color: AppbackgroundColor
+                                                        .Sub_Abg_Colors,
+                                                    borderRadius:
+                                                        const BorderRadius.only(
+                                                            topLeft:
+                                                                Radius.circular(
+                                                                    10),
+                                                            topRight:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomLeft:
+                                                                Radius.circular(
+                                                                    10),
+                                                            bottomRight:
+                                                                Radius.circular(
+                                                                    10)),
+                                                    border: Border.all(
+                                                        color: Colors.grey,
+                                                        width: 1),
+                                                  ),
+                                                  width: 120,
+                                                  padding:
+                                                      const EdgeInsets.all(8.0),
+                                                  child: PopupMenuButton(
+                                                    child: Center(
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .center,
+                                                        children: [
+                                                          Center(
+                                                            child: Translate.TranslateAndSetText(
+                                                                (Value_selectDate ==
+                                                                        null)
+                                                                    ? 'ทั้งหมด'
+                                                                    : '$Value_selectDate',
+                                                                CustomerScreen_Color
+                                                                    .Colors_Text1_,
+                                                                TextAlign.end,
+                                                                FontWeight.bold,
+                                                                FontWeight_
+                                                                    .Fonts_T,
+                                                                16,
+                                                                1),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    itemBuilder: (BuildContext
+                                                            context) =>
+                                                        [
+                                                      PopupMenuItem(
+                                                        child: InkWell(
+                                                            onTap: () async {
+                                                              setState(() {
+                                                                Value_selectDate =
+                                                                    null;
+                                                              });
+                                                              red_Syslog();
+                                                              Navigator.pop(
+                                                                  context);
+                                                            },
+                                                            child: Container(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        10),
+                                                                width: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width,
+                                                                child: Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Translate.TranslateAndSetText(
+                                                                          'เลือกทั้งหมด',
+                                                                          CustomerScreen_Color
+                                                                              .Colors_Text1_,
+                                                                          TextAlign
+                                                                              .end,
+                                                                          FontWeight
+                                                                              .bold,
+                                                                          FontWeight_
+                                                                              .Fonts_T,
+                                                                          16,
+                                                                          1),
+                                                                    )
+                                                                  ],
+                                                                ))),
+                                                      ),
+                                                      PopupMenuItem(
+                                                        child: InkWell(
+                                                            onTap: () async {
+                                                              Navigator.pop(
+                                                                  context);
+                                                              _select_Date(
+                                                                  context);
+                                                            },
+                                                            child: Container(
+                                                                padding:
+                                                                    const EdgeInsets
+                                                                            .all(
+                                                                        10),
+                                                                width: MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width,
+                                                                child: Row(
+                                                                  children: [
+                                                                    Expanded(
+                                                                      child: Translate.TranslateAndSetText(
+                                                                          'เลือกวันที่',
+                                                                          CustomerScreen_Color
+                                                                              .Colors_Text1_,
+                                                                          TextAlign
+                                                                              .end,
+                                                                          FontWeight
+                                                                              .bold,
+                                                                          FontWeight_
+                                                                              .Fonts_T,
+                                                                          16,
+                                                                          1),
+                                                                    )
+                                                                  ],
+                                                                ))),
+                                                      ),
+                                                    ],
                                                   ),
                                                 ),
                                               ),
-                                              child: Row(
-                                                children: [
-                                                  // Expanded(
-                                                  //   flex: 1,
-                                                  //   child: Container(
-                                                  //     child: Center(
-                                                  //       child: Text(
-                                                  //         '${syslogModel[index].atype}',
-                                                  //         style: const TextStyle(
-                                                  //             color:
-                                                  //                 CustomerScreen_Color
-                                                  //                     .Colors_Text2_,
-                                                  //             // fontWeight: FontWeight.bold,
-                                                  //             fontFamily:
-                                                  //                 Font_.Fonts_T),
-                                                  //       ),
-                                                  //     ),
-                                                  //   ),
-                                                  // ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      '${syslogModel[index].datex}',
-                                                      maxLines: 2,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              CustomerScreen_Color
-                                                                  .Colors_Text2_,
-                                                          // fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      '${syslogModel[index].timex}',
-                                                      maxLines: 2,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              CustomerScreen_Color
-                                                                  .Colors_Text2_,
-                                                          // fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Text(
-                                                      '${syslogModel[index].ip}',
-                                                      maxLines: 2,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              CustomerScreen_Color
-                                                                  .Colors_Text2_,
-                                                          // fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                  // Expanded(
-                                                  //   flex: 1,
-                                                  //   child: Container(
-                                                  //     child: Center(
-                                                  //       child: Text(
-                                                  //         '${syslogModel[index].uid}',
-                                                  //         style: const TextStyle(
-                                                  //             color:
-                                                  //                 CustomerScreen_Color
-                                                  //                     .Colors_Text2_,
-                                                  //             // fontWeight: FontWeight.bold,
-                                                  //             fontFamily:
-                                                  //                 Font_.Fonts_T),
-                                                  //       ),
-                                                  //     ),
-                                                  //   ),
-                                                  // ),
-                                                  Expanded(
-                                                    flex: 2,
-                                                    child: Row(
-                                                      children: [
-                                                        Copy_Text(context,
-                                                            '${syslogModel[index].username}'),
-                                                        Expanded(
-                                                          child: Text(
-                                                            '${syslogModel[index].username}',
-                                                            maxLines: 2,
-                                                            textAlign:
-                                                                TextAlign.left,
-                                                            style:
-                                                                const TextStyle(
-                                                                    color: CustomerScreen_Color
-                                                                        .Colors_Text2_,
-                                                                    // fontWeight: FontWeight.bold,
-                                                                    fontFamily:
-                                                                        Font_
-                                                                            .Fonts_T),
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 1,
-                                                    child: Text(
-                                                      '${syslogModel[index].frm}',
-                                                      maxLines: 2,
-                                                      textAlign:
-                                                          TextAlign.center,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              CustomerScreen_Color
-                                                                  .Colors_Text2_,
-                                                          // fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                  Expanded(
-                                                    flex: 3,
-                                                    child: Text(
-                                                      '${syslogModel[index].fdo}',
-                                                      maxLines: 2,
-                                                      textAlign: TextAlign.left,
-                                                      style: const TextStyle(
-                                                          color:
-                                                              CustomerScreen_Color
-                                                                  .Colors_Text2_,
-                                                          // fontWeight: FontWeight.bold,
-                                                          fontFamily:
-                                                              Font_.Fonts_T),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
                                             ),
-                                          ),
+                                          ],
                                         ),
-                                      );
-                                    }),
+                                      ),
+                                    ],
+                                  ),
+                                ),
                               ),
-                            ))
-                          ],
-                        ),
                       ),
                     ],
                   ),
                 ),
               ),
-            ),
-          ),
-          Container(
-              width: (Responsive.isDesktop(context))
-                  ? MediaQuery.of(context).size.width / 1.165
-                  : MediaQuery.of(context).size.width,
-              decoration: const BoxDecoration(
-                color: AppbackgroundColor.Sub_Abg_Colors,
-                borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(0),
-                    topRight: Radius.circular(0),
-                    bottomLeft: Radius.circular(10),
-                    bottomRight: Radius.circular(10)),
+              Expanded(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(10),
+                        bottomLeft: Radius.circular(0),
+                        bottomRight: Radius.circular(0)),
+                    // border: Border.all(color: Colors.grey, width: 1),
+                  ),
+                  child: ScrollConfiguration(
+                    behavior:
+                        ScrollConfiguration.of(context).copyWith(dragDevices: {
+                      PointerDeviceKind.touch,
+                      PointerDeviceKind.mouse,
+                    }),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          Container(
+                            width: tableMinW,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.fromLTRB(8, 8, 8, 0),
+                                  child: Container(
+                                      decoration: BoxDecoration(
+                                        color: AppbackgroundColor.TiTile_Colors,
+                                        borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(10),
+                                            topRight: Radius.circular(10),
+                                            bottomLeft: Radius.circular(0),
+                                            bottomRight: Radius.circular(0)),
+                                        // border: Border.all(color: Colors.grey, width: 1),
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Column(
+                                        children: [
+                                          Next_page(),
+                                          Row(
+                                            children: [
+                                              // Expanded(
+                                              //   flex: 1,
+                                              //   child: Container(
+                                              //     child: const Center(
+                                              //       child: Text(
+                                              //         'atype',
+                                              //         style: TextStyle(
+                                              //             color: CustomerScreen_Color
+                                              //                 .Colors_Text1_,
+                                              //             fontWeight: FontWeight.bold,
+                                              //             fontFamily:
+                                              //                 FontWeight_.Fonts_T),
+                                              //       ),
+                                              //     ),
+                                              //   ),
+                                              // ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: Container(
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'วันที่',
+                                                            CustomerScreen_Color
+                                                                .Colors_Text1_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            16,
+                                                            1),
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: Container(
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'เวลา',
+                                                            CustomerScreen_Color
+                                                                .Colors_Text1_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            16,
+                                                            1),
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Container(
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'ไอพี(ip)',
+                                                            CustomerScreen_Color
+                                                                .Colors_Text1_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            16,
+                                                            1),
+                                                  ),
+                                                ),
+                                              ),
+                                              // Expanded(
+                                              //   flex: 1,
+                                              //   child: Container(
+                                              //     child: const Center(
+                                              //       child: Text(
+                                              //         'uid',
+                                              //         style: TextStyle(
+                                              //             color: CustomerScreen_Color
+                                              //                 .Colors_Text1_,
+                                              //             fontWeight: FontWeight.bold,
+                                              //             fontFamily:
+                                              //                 FontWeight_.Fonts_T),
+                                              //       ),
+                                              //     ),
+                                              //   ),
+                                              // ),
+                                              Expanded(
+                                                flex: 2,
+                                                child: Container(
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'ผู้ใช้',
+                                                            CustomerScreen_Color
+                                                                .Colors_Text1_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            16,
+                                                            1),
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 1,
+                                                child: Container(
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'เมนู',
+                                                            CustomerScreen_Color
+                                                                .Colors_Text1_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            16,
+                                                            1),
+                                                  ),
+                                                ),
+                                              ),
+                                              Expanded(
+                                                flex: 3,
+                                                child: Container(
+                                                  child: Center(
+                                                    child: Translate
+                                                        .TranslateAndSetText(
+                                                            'รายละเอียด',
+                                                            CustomerScreen_Color
+                                                                .Colors_Text1_,
+                                                            TextAlign.center,
+                                                            FontWeight.bold,
+                                                            FontWeight_.Fonts_T,
+                                                            16,
+                                                            1),
+                                                  ),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      )),
+                                ),
+                                Expanded(
+                                    child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Container(
+                                    // color: Colors.black,
+                                    child: ListView.builder(
+                                        controller: _scrollController1,
+                                        padding: const EdgeInsets.all(8),
+                                        itemCount: syslogModel.length,
+                                        itemBuilder:
+                                            (BuildContext context, int index) {
+                                          return Material(
+                                            color:
+                                                tappedIndex_ == index.toString()
+                                                    ? tappedIndex_Color
+                                                        .tappedIndex_Colors
+                                                    : AppbackgroundColor
+                                                        .Sub_Abg_Colors,
+                                            child: Container(
+                                              // color:
+                                              //     tappedIndex_ == index.toString()
+                                              //         ? Colors.grey.shade300
+                                              //         : null,
+                                              padding: const EdgeInsets.all(5),
+                                              child: ListTile(
+                                                onTap: () {
+                                                  setState(() {
+                                                    tappedIndex_ =
+                                                        index.toString();
+                                                  });
+                                                },
+                                                title: Container(
+                                                  decoration: BoxDecoration(
+                                                    // color: Colors.green[100]!
+                                                    //     .withOpacity(0.5),
+                                                    border: Border(
+                                                      bottom: BorderSide(
+                                                        color: Colors.black12,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: Row(
+                                                    children: [
+                                                      // Expanded(
+                                                      //   flex: 1,
+                                                      //   child: Container(
+                                                      //     child: Center(
+                                                      //       child: Text(
+                                                      //         '${syslogModel[index].atype}',
+                                                      //         style: const TextStyle(
+                                                      //             color:
+                                                      //                 CustomerScreen_Color
+                                                      //                     .Colors_Text2_,
+                                                      //             // fontWeight: FontWeight.bold,
+                                                      //             fontFamily:
+                                                      //                 Font_.Fonts_T),
+                                                      //       ),
+                                                      //     ),
+                                                      //   ),
+                                                      // ),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Text(
+                                                          '${syslogModel[index].datex}',
+                                                          maxLines: 2,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: CustomerScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Text(
+                                                          '${syslogModel[index].timex}',
+                                                          maxLines: 2,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: CustomerScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 2,
+                                                        child: Text(
+                                                          '${syslogModel[index].ip}',
+                                                          maxLines: 2,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: CustomerScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                      // Expanded(
+                                                      //   flex: 1,
+                                                      //   child: Container(
+                                                      //     child: Center(
+                                                      //       child: Text(
+                                                      //         '${syslogModel[index].uid}',
+                                                      //         style: const TextStyle(
+                                                      //             color:
+                                                      //                 CustomerScreen_Color
+                                                      //                     .Colors_Text2_,
+                                                      //             // fontWeight: FontWeight.bold,
+                                                      //             fontFamily:
+                                                      //                 Font_.Fonts_T),
+                                                      //       ),
+                                                      //     ),
+                                                      //   ),
+                                                      // ),
+                                                      Expanded(
+                                                        flex: 2,
+                                                        child: Row(
+                                                          children: [
+                                                            Copy_Text(context,
+                                                                '${syslogModel[index].username}'),
+                                                            Expanded(
+                                                              child: Text(
+                                                                '${syslogModel[index].username}',
+                                                                maxLines: 2,
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .left,
+                                                                style: const TextStyle(
+                                                                    color: CustomerScreen_Color.Colors_Text2_,
+                                                                    // fontWeight: FontWeight.bold,
+                                                                    fontFamily: Font_.Fonts_T),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 1,
+                                                        child: Text(
+                                                          '${syslogModel[index].frm}',
+                                                          maxLines: 2,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: CustomerScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                      Expanded(
+                                                        flex: 3,
+                                                        child: Text(
+                                                          '${syslogModel[index].fdo}',
+                                                          maxLines: 2,
+                                                          textAlign:
+                                                              TextAlign.left,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: CustomerScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  // fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          );
+                                        }),
+                                  ),
+                                ))
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Row(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: () {
-                              _scrollController1.animateTo(
-                                0,
-                                duration: const Duration(seconds: 1),
-                                curve: Curves.easeOut,
-                              );
-                            },
-                            child: Container(
+              Container(
+                  width: (Responsive.isDesktop(context))
+                      ? MediaQuery.of(context).size.width / 1.165
+                      : MediaQuery.of(context).size.width,
+                  decoration: const BoxDecoration(
+                    color: AppbackgroundColor.Sub_Abg_Colors,
+                    borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(0),
+                        topRight: Radius.circular(0),
+                        bottomLeft: Radius.circular(10),
+                        bottomRight: Radius.circular(10)),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: InkWell(
+                                onTap: () {
+                                  _scrollController1.animateTo(
+                                    0,
+                                    duration: const Duration(seconds: 1),
+                                    curve: Curves.easeOut,
+                                  );
+                                },
+                                child: Container(
+                                    decoration: BoxDecoration(
+                                      // color: AppbackgroundColor
+                                      //     .TiTile_Colors,
+                                      borderRadius: const BorderRadius.only(
+                                          topLeft: Radius.circular(6),
+                                          topRight: Radius.circular(6),
+                                          bottomLeft: Radius.circular(6),
+                                          bottomRight: Radius.circular(8)),
+                                      border: Border.all(
+                                          color: Colors.grey, width: 1),
+                                    ),
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: const Text(
+                                      'Top',
+                                      style: TextStyle(
+                                          color: Colors.grey,
+                                          fontSize: 10.0,
+                                          fontFamily: FontWeight_.Fonts_T),
+                                    )),
+                              ),
+                            ),
+                            InkWell(
+                              onTap: () {
+                                if (_scrollController1.hasClients) {
+                                  final position = _scrollController1
+                                      .position.maxScrollExtent;
+                                  _scrollController1.animateTo(
+                                    position,
+                                    duration: const Duration(seconds: 1),
+                                    curve: Curves.easeOut,
+                                  );
+                                }
+                              },
+                              child: Container(
+                                  decoration: BoxDecoration(
+                                    // color: AppbackgroundColor
+                                    //     .TiTile_Colors,
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(6),
+                                        topRight: Radius.circular(6),
+                                        bottomLeft: Radius.circular(6),
+                                        bottomRight: Radius.circular(6)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  padding: const EdgeInsets.all(3.0),
+                                  child: const Text(
+                                    'Down',
+                                    style: TextStyle(
+                                        color: Colors.grey,
+                                        fontSize: 10.0,
+                                        fontFamily: FontWeight_.Fonts_T),
+                                  )),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Row(
+                          children: [
+                            InkWell(
+                              onTap: _moveUp1,
+                              child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Icon(
+                                      Icons.arrow_upward,
+                                      color: Colors.grey,
+                                    ),
+                                  )),
+                            ),
+                            Container(
                                 decoration: BoxDecoration(
                                   // color: AppbackgroundColor
                                   //     .TiTile_Colors,
@@ -1636,111 +1631,40 @@ class _SystemlogScreenState extends State<SystemlogScreen> {
                                       topLeft: Radius.circular(6),
                                       topRight: Radius.circular(6),
                                       bottomLeft: Radius.circular(6),
-                                      bottomRight: Radius.circular(8)),
+                                      bottomRight: Radius.circular(6)),
                                   border:
                                       Border.all(color: Colors.grey, width: 1),
                                 ),
                                 padding: const EdgeInsets.all(3.0),
                                 child: const Text(
-                                  'Top',
+                                  'Scroll',
                                   style: TextStyle(
                                       color: Colors.grey,
                                       fontSize: 10.0,
                                       fontFamily: FontWeight_.Fonts_T),
                                 )),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            if (_scrollController1.hasClients) {
-                              final position =
-                                  _scrollController1.position.maxScrollExtent;
-                              _scrollController1.animateTo(
-                                position,
-                                duration: const Duration(seconds: 1),
-                                curve: Curves.easeOut,
-                              );
-                            }
-                          },
-                          child: Container(
-                              decoration: BoxDecoration(
-                                // color: AppbackgroundColor
-                                //     .TiTile_Colors,
-                                borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(6),
-                                    topRight: Radius.circular(6),
-                                    bottomLeft: Radius.circular(6),
-                                    bottomRight: Radius.circular(6)),
-                                border:
-                                    Border.all(color: Colors.grey, width: 1),
-                              ),
-                              padding: const EdgeInsets.all(3.0),
-                              child: const Text(
-                                'Down',
-                                style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 10.0,
-                                    fontFamily: FontWeight_.Fonts_T),
-                              )),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: Row(
-                      children: [
-                        InkWell(
-                          onTap: _moveUp1,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerLeft,
-                                child: Icon(
-                                  Icons.arrow_upward,
-                                  color: Colors.grey,
-                                ),
-                              )),
-                        ),
-                        Container(
-                            decoration: BoxDecoration(
-                              // color: AppbackgroundColor
-                              //     .TiTile_Colors,
-                              borderRadius: const BorderRadius.only(
-                                  topLeft: Radius.circular(6),
-                                  topRight: Radius.circular(6),
-                                  bottomLeft: Radius.circular(6),
-                                  bottomRight: Radius.circular(6)),
-                              border: Border.all(color: Colors.grey, width: 1),
+                            InkWell(
+                              onTap: _moveDown1,
+                              child: const Padding(
+                                  padding: EdgeInsets.all(8.0),
+                                  child: Align(
+                                    alignment: Alignment.centerRight,
+                                    child: Icon(
+                                      Icons.arrow_downward,
+                                      color: Colors.grey,
+                                    ),
+                                  )),
                             ),
-                            padding: const EdgeInsets.all(3.0),
-                            child: const Text(
-                              'Scroll',
-                              style: TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 10.0,
-                                  fontFamily: FontWeight_.Fonts_T),
-                            )),
-                        InkWell(
-                          onTap: _moveDown1,
-                          child: const Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Align(
-                                alignment: Alignment.centerRight,
-                                child: Icon(
-                                  Icons.arrow_downward,
-                                  color: Colors.grey,
-                                ),
-                              )),
+                          ],
                         ),
-                      ],
-                    ),
-                  )
-                ],
-              )),
-        ],
-      ),
-    ));
+                      )
+                    ],
+                  )),
+            ],
+          ),
+        );
+      }),
+    );
   }
   //////////----------------------------------------------------------------->
 

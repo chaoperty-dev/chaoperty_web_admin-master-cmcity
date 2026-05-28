@@ -83,90 +83,119 @@ class TransBillPayChoiceModel {
   String? tel;
   String? total_wht;
 
-  TransBillPayChoiceModel({
-    this.ser,
-    this.datex,
-    this.rser,
-    this.daterec,
-    this.date,
-    this.duedate,
-    this.dateacc,
-    this.shopno,
-    this.pos,
-    this.st,
-    this.docno,
-    this.doctax,
-    this.cid,
-    this.fid,
-    this.inv,
-    this.refno,
-    this.room_number,
-    this.remark,
-    this.zn,
-    this.znn,
-    this.zser,
-    this.ln,
-    this.tax,
-    this.cname,
-    this.sdate,
-    this.ldate,
-    this.pdate,
-    this.user,
-    this.name_user,
-    this.count_pakan,
-    this.pakan_amt,
-    this.pakan_pvat,
-    this.pakan_vat,
-    this.pakan_total,
-    this.service_amt,
-    this.service_pvat,
-    this.service_vat,
-    this.service_wht,
-    this.service_total,
-    this.service_total_future,
-    this.equip_amt,
-    this.equip_pvat,
-    this.equip_vat,
-    this.equip_wht,
-    this.equip_total,
-    this.equip_total_future,
-    this.total_bill,
-    this.total_dis,
-    this.total_bill_amt,
-    this.total_bill_pvat,
-    this.total_bill_vat,
-    this.total_bill_wht,
-    this.water_electri,
-    this.rent_name,
-    this.rent_amt,
-    this.rent_pvat,
-    this.rent_wht,
-    this.rent_vat,
-    this.rent_total,
-    this.land_name,
-    this.land_amt,
-    this.land_pvat,
-    this.land_wht,
-    this.land_vat,
-    this.land_total,
-    this.water,
-    this.electricity,
-    this.water_fees,
-    this.electricity_fees,
-    this.fine,
-    this.stype,
-    this.renew_cid,
-    this.total_bill_pay,
-    this.exp_array,
-    this.ref1,
-    this.ref2,
-    this.ref3,
-    this.ref4,
-    this.wnote,
-    this.type,
-    this.tel,
-    this.total_wht,
-  });
+  String? water_pvat;
+  String? water_vat;
+  String? water_wht;
+  String? electricity_pvat;
+  String? electricity_vat;
+  String? electricity_wht;
+  String? equip_total_pvat;
+  String? equip_total_vat;
+  String? equip_total_wht;
+  String? fine_pvat;
+  String? fine_vat;
+  String? fine_wht;
+
+  String? disendbill;
+  String? zn_code;
+
+  TransBillPayChoiceModel(
+      {this.ser,
+      this.datex,
+      this.rser,
+      this.daterec,
+      this.date,
+      this.duedate,
+      this.dateacc,
+      this.shopno,
+      this.pos,
+      this.st,
+      this.docno,
+      this.doctax,
+      this.cid,
+      this.fid,
+      this.inv,
+      this.refno,
+      this.room_number,
+      this.remark,
+      this.zn,
+      this.znn,
+      this.zser,
+      this.ln,
+      this.tax,
+      this.cname,
+      this.sdate,
+      this.ldate,
+      this.pdate,
+      this.user,
+      this.name_user,
+      this.count_pakan,
+      this.pakan_amt,
+      this.pakan_pvat,
+      this.pakan_vat,
+      this.pakan_total,
+      this.service_amt,
+      this.service_pvat,
+      this.service_vat,
+      this.service_wht,
+      this.service_total,
+      this.service_total_future,
+      this.equip_amt,
+      this.equip_pvat,
+      this.equip_vat,
+      this.equip_wht,
+      this.equip_total,
+      this.equip_total_future,
+      this.total_bill,
+      this.total_dis,
+      this.total_bill_amt,
+      this.total_bill_pvat,
+      this.total_bill_vat,
+      this.total_bill_wht,
+      this.water_electri,
+      this.rent_name,
+      this.rent_amt,
+      this.rent_pvat,
+      this.rent_wht,
+      this.rent_vat,
+      this.rent_total,
+      this.land_name,
+      this.land_amt,
+      this.land_pvat,
+      this.land_wht,
+      this.land_vat,
+      this.land_total,
+      this.water,
+      this.electricity,
+      this.water_fees,
+      this.electricity_fees,
+      this.fine,
+      this.stype,
+      this.renew_cid,
+      this.total_bill_pay,
+      this.exp_array,
+      this.ref1,
+      this.ref2,
+      this.ref3,
+      this.ref4,
+      this.wnote,
+      this.type,
+      this.tel,
+      this.total_wht,
+      this.water_pvat,
+      this.water_vat,
+      this.water_wht,
+      this.electricity_pvat,
+      this.electricity_vat,
+      this.electricity_wht,
+      this.equip_total_pvat,
+      this.equip_total_vat,
+      this.equip_total_wht,
+      this.fine_pvat,
+      this.fine_vat,
+      this.fine_wht,
+      this.disendbill,
+      this.zn_code});
 
   TransBillPayChoiceModel.fromJson(Map<String, dynamic> json) {
     ser = json['ser'];
@@ -255,6 +284,21 @@ class TransBillPayChoiceModel {
     type = json['type'];
     tel = json['tel'];
     total_wht = json['total_wht'];
+
+    water_pvat = json['water_pvat'];
+    water_vat = json['water_vat'];
+    water_wht = json['water_wht'];
+    electricity_pvat = json['electricity_pvat'];
+    electricity_vat = json['electricity_vat'];
+    electricity_wht = json['electricity_wht'];
+    equip_total_pvat = json['equip_total_pvat'];
+    equip_total_vat = json['equip_total_vat'];
+    equip_total_wht = json['equip_total_wht'];
+    fine_pvat = json['fine_pvat'];
+    fine_vat = json['fine_vat'];
+    fine_wht = json['fine_wht'];
+    disendbill = json['disendbill'];
+    zn_code = json['zn_code'];
   }
 
   Map<String, dynamic> toJson() {
@@ -344,6 +388,21 @@ class TransBillPayChoiceModel {
     data['type'] = this.type;
     data['tel'] = this.tel;
     data['total_wht'] = this.total_wht;
+
+    data['water_pvat'] = this.water_pvat;
+    data['water_vat'] = this.water_vat;
+    data['water_wht'] = this.water_wht;
+    data['electricity_pvat'] = this.electricity_pvat;
+    data['electricity_vat'] = this.electricity_vat;
+    data['electricity_wht'] = this.electricity_wht;
+    data['equip_total_pvat'] = this.equip_total_pvat;
+    data['equip_total_vat'] = this.equip_total_vat;
+    data['equip_total_wht'] = this.equip_total_wht;
+    data['fine_pvat'] = this.fine_pvat;
+    data['fine_vat'] = this.fine_vat;
+    data['fine_wht'] = this.fine_wht;
+    data['disendbill'] = this.disendbill;
+    data['zn_code'] = this.zn_code;
 
     return data;
   }

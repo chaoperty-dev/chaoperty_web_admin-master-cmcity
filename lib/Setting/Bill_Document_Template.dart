@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../Constant/Myconstant.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../PeopleChao/Pays_.dart';
@@ -176,7 +177,7 @@ class _Bill_DocumentTemplateState extends State<Bill_DocumentTemplate> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -226,7 +227,7 @@ class _Bill_DocumentTemplateState extends State<Bill_DocumentTemplate> {
       }
     } catch (e) {}
 
-    print('name>>>>>  $renname');
+    //print('name>>>>>  $renname');
   }
 
 //////////////////////////////------------------------------------->
@@ -382,14 +383,14 @@ class _Bill_DocumentTemplateState extends State<Bill_DocumentTemplate> {
                                                         .decode(response.body);
                                                     if (result.toString() ==
                                                         'true') {
-                                                      print(
-                                                          'check_box ${index + 1}  ///$ren');
+                                                      //print(
+                                                      //    'check_box ${index + 1}  ///$ren');
                                                       setState(() {
                                                         read_GC_rental();
                                                       });
                                                     }
                                                   } catch (e) {
-                                                    print(e);
+                                                    //print(e);
                                                   }
                                                 },
                                                 icon:
@@ -605,7 +606,7 @@ class _Bill_DocumentTemplateState extends State<Bill_DocumentTemplate> {
                                             //                                   .value = Matrix4.identity()
                                             //                                 ..scale(1.0);
                                             //                             });
-                                            //                             // print(
+                                            //                             // //print(
                                             //                             //     '${'images/TP${index + 1}/${name_bill_png[sertap_dialog_tempage]}_TP${index + 1}.png'}');
                                             //                           },
                                             //                           child:
@@ -960,7 +961,7 @@ class _PreviewScreen_doc3State extends State<PreviewScreen_doc3> {
   final GlobalKey<SfPdfViewerState> _pdfViewerKey =
       GlobalKey<SfPdfViewerState>();
   final PdfViewerController _pdfViewerController = PdfViewerController();
-  double _currentZoomLevel = 1.0;
+  double _currentZoomLevel = 1.5;
 
   @override
   Widget build(BuildContext context) {
@@ -981,6 +982,24 @@ class _PreviewScreen_doc3State extends State<PreviewScreen_doc3> {
             centerTitle: true,
             title: Text('${widget.title}'),
             actions: [
+              IconButton(
+                icon: const Icon(Icons.download, color: Colors.white),
+                onPressed: () async {
+                  final url = widget.Url.toString();
+
+                  if (await canLaunchUrl(Uri.parse(url))) {
+                    await launchUrl(
+                      Uri.parse(url),
+                      mode: LaunchMode.externalApplication,
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content: Text("ไม่สามารถดาวน์โหลดไฟล์ได้")),
+                    );
+                  }
+                },
+              ),
               IconButton(
                 icon: Icon(Icons.zoom_in),
                 onPressed: () {
@@ -1012,6 +1031,10 @@ class _PreviewScreen_doc3State extends State<PreviewScreen_doc3> {
             canShowScrollStatus: false,
             pageLayoutMode: PdfPageLayoutMode.continuous,
             enableDoubleTapZooming: false,
+            onDocumentLoaded: (details) {
+              _pdfViewerController.zoomLevel =
+                  _currentZoomLevel; // 🔥 ตั้งค่าซูมทันทีที่โหลดเสร็จ
+            },
           ),
         ));
   }

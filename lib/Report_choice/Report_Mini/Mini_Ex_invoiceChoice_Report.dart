@@ -1003,7 +1003,7 @@ class Mini_Ex_InvoiceChoiceReport {
           mimeType: type);
       log(path);
     } catch (e) {
-      print(e);
+    //   print(e);
     }
 
     // final List<int> bytes = workbook.saveAsStream();

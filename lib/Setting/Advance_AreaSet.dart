@@ -127,7 +127,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result.toString() == 'true') {
         // setState(() {
         //   read_GC_rownum();
@@ -153,7 +153,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         if (areaModels.length != 0) {
           areaModels.clear();
@@ -315,7 +315,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           RenTalModel renTalModel = RenTalModel.fromJson(map);
@@ -354,7 +354,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
         }
       } else {}
     } catch (e) {}
-    // print('name>>>>>  $renname');
+    // //print('name>>>>>  $renname');
   }
 
   //////////////////------------------------------>
@@ -374,7 +374,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       Map<String, dynamic> map = Map();
       map['ser'] = '0';
       map['rser'] = '0';
@@ -423,7 +423,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         for (var map in result) {
           AreaCountModel areaCountModel = AreaCountModel.fromJson(map);
@@ -458,7 +458,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
       var response = await http.get(Uri.parse(url));
 
       var result = json.decode(response.body);
-      // print(result);
+      // //print(result);
       if (result != null) {
         if (areaModels.length != 0) {
           areaModels.clear();
@@ -515,7 +515,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
         ),
       ),
       onChanged: (text) {
-        // print(text);
+        // //print(text);
         text = text.toLowerCase();
         setState(() {
           zoneModels = _zoneModels.where((zoneModelss) {
@@ -553,7 +553,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
         ),
       ),
       onChanged: (text) {
-        // print(text);
+        // //print(text);
         text = text.toLowerCase();
         setState(() {
           areatypes = _areatypes.where((areatypess) {
@@ -592,7 +592,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
         ),
       ),
       onChanged: (text) {
-        // print(text);
+        // //print(text);
         text = text.toLowerCase();
         setState(() {
           areaModels = limitedList_areaModels_.where((areaModelss) {
@@ -1377,7 +1377,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                     var result =
                                                                         json.decode(
                                                                             response.body);
-                                                                    // print(result);
+                                                                    // //print(result);
                                                                     Insert_log.Insert_logs(
                                                                         'ตั้งค่า',
                                                                         'พื้นที่>>เพิ่มโซนพื้นที่(${zone_text.text.toString()})');
@@ -1398,7 +1398,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                           'OK');
                                                                     }
                                                                   } catch (e) {
-                                                                    print(e);
+                                                                    //  //print(e);
                                                                   }
                                                                 }
                                                               },
@@ -1938,7 +1938,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                           String
                                                                               url =
                                                                               '${MyConstant().domain}/UpAd_area_Type.php?isAdd=true&ren=$ren&ser_user=$ser_user&type=Add&valuex=$value_x&rentadd=$rent_addx';
-                                                                          // print(
+                                                                          // //print(
                                                                           //     url);
                                                                           try {
                                                                             var response =
@@ -1946,7 +1946,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
 
                                                                             var result =
                                                                                 json.decode(response.body);
-                                                                            // print(result);
+                                                                            // //print(result);
                                                                             if (result.toString() ==
                                                                                 'true') {
                                                                               setState(() {
@@ -2141,12 +2141,12 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                                                   String? ser_user = preferences.getString('ser');
                                                                                                   var tserx = areatypes[index].ser;
                                                                                                   String url = '${MyConstant().domain}/UpAd_area_Type.php?isAdd=true&ren=$ren&tser=$tserx&ser_user=$ser_user&type=Delete';
-                                                                                                  print(url);
+                                                                                                  //  //print(url);
                                                                                                   try {
                                                                                                     var response = await http.get(Uri.parse(url));
 
                                                                                                     var result = json.decode(response.body);
-                                                                                                    // print(result);
+                                                                                                    // //print(result);
                                                                                                     if (result.toString() == 'true') {
                                                                                                       setState(() {
                                                                                                         read_Area_type();
@@ -2172,12 +2172,12 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                                                 var tserx = areatypes[index].ser;
                                                                                                 var value_x = value.toString();
                                                                                                 String url = '${MyConstant().domain}/UpAd_area_Type.php?isAdd=true&ren=$ren&tser=$tserx&ser_user=$ser_user&type=Edit&valuex=$value_x&typerent=no';
-                                                                                                print(url);
+                                                                                                //  //print(url);
                                                                                                 try {
                                                                                                   var response = await http.get(Uri.parse(url));
 
                                                                                                   var result = json.decode(response.body);
-                                                                                                  // print(result);
+                                                                                                  // //print(result);
                                                                                                   if (result.toString() == 'true') {
                                                                                                     setState(() {
                                                                                                       read_Area_type();
@@ -2232,13 +2232,13 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                                                 var tserx = areatypes[index].ser;
                                                                                                 var value_x = value.toString();
                                                                                                 String url = '${MyConstant().domain}/UpAd_area_Type.php?isAdd=true&ren=$ren&tser=$tserx&ser_user=$ser_user&type=Edit&valuex=$value_x&typerent=yes';
-                                                                                                print(url);
+                                                                                                //print(url);
 
                                                                                                 try {
                                                                                                   var response = await http.get(Uri.parse(url));
 
                                                                                                   var result = json.decode(response.body);
-                                                                                                  // print(result);
+                                                                                                  // //print(result);
                                                                                                   if (result.toString() == 'true') {
                                                                                                     setState(() {
                                                                                                       read_Area_type();
@@ -2344,11 +2344,27 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                         SizedBox(
                                           width:
                                               (!Responsive.isDesktop(context))
-                                                  ? 790
+                                                  ? 1400.00
                                                   : MediaQuery.of(context)
                                                           .size
                                                           .width *
-                                                      .835,
+                                                      0.85,
+                                          // width:
+                                          //     (!Responsive.isDesktop(context))
+                                          //         ? MediaQuery.of(context)
+                                          //             .size
+                                          //             .width
+                                          //         : MediaQuery.of(context)
+                                          //                 .size
+                                          //                 .width *
+                                          //             0.85,
+                                          // width:
+                                          //     (!Responsive.isDesktop(context))
+                                          //         ? 790
+                                          //         : MediaQuery.of(context)
+                                          //                 .size
+                                          //                 .width *
+                                          //             .835,
 
                                           // height: MediaQuery.of(context).size.height,
                                           child: Column(
@@ -2574,7 +2590,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                             .toString());
                                                                       });
                                                                       read_GC_area();
-                                                                      // print('$index');
+                                                                      // //print('$index');
                                                                     },
                                                                     searchMatchFn:
                                                                         (item,
@@ -2908,7 +2924,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                                                       var response = await http.get(Uri.parse(url));
 
                                                                                                       var result = json.decode(response.body);
-                                                                                                      // print(result);
+                                                                                                      // //print(result);
                                                                                                       if (result.toString() == 'true') {
                                                                                                         setState(() {
                                                                                                           read_GC_zone();
@@ -2922,7 +2938,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                                                                         Navigator.pop(context);
                                                                                                       }
                                                                                                     } catch (e) {
-                                                                                                      print(e);
+                                                                                                      //print(e);
                                                                                                     }
                                                                                                   },
                                                                                                   child: Translate.TranslateAndSetText('ยันยัน', Colors.white, TextAlign.start, null, Font_.Fonts_T, 14, 1),
@@ -3173,13 +3189,29 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                 ),
                                               ),
                                               Container(
-                                                  width: (!Responsive
-                                                          .isDesktop(context))
-                                                      ? 790
+                                                  width: (!Responsive.isDesktop(
+                                                          context))
+                                                      ? 1400.00
                                                       : MediaQuery.of(context)
                                                               .size
                                                               .width *
-                                                          .835,
+                                                          0.85,
+                                                  // width: (!Responsive.isDesktop(
+                                                  //         context))
+                                                  //     ? MediaQuery.of(context)
+                                                  //         .size
+                                                  //         .width
+                                                  //     : MediaQuery.of(context)
+                                                  //             .size
+                                                  //             .width *
+                                                  //         0.85,
+                                                  // width: (!Responsive
+                                                  //         .isDesktop(context))
+                                                  //     ? 790
+                                                  //     : MediaQuery.of(context)
+                                                  //             .size
+                                                  //             .width *
+                                                  //         .835,
                                                   height: MediaQuery.of(context)
                                                           .size
                                                           .height *
@@ -3597,7 +3629,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                         String? ser_user = preferences.getString('ser');
                         // int selectedIndex =
                         //     areatypes.indexWhere((item) => item.ser == value);
-                        // print(value);
+                        // //print(value);
                         // Add_typename_area_text.text =
                         //     areatypes[selectedIndex].unit.toString();
                         // Add_typeser_area_text.text = value!;
@@ -3614,7 +3646,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                           if (result.toString() == 'true') {
                             Future.delayed(const Duration(milliseconds: 500),
                                 () {
-                              // print(result);
+                              // //print(result);
                               setState(() {
                                 read_GC_area();
                               });
@@ -3702,7 +3734,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                   var response = await http.get(Uri.parse(url));
 
                   var result = json.decode(response.body);
-                  // print(result);
+                  // //print(result);
                   if (result.toString() == 'true') {
                     setState(() {
                       read_GC_area();
@@ -3763,7 +3795,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                   var response = await http.get(Uri.parse(url));
 
                   var result = json.decode(response.body);
-                  // print(result);
+                  // //print(result);
                   if (result.toString() == 'true') {
                     setState(() {
                       read_GC_area();
@@ -3824,7 +3856,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                   var response = await http.get(Uri.parse(url));
 
                   var result = json.decode(response.body);
-                  // print(result);
+                  // //print(result);
                   if (result.toString() == 'true') {
                     setState(() {
                       read_GC_area();
@@ -3892,7 +3924,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                   var response = await http.get(Uri.parse(url));
 
                   var result = json.decode(response.body);
-                  // print(result);
+                  // //print(result);
                   if (result.toString() == 'true') {
                     setState(() {
                       read_GC_area();
@@ -3953,7 +3985,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                   var response = await http.get(Uri.parse(url));
 
                   var result = json.decode(response.body);
-                  // print(result);
+                  // //print(result);
                   if (result.toString() == 'true') {
                     setState(() {
                       read_GC_area();
@@ -4096,7 +4128,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
 
                                                   var result = json
                                                       .decode(response.body);
-                                                  // print(result);
+                                                  // //print(result);
                                                   if (result.toString() ==
                                                       'true') {
                                                     Insert_log.Insert_logs(
@@ -4299,7 +4331,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                               var response = await http.get(Uri.parse(url));
 
                               var result = json.decode(response.body);
-                              // print(result);
+                              // //print(result);
                               if (result['success'].toString() == 'true') {
                                 setState(() {
                                   read_GC_area();
@@ -5001,7 +5033,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                         int selectedIndex =
                                             areatypes.indexWhere(
                                                 (item) => item.ser == value);
-                                        // print(value);
+                                        // //print(value);
                                         Add_typename_area_text.text =
                                             areatypes[selectedIndex]
                                                 .unit
@@ -6018,7 +6050,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
 
                                               var result =
                                                   json.decode(response.body);
-                                              print(result);
+                                              //print(result);
                                               if (result.toString() == 'true') {
                                                 setState(() {
                                                   read_GC_zone();
@@ -6033,7 +6065,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                 Navigator.pop(context, 'OK');
                                               }
                                             } catch (e) {
-                                              print(e);
+                                              //print(e);
                                             }
                                           }
                                         },
@@ -6837,7 +6869,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                         int selectedIndex =
                                             areatypes.indexWhere(
                                                 (item) => item.ser == value);
-                                        // print(value);
+                                        // //print(value);
                                         Add_typename_area_text.text =
                                             areatypes[selectedIndex]
                                                 .unit
@@ -7784,7 +7816,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                 .getString('renTalSer');
                                             String? ser_user =
                                                 preferences.getString('ser');
-                                            // print('*******  ${Add_totalnew_area_text.text}');
+                                            // //print('*******  ${Add_totalnew_area_text.text}');
 
                                             var zonename = ser_Zonex;
 
@@ -7903,7 +7935,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
 
                                                 var result =
                                                     json.decode(response.body);
-                                                print(result);
+                                                //print(result);
                                                 if (index + 1 ==
                                                     int.parse(
                                                         Add_totalnew_area_text
@@ -7933,11 +7965,11 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                   }
                                                 }
                                               } catch (e) {
-                                                print(e);
+                                                //print(e);
                                               }
                                             }
                                           } else {
-                                            print('No Data ');
+                                            //print('No Data ');
                                           }
                                         },
                                   child: Translate.TranslateAndSetText(
@@ -8039,8 +8071,12 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                 children: [
                   SizedBox(
                     width: (!Responsive.isDesktop(context))
-                        ? 790
-                        : MediaQuery.of(context).size.width * 0.83,
+                        ? 1400.00
+                        : MediaQuery.of(context).size.width * 0.85,
+                    // height: MediaQuery.of(context).size.height,
+                    // width: (!Responsive.isDesktop(context))
+                    //     ? 790
+                    //     : MediaQuery.of(context).size.width * 0.83,
                     child: Column(
                       children: [
                         Container(
@@ -8154,8 +8190,12 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                           stream: Stream.periodic(const Duration(seconds: 0)),
                           builder: (context, snapshot) {
                             return Container(
-                              height: MediaQuery.of(context).size.width * 0.35,
-                              width: MediaQuery.of(context).size.width,
+                              width: (!Responsive.isDesktop(context))
+                                  ? 1400.00
+                                  : MediaQuery.of(context).size.width * 0.85,
+                              height: MediaQuery.of(context).size.height,
+                              // height: MediaQuery.of(context).size.width * 0.35,
+                              // width: MediaQuery.of(context).size.width,
                               decoration: const BoxDecoration(
                                 color: AppbackgroundColor.Sub_Abg_Colors,
                                 borderRadius: BorderRadius.only(
