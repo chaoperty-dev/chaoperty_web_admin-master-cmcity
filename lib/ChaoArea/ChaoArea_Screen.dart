@@ -103,6 +103,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   int Ser_Body = 0;
   String Visit_ = 'grid'; //มุมมอง Visit_ = 'grid';
   String Ser_nowpage = '1';
+  String areaStatusFilter = 'ทั้งหมด';
   List<Map<String, String>> chaolist1 = [];
   ///////---------------------------------------------------->
   String tappedIndex_ = '';
@@ -468,6 +469,61 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
   // }
 
   String _norm(dynamic v) => v == null ? '' : v.toString().trim();
+
+  String _requestStatusText(AreaModel area) {
+    if (area.properties.isEmpty) return '';
+    final status = area.properties.first.newRequest?.requestStatus;
+    return _norm(status);
+  }
+
+  List<String> _requestStatusOptions() {
+    final options = <String>{'ทั้งหมด'};
+    for (final area in areaModels) {
+      final status = _requestStatusText(area);
+      if (status.isNotEmpty) options.add(status);
+    }
+    return options.toList();
+  }
+
+  bool _matchesAreaFilters(AreaModel area) {
+    if (SortCMMProperties && area.properties.isEmpty) return false;
+    if (areaStatusFilter == 'ทั้งหมด') return true;
+    return _requestStatusText(area) == areaStatusFilter;
+  }
+
+  List<int> _filteredAreaIndexes({dynamic zser}) {
+    final indexes = <int>[];
+    for (int i = 0; i < areaModels.length; i++) {
+      final area = areaModels[i];
+      if (zser != null && _norm(area.zser) != _norm(zser)) continue;
+      if (_matchesAreaFilters(area)) indexes.add(i);
+    }
+    return indexes;
+  }
+
+  Widget _emptyAreaState() {
+    return const SizedBox(
+      height: 80,
+      child: Center(
+        child: Text(
+          'ไม่พบข้อมูล',
+          style: TextStyle(
+            color: PeopleChaoScreen_Color.Colors_Text2_,
+            fontFamily: Font_.Fonts_T,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
+
+  double _filteredZoneGridHeight(dynamic zser) {
+    final count = _filteredAreaIndexes(zser: zser).length;
+    if (count == 0) return 80;
+    if ((count / 12) < 1.5) return 145;
+    if ((count / 12) < 2.5) return 245;
+    return 320;
+  }
 
   void sortZoneModels() {
     if (limitedList_zoneModels.isEmpty) return;
@@ -5149,18 +5205,86 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                 //fontSize: 10.0
                               ),
                             ),
-                            IconButton(
-                              onPressed: () async {
+                            // IconButton(
+                            //   onPressed: () async {
+                            //     setState(() {
+                            //       SortCMMProperties =
+                            //           !SortCMMProperties; // toggle ค่า
+                            //     });
+                            //   },
+                            //   icon: Icon(
+                            //     Icons.sort,
+                            //     color: (SortCMMProperties == false)
+                            //         ? Colors.grey
+                            //         : Colors.blue,
+                            //   ),
+                            // ),
+                            PopupMenuButton<String>(
+                              tooltip: 'กรองสถานะ',
+                              onSelected: (value) {
                                 setState(() {
-                                  SortCMMProperties =
-                                      !SortCMMProperties; // toggle ค่า
+                                  areaStatusFilter = value;
                                 });
                               },
-                              icon: Icon(
-                                Icons.sort,
-                                color: (SortCMMProperties == false)
-                                    ? Colors.grey
-                                    : Colors.blue,
+                              itemBuilder: (context) =>
+                                  _requestStatusOptions().map((item) {
+                                final value = item.toString();
+                                return PopupMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        areaStatusFilter == value
+                                            ? Icons.check
+                                            : Icons.circle_outlined,
+                                        size: 16,
+                                        color: areaStatusFilter == value
+                                            ? Colors.green
+                                            : Colors.grey,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        value,
+                                        style: const TextStyle(
+                                          color: PeopleChaoScreen_Color
+                                              .Colors_Text2_,
+                                          fontFamily: Font_.Fonts_T,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              child: Container(
+                                height: 34,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 10),
+                                decoration: BoxDecoration(
+                                  color: areaStatusFilter == 'ทั้งหมด'
+                                      ? Colors.white
+                                      : Colors.blue.shade50,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: areaStatusFilter == 'ทั้งหมด'
+                                        ? Colors.grey.shade300
+                                        : Colors.blue.shade200,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.filter_list, size: 18),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      areaStatusFilter,
+                                      style: const TextStyle(
+                                        color: PeopleChaoScreen_Color
+                                            .Colors_Text2_,
+                                        fontFamily: Font_.Fonts_T,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             )
                           ],
@@ -5422,11 +5546,7 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                                             .toList()
                                                                             .isEmpty)
                                                                         ? null
-                                                                        : ((areaModels.where((item) => item.zser == zoneModels[zindex].ser).toList().length / 12) < 1.5)
-                                                                            ? 145
-                                                                            : ((areaModels.where((item) => item.zser == zoneModels[zindex].ser).toList().length / 12) < 2.5)
-                                                                                ? 245
-                                                                                : 320,
+                                                                        : _filteredZoneGridHeight(zoneModels[zindex].ser),
                                                                     // height: MediaQuery.of(
                                                                     //                 context)
                                                                     //             .size
@@ -5482,22 +5602,21 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                                               ],
                                                                             ),
                                                                           )
-                                                                        : GridView.count(
-                                                                            crossAxisSpacing:
-                                                                                10,
-                                                                            mainAxisSpacing:
-                                                                                10,
-                                                                            crossAxisCount:
-                                                                                _crossAxisCount(context),
-                                                                            children: [
-                                                                              for (int i = 0; i < areaModels.length; i++)
-                                                                                if (zoneModels[zindex].ser == areaModels[i].zser)
-                                                                                  if (SortCMMProperties == true) ...[
-                                                                                    if (areaModels[i].properties.isNotEmpty) createCard(i, context),
-                                                                                  ] else ...[
-                                                                                    createCard(i, context),
-                                                                                  ]
-                                                                            ],
+                                                                        : Builder(
+                                                                            builder:
+                                                                                (context) {
+                                                                              final visibleIndexes = _filteredAreaIndexes(zser: zoneModels[zindex].ser);
+                                                                              if (visibleIndexes.isEmpty)
+                                                                                return _emptyAreaState();
+                                                                              return GridView.count(
+                                                                                crossAxisSpacing: 10,
+                                                                                mainAxisSpacing: 10,
+                                                                                crossAxisCount: _crossAxisCount(context),
+                                                                                children: [
+                                                                                  for (final i in visibleIndexes) createCard(i, context),
+                                                                                ],
+                                                                              );
+                                                                            },
                                                                           ),
                                                                   ),
                                                                   const SizedBox(
@@ -5643,7 +5762,10 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                             .size
                                                             .height *
                                                         0.6
-                                                    : 600,
+                                                    : (_filteredAreaIndexes()
+                                                            .isEmpty)
+                                                        ? 160
+                                                        : 600,
                                                 child: (areaModels.length == 0)
                                                     ? SizedBox(
                                                         child: Column(
@@ -5703,32 +5825,29 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
                                                           ],
                                                         ),
                                                       )
-                                                    : GridView.count(
-                                                        crossAxisSpacing: 10,
-                                                        mainAxisSpacing: 10,
-                                                        crossAxisCount:
-                                                            _crossAxisCount(
-                                                                context),
-                                                        children: [
-                                                          for (int i = 0;
-                                                              i <
-                                                                  areaModels
-                                                                      .length;
-                                                              i++)
-                                                            if (SortCMMProperties ==
-                                                                true) ...[
-                                                              if (areaModels[i]
-                                                                  .properties
-                                                                  .isNotEmpty)
+                                                    : Builder(
+                                                        builder: (context) {
+                                                          final visibleIndexes =
+                                                              _filteredAreaIndexes();
+                                                          if (visibleIndexes
+                                                              .isEmpty) {
+                                                            return _emptyAreaState();
+                                                          }
+                                                          return GridView.count(
+                                                            crossAxisSpacing:
+                                                                10,
+                                                            mainAxisSpacing: 10,
+                                                            crossAxisCount:
+                                                                _crossAxisCount(
+                                                                    context),
+                                                            children: [
+                                                              for (final i
+                                                                  in visibleIndexes)
                                                                 createCard(
                                                                     i, context),
-                                                            ] else ...[
-                                                              createCard(
-                                                                  i, context),
-                                                            ]
-                                                          // createCard(
-                                                          //     i, context),
-                                                        ],
+                                                            ],
+                                                          );
+                                                        },
                                                       ),
                                               )
                                             ],
