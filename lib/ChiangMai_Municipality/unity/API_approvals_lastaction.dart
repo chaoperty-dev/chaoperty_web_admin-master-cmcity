@@ -55,7 +55,11 @@ Future<ReviewResponse> read_GC_ApprovalsLastaction({
       final u = Uri.parse(urlCustom);
       final qp = Map<String, String>.from(u.queryParameters);
       qp['per_page'] = '50';
-      qp['q'] = query; // keep current UI search state
+      if (query.isNotEmpty) {
+        qp['q'] = query; // keep current UI search state
+      } else {
+        qp.remove('q');
+      }
       if (orderBy != null && orderBy.isNotEmpty) qp['order_by'] = orderBy;
       if (sortDir != null && sortDir.isNotEmpty) qp['sort_dir'] = sortDir;
 
@@ -66,8 +70,10 @@ Future<ReviewResponse> read_GC_ApprovalsLastaction({
       // à¸„à¸£à¸±à¹‰à¸‡à¹à¸£à¸: à¹€à¸£à¸²à¸ªà¸£à¹‰à¸²à¸‡ URL à¹€à¸­à¸‡
       final params = <String, String>{
         'per_page': '$perPage',
-        'q': query,
       };
+      if (query.isNotEmpty) params['q'] = query;
+      if (orderBy != null && orderBy.isNotEmpty) params['order_by'] = orderBy;
+      if (sortDir != null && sortDir.isNotEmpty) params['sort_dir'] = sortDir;
       uri = baseDomain
           .replace(queryParameters: {...baseDomain.queryParameters, ...params});
     }
@@ -154,7 +160,11 @@ Future<ReviewResponse> read_GC_ApprovalsLastcompleted({
       final u = Uri.parse(urlCustom);
       final qp = Map<String, String>.from(u.queryParameters);
       qp['per_page'] = '50';
-      qp['q'] = query; // keep current UI search state
+      if (query.isNotEmpty) {
+        qp['q'] = query; // keep current UI search state
+      } else {
+        qp.remove('q');
+      }
       if (orderBy != null && orderBy.isNotEmpty) qp['order_by'] = orderBy;
       if (sortDir != null && sortDir.isNotEmpty) qp['sort_dir'] = sortDir;
 
@@ -165,8 +175,10 @@ Future<ReviewResponse> read_GC_ApprovalsLastcompleted({
       // à¸„à¸£à¸±à¹‰à¸‡à¹à¸£à¸: à¹€à¸£à¸²à¸ªà¸£à¹‰à¸²à¸‡ URL à¹€à¸­à¸‡
       final params = <String, String>{
         'per_page': '$perPage',
-        'q': query,
       };
+      if (query.isNotEmpty) params['q'] = query;
+      if (orderBy != null && orderBy.isNotEmpty) params['order_by'] = orderBy;
+      if (sortDir != null && sortDir.isNotEmpty) params['sort_dir'] = sortDir;
       uri = baseDomain
           .replace(queryParameters: {...baseDomain.queryParameters, ...params});
     }

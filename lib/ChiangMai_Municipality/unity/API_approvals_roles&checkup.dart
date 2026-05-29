@@ -32,9 +32,13 @@ Future<ReviewResponse> read_GC_ApprovalsRoles({
       final u = Uri.parse(urlCustom);
       final qp = Map<String, String>.from(u.queryParameters);
       qp['per_page'] = '50';
-      qp['q'] = query; // บังคับเขียนทับเพื่อให้ตรงกับ UI ปัจจุบัน
+      if (query.isNotEmpty) {
+        qp['q'] = query; // บังคับเขียนทับเพื่อให้ตรงกับ UI ปัจจุบัน
+      } else {
+        qp.remove('q');
+      }
       if (zn != null && zn.isNotEmpty)
-        qp['zn'] = zn ?? ''; // บังคับเขียนทับเพื่อให้ตรงกับ UI ปัจจุบัน
+        qp['zn'] = zn; // บังคับเขียนทับเพื่อให้ตรงกับ UI ปัจจุบัน
       // เพิ่ม order_by และ sort_dir ถ้ามี
       if (orderBy != null && orderBy.isNotEmpty) {
         qp['order_by'] = orderBy;
@@ -48,20 +52,15 @@ Future<ReviewResponse> read_GC_ApprovalsRoles({
           .replace(queryParameters: {...baseDomain.queryParameters, ...qp});
     } else {
       // ครั้งแรก: เราสร้าง URL เอง
-      final params = (zn != null && zn.isNotEmpty)
-          ? <String, String>{
-              'per_page': '$perPage',
-              'q': query,
-              'zn': zn ?? '',
-              'order_by': orderBy!,
-              'sort_dir': sortDir!,
-            }
-          : <String, String>{
-              'per_page': '$perPage',
-              'q': query,
-              'order_by': orderBy!,
-              'sort_dir': sortDir!,
-            };
+      final params = <String, String>{
+        'per_page': '$perPage',
+      };
+      if (query.isNotEmpty) {
+        params['q'] = query;
+      }
+      if (zn != null && zn.isNotEmpty) {
+        params['zn'] = zn;
+      }
 
       // เพิ่ม order_by และ sort_dir ถ้ามี
       if (orderBy != null && orderBy.isNotEmpty) {

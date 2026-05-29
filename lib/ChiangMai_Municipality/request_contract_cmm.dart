@@ -505,6 +505,11 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
     'รหัสรายการ': 'uuid',
   };
 
+  bool _canSortColumn(String column) {
+    final field = _sortFieldMap[column];
+    return field == 'zn' || field == 'ln';
+  }
+
   Future<void> Loading_Main({
     String? customUrl,
     String query = '',
@@ -551,6 +556,8 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
           customUrl: customUrl,
           query: _getQueryValue(query),
           append: append,
+          orderBy: orderBy,
+          sortDir: sortDir,
         );
         break;
       case 4:
@@ -559,6 +566,8 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
           customUrl: customUrl,
           query: _getQueryValue(query),
           append: append,
+          orderBy: orderBy,
+          sortDir: sortDir,
         );
         break;
     }
@@ -2362,28 +2371,34 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                 ),
                               ...columnHeaders.skip(1).map((column) => Expanded(
                                     child: InkWell(
-                                      onTap: () {
-                                        setState(() {
-                                          if (sortColumn == column) {
-                                            sortAscending = !sortAscending;
-                                          } else {
-                                            sortColumn = column;
-                                            sortAscending = true;
-                                          }
-                                        });
-                                        final field = _sortFieldMap[column];
-                                        if (field != null) {
-                                          Loading_Main(
-                                            orderBy: field,
-                                            sortDir:
-                                                sortAscending ? 'asc' : 'desc',
-                                          );
-                                        }
-                                      },
+                                      onTap: _canSortColumn(column)
+                                          ? () {
+                                              setState(() {
+                                                if (sortColumn == column) {
+                                                  sortAscending =
+                                                      !sortAscending;
+                                                } else {
+                                                  sortColumn = column;
+                                                  sortAscending = true;
+                                                }
+                                              });
+                                              final field =
+                                                  _sortFieldMap[column];
+                                              if (field != null) {
+                                                Loading_Main(
+                                                  orderBy: field,
+                                                  sortDir: sortAscending
+                                                      ? 'asc'
+                                                      : 'desc',
+                                                );
+                                              }
+                                            }
+                                          : null,
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          if (sortColumn == column)
+                                          if (_canSortColumn(column) &&
+                                              sortColumn == column)
                                             Icon(
                                               sortAscending
                                                   ? Icons.arrow_drop_up
