@@ -31,11 +31,10 @@ import '../ChaoArea/ChaoArea_Screen.dart';
 import '../ChiangMai_Municipality/License_menu/license_announce_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_attach_page.dart';
-
-import '../ChiangMai_Municipality/License_menu/license_fact_check_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_payment_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_request_page/views/license_request_page.dart';
-import '../ChiangMai_Municipality/License_menu/license_verify_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_verify_page/views/license_verify_page.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/chiangMaiBackground2.dart';
