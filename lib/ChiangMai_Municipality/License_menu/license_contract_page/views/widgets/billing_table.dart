@@ -794,8 +794,9 @@ class _AddRowDialogState extends State<_AddRowDialog> {
                                   headingRowHeight: 36,
                                   dataRowMinHeight: 40,
                                   dataRowMaxHeight: 52,
-                                  headingRowColor: MaterialStateColor.resolveWith(
-                                      (states) => LcColors.surfaceMuted),
+                                  headingRowColor:
+                                      MaterialStateColor.resolveWith(
+                                          (states) => LcColors.surfaceMuted),
                                   headingTextStyle: LcText.tableHeader,
                                   dataTextStyle: LcText.tableCell,
                                   columns: const [
