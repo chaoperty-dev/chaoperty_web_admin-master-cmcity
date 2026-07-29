@@ -331,7 +331,7 @@ class BillingTable extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Text('ยอดรวมทั้งหมด', style: LcText.label),
+                          const Text('ยอดรวมทั้งหมด', style: LcText.label),
                           const SizedBox(height: 2),
                           Text(
                             'รวม ${vm.rows.length} รายการ',
@@ -583,9 +583,10 @@ class _EmptyState extends StatelessWidget {
                 size: 32, color: LcColors.primary),
           ),
           const SizedBox(height: LcSpace.md),
-          Text('ยังไม่มีรายการค่าบริการ', style: LcText.h2),
+          const Text('ยังไม่มีรายการค่าบริการ', style: LcText.h2),
           const SizedBox(height: 6),
-          Text('กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น', style: LcText.bodyMuted),
+          const Text('กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น',
+              style: LcText.bodyMuted),
           const SizedBox(height: LcSpace.lg),
           _GradientAddButton(onPressed: onAdd),
         ],

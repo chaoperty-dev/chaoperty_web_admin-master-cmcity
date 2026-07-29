@@ -6231,6 +6231,52 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                   fontFamily: 'MaterialIcons',
                 ),
               ),
+              // ✅ ใบอนุญาต sub-menu (mobile)
+              AdminMenuItem(
+                title: 'ใบอนุญาต',
+                route: '/LicenseMenu',
+                icon: IconData(
+                  int.parse('0xe90e'), // Verified User
+                  fontFamily: 'MaterialIcons',
+                ),
+                children: const [
+                  AdminMenuItem(
+                    title: 'ประกาศ',
+                    route: '/LicenseAnnounce',
+                    icon: IconData(0xe7f4, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'ทำสัญญา',
+                    route: '/LicenseContract',
+                    icon: IconData(0xe53e, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'แนบหลักฐาน',
+                    route: '/LicenseAttach',
+                    icon: IconData(0xe226, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'รับชำระ',
+                    route: '/LicensePayment',
+                    icon: IconData(0xe227, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'ตรวจสอบหลักฐาน',
+                    route: '/LicenseVerify',
+                    icon: IconData(0xe8e8, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'ตรวจสอบข้อเท็จจริง',
+                    route: '/LicenseFactCheck',
+                    icon: IconData(0xe8b1, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'อนุมัติคำขอ',
+                    route: '/LicenseApprove',
+                    icon: IconData(0xe5ca, fontFamily: 'MaterialIcons'),
+                  ),
+                ],
+              ),
             ],
           ),
         ],
@@ -6268,7 +6314,42 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
             }
             return;
           }
-          for (int i = 0; i < perMissionModels.length; i++) {
+                    // ✅ License sub-menu routes (mobile)
+          const licenseRoutes = {
+            '/LicenseContract': 'LicenseContract',
+            '/LicensePayment': 'LicensePayment',
+            '/LicenseAttach': 'LicenseAttach',
+            '/LicenseVerify': 'LicenseVerify',
+            '/LicenseFactCheck': 'LicenseFactCheck',
+            '/LicenseApprove': 'LicenseApprove',
+            '/LicenseAnnounce': 'LicenseAnnounce',
+          };
+          if (licenseRoutes.containsKey(item.route)) {
+            if (renTal_user != null) {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              final routeName = licenseRoutes[item.route]!;
+              prefs.setString('route', routeName);
+              setState(() {
+                Value_Route = routeName;
+                Navigator.pop(context);
+              });
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Translate.TranslateAndSetText(
+                      'กรุณาเลือกสถานที่ของท่านเพื่อเรียกดูข้อมูล',
+                      Colors.black,
+                      TextAlign.center,
+                      FontWeight.bold,
+                      FontWeight_.Fonts_T,
+                      14,
+                      1),
+                ),
+              );
+            }
+            return;
+          }
+for (int i = 0; i < perMissionModels.length; i++) {
             if (item.route == '/${perMissionModels[i].perm!.trim()}') {
               if (renTal_user != null) {
                 SharedPreferences preferences =
