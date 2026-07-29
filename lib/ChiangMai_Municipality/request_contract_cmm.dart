@@ -39,6 +39,8 @@ import 'package:pdf/widgets.dart' as pw;
 import 'unity/API_admin_signature.dart';
 import 'PDF_CMM/unity_pdf_cmm/unitypdf_cmm.dart';
 import 'Model/ReviewUuid_Model.dart';
+import 'Make_contract_CMM/new_contract_popup_cmm.dart';
+import 'unity/API_properties.dart';
 import 'unity/show_dialog_cmm.dart';
 
 class AvatarPrettyLoader extends StatefulWidget {
@@ -1380,30 +1382,64 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                     height: 44,
                                     child: _buildZoneDropdown(false)),
                                 Expanded(
-                                  child: Align(
-                                    alignment: Alignment.topRight,
-                                    child: InkWell(
-                                      onTap: () {
-                                        Navigator.pushAndRemoveUntil(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                AdminScafScreen(
-                                                    route: 'TestPrintNamePage'),
+                                  child: Row(
+                                    children: [
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: InkWell(
+                                          onTap: () async {
+                                            // โหลด Properties ตามโซนปัจจุบัน แล้วเปิด popup
+                                            final props =
+                                                await read_GC_properties(
+                                              zone_Subser,
+                                              null,
+                                              null,
+                                            );
+                                            if (!context.mounted) return;
+                                            await NewContractStepOnePopup.show(
+                                              context,
+                                              properties: props,
+                                              title: 'ผู้เช่า (Popup)',
+                                            );
+                                          },
+                                          child: CircleAvatar(
+                                            backgroundColor: Colors.orange,
+                                            radius: 20,
+                                            child: Center(
+                                                child: Icon(
+                                              Icons.contact_page,
+                                              color: Colors.white,
+                                            )),
                                           ),
-                                          (route) => false,
-                                        );
-                                      },
-                                      child: CircleAvatar(
-                                        backgroundColor: Colors.orange,
-                                        radius: 20,
-                                        child: Center(
-                                            child: Icon(
-                                          Icons.folder,
-                                          color: Colors.white,
-                                        )),
+                                        ),
                                       ),
-                                    ),
+                                      Align(
+                                        alignment: Alignment.topRight,
+                                        child: InkWell(
+                                          onTap: () {
+                                            Navigator.pushAndRemoveUntil(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) =>
+                                                    AdminScafScreen(
+                                                        route:
+                                                            'TestPrintNamePage'),
+                                              ),
+                                              (route) => false,
+                                            );
+                                          },
+                                          child: CircleAvatar(
+                                            backgroundColor: Colors.orange,
+                                            radius: 20,
+                                            child: Center(
+                                                child: Icon(
+                                              Icons.folder,
+                                              color: Colors.white,
+                                            )),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 )
                               ],
@@ -1753,7 +1789,7 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                                     child: Container(
                                                       height: double.infinity,
                                                       padding: const EdgeInsets
-                                                          .symmetric(
+                                                              .symmetric(
                                                           horizontal: 6),
                                                       child: Row(
                                                         children: [
@@ -2163,7 +2199,7 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                                               double.infinity,
                                                           padding:
                                                               const EdgeInsets
-                                                                  .symmetric(
+                                                                      .symmetric(
                                                                   horizontal:
                                                                       6),
                                                           child: Row(
@@ -2489,15 +2525,12 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                                                         return AlertDialog(
                                                                           backgroundColor:
                                                                               AppbackgroundColor.Sub_Abg_Colors,
-                                                                          titlePadding: const EdgeInsets
-                                                                              .all(
-                                                                              0.0),
-                                                                          contentPadding: const EdgeInsets
-                                                                              .all(
-                                                                              10.0),
-                                                                          actionsPadding: const EdgeInsets
-                                                                              .all(
-                                                                              6.0),
+                                                                          titlePadding:
+                                                                              const EdgeInsets.all(0.0),
+                                                                          contentPadding:
+                                                                              const EdgeInsets.all(10.0),
+                                                                          actionsPadding:
+                                                                              const EdgeInsets.all(6.0),
                                                                           // insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
                                                                           shape:
                                                                               RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -3633,7 +3666,7 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                                   isDense: true,
                                                   contentPadding:
                                                       const EdgeInsets
-                                                          .symmetric(
+                                                              .symmetric(
                                                           horizontal: 12,
                                                           vertical: 12),
                                                   border: OutlineInputBorder(
@@ -3681,7 +3714,7 @@ class _RequestContract_CMMState extends State<RequestContract_CMM> {
                                                   isDense: true,
                                                   contentPadding:
                                                       const EdgeInsets
-                                                          .symmetric(
+                                                              .symmetric(
                                                           horizontal: 12,
                                                           vertical: 12),
                                                   border: OutlineInputBorder(

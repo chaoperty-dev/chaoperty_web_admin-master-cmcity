@@ -331,15 +331,15 @@ Future<ReviewResponse> read_GC_Reviews({
 
 Future<http.Response?> read_GC_ReviewsUuid(String? UuidRequest) async {
   if (UuidRequest == null || UuidRequest.isEmpty) {
-    //print('âš ï¸ UuidRequest is null or empty');
+    //print(' UuidRequest is null or empty');
     return null;
   }
 
-  final headers = await MyHeaders.build(); // âœ… à¸•à¹‰à¸­à¸‡ await
+  final headers = await MyHeaders.build(); // await
 
   final url = Uri.parse(
       '${MyConstant().domain_v1}/admin/approvals/$UuidRequest/review');
-  print('ðŸ”Ž GET Reviews by Uuid: $url');
+  print(' GET Reviews by Uuid: $url');
 
   try {
     final response = await http.get(url, headers: headers);
@@ -354,8 +354,8 @@ Future<http.Response?> read_GC_ReviewsUuid(String? UuidRequest) async {
 
     return response;
   } catch (e, stack) {
-    //print('âŒ Exception during Reviews Uuid request: $e');
-    //print('ðŸ§­ StackTrace:\n$stack');
+    //print('Exception during Reviews Uuid request: $e');
+    //print('­ StackTrace:\n$stack');
     return null;
   }
 }

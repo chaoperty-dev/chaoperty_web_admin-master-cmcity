@@ -47,5 +47,17 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+	<!-- 📷 เพิ่มสิทธิ์ที่จำเป็น -->
+	<key>NSCameraUsageDescription</key>
+	<string>ต้องการใช้กล้องเพื่อถ่ายรูปเอกสาร</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>ต้องการเข้าถึงคลังรูปเพื่ออัปโหลดเอกสาร</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>ต้องการบันทึกรูปภาพลงคลังรูป</string>
+
+	<!-- 🎙 flutter_inappwebview microphone permission -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>ต้องการใช้ไมโครโฟนเพื่อบันทึกเสียงในเว็บไซต์</string>
 </dict>
 </plist>

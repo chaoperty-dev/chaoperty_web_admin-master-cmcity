@@ -1,68 +1,331 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 
 <head>
-
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <!-- Flutter จะจัดการ viewport เองใน runtime; ใส่ค่า base เพื่อ initial render -->
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <base href="$FLUTTER_BASE_HREF">
 
-  <meta charset="UTF-8">
-  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="chaoperty.">
+  <!-- <base href="/"> -->
 
-  <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="chaoperty">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <title>Chaoperty — ช่วยจัดการทรัพย์ได้ง่าย</title>
+  <meta name="description" content="ระบบจัดการทรัพย์ อัปเดตค่าเช่า สัญญา แจ้งเตือน และรายงานแบบเรียลไทม์" />
+  <link rel="canonical" href="https://chaoperties.com/CMM/" />
 
-  <!-- Favicon -->
+  <!-- PWA / Mobile -->
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+  <meta name="apple-mobile-web-app-title" content="Chaoperty" />
+  <meta name="theme-color" content="#0ea5e9" />
+
+  <link rel="apple-touch-icon" sizes="192x192" href="icons/Icon-192.png" />
   <link rel="icon" type="image/png" href="favicon.png" />
+  <link rel="manifest" href="manifest.json" />
 
-  <title>chaoperty</title>
-  <link rel="manifest" href="manifest.json">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="Chaoperty" />
+  <meta property="og:title" content="Chaoperty — ช่วยจัดการทรัพย์ได้ง่าย" />
+  <meta property="og:description" content="ระบบจัดการทรัพย์ อัปเดตค่าเช่า สัญญา แจ้งเตือน และรายงานแบบเรียลไทม์" />
+  <meta property="og:image" content="https://chaoperties.com/assets/og/cover-1200x630.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="ภาพหน้าปก Chaoperty" />
+  <meta property="og:url" content="https://chaoperties.com/CMM/" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Chaoperty — ช่วยจัดการทรัพย์ได้ง่าย" />
+  <meta name="twitter:description" content="ระบบจัดการทรัพย์ อัปเดตค่าเช่า สัญญา แจ้งเตือน และรายงานแบบเรียลไทม์" />
+  <meta name="twitter:image" content="https://chaoperties.com/assets/og/cover-1200x630.jpg" />
+
+  <!-- Performance hints -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+  <link rel="preconnect" href="https://unpkg.com" crossorigin />
 
   <script>
-    // The value below is injected by flutter build, do not touch.
-    var serviceWorkerVersion = null;
-  </script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.4.456/pdf.min.js"></script>
-  <script type="text/javascript">
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.4.456/pdf.worker.min.js";
-  </script>
-  <!-- This script adds the flutter initialization JS code -->
-  <script src="flutter.js" defer></script>
-  <script src="//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.min.js"></script>
-  <script type="text/javascript">
-    pdfjsLib.GlobalWorkerOptions.workerSrc = "//cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.worker.min.js";
+    // ถูกแทนค่าโดย flutter build
+    var serviceWorkerVersion = "78118702";
   </script>
 
+  <!-- Flutter bootstrap -->
+  <script src="flutter.js" defer></script>
+
+  <!-- flutter_inappwebview web support -->
+  <script type="application/javascript" src="/assets/packages/flutter_inappwebview_web/assets/web/web_support.js" defer></script>
+
+  <!-- pdf.js (single version) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.min.js" defer crossorigin="anonymous"></script>
+  <script defer>
+    window.addEventListener('DOMContentLoaded', function () {
+      if (window.pdfjsLib) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.8.335/pdf.worker.min.js";
+      }
+    });
+  </script>
+
+  <!-- Tesseract.js -->
+  <script src="https://unpkg.com/tesseract.js@v4.0.2/dist/tesseract.min.js" defer crossorigin="anonymous"></script>
+  <script defer>
+    // ✅ OCR core (เหมือนเดิม)
+    const LANG_BASES = [
+      "https://raw.githubusercontent.com/tesseract-ocr/tessdata_best/main",
+      "https://raw.githubusercontent.com/tesseract-ocr/tessdata_fast/main",
+      "https://tesseract.projectnaptha.com/4.0.0",
+    ];
+
+    function preferredBaseIndex(firstLang) {
+      // ตอนนี้ใช้ best เป็นค่าเริ่มต้นเสมอ
+      return 0;
+    }
+
+    const OCR = (() => {
+      let worker = null;
+      let currentBaseIdx = null;
+      let initializedLangs = null;
+
+      const queue = [];
+      let processing = false;
+
+      async function createWorkerAt(baseIdx) {
+        return await Tesseract.createWorker({
+          langPath: LANG_BASES[baseIdx],
+        });
+      }
+
+      async function ensureWorkerForLangs(langs) {
+        const startIdx = currentBaseIdx ?? preferredBaseIndex(langs.split('+')[0]);
+
+        if (!worker || initializedLangs !== langs) {
+          if (worker) {
+            try { await worker.terminate(); } catch (_) { }
+            worker = null;
+          }
+
+          const candidates = [startIdx, ...[0, 1, 2].filter(i => i !== startIdx)];
+
+          for (const idx of candidates) {
+            try {
+              const w = await createWorkerAt(idx);
+              await w.loadLanguage(langs);
+              await w.initialize(langs);
+              worker = w;
+              currentBaseIdx = idx;
+              initializedLangs = langs;
+              return worker;
+            } catch (_) {
+              try { await worker?.terminate(); } catch (_) { }
+              worker = null;
+              initializedLangs = null;
+            }
+          }
+
+          throw new Error("Cannot load traineddata for: " + langs);
+        }
+
+        return worker;
+      }
+
+      async function runJob(imagePath, mapData = {}) {
+        const langs = (mapData.language || "eng").trim();
+        const args = mapData.args || {};
+
+        const w = await ensureWorkerForLangs(langs);
+        if (Object.keys(args).length) {
+          await w.setParameters(args);
+        }
+
+        const result = await w.recognize(imagePath);
+        return args["tessjs_create_hocr"] ? result.data.hocr : result.data.text;
+      }
+
+      async function processQueue() {
+        if (processing) return;
+        processing = true;
+
+        while (queue.length) {
+          const { imagePath, mapData, resolve, reject } = queue.shift();
+          try {
+            const out = await runJob(imagePath, mapData);
+            resolve(out);
+          } catch (e) {
+            reject(e);
+          }
+        }
+
+        processing = false;
+      }
+
+      function push(imagePath, mapData) {
+        if (mapData && typeof mapData.logger !== 'function') {
+          delete mapData.logger;
+        }
+
+        return new Promise((resolve, reject) => {
+          queue.push({ imagePath, mapData, resolve, reject });
+          processQueue();
+        });
+      }
+
+      async function terminate() {
+        if (worker) {
+          try { await worker.terminate(); } catch (_) { }
+        }
+        worker = null;
+        initializedLangs = null;
+        currentBaseIdx = null;
+      }
+
+      return { push, terminate };
+    })();
+
+    // ฟังก์ชันที่ Flutter Web เรียกผ่าน JS interop
+    async function __extractCore(imagePath, mapData = {}) {
+      return OCR.push(imagePath, mapData);
+    }
+    window.extractText = __extractCore;
+    window._extractText = __extractCore;
+    window.__terminateOcrWorker = () => OCR.terminate();
+
+    // คืน “คำ + พิกัด” สำหรับ overlay โดยใช้ worker แยก
+    async function __extractWords(imagePath, mapData = {}) {
+      const langs = (mapData.language || "eng").trim();
+      const args = mapData.args || {};
+      const w = await Tesseract.createWorker({
+        langPath: LANG_BASES[0],
+      });
+
+      try {
+        await w.loadLanguage(langs);
+        await w.initialize(langs);
+        if (Object.keys(args).length) {
+          await w.setParameters(args);
+        }
+        const { data } = await w.recognize(imagePath);
+
+        return data.words.map((x) => ({
+          text: x.text,
+          x: x.bbox.x0,
+          y: x.bbox.y0,
+          w: x.bbox.x1 - x.bbox.x0,
+          h: x.bbox.y1 - x.bbox.y0,
+          conf: x.confidence,
+        }));
+      } finally {
+        await w.terminate();
+      }
+    }
+    window._extractWords = __extractWords;
+  </script>
+  <style>
+    .loading-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: radial-gradient(circle at center, #ffffff 0%, #f9fafb 100%);
+      z-index: 9999;
+      transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .loader-wrapper {
+      position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 100px;
+      height: 100px;
+    }
+
+    .loader-ring {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border: 4px solid transparent;
+      border-top-color: #7f4caf;
+      border-radius: 50%;
+      animation: spin-ios 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.1);
+    }
+
+    .loader-ring:nth-child(2) {
+      width: 60px;
+      height: 60px;
+      border-top-color: #c781c1;
+      animation-direction: reverse;
+      animation-duration: 0.8s;
+      opacity: 0.7;
+    }
+
+    @keyframes spin-ios {
+      0% {
+        transform: rotate(0deg);
+      }
+
+      100% {
+        transform: rotate(360deg);
+      }
+    }
+
+    .loading-text {
+      margin-top: 32px;
+      font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #7a2e7d;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      opacity: 0;
+      animation: fade-in-text 1s ease forwards 0.3s;
+    }
+
+    @keyframes fade-in-text {
+      to {
+        opacity: 0.8;
+      }
+    }
+  </style>
+  <script>(function () { const a = ["/user", "/market", "/CMM", "/Choice", "/Choice/user", "/cmcity", "/cmcity_test"]; function b() { const h = location.hostname, p = location.pathname; return h !== "localhost" && h !== "127.0.0.1" && !a.some(x => p.startsWith(x)) } if (!b()) return; const c = console.log.bind(console); window.___devtoolsLog = c; console.log = console.info = console.debug = console.warn = console.error = function () { }; document.addEventListener('keydown', function (e) { const k = e.key; if (k === 'F12' || (e.ctrlKey && e.shiftKey && (k === 'I' || k === 'J')) || (e.ctrlKey && k === 'U')) { e.preventDefault(); return false } }); document.addEventListener('contextmenu', function (e) { e.preventDefault() }); setInterval(function () { try { const v = /./; v.toString = function () { this.o = true }; (window.___devtoolsLog || console.log)('%c', v); if (v.o) window.location.replace("about:blank") } catch (e) { } }, 500) })()</script>
 </head>
 
 <body>
+  <div id="loading_indicator" class="loading-container">
+    <div class="loader-wrapper">
+      <div class="loader-ring"></div>
+      <div class="loader-ring"></div>
+    </div>
+    <div class="loading-text">กำลังโหลด...</div>
+  </div>
+
+  <noscript>ต้องเปิดใช้งาน JavaScript เพื่อใช้แอปนี้</noscript>
+
+  <!-- โหลด Flutter app -->
   <script>
-    window.addEventListener('load', function (ev) {
-      // Download main.dart.js
+    window.addEventListener('load', function () {
       _flutter.loader.loadEntrypoint({
-        serviceWorker: {
-          serviceWorkerVersion: serviceWorkerVersion,
-        }
+        serviceWorker: { serviceWorkerVersion: serviceWorkerVersion },
       }).then(function (engineInitializer) {
         return engineInitializer.initializeEngine();
       }).then(function (appRunner) {
         return appRunner.runApp();
+      }).then(function () {
+        // ลบ Loading Indicator เมื่อแอปพร้อม
+        var loader = document.getElementById('loading_indicator');
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(function () {
+            loader.remove();
+          }, 500);
+        }
       });
     });
   </script>

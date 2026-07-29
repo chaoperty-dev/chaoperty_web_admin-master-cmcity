@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../Constant/Myconstant.dart';
+import '../Constant/global_http.dart';
 import '../INSERT_Log/Insert_log.dart';
 import '../Man_PDF/Man_Reduce_debt.dart';
 import '../Model/GetInvoice_Model.dart';
@@ -131,7 +132,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/GC_bill_pay.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       print('result $ciddoc');
@@ -163,7 +164,7 @@ class _DiscountBillState extends State<DiscountBill> {
         '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
     renTal_name = preferences.getString('renTalName');
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -227,7 +228,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/GC_bill_invoice.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -256,7 +257,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/GC_bill_invoice_hisdis.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -291,7 +292,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/GC_bill_invoice_hislist.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -1911,7 +1912,7 @@ class _DiscountBillState extends State<DiscountBill> {
                                                                                 url =
                                                                                 '${MyConstant().domain}/U_tran_select_ser_dis.php?isAdd=true&ren=$ren&ser_tran=$ser_tran&c_value=$c_value&valuex=$valuex&user=$user&vat_ser=$vat_ser&nwht_inv=$nwht_inv';
                                                                             try {
-                                                                              var response = await http.get(Uri.parse(url));
+                                                                              var response = await httpClient.get(Uri.parse(url));
 
                                                                               var result = json.decode(response.body);
                                                                               // print(result);
@@ -2017,7 +2018,7 @@ class _DiscountBillState extends State<DiscountBill> {
                                                                                 url =
                                                                                 '${MyConstant().domain}/U_tran_select_ser_dis.php?isAdd=true&ren=$ren&ser_tran=$ser_tran&c_value=$c_value&valuex=$valuex&user=$user&vat_ser=$vat_ser&nwht_inv=$nwht_inv';
                                                                             try {
-                                                                              var response = await http.get(Uri.parse(url));
+                                                                              var response = await httpClient.get(Uri.parse(url));
 
                                                                               var result = json.decode(response.body);
                                                                               // print(result);
@@ -2918,7 +2919,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/In_tran_select_dis.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&textadd=$textadd&priceadd=$priceadd&user=$user&dtypeadd=$dtypeadd&docno_inv=$docno_inv';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print('rr>>>>>> $result');
@@ -2953,7 +2954,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/GC_tran_select_dis.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docno_inv=$docno_inv';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -3005,7 +3006,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/D_tran_select_ser.php?isAdd=true&ren=$ren&ser_tren=$ser_tran&qutser=$qutser&user=$user';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -3036,7 +3037,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/GC_bill_invoice_history.php?isAdd=true&ren=$ren&user=$user&ciddoc=$ciddoc&docnoin=$docnoin';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       // print(result);
@@ -3089,7 +3090,7 @@ class _DiscountBillState extends State<DiscountBill> {
     String url =
         '${MyConstant().domain}/In_tran_invoice_dis.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser&user=$user&sumdis=$sumdis&sumdisp=$sumdisp&pay_Ser1=$c_payment_Ser';
     try {
-      var response = await http.get(Uri.parse(url));
+      var response = await httpClient.get(Uri.parse(url));
 
       var result = json.decode(response.body);
       print('result>In_tran_invoice_dis>>> $result');

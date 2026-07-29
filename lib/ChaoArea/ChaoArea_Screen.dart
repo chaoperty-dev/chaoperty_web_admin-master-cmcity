@@ -11700,31 +11700,32 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
     //   if (qty == '3') return Colors.purple.shade200;
     //   return Colors.green.shade200;
     // }
-    Color _tileColor(String qty, String? ldate) {
+    Color _tileColor(String qty, String? ldate, bool hasTenant) {
       final baseDateString = ldate ?? DateFormat('yyyy-MM-dd').format(datex);
       final targetDate = DateTime.parse('$baseDateString 00:00:00.000');
 
-      return qty == '1'
-          ? (ldate == null)
-              ? Colors.red.shade200
-              : datex.isAfter(DateTime.parse('${ldate} 00:00:00.000')
-                          .subtract(Duration(days: open_set_date))) ==
-                      true //datex
-                  ? datex.isAfter(DateTime.parse('${ldate} 00:00:00.000')
-                              .subtract(Duration(days: 0))) ==
-                          false
-                      ? Colors.orange.shade200
-                      : Colors.grey.shade200
-                  : Colors.red.shade200
-          : qty == '2'
-              ? Colors.blue.shade200
-              : qty == '3'
-                  ? Colors.purple.shade200
-                  : Colors.green.shade200;
+      // ✅ ถ้ามีคนเช่าจริง (join จาก properties) ให้ถือว่า "เช่าอยู่" แม้ qty จะ null
+      if (hasTenant || qty == '1') {
+        if (ldate == null) return Colors.red.shade200;
+        return datex.isAfter(DateTime.parse('${ldate} 00:00:00.000')
+                    .subtract(Duration(days: open_set_date))) ==
+                true
+            ? datex.isAfter(DateTime.parse('${ldate} 00:00:00.000')
+                        .subtract(Duration(days: 0))) ==
+                    false
+                ? Colors.orange.shade200
+                : Colors.grey.shade200
+            : Colors.red.shade200;
+      }
+      if (qty == '2') return Colors.blue.shade200;
+      if (qty == '3') return Colors.purple.shade200;
+      return Colors.green.shade200;
     }
 
     String _statusText(AreaModel a) {
-      if (a.quantity == '1') {
+      final hasTenant = a.properties.isNotEmpty;
+      if (a.quantity == '1' ||
+          (hasTenant && (a.quantity == null || a.quantity!.isEmpty))) {
         final cc = (a.cc_date != null && a.cc_date != '0000-00-00')
             ? ' ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${a.cc_date} 00:00:00.000'))}'
             : '';
@@ -11738,6 +11739,8 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
       }
       if (a.quantity == '2') return 'เสนอราคา';
       if (a.quantity == '3') return 'เสนอราคา(มัดจำ)';
+      // ✅ ถ้ามี request (มีผู้เช่า) แต่ qty เป็น null → แสดงเป็น "เช่าอยู่"
+      if (hasTenant) return 'เช่าอยู่';
       return 'ว่าง';
     }
 
@@ -11750,8 +11753,11 @@ class _ChaoAreaScreenState extends State<ChaoAreaScreen> {
 
     data_tstatusx = nr?.requestStatus; // ใช้ตัวแปรเดิมที่คุณมี
 
-    final tileColor =
-        _tileColor(areaModels[index].quantity ?? '', areaModels[index].ldate);
+    final tileColor = _tileColor(
+      areaModels[index].quantity ?? '',
+      areaModels[index].ldate,
+      areaModels[index].properties.isNotEmpty,
+    );
     return (_btnKeys.length == 0)
         ? SizedBox()
         : Stack(

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
+import 'package:chaoperty/ChiangMai_Municipality/License_menu/license_contract_page/views/license_contract_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_ip_address/get_ip_address.dart';
@@ -27,6 +28,14 @@ import '../Account/Play_column.dart';
 import '../Beam/Beam_api_check_Pay.dart';
 import '../Bureau_Registration/Bureau_Screen.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
+import '../ChiangMai_Municipality/License_menu/license_announce_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_approve_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_attach_page.dart';
+
+import '../ChiangMai_Municipality/License_menu/license_fact_check_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_payment_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_request_page/views/license_request_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_verify_page.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/chiangMaiBackground2.dart';
@@ -74,6 +83,7 @@ import '../Style/view_pagenow.dart';
 import '../Style/test_print_name.dart';
 import '../Constant/api_cache.dart';
 import '../main.dart';
+import '../support/admin_support.dart';
 import 'Chat_Screen.dart';
 import 'dart:html' as html;
 import '../Model/MasterData_Model.dart';
@@ -3569,6 +3579,74 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       ),
                     ),
                 AdminMenuItem(
+                  title: 'ใบอนุญาต',
+                  // icon: Icons.more_horiz,
+                  icon: IconData(
+                    int.parse(
+                      '0xe44f',
+                    ),
+                    fontFamily: 'MaterialIcons',
+                  ),
+                  children: [
+                    AdminMenuItem(
+                      title: '  ↳ ประกาศ',
+                      route: '/LicenseAnnounce',
+                      // icon: IconData(
+                      //   int.parse('0xe94d'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ ทำสัญญา',
+                      route: '/LicenseContract',
+                      // icon: IconData(
+                      //   int.parse('0xe873'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ แนบหลักฐาน',
+                      route: '/LicenseAttach',
+                      // icon: IconData(
+                      //   int.parse('0xe226'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ รับชำระ',
+                      route: '/LicensePayment',
+                      // icon: IconData(
+                      //   int.parse('0xef63'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ ตรวจสอบหลักฐาน',
+                      route: '/LicenseVerify',
+                      // icon: IconData(
+                      //   int.parse('0xf0c5'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ ตรวจสอบข้อเท็จจริง',
+                      route: '/LicenseFactCheck',
+                      // icon: IconData(
+                      //   int.parse('0xe880'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ อนุมัติคำขอ',
+                      route: '/LicenseApprove',
+                      // icon: IconData(
+                      //   int.parse('0xe94d'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                  ],
+                ),
+                AdminMenuItem(
                   title: '${more_menu}',
                   // icon: Icons.more_horiz,
                   icon: IconData(
@@ -3591,6 +3669,14 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                             fontFamily: 'MaterialIcons',
                           ),
                         ),
+                    AdminMenuItem(
+                      title: 'แอดมินซัพพอร์ต',
+                      route: '/AdminSupport',
+                      icon: IconData(
+                        int.parse('0xe621'), // Admin Panel Settings
+                        fontFamily: 'MaterialIcons',
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -3603,6 +3689,68 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                     preferences.setString('zoneSer', '0');
                     preferences.setString('zonesName', 'ทั้งหมด');
                   });
+                }
+                // ✅ Static menu: แอดมิน#sym:AdminSupport
+                if (item.route == '/AdminSupport') {
+                  if (renTal_user != null) {
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    prefs.setString('route', 'AdminSupport');
+                    setState(() {
+                      Value_Route = 'AdminSupport';
+                      _keybar.currentState?.closeDrawer();
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Translate.TranslateAndSetText(
+                            'กรุณาเลือกสถานที่ของท่านเพื่อเรียกดูข้อมูล',
+                            Colors.black,
+                            TextAlign.center,
+                            FontWeight.bold,
+                            FontWeight_.Fonts_T,
+                            14,
+                            1),
+                      ),
+                    );
+                  }
+                  return;
+                }
+                // ✅ License sub-menu routes
+                const licenseRoutes = {
+                  '/LicenseContract': 'LicenseContract',
+                  '/LicensePayment': 'LicensePayment',
+                  '/LicenseAttach': 'LicenseAttach',
+                  '/LicenseVerify': 'LicenseVerify',
+                  '/LicenseFactCheck': 'LicenseFactCheck',
+                  '/LicenseApprove': 'LicenseApprove',
+                  '/LicenseAnnounce': 'LicenseAnnounce',
+                };
+                if (licenseRoutes.containsKey(item.route)) {
+                  if (renTal_user != null) {
+                    SharedPreferences prefs =
+                        await SharedPreferences.getInstance();
+                    final routeName = licenseRoutes[item.route]!;
+                    prefs.setString('route', routeName);
+                    setState(() {
+                      Value_Route = routeName;
+                      _keybar.currentState?.closeDrawer();
+                    });
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Translate.TranslateAndSetText(
+                            'กรุณาเลือกสถานที่ของท่านเพื่อเรียกดูข้อมูล',
+                            Colors.black,
+                            TextAlign.center,
+                            FontWeight.bold,
+                            FontWeight_.Fonts_T,
+                            14,
+                            1),
+                      ),
+                    );
+                  }
+                  return;
                 }
                 for (int i = 0; i < perMissionModels.length; i++) {
                   if (item.route == '/${perMissionModels[i].perm!.trim()}') {
@@ -4813,37 +4961,61 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       route_getdata: widget.route_getdata ?? "",
                       ser_title: widget.ser_title,
                     )
-                  : (Value_Route == 'RequestExaminer1_CMM')
-                      ? const RequestExaminer1_CMM(
-                          viewver: false,
-                          plugin: false,
+                  : (Value_Route == 'LicenseContract')
+                      ? LicenseRequestPage.create(
+                          routeData: widget.route_getdata,
+                          serTitle: widget.ser_title,
                         )
-                      : (Value_Route == 'RequestExaminer2_CMM')
-                          ? const RequestExaminer2_CMM(
-                              viewver: false,
-                              plugin: false,
-                            )
-                          : (Value_Route == 'SignaturePad_CMM')
-                              ? const SignaturePad_CMM()
-                              : (Value_Route == 'ผู้เช่า')
-                                  ? const PeopleChaoScreen()
-                                  : (Value_Route == 'บัญชี')
-                                      ? const AccountScreen()
-                                      : (Value_Route == 'จัดการ')
-                                          ? const ManageScreen()
-                                          : (Value_Route == 'รายงาน')
-                                              ? ReportScreen()
-                                              : (Value_Route == 'ทะเบียน')
-                                                  ? const BureauScreen()
-                                                  : (Value_Route == 'ตั้งค่า')
-                                                      ? const SettingScreen()
+                      : (Value_Route == 'LicensePayment')
+                          ? const LicensePaymentPage()
+                          : (Value_Route == 'LicenseAttach')
+                              ? const LicenseAttachPage()
+                              : (Value_Route == 'LicenseVerify')
+                                  ? const LicenseVerifyPage()
+                                  : (Value_Route == 'LicenseFactCheck')
+                                      ? const LicenseFactCheckPage()
+                                      : (Value_Route == 'LicenseApprove')
+                                          ? const LicenseApprovePage()
+                                          : (Value_Route == 'LicenseAnnounce')
+                                              ? const LicenseAnnouncePage()
+                                              : (Value_Route ==
+                                                      'RequestExaminer1_CMM')
+                                                  ? const RequestExaminer1_CMM(
+                                                      viewver: false,
+                                                      plugin: false,
+                                                    )
+                                                  : (Value_Route ==
+                                                          'RequestExaminer2_CMM')
+                                                      ? const RequestExaminer2_CMM(
+                                                          viewver: false,
+                                                          plugin: false,
+                                                        )
                                                       : (Value_Route ==
-                                                              'จัดการข้อมูลส่วนตัว')
-                                                          ? ManagePersonalInformation_CMM() //USerInformation()
+                                                              'SignaturePad_CMM')
+                                                          ? const SignaturePad_CMM()
                                                           : (Value_Route ==
-                                                                  'TestPrintNamePage')
-                                                              ? TestPrintNamePage()
-                                                              : const SettingUserScreen(),
+                                                                  'AdminSupport')
+                                                              ? AdminSupport()
+                                                              : (Value_Route ==
+                                                                      'ผู้เช่า')
+                                                                  ? const PeopleChaoScreen()
+                                                                  : (Value_Route ==
+                                                                          'บัญชี')
+                                                                      ? const AccountScreen()
+                                                                      : (Value_Route ==
+                                                                              'จัดการ')
+                                                                          ? const ManageScreen()
+                                                                          : (Value_Route == 'รายงาน')
+                                                                              ? ReportScreen()
+                                                                              : (Value_Route == 'ทะเบียน')
+                                                                                  ? const BureauScreen()
+                                                                                  : (Value_Route == 'ตั้งค่า')
+                                                                                      ? const SettingScreen()
+                                                                                      : (Value_Route == 'จัดการข้อมูลส่วนตัว')
+                                                                                          ? ManagePersonalInformation_CMM() //USerInformation()
+                                                                                          : (Value_Route == 'TestPrintNamePage')
+                                                                                              ? TestPrintNamePage()
+                                                                                              : const SettingUserScreen(),
       // body: (Value_Route == 'หน้าหลัก')
       //     ? const HomeScreen()
       //     : (Value_Route == 'พื้นที่เช่า')
@@ -6051,6 +6223,14 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       fontFamily: 'MaterialIcons',
                     ),
                   ),
+              AdminMenuItem(
+                title: 'แอดมินซัพพอร์ต',
+                route: '/AdminSupport',
+                icon: IconData(
+                  int.parse('0xe621'), // Admin Panel Settings
+                  fontFamily: 'MaterialIcons',
+                ),
+              ),
             ],
           ),
         ],
@@ -6062,6 +6242,31 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
               preferences.setString('zoneSer', '0');
               preferences.setString('zonesName', 'ทั้งหมด');
             });
+          }
+          // ✅ Static menu: แอดมิน#sym:AdminSupport
+          if (item.route == '/AdminSupport') {
+            if (renTal_user != null) {
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              prefs.setString('route', 'AdminSupport');
+              setState(() {
+                Value_Route = 'AdminSupport';
+                Navigator.pop(context);
+              });
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Translate.TranslateAndSetText(
+                      'กรุณาเลือกสถานที่ของท่านเพื่อเรียกดูข้อมูล',
+                      Colors.black,
+                      TextAlign.center,
+                      FontWeight.bold,
+                      FontWeight_.Fonts_T,
+                      14,
+                      1),
+                ),
+              );
+            }
+            return;
           }
           for (int i = 0; i < perMissionModels.length; i++) {
             if (item.route == '/${perMissionModels[i].perm!.trim()}') {
@@ -6313,25 +6518,28 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                             )
                           : (Value_Route == 'SignaturePad_CMM')
                               ? const SignaturePad_CMM()
-                              : (Value_Route == 'ผู้เช่า')
-                                  ? const PeopleChaoScreen()
-                                  : (Value_Route == 'บัญชี')
-                                      ? const AccountScreen()
-                                      : (Value_Route == 'จัดการ')
-                                          ? const ManageScreen()
-                                          : (Value_Route == 'รายงาน')
-                                              ? ReportScreen()
-                                              : (Value_Route == 'ทะเบียน')
-                                                  ? const BureauScreen()
-                                                  : (Value_Route == 'ตั้งค่า')
-                                                      ? const SettingScreen()
+                              : (Value_Route == 'AdminSupport')
+                                  ? AdminSupport()
+                                  : (Value_Route == 'ผู้เช่า')
+                                      ? const PeopleChaoScreen()
+                                      : (Value_Route == 'บัญชี')
+                                          ? const AccountScreen()
+                                          : (Value_Route == 'จัดการ')
+                                              ? const ManageScreen()
+                                              : (Value_Route == 'รายงาน')
+                                                  ? ReportScreen()
+                                                  : (Value_Route == 'ทะเบียน')
+                                                      ? const BureauScreen()
                                                       : (Value_Route ==
-                                                              'จัดการข้อมูลส่วนตัว')
-                                                          ? ManagePersonalInformation_CMM() //USerInformation()
+                                                              'ตั้งค่า')
+                                                          ? const SettingScreen()
                                                           : (Value_Route ==
-                                                                  'TestPrintNamePage')
-                                                              ? TestPrintNamePage()
-                                                              : const SettingUserScreen(),
+                                                                  'จัดการข้อมูลส่วนตัว')
+                                                              ? ManagePersonalInformation_CMM() //USerInformation()
+                                                              : (Value_Route ==
+                                                                      'TestPrintNamePage')
+                                                                  ? TestPrintNamePage()
+                                                                  : const SettingUserScreen(),
       // body: (Value_Route == 'หน้าหลัก')
       //     ? const HomeScreen()
       //     : (Value_Route == 'พื้นที่เช่า')

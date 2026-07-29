@@ -45,6 +45,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
   List<RenTalModel> renTalModels = [];
   List<ZoneModel> zoneModels = [];
   List<ZoneModel> _zoneModels = <ZoneModel>[];
+  bool _isLoadingZone = false; // guard against re-entry for read_GC_zone
   List<AreaModel> limitedList_areaModels = [];
 
   List<AreaModel> areaModels = [];
@@ -91,7 +92,7 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
     super.initState();
     read_GC_rental();
     read_GC_zone();
-    read_GC_area();
+    // read_GC_area();
     read_Area_type();
     read_GC_area_count();
     read_GC_rownum().then((value) => con_row());
@@ -359,56 +360,74 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
 
   //////////////////------------------------------>
   Future<Null> read_GC_zone() async {
-    if (zoneModels.length != 0) {
-      setState(() {
-        zoneModels.clear();
-      });
-    }
-    SharedPreferences preferences = await SharedPreferences.getInstance();
-
-    var ren = preferences.getString('renTalSer');
-
-    String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
+    // Guard against re-entry: skip if a previous call is still in-flight.
+    if (_isLoadingZone) return Future.value();
+    _isLoadingZone = true;
 
     try {
-      var response = await http.get(Uri.parse(url));
+      if (!mounted) return Future.value();
 
-      var result = json.decode(response.body);
-      // //print(result);
-      Map<String, dynamic> map = Map();
-      map['ser'] = '0';
-      map['rser'] = '0';
-      map['zn'] = 'ทั้งหมด';
-      map['qty'] = '0';
-      map['img'] = '0';
-      map['data_update'] = '0';
-
-      ZoneModel zoneModelx = ZoneModel.fromJson(map);
-
-      setState(() {
-        zoneModels.add(zoneModelx);
-      });
-
-      for (var map in result) {
-        ZoneModel zoneModel = ZoneModel.fromJson(map);
+      if (zoneModels.isNotEmpty) {
         setState(() {
-          zoneModels.add(zoneModel);
+          zoneModels.clear();
         });
       }
-      zoneModels.sort((a, b) {
-        if (a.zn == 'ทั้งหมด') {
-          return -1; // 'all' should come before other elements
-        } else if (b.zn == 'ทั้งหมด') {
-          return 1; // 'all' should come after other elements
-        } else {
-          return a.zn!
-              .compareTo(b.zn!); // sort other elements in ascending order
+
+      SharedPreferences preferences = await SharedPreferences.getInstance();
+      var ren = preferences.getString('renTalSer');
+      String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
+
+      var response = await http.get(Uri.parse(url));
+
+      if (!mounted) return Future.value();
+
+      var result = json.decode(response.body);
+
+      // Build list locally, then commit with a single setState (avoids
+      // multiple rebuilds and keeps zoneModels/_zoneModels in sync).
+      List<ZoneModel> newZones = [];
+
+      if (result is List) {
+        for (var map in result) {
+          newZones.add(ZoneModel.fromJson(map));
         }
+      }
+
+      // Sort: 'all' first if present, others ascending.
+      newZones.sort((a, b) {
+        if (a.zn == 'ทั้งหมด') return -1;
+        if (b.zn == 'ทั้งหมด') return 1;
+        return a.zn!.compareTo(b.zn!);
       });
+
+      if (!mounted) return Future.value();
+
       setState(() {
-        _zoneModels = zoneModels;
+        zoneModels = newZones;
+        _zoneModels = newZones;
       });
-    } catch (e) {}
+
+      // Await so the chain (zone -> area) runs sequentially.
+      await setData();
+    } catch (e) {
+      // Preserve silent-fail behavior of original, but log for debugging.
+      debugPrint('read_GC_zone error: $e');
+    } finally {
+      _isLoadingZone = false;
+    }
+  }
+
+  Future<Null> setData() async {
+    if (!mounted) return Future.value();
+    if (_zoneModels.isEmpty) return Future.value();
+
+    setState(() {
+      name_Zone = _zoneModels.first.zn!;
+      Ser_Zone = int.parse(_zoneModels.first.ser.toString());
+    });
+
+    // Await so callers can rely on completion before follow-up UI work.
+    await read_GC_area();
   }
 
   /////////---------------------------------------------------->
@@ -4083,7 +4102,8 @@ class _Advance_AreaSettingState extends State<Advance_AreaSetting> {
                                                       .width *
                                                   0.2,
                                               child: Text(
-                                                'รหัสพื้นที่ ${areaModels[index].lncode} : ชื่อพื้นที่ ${areaModels[index].ln}',
+                                                'ชื่อพื้นที่ ${areaModels[index].lncode} : รหัสพื้นที่ ${areaModels[index].ln}',
+                                                // 'รหัสพื้นที่ ${areaModels[index].lncode} : ชื่อพื้นที่ ${areaModels[index].ln}',
                                                 style: const TextStyle(
                                                   fontSize: 16.0,
                                                   fontWeight: FontWeight.bold,

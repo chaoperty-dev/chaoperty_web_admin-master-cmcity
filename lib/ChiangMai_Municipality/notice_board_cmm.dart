@@ -1142,8 +1142,8 @@ class _NoticeboardCMMState extends State<NoticeboardCMM> {
                                                 crossAxisSpacing: 8,
                                                 mainAxisSpacing: 4,
                                                 childAspectRatio: 7,
-                                                physics:
-                                                    NeverScrollableScrollPhysics(),
+                                                // physics:
+                                                //     NeverScrollableScrollPhysics(),
                                                 children: List.generate(
                                                   zoneModels.length,
                                                   (index) {

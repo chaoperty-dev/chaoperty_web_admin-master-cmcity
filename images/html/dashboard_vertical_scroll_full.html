@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Chaoperty Dashboard Fix</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    /* 1. จุดสำคัญที่สุด: บังคับขนาดตายตัวเพื่อหยุด Warning ใน Console */
+    html, body {
+      width: 100vw !important;
+      height: 100vh !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important; /* ห้าม body scroll เด็ดขาด */
+      background-color: #f8fafc;
+      font-family: 'Inter', -apple-system, sans-serif;
+      /* บังคับใช้ GPU ช่วยเรนเดอร์เพื่อลดอาการค้าง */
+      -webkit-transform: translate3d(0,0,0);
+      transform: translate3d(0,0,0);
+    }
+
+    :root {
+      --primary-purple: #5c469c;
+      --soft-purple: #f3f0ff;
+      --text-main: #1e1b4b;
+      --text-sub: #64748b;
+    }
+
+    * { box-sizing: border-box; }
+
+    /* 2. ให้ Wrapper ตัวนี้ทำหน้าที่ Scroll แทน เพื่อไม่ให้ตีกับ Flutter */
+    .wrapper { 
+      width: 100%; 
+      height: 100%; 
+      overflow-y: auto; 
+      overflow-x: hidden;
+      padding: 15px; 
+      -webkit-overflow-scrolling: touch; /* ลื่นไหลบน iOS */
+    }
+
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .timer-bar { width: 80px; height: 4px; background: #e2e8f0; border-radius: 2px; margin-top: 4px; overflow: hidden; }
+    .timer-progress { width: 0%; height: 100%; background: var(--primary-purple); transition: width 0.1s linear; }
+
+    /* Stats & Cards */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat-card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(92, 70, 156, 0.05); border: 1px solid #f1f5f9; }
+    .stat-label { color: var(--text-sub); font-size: 12px; font-weight: 500; }
+    .stat-value { font-size: 24px; font-weight: 800; margin-top: 4px; color: var(--primary-purple); }
+    .featured { background: var(--primary-purple); color: white; border: none; }
+    .featured .stat-label { color: rgba(255,255,255,0.8); }
+    .featured .stat-value { color: white; }
+
+    /* Chart Layout */
+    .grid-charts { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 15px; }
+    .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid #f1f5f9; }
+    h3 { margin: 0 0 12px 0; font-size: 14px; font-weight: 700; border-left: 4px solid var(--primary-purple); padding-left: 10px; }
+    .chart-wrap { position: relative; height: 220px; width: 100%; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 8px; color: var(--text-sub); font-size: 11px; border-bottom: 2px solid #f3f0ff; }
+    td { padding: 10px 8px; border-bottom: 1px solid #f3f0ff; font-size: 12px; }
+    .tag { padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; }
+    .ok { background: #dcfce7; color: #166534; }
+    .empty { background: #fee2e2; color: #991b1b; }
+    .list-item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #f3f0ff; font-size: 12px; }
+  </style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="header">
+    <h2 style="margin:0; font-size:18px; color:var(--primary-purple);">Operations Dashboard</h2>
+    <div style="text-align: right;">
+      <div style="font-size: 11px; font-weight: 600; color: #22c55e;">Live อัปเดต: <span id="lastUpdated" style="color:var(--text-main);">--:--:--</span></div>
+      <div class="timer-bar"><div class="timer-progress" id="js-progress"></div></div>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-label">คำขอวันนี้</div><div class="stat-value" id="countToday">0</div></div>
+    <div class="stat-card"><div class="stat-label">คำขอทั้งหมด</div><div class="stat-value" id="totalRequest">0</div></div>
+    <div class="stat-card"><div class="stat-label">ไฟล์ทั้งหมด</div><div class="stat-value" id="totalFiles">0</div></div>
+    <div class="stat-card featured"><div class="stat-label">ขนาดไฟล์รวม</div><div class="stat-value" id="totalSize">0 MB</div></div>
+  </div>
+
+  <div class="grid-charts">
+    <div class="card">
+      <h3>สถิติรายประเภท</h3>
+      <div class="chart-wrap"><canvas id="barChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>สัดส่วนเอกสาร</h3>
+      <div class="chart-wrap"><canvas id="pieChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:15px;">
+    <h3>สถานะข้อมูลเอกสาร</h3>
+    <table>
+      <thead><tr><th>ประเภทเอกสาร</th><th>จำนวน</th><th>สถานะ</th></tr></thead>
+      <tbody id="docTableBody"></tbody>
+    </table>
+  </div>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+    <div class="card"><h3>กิจกรรมล่าสุด</h3><div id="activityList"></div></div>
+    <div class="card"><h3>ความหนาแน่นโซน</h3><div id="zoneList"></div></div>
+  </div>
+</div>
+
+<script>
+const API_URL = "https://cmcity-d-api.chaoperties.com/api/dashboard/summary";
+let charts = {};
+let progress = 0;
+
+function startTimer() {
+  progress = 0;
+  const interval = 100;
+  const step = (interval / 5000) * 100;
+  const timer = setInterval(() => {
+    progress += step;
+    const el = document.getElementById('js-progress');
+    if(el) el.style.width = Math.min(progress, 100) + '%';
+    if (progress >= 100) {
+      clearInterval(timer);
+      updateDashboard();
+    }
+  }, interval);
+}
+
+async function updateDashboard() {
+  try {
+    const res = await fetch(API_URL);
+    if (!res.ok) throw new Error();
+    const result = await res.json();
+    const data = result.data;
+
+    document.getElementById('countToday').innerText = data.requests.count_by_today;
+    document.getElementById('totalRequest').innerText = data.requests.total_request;
+    document.getElementById('totalFiles').innerText = data.documents.total_files;
+    document.getElementById('totalSize').innerText = data.documents.total_size_mb + " MB";
+    document.getElementById('lastUpdated').innerText = new Date().toLocaleTimeString('th-TH');
+
+    const docs = Object.entries(data.documents.count_by_client_document_id).sort((a,b) => b[1]-a[1]);
+    document.getElementById('docTableBody').innerHTML = docs.slice(0, 5).map(([name, count]) => `
+      <tr><td>${name}</td><td><strong>${count}</strong></td><td><span class="tag ${count > 0 ? 'ok' : 'empty'}">${count > 0 ? 'Active' : 'N/A'}</span></td></tr>
+    `).join('');
+
+    document.getElementById('activityList').innerHTML = data.latest_activity.slice(0, 3).map(a => `
+      <div class="list-item">
+        <span><strong>${a.create_by || 'Admin'}</strong><br><small>${a.type}</small></span>
+        <span style="color:var(--text-sub)">${a.timestamp.split(' ')[1]}</span>
+      </div>
+    `).join('');
+
+    const zones = data.announcements.zone_with_area_total;
+    const zReq = data.announcements.zone_reqeust || {};
+    document.getElementById('zoneList').innerHTML = Object.entries(zones).slice(0, 3).map(([name, total]) => {
+      const pct = total > 0 ? (((zReq[name]||0)/total)*100).toFixed(0) : 0;
+      return `<div class="list-item"><span>${name}</span><strong>${pct}%</strong></div>`;
+    }).join('');
+
+    // อัปเดตกราฟแบบ Smart Update (ไม่ลบกราฟเดิม)
+    renderCharts(docs);
+    startTimer();
+  } catch (e) {
+    console.error("Fetch Error:", e);
+    setTimeout(updateDashboard, 5000);
+  }
+}
+
+function renderCharts(docs) {
+  const labels = docs.slice(0, 6).map(d => d[0]);
+  const values = docs.slice(0, 6).map(d => d[1]);
+  const colors = ['#5c469c', '#7d64c2', '#a084dc', '#d1b3ff', '#b197fc', '#e0e7ff'];
+
+  updateOrCreateChart('barChart', 'bar', labels, values, colors, { plugins:{legend:{display:false}}, scales:{x:{display:false}} });
+  updateOrCreateChart('pieChart', 'doughnut', labels.slice(0,4), values.slice(0,4), colors, { cutout:'70%' });
+}
+
+function updateOrCreateChart(id, type, labels, data, colors, options) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  
+  if (charts[id]) {
+    charts[id].data.labels = labels;
+    charts[id].data.datasets[0].data = data;
+    charts[id].update('none'); // อัปเดตข้อมูลโดยไม่มีอนิเมชั่นเพื่อประหยัดทรัพยากร
+  } else {
+    charts[id] = new Chart(ctx, {
+      type: type,
+      data: { labels: labels, datasets: [{ data: data, backgroundColor: colors, borderRadius: 5 }] },
+      options: { maintainAspectRatio: false, responsive: true, ...options }
+    });
+  }
+}
+
+updateDashboard();
+</script>
+</body>
+</html>
