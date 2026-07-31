@@ -49,9 +49,9 @@ class MyConstant {
   // String domain_v2 = 'https://apis.chaoperties.com/api/v2';R
   // String domain_v3 = 'https://apis.chaoperties.com';
 
-  String domain_v1 = 'https://cmcity-api.chaoperties.com/api/v1';
-  String domain_v2 = 'https://cmcity-api.chaoperties.com/api/v2';
-  String domain_v3 = 'https://cmcity-api.chaoperties.com';
+  String domain_v1 = 'https://cmcity-test-api.chaoperties.com/api/v1';
+  String domain_v2 = 'https://cmcity-test-api.chaoperties.com/api/v2';
+  String domain_v3 = 'https://cmcity-test-api.chaoperties.com';
 
   // List<String> Authorizations = [
   //   'Bearer 3|7HeaY2A8EqAveID7fpx5i4nevJfzmZrAnb2QxDyX1a724c5a',

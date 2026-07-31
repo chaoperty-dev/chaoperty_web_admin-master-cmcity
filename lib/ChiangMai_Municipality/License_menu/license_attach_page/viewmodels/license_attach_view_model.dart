@@ -248,13 +248,13 @@ class LicenseAttachViewModel extends ChangeNotifier {
   // ===============================================================
   /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
 
-  /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → นำทาง
+  /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
   void onViewRequest(ReviewModel model) {
     final uuid = model.newRequest?.requestUuid?.toString() ??
         model.uuid?.toString() ??
         '';
     _eventController.add(
-      LicenseAttachNavigateEvent('ใบอนุญาต', routeData: uuid),
+      LicenseAttachNavigateEvent('แนบหลักฐาน', routeData: uuid),
     );
   }
 

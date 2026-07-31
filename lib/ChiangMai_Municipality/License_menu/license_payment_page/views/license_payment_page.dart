@@ -26,6 +26,7 @@ import 'widgets/license_payment_pagination.dart';
 import 'widgets/license_payment_search_bar.dart';
 import 'widgets/license_payment_table.dart';
 import 'widgets/license_payment_zone_filter.dart';
+import 'license_payment_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -40,7 +41,7 @@ class LicensePaymentPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'อนุมัติคำขอ',
+    String title = 'การรับชำระ',
     ValueChanged<LicenseContractResult>? onSave,
     LicensePaymentConfig? config,
   }) {
@@ -113,14 +114,16 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
           ),
         );
         break;
-      case LicensePaymentNavigateEvent(:final route, :final routeData):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LaRadius.md),
+      case LicensePaymentNavigateEvent(:final routeData):
+        // เปิด full-page detail route (เต็มจอ)
+        final title = context.read<LicensePaymentViewModel>().title;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicensePaymentDetailPage.create(
+              routeData: routeData,
+              title: title,
             ),
+            fullscreenDialog: true,
           ),
         );
         break;
@@ -145,7 +148,8 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
           children: [
             LicensePaymentHeader(
               title: vm.title,
-              subtitle: 'รับชำระค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกการชำระเงิน',
+              subtitle:
+                  'รับชำระค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกการชำระเงิน',
               totalCount: vm.total,
             ),
             const SizedBox(height: LaSpace.lg),
@@ -184,7 +188,7 @@ class LicensePaymentHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'อนุมัติคำขอ',
+    this.title = 'การรับชำระ',
     this.onSave,
   });
 

@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:chaoperty/ChiangMai_Municipality/License_menu/license_contract_page/views/license_contract_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Tenant_menu/tenant_license_page/views/tenant_license_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get_ip_address/get_ip_address.dart';
@@ -26,7 +27,7 @@ import 'dart:math' as math;
 import '../Account/Ac_Sub/Account_Screen.dart';
 import '../Account/Play_column.dart';
 import '../Beam/Beam_api_check_Pay.dart';
-import '../Bureau_Registration/Bureau_Screen.dart';
+import '../ChiangMai_Municipality/Registration_menu/registration_page/views/registration_page.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
 import '../ChiangMai_Municipality/License_menu/license_announce_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
@@ -46,7 +47,7 @@ import '../ChiangMai_Municipality/request_examiner2_cmm.dart';
 import '../ChiangMai_Municipality/unity/API_admin_signature.dart';
 import '../ChiangMai_Municipality/unity/SecurePrefs_helper.dart';
 import '../Constant/Myconstant.dart';
-import '../Bureau_Registration/Customer_Screen.dart';
+// Customer_Screen ถูกย้ายไปอยู่ใน Registration_menu (internal use only)
 import '../Home/Home2.dart';
 import '../Home/Home_Screen.dart';
 import '../Home/dashboardHtml.dart';
@@ -2274,6 +2275,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                   backgroundImage: NetworkImage(
                                       '${MyConstant().domain}/files/$foder/logo/$img_logo'),
                                   backgroundColor: Colors.transparent,
+                                  onBackgroundImageError: (_, __) {},
                                 ),
                                 onTap: () {
                                   if (img_logo == null ||
@@ -4966,15 +4968,15 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                           serTitle: widget.ser_title,
                         )
                       : (Value_Route == 'LicensePayment')
-                          ? const LicensePaymentPage()
+                          ? LicensePaymentPage.create()
                           : (Value_Route == 'LicenseAttach')
-                              ? const LicenseAttachPage()
+                              ? LicenseAttachPage.create()
                               : (Value_Route == 'LicenseVerify')
-                                  ? const LicenseVerifyPage()
+                                  ? LicenseverifyPage.create()
                                   : (Value_Route == 'LicenseFactCheck')
-                                      ? const LicenseFactCheckPage()
+                                      ? LicensefactcheckPage.create()
                                       : (Value_Route == 'LicenseApprove')
-                                          ? const LicenseApprovePage()
+                                          ? LicenseApprovePage.create()
                                           : (Value_Route == 'LicenseAnnounce')
                                               ? const LicenseAnnouncePage()
                                               : (Value_Route ==
@@ -4997,7 +4999,9 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                               ? AdminSupport()
                                                               : (Value_Route ==
                                                                       'ผู้เช่า')
-                                                                  ? const PeopleChaoScreen()
+                                                                  ? TenantLicensePage
+                                                                      .create()
+                                                                  // const PeopleChaoScreen()
                                                                   : (Value_Route ==
                                                                           'บัญชี')
                                                                       ? const AccountScreen()
@@ -5007,7 +5011,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                                           : (Value_Route == 'รายงาน')
                                                                               ? ReportScreen()
                                                                               : (Value_Route == 'ทะเบียน')
-                                                                                  ? const BureauScreen()
+                                                                                  ? RegistrationPage.create()
                                                                                   : (Value_Route == 'ตั้งค่า')
                                                                                       ? const SettingScreen()
                                                                                       : (Value_Route == 'จัดการข้อมูลส่วนตัว')
@@ -5125,6 +5129,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                   backgroundImage: NetworkImage(
                                       '${MyConstant().domain}/files/$foder/logo/$img_logo'),
                                   backgroundColor: Colors.transparent,
+                                  onBackgroundImageError: (_, __) {},
                                 ),
                                 onTap: () {
                                   if (img_logo == null ||
@@ -6609,7 +6614,8 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                               : (Value_Route == 'รายงาน')
                                                   ? ReportScreen()
                                                   : (Value_Route == 'ทะเบียน')
-                                                      ? const BureauScreen()
+                                                      ? RegistrationPage
+                                                          .create()
                                                       : (Value_Route ==
                                                               'ตั้งค่า')
                                                           ? const SettingScreen()

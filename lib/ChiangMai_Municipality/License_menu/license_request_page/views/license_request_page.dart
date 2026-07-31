@@ -27,6 +27,7 @@ import 'widgets/license_request_pagination.dart';
 import 'widgets/license_request_search_bar.dart';
 import 'widgets/license_request_table.dart';
 import 'widgets/license_request_zone_filter.dart';
+import 'license_request_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -117,14 +118,16 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
       case LicenseRequestOpenCreatePopupEvent():
         _openCreatePopup();
         break;
-      case LicenseRequestNavigateEvent(:final route, :final routeData):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LrRadius.md),
+      case LicenseRequestNavigateEvent(:final routeData):
+        // เปิด full-page detail route (เต็มจอ)
+        final title = context.read<LicenseRequestViewModel>().title;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicenseRequestDetailPage.create(
+              routeData: routeData,
+              title: title,
             ),
+            fullscreenDialog: true,
           ),
         );
         break;

@@ -26,6 +26,7 @@ import 'widgets/license_attach_pagination.dart';
 import 'widgets/license_attach_search_bar.dart';
 import 'widgets/license_attach_table.dart';
 import 'widgets/license_attach_zone_filter.dart';
+import 'license_attach_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -40,7 +41,7 @@ class LicenseAttachPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'อนุมัติคำขอ',
+    String title = 'แนบหลักฐาน',
     ValueChanged<LicenseContractResult>? onSave,
     LicenseAttachConfig? config,
   }) {
@@ -84,8 +85,7 @@ class _LicenseAttachPageBody extends StatefulWidget {
   });
 
   @override
-  State<_LicenseAttachPageBody> createState() =>
-      _LicenseAttachPageBodyState();
+  State<_LicenseAttachPageBody> createState() => _LicenseAttachPageBodyState();
 }
 
 class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
@@ -113,14 +113,16 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
           ),
         );
         break;
-      case LicenseAttachNavigateEvent(:final route, :final routeData):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LaRadius.md),
+      case LicenseAttachNavigateEvent(:final routeData):
+        // เปิด full-page detail route (เต็มจอ)
+        final title = context.read<LicenseAttachViewModel>().title;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicenseAttachDetailPage.create(
+              routeData: routeData,
+              title: title,
             ),
+            fullscreenDialog: true,
           ),
         );
         break;
@@ -184,7 +186,7 @@ class LicenseAttachHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'อนุมัติคำขอ',
+    this.title = 'แนบหลักฐาน',
     this.onSave,
   });
 

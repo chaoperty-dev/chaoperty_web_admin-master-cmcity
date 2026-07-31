@@ -15,7 +15,9 @@ import '../../../../Constant/api_cache.dart';
 import '../../../../Model/GetArea_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
+import '../../../Model/AnnouncementZone_Model.dart';
 import '../../../Model/Properties_Model.dart';
+import '../../../unity/API_announcement.dart';
 import '../../../unity/API_properties.dart';
 
 class LicenseContractService {
@@ -191,6 +193,61 @@ class LicenseContractService {
         '🔸 fetchAreas zone="$zone" count=${areas.length} properties=${properties.length} '
         'occupied=${areas.where((a) => a.properties.isNotEmpty).length}');
     return areas;
+  }
+
+  // ---------- Announcement ----------
+  /// โหลดประกาศของโซนที่เลือกจาก `/admin/announcement/getzone?zoneid=$zoneSer`
+  /// คืนค่า AnnouncementZone ตัวแรก (ถ้ามี) พร้อม message จาก response
+  Future<({AnnouncementZone? zone, String? message})> fetchAnnouncement({
+    required String zoneSer,
+  }) async {
+    if (zoneSer.isEmpty || zoneSer == '0') {
+      return (zone: null, message: null);
+    }
+
+    final cacheKey = 'license_contract_announcement_$zoneSer';
+    if (_cache.isValid(cacheKey)) {
+      final cached = _cache.get(cacheKey);
+      if (cached is Map<String, dynamic>) {
+        return (
+          zone: AnnouncementZone.fromJson(cached),
+          message: cached['_message'] as String?,
+        );
+      }
+    }
+
+    try {
+      final response = await read_AnnounceMent_Getzone(zoneid: zoneSer);
+      if (response == null || response.statusCode != 200) {
+        return (zone: null, message: null);
+      }
+
+      final result = json.decode(response.body);
+      final data = result['data'];
+      final message = result['message']?.toString();
+
+      if (data == null) {
+        return (zone: null, message: message);
+      }
+
+      AnnouncementZone? zone;
+      if (data is List && data.isNotEmpty) {
+        zone = AnnouncementZone.fromJson(data.first as Map<String, dynamic>);
+      } else if (data is Map) {
+        zone = AnnouncementZone.fromJson(Map<String, dynamic>.from(data));
+      }
+
+      if (zone != null) {
+        final cacheMap = zone.toJson();
+        cacheMap['_message'] = message;
+        _cache.set(cacheKey, cacheMap);
+      }
+
+      return (zone: zone, message: message);
+    } catch (e) {
+      print('LicenseContractService.fetchAnnouncement error: $e');
+      return (zone: null, message: null);
+    }
   }
 
   // ---------- Helpers ----------

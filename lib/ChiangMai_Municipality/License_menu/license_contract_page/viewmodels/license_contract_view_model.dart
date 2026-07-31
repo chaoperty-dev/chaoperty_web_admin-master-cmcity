@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import '../../../../Model/GetArea_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
+import '../../../Model/AnnouncementZone_Model.dart';
 import '../../../Model/Person&Shop_Model.dart';
 import '../models/license_contract_config.dart';
 import '../models/license_contract_event.dart';
@@ -58,10 +59,19 @@ class LicenseContractViewModel extends ChangeNotifier {
   List<SubZoneModel> _subzoneModels = [];
   List<AreaModel> _zoneAreas = []; // ทุกล็อกทั้งหมด (รวมที่มี/ไม่มีคนเช่า)
 
+  // ---------- Announcement ----------
+  AnnouncementZone? _announcementZone;
+  String? _announcementMessage;
+
   // ---------- Public getters ----------
   bool get readOnly => _config.readOnly;
   String get title => _config.title;
-  String? get announcementMessage => _config.announcementMessage;
+  String? get announcementMessage =>
+      _announcementMessage ?? _config.announcementMessage;
+  String? get announcementUuid => _announcementZone?.uuid;
+  String? get computedStatus => _announcementZone?.computedStatus;
+  String? get cDateStart => _announcementZone?.cDateStart;
+  String? get cDateEnd => _announcementZone?.cDateEnd;
 
   // ---------- Page (Step) ----------
   int _currentPage = 1; // 1 = form, 2 = placeholder
@@ -323,9 +333,35 @@ class LicenseContractViewModel extends ChangeNotifier {
     // ถ้าเลือก "ทั้งหมด" → โหลดทุกล็อก
     if (zoneSer == '0' || zoneSer == null) {
       await loadAreas(null);
+      await _loadAnnouncement(null);
     } else {
       await loadAreas(zoneSer);
+      await _loadAnnouncement(zoneSer);
     }
+  }
+
+  /// โหลดประกาศของโซนที่เลือกจาก API
+  Future<void> _loadAnnouncement(String? zoneSer) async {
+    final result = await _service.fetchAnnouncement(
+      zoneSer: zoneSer ?? '',
+    );
+
+    _announcementZone = result.zone;
+    _announcementMessage = result.message;
+
+    // ถ้ามี c_date_start / c_date_end จากประกาศ → อัปเดต CID date fields
+    if (_announcementZone != null) {
+      final startIdx = _findCidIndex('1');
+      final endIdx = _findCidIndex('2');
+      if (startIdx >= 0 && _announcementZone!.cDateStart != null) {
+        _dataCid[startIdx]['detail'] = _announcementZone!.cDateStart!;
+      }
+      if (endIdx >= 0 && _announcementZone!.cDateEnd != null) {
+        _dataCid[endIdx]['detail'] = _announcementZone!.cDateEnd!;
+      }
+    }
+
+    notifyListeners();
   }
 
   /// ผู้ใช้เลือก "รหัสพื้นที่" (AreaModel)

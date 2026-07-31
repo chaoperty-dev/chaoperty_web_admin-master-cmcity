@@ -13,6 +13,8 @@ class LicenseContractConfig {
   final List<String>? initialShopValues;
   final List<String>? initialShopSubValues;
   final List<Map<String, dynamic>>? initialCidValues;
+
+  /// ข้อความประกาศเริ่มต้น (fallback) — ถ้า null จะดึงจาก API อัตโนมัติ
   final String? announcementMessage;
   final String title;
 

@@ -26,6 +26,7 @@ import 'widgets/license_verify_pagination.dart';
 import 'widgets/license_verify_search_bar.dart';
 import 'widgets/license_verify_table.dart';
 import 'widgets/license_verify_zone_filter.dart';
+import 'license_verify_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -40,7 +41,7 @@ class LicenseverifyPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'อนุมัติคำขอ',
+    String title = 'ตรวจสอบหลักฐาน',
     ValueChanged<LicenseContractResult>? onSave,
     LicenseverifyConfig? config,
   }) {
@@ -84,8 +85,7 @@ class _LicenseverifyPageBody extends StatefulWidget {
   });
 
   @override
-  State<_LicenseverifyPageBody> createState() =>
-      _LicenseverifyPageBodyState();
+  State<_LicenseverifyPageBody> createState() => _LicenseverifyPageBodyState();
 }
 
 class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
@@ -100,6 +100,7 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
 
   void _onEvent(LicenseverifyEvent event) {
     if (!mounted) return;
+    final title = context.read<LicenseverifyViewModel>().title;
     switch (event) {
       case LicenseverifyErrorEvent(:final message):
         ScaffoldMessenger.of(context).showSnackBar(
@@ -113,14 +114,15 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
           ),
         );
         break;
-      case LicenseverifyNavigateEvent(:final route, :final routeData):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LaRadius.md),
+      case LicenseverifyNavigateEvent(:final routeData):
+        // เปิด full-page detail route (เต็มจอ)
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicenseverifyDetailPage.create(
+              routeData: routeData,
+              title: title,
             ),
+            fullscreenDialog: true,
           ),
         );
         break;
@@ -145,7 +147,8 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
           children: [
             LicenseverifyHeader(
               title: vm.title,
-              subtitle: 'ตรวจสอบหลักฐานใบอนุญาต — ตรวจสอบความถูกต้องก่อนอนุมัติ',
+              subtitle:
+                  'ตรวจสอบหลักฐานใบอนุญาต — ตรวจสอบความถูกต้องก่อนอนุมัติ',
               totalCount: vm.total,
             ),
             const SizedBox(height: LaSpace.lg),

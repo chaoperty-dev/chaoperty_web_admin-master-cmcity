@@ -26,6 +26,7 @@ import 'widgets/license_fact_check_pagination.dart';
 import 'widgets/license_fact_check_search_bar.dart';
 import 'widgets/license_fact_check_table.dart';
 import 'widgets/license_fact_check_zone_filter.dart';
+import 'license_fact_check_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -40,7 +41,7 @@ class LicensefactcheckPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'อนุมัติคำขอ',
+    String title = 'ตรวจสอบข้อเท็จจริง',
     ValueChanged<LicenseContractResult>? onSave,
     LicensefactcheckConfig? config,
   }) {
@@ -113,14 +114,16 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
           ),
         );
         break;
-      case LicensefactcheckNavigateEvent(:final route, :final routeData):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LaRadius.md),
+      case LicensefactcheckNavigateEvent(:final routeData):
+        // เปิด full-page detail route (เต็มจอ)
+        final title = context.read<LicensefactcheckViewModel>().title;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicensefactcheckDetailPage.create(
+              routeData: routeData,
+              title: title,
             ),
+            fullscreenDialog: true,
           ),
         );
         break;
@@ -145,7 +148,8 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
           children: [
             LicensefactcheckHeader(
               title: vm.title,
-              subtitle: 'ตรวจสอบข้อเท็จจริงใบอนุญาต — ยืนยันข้อมูลก่อนอนุมัติขั้นสุดท้าย',
+              subtitle:
+                  'ตรวจสอบข้อเท็จจริงใบอนุญาต — ยืนยันข้อมูลก่อนอนุมัติขั้นสุดท้าย',
               totalCount: vm.total,
             ),
             const SizedBox(height: LaSpace.lg),
@@ -184,7 +188,7 @@ class LicensefactcheckHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'อนุมัติคำขอ',
+    this.title = 'ตรวจสอบข้อเท็จจริง',
     this.onSave,
   });
 

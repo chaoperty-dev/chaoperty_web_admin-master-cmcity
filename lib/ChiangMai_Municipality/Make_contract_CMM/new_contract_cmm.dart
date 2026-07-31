@@ -1785,7 +1785,7 @@ class _Newcontract_cmmState extends State<Newcontract_cmm> {
                                                           child: ListTile(
                                                             contentPadding:
                                                                 const EdgeInsets
-                                                                    .symmetric(
+                                                                        .symmetric(
                                                                     horizontal:
                                                                         8,
                                                                     vertical:
@@ -1839,7 +1839,7 @@ class _Newcontract_cmmState extends State<Newcontract_cmm> {
                                                             subtitle: Padding(
                                                               padding:
                                                                   const EdgeInsets
-                                                                      .only(
+                                                                          .only(
                                                                       top: 4),
                                                               child: Text(
                                                                 hasAnnouncement
@@ -5650,8 +5650,7 @@ class _Newcontract_cmmState extends State<Newcontract_cmm> {
                                                                 children: [
                                                                   Container(
                                                                     padding:
-                                                                        const EdgeInsets
-                                                                            .all(
+                                                                        const EdgeInsets.all(
                                                                             8.0),
                                                                     child:
                                                                         AutoSizeText(
@@ -5686,7 +5685,7 @@ class _Newcontract_cmmState extends State<Newcontract_cmm> {
                                                               child: Padding(
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .all(
+                                                                            .all(
                                                                         8.0),
                                                                 child:
                                                                     AutoSizeText(
@@ -5723,7 +5722,7 @@ class _Newcontract_cmmState extends State<Newcontract_cmm> {
                                                               child: Padding(
                                                                 padding:
                                                                     const EdgeInsets
-                                                                        .all(
+                                                                            .all(
                                                                         8.0),
                                                                 child:
                                                                     AutoSizeText(
@@ -6540,9 +6539,8 @@ class _Newcontract_cmmState extends State<Newcontract_cmm> {
                                                                               .contain,
                                                                         ),
                                                                         Padding(
-                                                                          padding: const EdgeInsets
-                                                                              .all(
-                                                                              8.0),
+                                                                          padding:
+                                                                              const EdgeInsets.all(8.0),
                                                                           child:
                                                                               TextButton(
                                                                             onPressed: () =>

@@ -72,7 +72,7 @@ class LicensePaymentHeader extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'LICENSE PAYMENT',
+                  'LICENSE PAYMENT ACCEPTANCE',
                   style: LaText.label.copyWith(
                     color: LaColors.primaryAccent.withOpacity(.9),
                     letterSpacing: 1.6,

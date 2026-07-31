@@ -26,6 +26,7 @@ import 'widgets/license_approve_pagination.dart';
 import 'widgets/license_approve_search_bar.dart';
 import 'widgets/license_approve_table.dart';
 import 'widgets/license_approve_zone_filter.dart';
+import 'license_approve_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -113,14 +114,16 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
           ),
         );
         break;
-      case LicenseApproveNavigateEvent(:final route, :final routeData):
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(LaRadius.md),
+      case LicenseApproveNavigateEvent(:final routeData):
+        // เปิด full-page detail route (เต็มจอ)
+        final title = context.read<LicenseApproveViewModel>().title;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicenseApproveDetailPage.create(
+              routeData: routeData,
+              title: title,
             ),
+            fullscreenDialog: true,
           ),
         );
         break;
