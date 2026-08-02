@@ -30,7 +30,7 @@ class LicenseAttachDetailPage extends StatefulWidget {
     String title = 'แนบหลักฐาน',
   }) {
     return ChangeNotifierProvider<LicenseAttachDetailViewModel>(
-      create: (_) => LicenseAttachDetailViewModel(),
+      create: (_) => LicenseAttachDetailViewModel(requestUuid: routeData),
       child: _LicenseAttachDetailPageBody(
         title: title,
         routeData: routeData,
@@ -96,7 +96,7 @@ class _LicenseAttachDetailPageBodyState
             ),
             Expanded(
               child: step == 1
-                  ? const AttachDetailStep1()
+                  ? AttachDetailStep1(requestUuid: vm.requestUuid)
                   : const AttachDetailStep2(),
             ),
             AttachDetailFooter(

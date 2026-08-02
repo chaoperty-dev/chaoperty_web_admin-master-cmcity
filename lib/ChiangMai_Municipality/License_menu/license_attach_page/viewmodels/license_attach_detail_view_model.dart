@@ -12,6 +12,11 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
   ///   2 = สรุปการแนบเอกสาร (Step 2)
   static const int detailTotalSteps = 2;
 
+  LicenseAttachDetailViewModel({this.requestUuid});
+
+  /// UUID ของ request (ส่งต่อมาจาก routeData ของหน้า list)
+  final String? requestUuid;
+
   int _currentDetailStep = 1;
   int get currentDetailStep => _currentDetailStep;
   int get totalDetailSteps => detailTotalSteps;
