@@ -25,6 +25,7 @@ class CustomerModel {
   String? fax;
   String? email;
   String? lineid;
+  String? lineRegisUrl; // line_regis_url จาก regis_data[0]
   String? lastday;
   String? status;
   dynamic st;
@@ -80,6 +81,7 @@ class CustomerModel {
     this.fax,
     this.email,
     this.lineid,
+    this.lineRegisUrl,
     this.lastday,
     this.status,
     this.st,
@@ -191,14 +193,15 @@ class CustomerModel {
       cname: _asString(json['cname']),
       branch: _asString(json['branch']),
       attn: _asString(json['attn']),
-      addr1: _asString(json['addr_1']),
-      addr2: _asString(json['addr_2']),
+      addr1: _asString(json['addr1'] ?? json['addr_1']),
+      addr2: _asString(json['addr2'] ?? json['addr_2']),
       zip: _asString(json['zip']),
       tel: _asString(json['tel']),
       tax: _asString(json['tax']),
       fax: _asString(json['fax']),
       email: _asString(json['email']),
       lineid: _asString(json['lineid']),
+      lineRegisUrl: _asString(json['line_regis_url']),
       lastday: _asString(json['lastday']),
       status: _asString(json['status']),
       st: json['st'],

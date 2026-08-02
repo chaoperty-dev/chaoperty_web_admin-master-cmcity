@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'dart:ui';
 import 'package:chaoperty/ChiangMai_Municipality/License_menu/license_contract_page/views/license_contract_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Personal_information_menu/personal_information_page/views/personal_information_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/views/setting_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/Tenant_menu/tenant_license_page/views/tenant_license_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import 'package:flutter/foundation.dart';
@@ -41,6 +43,7 @@ import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/chiangMaiBackground2.dart';
 import '../ChiangMai_Municipality/cignaturepad_cmm.dart';
 import '../ChiangMai_Municipality/manage_personalInformation_cmm.dart';
+import '../ChiangMai_Municipality/Personal_information_menu/personal_information_page/views/personal_information_page.dart';
 import '../ChiangMai_Municipality/request_contract_cmm.dart';
 import '../ChiangMai_Municipality/request_examiner1_cmm.dart';
 import '../ChiangMai_Municipality/request_examiner2_cmm.dart';
@@ -5013,9 +5016,9 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                                               : (Value_Route == 'ทะเบียน')
                                                                                   ? RegistrationPage.create()
                                                                                   : (Value_Route == 'ตั้งค่า')
-                                                                                      ? const SettingScreen()
+                                                                                      ? const SettingPage()
                                                                                       : (Value_Route == 'จัดการข้อมูลส่วนตัว')
-                                                                                          ? ManagePersonalInformation_CMM() //USerInformation()
+                                                                                          ? ManagePersonalInformationPage.create() //USerInformation()
                                                                                           : (Value_Route == 'TestPrintNamePage')
                                                                                               ? TestPrintNamePage()
                                                                                               : const SettingUserScreen(),
@@ -6621,7 +6624,8 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                                           ? const SettingScreen()
                                                           : (Value_Route ==
                                                                   'จัดการข้อมูลส่วนตัว')
-                                                              ? ManagePersonalInformation_CMM() //USerInformation()
+                                                              ? ManagePersonalInformationPage
+                                                                  .create() //USerInformation()
                                                               : (Value_Route ==
                                                                       'TestPrintNamePage')
                                                                   ? TestPrintNamePage()

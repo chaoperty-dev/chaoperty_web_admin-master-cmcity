@@ -72,6 +72,19 @@ class _LicensefactcheckDetailPageBody extends StatefulWidget {
 class _LicensefactcheckDetailPageBodyState
     extends State<_LicensefactcheckDetailPageBody> {
   @override
+  void initState() {
+    super.initState();
+    // โหลดข้อมูลคำขอจาก uuid ที่ส่งมา (routeData) หลัง frame แรก
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final uuid = widget.routeData ?? '';
+      if (uuid.isNotEmpty) {
+        context.read<LicensefactcheckDetailViewModel>().loadByUuid(uuid);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = context.watch<LicensefactcheckDetailViewModel>();
     final step = vm.currentDetailStep;
