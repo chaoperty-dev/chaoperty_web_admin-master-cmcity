@@ -7,6 +7,8 @@
 // - สรุปที่อยู่เป็นข้อความเดียว (auto-built)
 // ============================================================================
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -15,12 +17,16 @@ import '../theme/registration_theme.dart';
 import 'address_autocomplete_field.dart';
 
 class RegistrationAddStep2 extends StatefulWidget {
+  final GlobalKey<FormState> formKey;
   final TextEditingController tax;
   final TextEditingController birth;
+  final TextEditingController national;
+  final TextEditingController religion;
 
   // ─── Address fields ───
   final TextEditingController houseNo;
   final TextEditingController moo;
+  final TextEditingController soi; // ซอย (เพิ่มใหม่)
   final TextEditingController street;
   final TextEditingController subDistrict;
   final TextEditingController district;
@@ -30,18 +36,26 @@ class RegistrationAddStep2 extends StatefulWidget {
   // ─── Callback ส่งที่อยู่ที่ join แล้วกลับไปที่ page ───
   final ValueChanged<String> onAddressChanged;
 
+  // ─── Callback ส่งที่อยู่ในรูป JSON parts (สำหรับ address_2) ───
+  final ValueChanged<String>? onAddressPartsChanged;
+
   const RegistrationAddStep2({
     super.key,
+    required this.formKey,
     required this.tax,
     required this.birth,
+    required this.national,
+    required this.religion,
     required this.houseNo,
     required this.moo,
+    required this.soi,
     required this.street,
     required this.subDistrict,
     required this.district,
     required this.province,
     required this.zipcode,
     required this.onAddressChanged,
+    this.onAddressPartsChanged,
   });
 
   @override
@@ -81,22 +95,28 @@ class _RegistrationAddStep2State extends State<RegistrationAddStep2> {
   }
 
   /// รวมที่อยู่เป็นข้อความเดียว (ส่งไปบันทึกที่ API)
-  /// รูปแบบ: "บ้านเลขที่ หมู่ที่ ถนน ตำบล อำเภอ จังหวัด รหัสไปรษณีย์"
+  /// รูปแบบ: "เลขที่ X/Y หมู่ 2 ซ.4 ถ.ช้างเผือก ต.ศรีภูมิ อ.เมือง จ.เชียงใหม่ 52180"
   String _buildAddress() {
     final parts = <String>[];
     final house = widget.houseNo.text.trim();
     final moo = widget.moo.text.trim();
+    final soi = widget.soi.text.trim();
     final street = widget.street.text.trim();
     final sub = widget.subDistrict.text.trim();
     final dist = widget.district.text.trim();
     final prov = widget.province.text.trim();
     final zip = widget.zipcode.text.trim();
 
-    // บ้านเลขที่ + หมู่ (รวมเป็นชิ้นเดียว: "123/45 หมู่ 2")
+    // ─── หัวที่อยู่: เลขที่ + หมู่ (รวมเป็นชิ้นเดียว: "เลขที่ 3/55 หมู่ 2") ───
     final addrHead = <String>[];
-    if (house.isNotEmpty) addrHead.add(house);
+    if (house.isNotEmpty) addrHead.add('เลขที่ $house');
     if (moo.isNotEmpty) addrHead.add('หมู่ $moo');
     if (addrHead.isNotEmpty) parts.add(addrHead.join(' '));
+
+    // ─── ซอย (ถ้ามี) ───
+    if (soi.isNotEmpty) parts.add('ซ.$soi');
+
+    // ─── ถนน / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์ ───
     if (street.isNotEmpty) parts.add('ถ.$street');
     if (sub.isNotEmpty) parts.add('ต.$sub');
     if (dist.isNotEmpty) parts.add('อ.$dist');
@@ -105,8 +125,26 @@ class _RegistrationAddStep2State extends State<RegistrationAddStep2> {
     return parts.join(' ');
   }
 
+  /// Build address parts as JSON string (สำหรับ address_2)
+  /// รูปแบบ: {"number":"3/55","moo":"-","soi":"4","road":"ช้างเผือก","tambon":"ศรีภูมิ","amphoe":"เมืองเชียงใหม่","province":"เชียงใหม่","zip":"52180"}
+  String _buildAddressPartsJson() {
+    String _v(String s) => s.trim().isEmpty ? '-' : s.trim();
+    final parts = <String, String>{
+      'number': _v(widget.houseNo.text),
+      'moo': _v(widget.moo.text),
+      'soi': _v(widget.soi.text),
+      'road': _v(widget.street.text),
+      'tambon': _v(widget.subDistrict.text),
+      'amphoe': _v(widget.district.text),
+      'province': _v(widget.province.text),
+      'zip': _v(widget.zipcode.text),
+    };
+    return jsonEncode(parts);
+  }
+
   void _emitAddress() {
     widget.onAddressChanged(_buildAddress());
+    widget.onAddressPartsChanged?.call(_buildAddressPartsJson());
   }
 
   /// คำนวณอายุจาก yyyy-MM-dd → (years, months, days)
@@ -149,169 +187,204 @@ class _RegistrationAddStep2State extends State<RegistrationAddStep2> {
       child: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1100),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _sectionCard(
-                icon: Icons.person_outline,
-                title: 'ข้อมูลส่วนบุคคล',
-                subtitle: 'เลขประจำตัวผู้เสียภาษีและวันเกิด',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _grid(twoCol, [
-                      _fieldRow(
-                        icon: Icons.badge_outlined,
-                        label: 'เลขประจำตัวผู้เสียภาษี',
-                        required: true,
-                        child: _field(
-                          controller: widget.tax,
-                          hint: 'ระบุ 13 หลัก',
-                          keyboardType: TextInputType.number,
-                          maxLength: 13,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly
-                          ],
-                          validator: (value) {
-                            final v = value?.trim() ?? '';
-                            if (v.isEmpty) return 'กรอกข้อมูลให้ครบถ้วน';
-                            if (v.length < 13) return 'กรอกอย่างน้อย 13 หลัก';
-                            return null;
-                          },
+          child: Form(
+            key: widget.formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _sectionCard(
+                  icon: Icons.person_outline,
+                  title: 'ข้อมูลส่วนบุคคล',
+                  subtitle: 'เลขประจำตัวผู้เสียภาษีและวันเกิด',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _grid(twoCol, [
+                        _fieldRow(
+                          icon: Icons.badge_outlined,
+                          label: 'เลขประจำตัวผู้เสียภาษี',
+                          required: true,
+                          child: _field(
+                            controller: widget.tax,
+                            hint: 'ระบุ 13 หลัก',
+                            keyboardType: TextInputType.number,
+                            maxLength: 13,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            validator: (value) {
+                              final v = value?.trim() ?? '';
+                              if (v.isEmpty) return 'กรอกข้อมูลให้ครบถ้วน';
+                              if (v.length < 13) return 'กรอกอย่างน้อย 13 หลัก';
+                              return null;
+                            },
+                          ),
                         ),
-                      ),
-                      _fieldRow(
-                        icon: Icons.cake_outlined,
-                        label: 'วันเกิด',
-                        child: _dateField(),
-                      ),
-                    ]),
-                    const SizedBox(height: LaSpace.sm),
-                    _ageSummary(),
-                  ],
+                        _fieldRow(
+                          icon: Icons.cake_outlined,
+                          label: 'วันเกิด',
+                          child: _dateField(),
+                        ),
+                      ]),
+                      const SizedBox(height: LaSpace.sm),
+                      _grid(twoCol, [
+                        _fieldRow(
+                          icon: Icons.flag_circle_outlined,
+                          label: 'สัญชาติ',
+                          child: _field(
+                            controller: widget.national,
+                            hint: 'เช่น ไทย',
+                          ),
+                        ),
+                        _fieldRow(
+                          icon: Icons.self_improvement_outlined,
+                          label: 'ศาสนา',
+                          child: _field(
+                            controller: widget.religion,
+                            hint: 'เช่น พุทธ',
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: LaSpace.sm),
+                      _ageSummary(),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: LaSpace.lg),
-              _sectionCard(
-                icon: Icons.location_on_outlined,
-                title: 'ที่อยู่',
-                subtitle:
-                    'กรอกที่อยู่แยกตามช่อง — ระบบจะรวมเป็นข้อความเดียวให้อัตโนมัติ',
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ─── Row 1: บ้านเลขที่ + หมู่ที่ ───
-                    _grid(twoCol, [
-                      _fieldRow(
-                        icon: Icons.home_outlined,
-                        label: 'บ้านเลขที่',
-                        child: _field(
-                          controller: widget.houseNo,
-                          hint: 'เช่น 123/45',
-                          onChanged: (_) => _emitAddress(),
+                const SizedBox(height: LaSpace.lg),
+                _sectionCard(
+                  icon: Icons.location_on_outlined,
+                  title: 'ที่อยู่',
+                  subtitle:
+                      'กรอกที่อยู่แยกตามช่อง — ระบบจะรวมเป็นข้อความเดียวให้อัตโนมัติ',
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ─── Row 1: บ้านเลขที่ + หมู่ที่ ───
+                      _grid(twoCol, [
+                        _fieldRow(
+                          icon: Icons.home_outlined,
+                          label: 'บ้านเลขที่',
+                          child: _field(
+                            controller: widget.houseNo,
+                            hint: 'เช่น 3/55',
+                            onChanged: (_) => _emitAddress(),
+                          ),
                         ),
-                      ),
-                      _fieldRow(
-                        icon: Icons.format_list_numbered_rounded,
-                        label: 'หมู่ที่',
-                        child: _field(
-                          controller: widget.moo,
-                          hint: 'เช่น 2',
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          onChanged: (_) => _emitAddress(),
+                        _fieldRow(
+                          icon: Icons.format_list_numbered_rounded,
+                          label: 'หมู่ที่',
+                          child: _field(
+                            controller: widget.moo,
+                            hint: 'เช่น 2',
+                            keyboardType: TextInputType.number,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly,
+                            ],
+                            onChanged: (_) => _emitAddress(),
+                          ),
                         ),
-                      ),
-                    ]),
-                    // ─── Row 2: ถนน + จังหวัด ───
-                    const SizedBox(height: 6),
-                    _grid(twoCol, [
-                      _fieldRow(
-                        icon: Icons.signpost_outlined,
-                        label: 'ถนน',
-                        child: _field(
-                          controller: widget.street,
-                          hint: 'เช่น ถนนนิมมานเหมินท์',
-                          onChanged: (_) => _emitAddress(),
+                      ]),
+                      // ─── Row 2: ซอย + ถนน ───
+                      const SizedBox(height: 6),
+                      _grid(twoCol, [
+                        _fieldRow(
+                          icon: Icons.alt_route_outlined,
+                          label: 'ซอย',
+                          child: _field(
+                            controller: widget.soi,
+                            hint: 'เช่น 4',
+                            onChanged: (_) => _emitAddress(),
+                          ),
                         ),
-                      ),
-                      _fieldRow(
-                        icon: Icons.flag_outlined,
-                        label: 'จังหวัด',
-                        child: AddressAutocompleteField(
-                          controller: widget.province,
-                          label: 'จังหวัด',
-                          hintText: 'พิมพ์หรือเลือก',
+                        _fieldRow(
+                          icon: Icons.signpost_outlined,
+                          label: 'ถนน',
+                          child: _field(
+                            controller: widget.street,
+                            hint: 'เช่น ถนนช้างเผือก',
+                            onChanged: (_) => _emitAddress(),
+                          ),
+                        ),
+                      ]),
+                      // ─── Row 3: จังหวัด + (ว่างเพื่อ layout) ───
+                      const SizedBox(height: 6),
+                      _grid(twoCol, [
+                        _fieldRow(
                           icon: Icons.flag_outlined,
-                          kind: AddressAutocompleteKind.province,
-                          onChanged: (_) {
-                            setState(() {});
-                            _emitAddress();
-                          },
+                          label: 'จังหวัด',
+                          child: AddressAutocompleteField(
+                            controller: widget.province,
+                            label: 'จังหวัด',
+                            hintText: 'พิมพ์หรือเลือก',
+                            icon: Icons.flag_outlined,
+                            kind: AddressAutocompleteKind.province,
+                            onChanged: (_) {
+                              setState(() {});
+                              _emitAddress();
+                            },
+                          ),
                         ),
-                      ),
-                    ]),
-                    // ─── Row 3: อำเภอ + ตำบล ───
-                    const SizedBox(height: 6),
-                    _grid(twoCol, [
-                      _fieldRow(
-                        icon: Icons.account_balance_outlined,
-                        label: 'อำเภอ/เขต',
-                        child: AddressAutocompleteField(
-                          controller: widget.district,
-                          label: 'อำเภอ/เขต',
-                          hintText: 'พิมพ์หรือเลือก',
+                      ]),
+                      // ─── Row 4: อำเภอ + ตำบล ───
+                      const SizedBox(height: 6),
+                      _grid(twoCol, [
+                        _fieldRow(
                           icon: Icons.account_balance_outlined,
-                          kind: AddressAutocompleteKind.district,
-                          provinceName: widget.province.text,
-                          onChanged: (_) {
-                            setState(() {});
-                            _emitAddress();
-                          },
+                          label: 'อำเภอ/เขต',
+                          child: AddressAutocompleteField(
+                            controller: widget.district,
+                            label: 'อำเภอ/เขต',
+                            hintText: 'พิมพ์หรือเลือก',
+                            icon: Icons.account_balance_outlined,
+                            kind: AddressAutocompleteKind.district,
+                            provinceName: widget.province.text,
+                            onChanged: (_) {
+                              setState(() {});
+                              _emitAddress();
+                            },
+                          ),
                         ),
-                      ),
-                      _fieldRow(
-                        icon: Icons.location_city_outlined,
-                        label: 'ตำบล/แขวง',
-                        child: AddressAutocompleteField(
-                          controller: widget.subDistrict,
-                          label: 'ตำบล/แขวง',
-                          hintText: 'พิมพ์หรือเลือก',
+                        _fieldRow(
                           icon: Icons.location_city_outlined,
-                          kind: AddressAutocompleteKind.subDistrict,
+                          label: 'ตำบล/แขวง',
+                          child: AddressAutocompleteField(
+                            controller: widget.subDistrict,
+                            label: 'ตำบล/แขวง',
+                            hintText: 'พิมพ์หรือเลือก',
+                            icon: Icons.location_city_outlined,
+                            kind: AddressAutocompleteKind.subDistrict,
+                            provinceName: widget.province.text,
+                            districtName: widget.district.text,
+                            onChanged: (_) => _emitAddress(),
+                          ),
+                        ),
+                      ]),
+                      // ─── Row 4: รหัสไปรษณีย์ (เต็มแถว สำหรับใส่ 5 หลัก) ───
+                      const SizedBox(height: 6),
+                      _fieldRow(
+                        icon: Icons.markunread_mailbox_outlined,
+                        label: 'รหัสไปรษณีย์',
+                        child: AddressAutocompleteField(
+                          controller: widget.zipcode,
+                          label: 'รหัสไปรษณีย์',
+                          hintText: 'พิมพ์หรือเลือก 5 หลัก',
+                          icon: Icons.markunread_mailbox_outlined,
+                          kind: AddressAutocompleteKind.zipcode,
                           provinceName: widget.province.text,
                           districtName: widget.district.text,
+                          subDistrictName: widget.subDistrict.text,
                           onChanged: (_) => _emitAddress(),
                         ),
                       ),
-                    ]),
-                    // ─── Row 4: รหัสไปรษณีย์ (เต็มแถว สำหรับใส่ 5 หลัก) ───
-                    const SizedBox(height: 6),
-                    _fieldRow(
-                      icon: Icons.markunread_mailbox_outlined,
-                      label: 'รหัสไปรษณีย์',
-                      child: AddressAutocompleteField(
-                        controller: widget.zipcode,
-                        label: 'รหัสไปรษณีย์',
-                        hintText: 'พิมพ์หรือเลือก 5 หลัก',
-                        icon: Icons.markunread_mailbox_outlined,
-                        kind: AddressAutocompleteKind.zipcode,
-                        provinceName: widget.province.text,
-                        districtName: widget.district.text,
-                        subDistrictName: widget.subDistrict.text,
-                        onChanged: (_) => _emitAddress(),
-                      ),
-                    ),
-                    // ─── Summary (auto-built) ───
-                    const SizedBox(height: LaSpace.md),
-                    _addressSummary(summary),
-                  ],
+                      // ─── Summary (auto-built) ───
+                      const SizedBox(height: LaSpace.md),
+                      _addressSummary(summary),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

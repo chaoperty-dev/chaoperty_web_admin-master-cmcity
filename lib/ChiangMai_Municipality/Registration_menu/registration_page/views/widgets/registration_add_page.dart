@@ -74,16 +74,20 @@ class _RegistrationAddPageBodyState extends State<_RegistrationAddPageBody> {
   final _email = TextEditingController();
   final _tax = TextEditingController();
   final _birth = TextEditingController();
+  final _national = TextEditingController(text: 'ไทย');
+  final _religion = TextEditingController(text: 'พุทธ');
 
   // ─── Address (แยกช่อง) ───
   final _houseNo = TextEditingController();
   final _moo = TextEditingController();
+  final _soi = TextEditingController();
   final _street = TextEditingController();
   final _subDistrict = TextEditingController();
   final _district = TextEditingController();
   final _province = TextEditingController();
   final _zipcode = TextEditingController();
   String _address = ''; // join แล้ว — ส่งไป API
+  String _address2 = ''; // JSON parts — ส่งไป address_2
 
   String _selectedType = '';
   bool _saving = false;
@@ -104,8 +108,11 @@ class _RegistrationAddPageBodyState extends State<_RegistrationAddPageBody> {
     _email.dispose();
     _tax.dispose();
     _birth.dispose();
+    _national.dispose();
+    _religion.dispose();
     _houseNo.dispose();
     _moo.dispose();
+    _soi.dispose();
     _street.dispose();
     _subDistrict.dispose();
     _district.dispose();
@@ -125,22 +132,104 @@ class _RegistrationAddPageBodyState extends State<_RegistrationAddPageBody> {
   }
 
   Future<void> _onSave() async {
-    if (_formKey.currentState?.validate() != true) return;
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    debugPrint('🟢 [RegistrationAddPage] _onSave() STARTED');
+    debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+    // ─── 1. Validate ───
+    final formState = _formKey.currentState;
+    debugPrint('📋 [1] Form state = $formState');
+    debugPrint('📋 [1] Form key context = ${_formKey.currentContext}');
+    debugPrint('📋 [1] Form key mounted = ${_formKey.currentContext?.mounted}');
+
+    // ─── 1a. Manual check ทุก field (ก่อน Form.validate) ───
+    debugPrint('📋 [1a] Manual field checks:');
+    debugPrint('     nameshop      = "${_nameshop.text.trim()}" (required)');
+    debugPrint('     typeshop      = "${_typeshop.text.trim()}"');
+    debugPrint('     bussshop      = "${_bussshop.text.trim()}"');
+    debugPrint(
+        '     bussscontact  = "${_bussscontact.text.trim()}" ${_isPersonalType ? "(businessLabel)" : ""}');
+    debugPrint('     tel           = "${_tel.text.trim()}"');
+    debugPrint('     email         = "${_email.text.trim()}"');
+    debugPrint(
+        '     tax           = "${_tax.text.trim()}" (required, len=${_tax.text.trim().length})');
+    debugPrint('     birth         = "${_birth.text.trim()}"');
+    debugPrint('     national      = "${_national.text.trim()}"');
+    debugPrint('     religion      = "${_religion.text.trim()}"');
+    debugPrint('     houseNo       = "${_houseNo.text.trim()}"');
+    debugPrint('     moo           = "${_moo.text.trim()}"');
+    debugPrint('     soi           = "${_soi.text.trim()}"');
+    debugPrint('     street        = "${_street.text.trim()}"');
+    debugPrint('     subDistrict   = "${_subDistrict.text.trim()}"');
+    debugPrint('     district      = "${_district.text.trim()}"');
+    debugPrint('     province      = "${_province.text.trim()}"');
+    debugPrint('     zipcode       = "${_zipcode.text.trim()}"');
+    debugPrint('     _address      = "${_address.trim()}"');
+    debugPrint('     _address2     = "$_address2"');
+    debugPrint('     _selectedType = "${_selectedType}"');
+    debugPrint('     _isPersonalType = $_isPersonalType');
+
+    // ─── 1b. Manual required validation (fallback) ───
+    final errors = <String>[];
+    if (_nameshop.text.trim().isEmpty) errors.add('nameshop (required)');
+    if (_tax.text.trim().isEmpty) {
+      errors.add('tax (required)');
+    } else if (_tax.text.trim().length < 13) {
+      errors.add(
+          'tax (ต้องกรอกอย่างน้อย 13 หลัก, ตอนนี้ ${_tax.text.trim().length})');
+    }
+    if (errors.isNotEmpty) {
+      debugPrint('❌ [1b] Manual required check FAILED:');
+      for (final e in errors) {
+        debugPrint('     - $e');
+      }
+    } else {
+      debugPrint('✅ [1b] Manual required check PASSED');
+    }
+
+    final formValid = formState?.validate() ?? false;
+    debugPrint('📋 [1c] Form.validate() result = $formValid');
+    if (!formValid) {
+      debugPrint(
+          '❌ [1] Validation FAILED — _onSave returns early (nothing happens!)');
+      debugPrint('   → ตรวจดูว่าช่องไหน required ยังไม่ได้กรอก');
+      if (errors.isNotEmpty) {
+        debugPrint('   → The fields likely failed:');
+        for (final e in errors) {
+          debugPrint('     - $e');
+        }
+      }
+      return;
+    }
+
     setState(() => _saving = true);
     try {
+      // ─── 2. Read SharedPreferences ───
       final prefs = await SharedPreferences.getInstance();
       final ren = prefs.getString('renTalSer') ?? '0';
       final user = prefs.getString('ser') ?? '';
+      debugPrint('🔑 [2] SharedPreferences: ren="$ren", user="$user"');
 
       final bussscontact =
           _isPersonalType ? _bussshop.text.trim() : _bussscontact.text.trim();
 
-      final endpoint = '${MyConstant().domain}/InC_CustoAdd_Bureau.php';
+      // ─── 3. Build URL ───
+      // ใช้ registration_add_up.php ตัวเดียว (รองรับทั้ง INSERT + UPDATE)
+      // - isEdit=false → INSERT (เพิ่ม)
+      // - isEdit=true  + มี ser → UPDATE (แก้ไข)
+      final endpoint = '${MyConstant().domain}/registration_add_up.php';
       final uri = Uri.parse(endpoint).replace(queryParameters: {
         'isAdd': 'true',
+        'isEdit': 'false',
         'ren': ren,
       });
+      debugPrint('🌐 [3] URL (full)  = ${uri.toString()}');
+      debugPrint('🌐 [3] URL (host)  = ${uri.host}');
+      debugPrint('🌐 [3] URL (path)  = ${uri.path}');
+      debugPrint('🌐 [3] URL (query) = ${uri.query}');
+      debugPrint('🌐 [3] Domain     = ${MyConstant().domain}');
 
+      // ─── 4. Build body ───
       final body = <String, String>{
         'ciddoc': '',
         'qutser': '',
@@ -164,6 +253,7 @@ class _RegistrationAddPageBodyState extends State<_RegistrationAddPageBody> {
         'bussshop': _bussshop.text.trim(),
         'bussscontact': bussscontact,
         'address': _address.trim(),
+        'address_2': _address2,
         'tel': _tel.text.trim(),
         'tax': _tax.text.trim(),
         'email': _email.text.trim(),
@@ -172,31 +262,149 @@ class _RegistrationAddPageBodyState extends State<_RegistrationAddPageBody> {
         'comment': '',
         'zser': '',
         'birth': _birth.text.trim(),
-        'national': 'ไทย',
-        'religion': 'พุทธ',
+        'national': _national.text.trim(),
+        'religion': _religion.text.trim(),
+        'zip': _zipcode.text.trim(),
       };
 
-      final resp =
-          await http.post(uri, body: body).timeout(const Duration(seconds: 20));
+      debugPrint('📦 [4] Body (${body.length} keys):');
+      body.forEach((k, v) {
+        debugPrint('     $k = "$v"');
+      });
 
-      if (!mounted) return;
+      // ─── 5. POST ───
+      debugPrint('🚀 [5] POST → start...');
+      debugPrint(
+          '🚀 [5] uri.scheme=${uri.scheme} host=${uri.host} port=${uri.port}');
+      debugPrint('🚀 [5] uri.encoded=${uri.toString()}');
+      http.Response resp;
+      try {
+        final stopwatch = Stopwatch()..start();
+        resp = await http
+            .post(uri, body: body)
+            .timeout(const Duration(seconds: 20));
+        stopwatch.stop();
+        debugPrint(
+          '🚀 [5] POST → done in ${stopwatch.elapsedMilliseconds} ms',
+        );
+      } catch (e, st) {
+        debugPrint('❌ [5] POST THREW EXCEPTION: $e');
+        debugPrint('❌ [5] stacktrace: $st');
+        rethrow;
+      }
+
+      // ─── 6. Response ───
+      debugPrint('📨 [6] Response status   = ${resp.statusCode}');
+      debugPrint('📨 [6] Response reasonPhrase = ${resp.reasonPhrase}');
+      debugPrint('📨 [6] Response headers  = ${resp.headers}');
+      debugPrint('📨 [6] Response body     = ${resp.body}');
+      debugPrint('📨 [6] Response body len = ${resp.body.length}');
+      // เดา content-type จาก header (เผื่อ server ตอบ HTML)
+      final ct = resp.headers['content-type'] ?? '';
+      debugPrint('📨 [6] Response content-type = $ct');
+
+      // ─── 7. Parse JSON ───
+      Map<String, dynamic>? firstRow;
+      String? newSer;
+      String? newUuid;
+      try {
+        final parsed = jsonDecode(resp.body);
+        debugPrint('✅ [7] JSON decoded type = ${parsed.runtimeType}');
+        if (parsed is List && parsed.isNotEmpty) {
+          firstRow = parsed.first as Map<String, dynamic>;
+          newSer = firstRow['ser']?.toString();
+          newUuid = firstRow['uuid']?.toString();
+          debugPrint('✅ [7] Parsed JSON: ser=$newSer, uuid=$newUuid');
+        } else if (parsed is Map<String, dynamic>) {
+          debugPrint(
+            '⚠️ [7] Response is a Map (not a List). Keys=${parsed.keys.toList()}',
+          );
+        } else {
+          debugPrint('⚠️ [7] Response body is not a non-empty List');
+        }
+      } catch (e) {
+        debugPrint('⚠️ [7] JSON parse failed: $e');
+        debugPrint(
+            '⚠️ [7] raw body prefix = ${resp.body.substring(0, resp.body.length.clamp(0, 200))}');
+      }
+
+      if (!mounted) {
+        debugPrint('⚠️ [6] Widget unmounted — skip UI update');
+        return;
+      }
+
+      // ─── เก็บ messenger ก่อน await เพื่อไม่ให้ pop ช้า ───
+      final messenger = ScaffoldMessenger.of(context);
 
       if (resp.statusCode != 200) {
-        _snack('บันทึกลูกค้าไม่สำเร็จ [HTTP ${resp.statusCode}]');
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text('บันทึกลูกค้าไม่สำเร็จ [HTTP ${resp.statusCode}]'),
+            backgroundColor: LaColors.statusRejectedFg,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
         return;
       }
 
       final savedName = _nameshop.text.trim();
-      _snack('บันทึกลูกค้าสำเร็จ', success: true);
+      debugPrint('✅ [8] SAVE SUCCESS — showing SnackBar to user');
+
+      // ─── แสดง SnackBar สำเร็จ (4 วินาที ให้ user เห็นชัด) ───
+      messenger.showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.check_circle, color: Colors.white, size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'บันทึกลูกค้า "$savedName" สำเร็จ',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: LaColors.statusApprovedFg,
+          behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+
+      // ─── Callback refresh ตาราง ───
       if (widget.onSaveSuccess != null) {
-        await widget.onSaveSuccess!(savedName);
+        try {
+          await widget.onSaveSuccess!(savedName);
+          debugPrint('✅ [9] onSaveSuccess callback executed');
+        } catch (e) {
+          debugPrint('⚠️ [9] onSaveSuccess callback error: $e');
+        }
       }
-      if (mounted) Navigator.of(context).pop();
-    } catch (e) {
-      debugPrint('RegistrationAddPage save error: $e');
-      _snack('เกิดข้อผิดพลาด');
+
+      // ─── รอให้ user เห็น SnackBar ก่อน pop ───
+      if (mounted) {
+        await Future.delayed(const Duration(milliseconds: 600));
+        if (mounted) Navigator.of(context).pop();
+      }
+    } catch (e, st) {
+      debugPrint('❌ [Exception] RegistrationAddPage save error: $e');
+      debugPrint('❌ [Exception] StackTrace:\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('เกิดข้อผิดพลาด: $e'),
+            backgroundColor: LaColors.statusRejectedFg,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      debugPrint('🔴 [RegistrationAddPage] _onSave() FINISHED');
+      debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     }
   }
 
@@ -247,16 +455,22 @@ class _RegistrationAddPageBodyState extends State<_RegistrationAddPageBody> {
                       isPersonalType: _isPersonalType,
                     )
                   : RegistrationAddStep2(
+                      formKey: _formKey,
                       tax: _tax,
                       birth: _birth,
+                      national: _national,
+                      religion: _religion,
                       houseNo: _houseNo,
                       moo: _moo,
+                      soi: _soi,
                       street: _street,
                       subDistrict: _subDistrict,
                       district: _district,
                       province: _province,
                       zipcode: _zipcode,
                       onAddressChanged: (v) => setState(() => _address = v),
+                      onAddressPartsChanged: (v) =>
+                          setState(() => _address2 = v),
                     ),
             ),
             RegistrationAddFooter(

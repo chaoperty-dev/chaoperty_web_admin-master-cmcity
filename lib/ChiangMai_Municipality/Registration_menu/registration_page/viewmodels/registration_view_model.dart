@@ -190,18 +190,150 @@ class RegistrationViewModel extends ChangeNotifier {
   // User actions
   // ===============================================================
   void onViewCustomer(CustomerModel model) {
-    final uuid = model.uuid?.toString() ?? '';
+    // ใช้ ser เป็น key หลัก (API V2 ไม่มี field uuid)
+    final key = model.ser?.toString() ?? model.uuid?.toString() ?? '';
     _eventController.add(
-      RegistrationNavigateEvent('ทะเบียนลูกค้า', routeData: uuid),
+      RegistrationNavigateEvent('ทะเบียนลูกค้า', routeData: key),
     );
   }
 
-  CustomerModel? findCustomerByUuid(String uuid) {
-    if (uuid.isEmpty) return null;
+  CustomerModel? findCustomerByUuid(String key) {
+    if (key.isEmpty) return null;
     for (final c in _customers) {
-      if (c.uuid?.toString() == uuid) return c;
+      // match ด้วย ser ก่อน (API V2) → fallback uuid
+      if (c.ser?.toString() == key) return c;
+      if (c.uuid?.toString() == key) return c;
     }
     return null;
+  }
+
+  /// Local override สำหรับ "แอพผู้เช่า" (แยกจาก st ของลูกค้า)
+  /// - key = ser (preferred) หรือ uuid (fallback)
+  /// - value = st (0/1)
+  /// - ใช้เพราะ API ของแอพผู้เช่ายังไม่มี → เก็บ state ในเครื่อง
+  final Map<String, int> _appStatusOverrides = {};
+
+  /// อ่าน "แอพผู้เช่า" ของลูกค้า (fallback เป็น null ถ้าไม่มี)
+  /// - ใช้ override ก่อน (ถ้ามี) → ไม่งั้นดู model จริง
+  bool? appStatusFor(String uuid) {
+    if (_appStatusOverrides.containsKey(uuid)) {
+      return _isOn(_appStatusOverrides[uuid]);
+    }
+    return null;
+  }
+
+  /// Toggle "แอพผู้เช่า" (toggleCustomerAppStatus)
+  /// - ตอนนี้ service ยังเป็น stub (return false)
+  /// - optimistic update ใน local map → rollback ถ้า fail
+  Future<void> toggleCustomerAppAccess(String uuid) async {
+    final idx = _customers.indexWhere((c) => c.uuid?.toString() == uuid);
+    if (idx < 0) return;
+
+    final current = _customers[idx];
+    final customerSer = current.ser?.toString() ?? '';
+    if (customerSer.isEmpty) {
+      _emitError('ไม่พบ ser ของลูกค้า');
+      return;
+    }
+
+    // optimistic — อ่าน state ปัจจุบัน (override ก่อน, ไม่งั้น fallback เป็น 0)
+    final currentVal =
+        _appStatusOverrides[uuid] ?? (current.st is int ? current.st : 0);
+    final nextVal = (currentVal == 1) ? 0 : 1;
+    _appStatusOverrides[uuid] = nextVal;
+    notifyListeners();
+
+    try {
+      final ok = await _service.toggleCustomerAppStatus(customerSer, nextVal);
+      if (!ok) {
+        // rollback
+        _appStatusOverrides[uuid] = currentVal;
+        notifyListeners();
+        _emitError('อัปเดตสถานะแอพผู้เช่าไม่สำเร็จ (รอ API)');
+      }
+    } catch (e) {
+      _appStatusOverrides[uuid] = currentVal;
+      notifyListeners();
+      _emitError('อัปเดตสถานะแอพผู้เช่าไม่สำเร็จ: $e');
+    }
+  }
+
+  /// ===== LINE (ลงทะเบียน / ลบ ไลน์) =====
+  /// TODO: รอ API ของฝั่งไลน์ OA (ตอนนี้ยังไม่มี endpoint)
+  /// - ตอนนี้ส่ง SnackBar แจ้ง user ว่ายังไม่พร้อม
+  Future<void> registerLine(String uuid) async {
+    final name = findCustomerByUuid(uuid)?.scname ?? '';
+    debugPrint('⚠️ [registerLine] uuid=$uuid, name=$name — API ยังไม่มี');
+    _eventController.add(
+      RegistrationErrorEvent('ยังไม่รองรับการลงทะเบียนไลน์ (รอ API)'),
+    );
+  }
+
+  Future<void> removeLine(String uuid) async {
+    final c = findCustomerByUuid(uuid);
+    final name = c?.scname ?? '';
+    final oldLine = c?.lineid ?? '';
+    debugPrint(
+        '⚠️ [removeLine] uuid=$uuid, name=$name, lineid=$oldLine — API ยังไม่มี');
+    _eventController.add(
+      RegistrationErrorEvent('ยังไม่รองรับการลบไลน์ (รอ API)'),
+    );
+  }
+
+  /// สลับ st ของลูกค้า (เปิด/ปิดใช้งาน)
+  /// - อัพเดต state ในเครื่องทันที (optimistic)
+  /// - ส่ง API ไป update — ถ้า fail ค่อย rollback
+  Future<void> toggleAppAccess(String uuid) async {
+    final idx = _customers.indexWhere((c) => c.uuid?.toString() == uuid);
+    if (idx < 0) return;
+
+    // อ่านค่าปัจจุบัน
+    final current = _customers[idx];
+    final currentSt = current.st;
+    final bool currentOn = _isOn(currentSt);
+
+    // ใช้ ser ของลูกค้า (running number) เป็น key ส่งไป API
+    final customerSer = current.ser?.toString() ?? '';
+    if (customerSer.isEmpty) {
+      _emitError('ไม่พบ ser ของลูกค้า');
+      return;
+    }
+
+    // optimistic update
+    current.st = currentOn ? 0 : 1;
+    _applyFilter(); // refresh filter (no-op สำหรับ toggle แต่ safe)
+    notifyListeners();
+
+    try {
+      final ok = await _service.toggleCustomerStatus(customerSer, current.st);
+      if (!ok) {
+        // rollback
+        current.st = currentSt;
+        notifyListeners();
+        _emitError('อัปเดตสถานะไม่สำเร็จ');
+      } else {
+        // ─── สำเร็จ → รีเฟรชข้อมูลจาก API ───
+        debugPrint('🔄 [toggleAppAccess] success → กำลัง refresh ข้อมูล...');
+        await refresh();
+        debugPrint('✅ [toggleAppAccess] refresh เสร็จ');
+      }
+    } catch (e) {
+      // rollback
+      current.st = currentSt;
+      notifyListeners();
+      _emitError('อัปเดตสถานะไม่สำเร็จ: $e');
+    }
+  }
+
+  static bool _isOn(dynamic st) {
+    if (st == null) return false;
+    if (st is bool) return st;
+    if (st is num) return st == 1;
+    if (st is String) {
+      final s = st.trim();
+      return s == '1' || s.toLowerCase() == 'true';
+    }
+    return false;
   }
 
   // ===============================================================

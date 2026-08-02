@@ -175,6 +175,8 @@ class _AddressAutocompleteFieldState extends State<AddressAutocompleteField> {
                             widget.controller.text = opt;
                             widget.controller.selection =
                                 TextSelection.collapsed(offset: opt.length);
+                            // trigger onChanged เพื่อให้ parent rebuild/emit
+                            widget.onChanged?.call(opt);
                             onSelected(opt);
                           },
                           child: Container(

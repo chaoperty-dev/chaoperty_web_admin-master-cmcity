@@ -161,6 +161,10 @@ final List<ThaiProvince> kThaiProvinces = [
       'บ้านดง',
       'สบป้าด',
     ]),
+    ThaiDistrict(name: 'แม่พริก', subDistricts: [
+      'แม่พริก',
+      'พระบาทวังตวง',
+    ]),
   ]),
   ThaiProvince(name: 'ลำพูน', districts: [
     ThaiDistrict(name: 'เมืองลำพูน', subDistricts: [
@@ -699,7 +703,8 @@ const Map<String, Map<String, List<String>>> kZipcodeMap = {
   },
   'ลำปาง': {
     'เมืองลำปาง': ['52000', '52100'],
-    'แม่เมาะ': ['52220']
+    'แม่เมาะ': ['52220'],
+    'แม่พริก': ['52180']
   },
   'ลำพูน': {
     'เมืองลำพูน': ['51000'],

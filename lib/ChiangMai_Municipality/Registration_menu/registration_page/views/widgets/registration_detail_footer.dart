@@ -72,8 +72,15 @@ class RegistrationDetailFooter extends StatelessWidget {
             onTap: onCancel,
           ),
           const SizedBox(width: LaSpace.sm),
-          // ปุ่มหลัก: ถัดไป (Step 1) หรือ บันทึก (Step 2)
-          if (!readOnly)
+          // ปุ่มหลัก: ถัดไป (Step 1) / บันทึก (Step 2) — read-only ก็ยังเลื่อน step ได้
+          if (readOnly)
+            isLast
+                ? const SizedBox.shrink() // Step สุดท้ายในโหมดดู → ไม่มีปุ่ม
+                : _NextButton(
+                    label: 'ถัดไป',
+                    onTap: onNext,
+                  )
+          else
             isLast
                 ? _SaveButton(
                     label: saveLabel ?? 'บันทึก',
