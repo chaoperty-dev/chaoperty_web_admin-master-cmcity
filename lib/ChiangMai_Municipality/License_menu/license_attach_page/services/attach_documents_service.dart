@@ -166,6 +166,40 @@ class AttachDocumentsService {
     );
   }
 
+  /// โหลด bytes ของไฟล์แนบ (ใช้แสดง thumbnail / preview)
+  ///
+  /// - ถ้า [AttachmentsModel.filePath] เป็น full URL → ใช้ตรงๆ พร้อม auth header
+  /// - ถ้าเป็น relative path → ต่อกับ domain_v1
+  /// - ถ้ามี [AttachmentsModel.uuid] → ใช้ endpoint
+  ///   `/request-snapshot-attachments/{uuid}/preview` ซึ่งรองรับ auth
+  Future<Uint8List?> fetchAttachmentBytes(AttachmentsModel att) async {
+    final uuid = att.uuid?.toString() ?? '';
+    final filePath = att.filePath?.toString() ?? '';
+    if (uuid.isEmpty && filePath.isEmpty) return null;
+
+    final headers = await MyHeaders.build();
+    String url;
+    if (uuid.isNotEmpty) {
+      url =
+          '${MyConstant().domain_v1}/request-snapshot-attachments/$uuid/preview';
+    } else if (filePath.startsWith('http')) {
+      url = filePath;
+    } else {
+      final base = MyConstant().domain_v1;
+      url = filePath.startsWith('/') ? '$base$filePath' : '$base/$filePath';
+    }
+
+    try {
+      final response = await http.get(Uri.parse(url), headers: headers);
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return response.bodyBytes;
+      }
+    } catch (_) {
+      // ignore
+    }
+    return null;
+  }
+
   // ==========================================================================
   // Utils
   // ==========================================================================

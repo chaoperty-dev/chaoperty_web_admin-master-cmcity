@@ -13,18 +13,19 @@ import 'dart:typed_data';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:chaoperty/Constant/Myconstant.dart';
+import 'package:chaoperty/ChiangMai_Municipality/PDF_CMM/unity_pdf_cmm/perviewpdf_ordit_cmm.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../../viewmodels/attach_documents_view_model.dart';
 import '../theme/license_attach_theme.dart';
 import '../../services/attach_documents_service.dart';
 
+import '../../../../unity/API_admin_requests.dart';
 import '../../../../Model/Document_Model.dart';
 import 'attach_signature_section.dart';
 import 'attach_batch_upload_sheet.dart';
-import 'attach_batch_upload_sheet.dart';
+import 'attach_file_preview_dialog.dart';
 
 class AttachDetailStep1 extends StatelessWidget {
   /// UUID ของ request ที่ต้องการแนบเอกสาร
@@ -886,6 +887,26 @@ class _FileButton extends StatelessWidget {
   final bool enabled;
   const _FileButton({required this.doc, required this.enabled});
 
+  /// เปิด preview ไฟล์แนบ (PDF / รูป) — popup ดู 1 ต่อ 1
+  void _openPreview(BuildContext context) {
+    if (!enabled) return;
+
+    // หา attachment ที่ตรงกับ docId
+    final docId =
+        doc.id is int ? doc.id as int : int.tryParse('${doc.id}') ?? 0;
+    final matched = findAttachmentByDocId(
+      doc.attachments ?? <AttachmentsModel>[],
+      docId,
+    );
+    final att = matched ?? doc.attachments!.first;
+
+    AttachFilePreviewDialog.show(
+      context,
+      attachment: att,
+      title: doc.nameTh ?? 'ไฟล์แนบ',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -895,19 +916,7 @@ class _FileButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(LaRadius.sm),
         child: InkWell(
           borderRadius: BorderRadius.circular(LaRadius.sm),
-          onTap: enabled
-              ? () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'เปิดดู: ${doc.attachments?.first.fileName ?? doc.attachments?.first.filePath ?? '-'}',
-                      ),
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
-                }
-              : null,
+          onTap: enabled ? () => _openPreview(context) : null,
           child: Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: LaSpace.sm, vertical: 8),
@@ -1421,7 +1430,7 @@ class _DocumentGridCard extends StatelessWidget {
 }
 
 // =============================================================================
-// Document Preview — โหลด thumbnail รูป/PDF
+// Document Preview — โหลด thumbnail รูป/PDF (ใช้ service + auth header)
 // =============================================================================
 class _DocumentPreview extends StatelessWidget {
   final DocumentModel doc;
@@ -1431,182 +1440,145 @@ class _DocumentPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (!hasFile) {
-      return Container(
-        color: LaColors.surfaceMuted,
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.upload_file_rounded,
-                size: 32, color: LaColors.textMuted),
-            SizedBox(height: 4),
-            Text(
-              'ยังไม่มีไฟล์',
-              style: TextStyle(
-                color: LaColors.textMuted,
-                fontSize: 10,
-              ),
-            ),
-          ],
-        ),
-      );
+      return _emptyState();
     }
 
     final att = doc.attachments!.first;
-    final url = _buildPreviewUrl(att);
-    final fileType = (att.fileType ?? '').toString().toLowerCase();
-    final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp']
-        .any((ext) => fileType.endsWith(ext));
-    final isPdf = fileType.contains('pdf');
 
-    return Container(
-      color: LaColors.surfaceMuted,
-      alignment: Alignment.center,
-      child: _PreviewContent(
-        url: url,
-        att: att,
-        isImage: isImage,
-        isPdf: isPdf,
+    // ตรวจนามสกุลไฟล์
+    final fileType = (att.fileType ?? '').toString().toLowerCase();
+    final fileName =
+        (att.fileName ?? att.filePath ?? '').toString().toLowerCase();
+    final combined = '$fileType $fileName';
+    final isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp']
+        .any((ext) => combined.contains(ext));
+    final isPdf = combined.contains('pdf');
+
+    if (isImage) {
+      // โหลดผ่าน service (มี auth header) แล้วแสดงด้วย Image.memory
+      return FutureBuilder<Uint8List?>(
+        future: AttachDocumentsService().fetchAttachmentBytes(att),
+        builder: (ctx, snap) {
+          if (snap.connectionState == ConnectionState.waiting) {
+            return _loadingState();
+          }
+          final bytes = snap.data;
+          if (bytes == null || bytes.isEmpty) {
+            return GestureDetector(
+              onTap: () => _openPreview(context),
+              child: _placeholder(
+                Icons.broken_image_rounded,
+                'โหลดไม่สำเร็จ',
+              ),
+            );
+          }
+          return GestureDetector(
+            onTap: () => _openPreview(context),
+            child: Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              width: double.infinity,
+              height: double.infinity,
+              gaplessPlayback: true,
+              errorBuilder: (_, __, ___) => _placeholder(
+                Icons.broken_image_rounded,
+                'แสดงไม่ได้',
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // PDF / อื่นๆ → แสดง icon + คลิกเปิด preview เต็มจอ
+    return GestureDetector(
+      onTap: () => _openPreview(context),
+      child: _placeholder(
+        isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
+        isPdf ? 'PDF' : (fileType.isNotEmpty ? fileType.toUpperCase() : 'FILE'),
       ),
     );
   }
 
-  String _buildPreviewUrl(AttachmentsModel att) {
-    final filePath = att.filePath?.toString() ?? '';
-    final uuid = att.uuid?.toString() ?? '';
-    if (filePath.isEmpty) return '';
-    // ถ้าเป็น full URL ใช้ตรงๆ
-    if (filePath.startsWith('http')) return filePath;
-    // ถ้าเป็น relative path → ต่อกับ domain
-    final base = MyConstant().domain_v1;
-    if (filePath.startsWith('/')) return '$base$filePath';
-    // ใช้ endpoint preview ของ request-snapshot-attachments
-    if (uuid.isNotEmpty) {
-      return '$base/request-snapshot-attachments/$uuid/preview';
-    }
-    return '$base/$filePath';
-  }
-}
-
-class _PreviewContent extends StatefulWidget {
-  final String url;
-  final AttachmentsModel att;
-  final bool isImage;
-  final bool isPdf;
-
-  const _PreviewContent({
-    required this.url,
-    required this.att,
-    required this.isImage,
-    required this.isPdf,
-  });
-
-  @override
-  State<_PreviewContent> createState() => _PreviewContentState();
-}
-
-class _PreviewContentState extends State<_PreviewContent> {
-  Uint8List? _bytes;
-  bool _loading = false;
-  bool _failed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.isImage && widget.url.isNotEmpty) {
-      _fetch();
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant _PreviewContent oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.url != oldWidget.url && widget.isImage) {
-      _fetch();
-    }
-  }
-
-  Future<void> _fetch() async {
-    if (_loading) return;
-    setState(() {
-      _loading = true;
-      _failed = false;
-    });
-    try {
-      final headers = await MyHeaders.build();
-      final response = await http
-          .get(Uri.parse(widget.url), headers: headers)
-          .timeout(const Duration(seconds: 10));
-      if (response.statusCode == 200) {
-        if (mounted) {
-          setState(() {
-            _bytes = response.bodyBytes;
-            _loading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _failed = true;
-            _loading = false;
-          });
-        }
-      }
-    } catch (_) {
-      if (mounted) {
-        setState(() {
-          _failed = true;
-          _loading = false;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.isImage) {
-      if (_loading) {
-        return const SizedBox(
-          width: 20,
-          height: 20,
-          child: CircularProgressIndicator(strokeWidth: 2),
-        );
-      }
-      if (_bytes != null) {
-        return Image.memory(
-          _bytes!,
-          fit: BoxFit.cover,
-          width: double.infinity,
-          height: double.infinity,
-          errorBuilder: (_, __, ___) =>
-              _placeholder(Icons.broken_image_rounded),
-        );
-      }
-      return _placeholder(
-        _failed ? Icons.broken_image_rounded : Icons.image_rounded,
-      );
-    }
-    if (widget.isPdf) {
-      return _placeholder(Icons.picture_as_pdf_rounded);
-    }
-    return _placeholder(Icons.insert_drive_file_rounded);
-  }
-
-  Widget _placeholder(IconData icon) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 28, color: LaColors.textMuted),
-        const SizedBox(height: 4),
-        Text(
-          widget.att.fileType?.toString().toUpperCase() ?? 'FILE',
-          style: const TextStyle(
-            color: LaColors.textMuted,
-            fontSize: 9,
-            fontWeight: FontWeight.w600,
+  /// Empty state: ยังไม่มีไฟล์แนบ
+  Widget _emptyState() {
+    return Container(
+      color: LaColors.surfaceMuted,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.upload_file_rounded, size: 32, color: LaColors.textMuted),
+          SizedBox(height: 4),
+          Text(
+            'ยังไม่มีไฟล์',
+            style: TextStyle(
+              color: LaColors.textMuted,
+              fontSize: 10,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
+    );
+  }
+
+  /// Loading state: กำลังโหลดรูป
+  Widget _loadingState() {
+    return Container(
+      color: LaColors.surfaceMuted,
+      alignment: Alignment.center,
+      child: const SizedBox(
+        width: 22,
+        height: 22,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+    );
+  }
+
+  /// Placeholder: PDF / ไฟล์อื่น / โหลดไม่สำเร็จ
+  Widget _placeholder(IconData icon, String label) {
+    return Container(
+      color: LaColors.surfaceMuted,
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, size: 32, color: LaColors.textMuted),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: const TextStyle(
+              color: LaColors.textMuted,
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// เปิด preview ไฟล์แนบ — popup ดู 1 ต่อ 1 (เหมือน _FileButton)
+  void _openPreview(BuildContext context) {
+    if (!hasFile) return;
+
+    // หา attachment ที่ตรงกับ docId
+    final raw = doc.id;
+    final docId = raw is int
+        ? raw
+        : (raw is num
+            ? raw.toInt()
+            : (raw is String ? int.tryParse(raw) ?? 0 : 0));
+    final matched = findAttachmentByDocId(
+      doc.attachments ?? <AttachmentsModel>[],
+      docId,
+    );
+    final att = matched ?? doc.attachments!.first;
+
+    AttachFilePreviewDialog.show(
+      context,
+      attachment: att,
+      title: doc.nameTh ?? 'ไฟล์แนบ',
     );
   }
 }

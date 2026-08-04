@@ -103,7 +103,15 @@ class _LicenseAttachDetailPageBodyState
               readOnly: false,
               currentStep: step,
               totalSteps: total,
-              onNext: step < total ? vm.nextDetailStep : null,
+              onNext: step < total
+                  ? () {
+                      // ignore: avoid_print
+                      print(
+                        'Next clicked — Request UUID: ${vm.requestUuid}',
+                      );
+                      vm.nextDetailStep();
+                    }
+                  : null,
               onSave: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
