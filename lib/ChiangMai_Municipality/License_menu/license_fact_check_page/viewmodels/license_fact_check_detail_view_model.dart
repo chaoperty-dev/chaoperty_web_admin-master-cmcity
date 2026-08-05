@@ -308,6 +308,20 @@ class LicensefactcheckDetailViewModel extends ChangeNotifier {
   // Inspection actions: transition / recheck
   // ============================================================================
 
+  /// เริ่ม "เก็บข้อมูล/ตรวจรูป" → POST /admin/inspection/{uuid}/transition
+  /// state = in_review
+  /// ใช้ตอน round อยู่ในสถานะ pending แล้ว user กดปุ่ม "เริ่มทำ"
+  Future<InspectionActionResult?> startReview(
+    String reviewUuid, {
+    String comment = 'เริ่มตรวจ',
+  }) async {
+    return transitionRound(
+      reviewUuid,
+      state: 'in_review',
+      comment: comment,
+    );
+  }
+
   /// เปลี่ยนสถานะ inspection review → POST /admin/inspection/{uuid}/transition
   /// state: pending | in_review | passed | failed | cancelled
   Future<InspectionActionResult?> transitionRound(

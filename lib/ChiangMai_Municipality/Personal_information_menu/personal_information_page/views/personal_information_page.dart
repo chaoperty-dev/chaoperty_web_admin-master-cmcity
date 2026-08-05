@@ -130,10 +130,10 @@ class _Body extends StatelessWidget {
       height: 280,
       alignment: Alignment.center,
       decoration: PiDecor.card(),
-      child: Column(
+      child: const Column(
         mainAxisAlignment: MainAxisAlignment.center,
         mainAxisSize: MainAxisSize.min,
-        children: const [
+        children: [
           SizedBox(
             width: 22,
             height: 22,
@@ -308,20 +308,24 @@ class _ProfileCard extends StatelessWidget {
             fields: [
               InfoFieldData(
                 label: 'รหัสผู้ใช้ (User UUID)',
-                value: profile.userUuid.isEmpty ? '-' : profile.userUuid,
+                value:
+                    profile.userUuid.isEmpty ? '-' : '${profile.userUuid}***',
                 mono: true,
                 icon: Icons.fingerprint_rounded,
               ),
               InfoFieldData(
                 label: 'Profile UUID',
-                value: profile.profileUuid.isEmpty ? '-' : profile.profileUuid,
+                value: profile.profileUuid.isEmpty
+                    ? '-'
+                    : '${profile.profileUuid}***',
                 mono: true,
                 icon: Icons.tag_rounded,
               ),
               InfoFieldData(
                 label: 'Signature UUID',
-                value:
-                    profile.signatureUuid.isEmpty ? '-' : profile.signatureUuid,
+                value: profile.signatureUuid.isEmpty
+                    ? '-'
+                    : '${profile.signatureUuid}***',
                 mono: true,
                 icon: Icons.draw_rounded,
               ),

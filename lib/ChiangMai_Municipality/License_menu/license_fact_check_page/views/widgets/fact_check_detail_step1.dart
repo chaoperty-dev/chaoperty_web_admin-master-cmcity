@@ -852,18 +852,42 @@ class _CurrentRoundCard extends StatelessWidget {
     );
   }
 
-  /// Toolbar แถวเดียว: อัปโหลด + ผ่าน + ไม่ผ่าน + รีเช็ค
+  /// Toolbar แถวเดียว
+  /// - pending     → ปุ่ม "เริ่มทำ" (เต็มแถว) → ยิง transition(state=in_review)
+  /// - in_review   → อัปโหลด + ผ่าน + ไม่ผ่าน + รีเช็ค
+  /// - passed/failed/cancelled → ไม่แสดง
   Widget _toolbar(BuildContext context, InspectionRound r) {
     final s = (r.state ?? '').toLowerCase();
-    final canAct = (s.contains('pending') ||
-            s.contains('in_review') ||
-            s.contains('progress') ||
-            s.isEmpty) &&
-        r.uuid != null;
+    final isPending = s.contains('pending') || s.isEmpty;
+    final isInReview = s.contains('in_review') || s.contains('progress');
 
-    if (!canAct) return const SizedBox.shrink();
+    if (r.uuid == null) return const SizedBox.shrink();
 
     final vm = context.read<LicensefactcheckDetailViewModel>();
+
+    // ─── pending → เริ่มทำ ───
+    if (isPending) {
+      return _StartReviewButton(
+        inspectionUuid: r.uuid!,
+        onSuccess: (msg) => _showResultSnack(
+          context,
+          ok: true,
+          okText: msg,
+          errText: msg,
+          fg: LaColors.statusApprovedFg,
+        ),
+        onError: (msg) => _showResultSnack(
+          context,
+          ok: false,
+          okText: msg,
+          errText: msg,
+          fg: LaColors.statusRejectedFg,
+        ),
+      );
+    }
+
+    // ─── in_review → full toolbar ───
+    if (!isInReview) return const SizedBox.shrink();
 
     return Row(
       children: [
@@ -1255,6 +1279,101 @@ class _CurrentRoundCard extends StatelessWidget {
 /// helper global — ใช้แทน null/empty ด้วย fallback (default: '-')
 String _safe(String? s, [String fallback = '-']) =>
     (s == null || s.isEmpty) ? fallback : s;
+
+/// ปุ่ม "เริ่มทำ" — ใช้กับ round ที่อยู่ในสถานะ pending
+/// กดแล้ว → vm.startReview(uuid) → transition(state=in_review)
+/// แสดง full-width, มี spinner ตอนกำลังยิง API
+class _StartReviewButton extends StatefulWidget {
+  final String inspectionUuid;
+  final void Function(String message) onSuccess;
+  final void Function(String message) onError;
+  const _StartReviewButton({
+    required this.inspectionUuid,
+    required this.onSuccess,
+    required this.onError,
+  });
+
+  @override
+  State<_StartReviewButton> createState() => _StartReviewButtonState();
+}
+
+class _StartReviewButtonState extends State<_StartReviewButton> {
+  bool _busy = false;
+
+  Future<void> _onTap() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final vm = context.read<LicensefactcheckDetailViewModel>();
+    try {
+      final res = await vm.startReview(
+        widget.inspectionUuid,
+        comment: 'เริ่มตรวจ',
+      );
+      if (!mounted) return;
+      setState(() => _busy = false);
+      if (res?.success == true) {
+        widget
+            .onSuccess('เริ่มตรวจสำเร็จ — เปลี่ยนสถานะเป็น "กำลังเก็บข้อมูล"');
+      } else {
+        widget.onError(res?.message ?? 'เปลี่ยนสถานะไม่สำเร็จ');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _busy = false);
+      widget.onError('เกิดข้อผิดพลาด: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = Colors.white;
+    return MouseRegion(
+      cursor: _busy ? SystemMouseCursors.basic : SystemMouseCursors.click,
+      child: GestureDetector(
+        onTap: _busy ? null : _onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            color: LaColors.statusPendingFg,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: [
+              BoxShadow(
+                color: LaColors.statusPendingFg.withOpacity(.25),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (_busy)
+                const SizedBox(
+                  width: 14,
+                  height: 14,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                )
+              else
+                Icon(Icons.play_arrow_rounded, color: fg, size: 18),
+              const SizedBox(width: 8),
+              Text(
+                _busy ? 'กำลังเริ่มตรวจ...' : 'เริ่มทำ',
+                style: TextStyle(
+                  color: fg,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13.5,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
 
 /// ปุ่มใน toolbar — full-width, มี 3 variants (filled / outlined / ghost)
 class _ToolButton extends StatelessWidget {

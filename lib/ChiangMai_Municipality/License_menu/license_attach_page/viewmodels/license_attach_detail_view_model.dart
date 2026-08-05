@@ -77,4 +77,39 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // --------------------------------------------------------------------------
+  // Submit checklist (POST)
+  // --------------------------------------------------------------------------
+  bool _isSubmitting = false;
+  bool get isSubmitting => _isSubmitting;
+
+  LicenseAttachChecklistSubmitResult? _submitResult;
+  LicenseAttachChecklistSubmitResult? get submitResult => _submitResult;
+
+  Future<LicenseAttachChecklistSubmitResult?> submitChecklist() async {
+    if (_isSubmitting) return _submitResult;
+    _isSubmitting = true;
+    _submitResult = null;
+    notifyListeners();
+
+    try {
+      final result = await LicenseAttachChecklistService.submitChecklist(
+        requestUuid,
+      );
+      _submitResult = result;
+      return result;
+    } catch (e) {
+      debugPrint('SubmitChecklist error: $e');
+      _submitResult = LicenseAttachChecklistSubmitResult(
+        success: false,
+        statusCode: -1,
+        message: e.toString(),
+      );
+      return _submitResult;
+    } finally {
+      _isSubmitting = false;
+      notifyListeners();
+    }
+  }
 }

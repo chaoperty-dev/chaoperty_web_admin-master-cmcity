@@ -16,6 +16,7 @@ import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
 import '../../../../unity/FormatPhone.dart';
 import '../../../../../Model/GetTeNant_Model.dart';
+import '../tenant_license_detail_page.dart';
 import '../theme/tenant_license_theme.dart';
 import '../../viewmodels/tenant_license_view_model.dart';
 
@@ -98,6 +99,22 @@ class TenantLicenseTable extends StatelessWidget {
   }
 
   // ========================================================================
+  // Open Detail Page
+  // ========================================================================
+  void _openDetail(BuildContext context, TeNantModel model) {
+    final cid = model.docno ?? model.cid ?? model.ln ?? '';
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TenantLicenseDetailPage.create(
+          routeData: cid,
+          title: model.cname ?? model.subzone ?? 'ข้อมูลผู้เช่า',
+          tenant: model,
+        ),
+      ),
+    );
+  }
+
+  // ========================================================================
   // Data row
   // ========================================================================
   Widget _dataRow(
@@ -110,13 +127,13 @@ class TenantLicenseTable extends StatelessWidget {
     final palette = StatusPalette.of(status);
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(model),
+      onTap: () => _openDetail(context, model),
       child: Row(
         children: [
           SizedBox(
             width: 110,
             child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(model))),
+                child: _ViewButton(onTap: () => _openDetail(context, model))),
           ),
           _Cell(value: model.cid ?? '-', flex: 2),
           _Cell(value: model.subzone ?? '-', flex: 2),

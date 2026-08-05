@@ -561,23 +561,51 @@ class _Content extends StatelessWidget {
   }
 
   Widget _commentBox() {
+    // ห้ามใช้ `Border(left: BorderSide(...))` ร่วมกับ `borderRadius` —
+    // Flutter บังคับว่า Border ที่มี borderRadius ต้องมี side เดียวกันทุกด้าน
+    //
+    // ห้ามใช้ IntrinsicHeight + Row(stretch) ใน SingleChildScrollView —
+    // LayoutBuilder ที่อยู่ในนั้นไม่รองรับ intrinsic dimensions
+    //
+    // ใช้แนวทาง: Container นอกกำหนด padding + borderRadius,
+    // BoxDecoration ใช้ Border.all(สีอ่อน) แทน แล้ววาง accent strip ด้านซ้าย
+    // โดยใช้ Padding เป็น pseudo-column ความสูงเท่ากัน (auto-fit ด้วย border)
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: LaSpace.sm, vertical: 6),
+      padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
       decoration: BoxDecoration(
         color: LaColors.surfaceMuted,
         borderRadius: BorderRadius.circular(LaRadius.sm),
-        border: Border(left: BorderSide(color: st.fg, width: 3)),
+        border: Border.all(color: st.fg.withOpacity(.35), width: 1),
       ),
-      child: AutoSizeText(
-        round.comment!,
-        minFontSize: 11,
-        maxFontSize: 12,
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-        style: LaText.caption.copyWith(
-          color: LaColors.textSecondary,
-          fontStyle: FontStyle.italic,
-        ),
+      child: Row(
+        // ไม่ใช้ stretch — children จัดการ height ของตัวเอง
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Accent strip (ซ้าย) — เป็น cell อิสระ ไม่ต้อง stretch
+          Container(
+            width: 3,
+            height: 28, // ✅ กำหนดเอง → ไม่ขึ้นกับ parent
+            margin: const EdgeInsets.only(right: 8),
+            decoration: BoxDecoration(
+              color: st.fg,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+          // Content
+          Expanded(
+            child: AutoSizeText(
+              round.comment!,
+              minFontSize: 11,
+              maxFontSize: 12,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+              style: LaText.caption.copyWith(
+                color: LaColors.textSecondary,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

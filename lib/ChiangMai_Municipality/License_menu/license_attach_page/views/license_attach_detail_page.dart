@@ -112,15 +112,64 @@ class _LicenseAttachDetailPageBodyState
                       vm.nextDetailStep();
                     }
                   : null,
-              onSave: () {
-                ScaffoldMessenger.of(context).showSnackBar(
+              onSave: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(context);
+                if (vm.isSubmitting) return;
+
+                messenger.showSnackBar(
                   const SnackBar(
-                    content: Text('บันทึกการแนบเอกสาร (placeholder)'),
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text('กำลังบันทึก...'),
+                      ],
+                    ),
                     behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
                   ),
                 );
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
+
+                final result = await vm.submitChecklist();
+
+                if (!mounted) return;
+                if (result == null) return;
+
+                if (result.success) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        result.message != null && result.message!.isNotEmpty
+                            ? 'บันทึกสำเร็จ: ${result.message}'
+                            : 'บันทึกสำเร็จ (HTTP ${result.statusCode})',
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  if (navigator.canPop()) {
+                    navigator.pop();
+                  }
+                } else {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'บันทึกไม่สำเร็จ (HTTP ${result.statusCode}): '
+                        '${result.message ?? '-'}',
+                      ),
+                      backgroundColor: Colors.red.shade700,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
                 }
               },
               onCancel: () {
