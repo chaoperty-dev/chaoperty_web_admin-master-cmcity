@@ -283,12 +283,21 @@ class _LicenseContractBody extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ─── ประกาศ (ข้างบนสุด) ───
+        const AnnouncementCard(),
+        const SizedBox(height: LcSpace.lg),
+
+        // ─── Zone dropdowns ───
         const ZoneDropdownRow(),
         const SizedBox(height: LcSpace.lg),
+
+        // ─── Area info card (เมื่อเลือกรหัสพื้นที่) ───
         if (vm.selectedLn != null) ...[
           const AreaInfoCard(),
           const SizedBox(height: LcSpace.lg),
         ],
+
+        // ─── Form card ───
         Container(
           decoration: LcDecor.card(),
           padding: const EdgeInsets.all(LcSpace.lg),
@@ -300,8 +309,6 @@ class _LicenseContractBody extends StatelessWidget {
                     SectionTitle(icon: Icons.person, title: 'ข้อมูลผู้เช่า'),
                     FormPersonSection(),
                     SizedBox(height: LcSpace.lg),
-                    AnnouncementCard(),
-                    SizedBox(height: LcSpace.lg),
                     SectionTitle(icon: Icons.store, title: 'ข้อมูลร้านค้า'),
                     FormShopSection(),
                     SizedBox(height: LcSpace.lg),
@@ -310,7 +317,7 @@ class _LicenseContractBody extends StatelessWidget {
                     FormContractSection(),
                   ],
                 )
-              // Desktop: 2 columns
+              // Desktop: 2 columns (no vertical divider)
               : const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -326,18 +333,11 @@ class _LicenseContractBody extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: LcSpace.lg),
-                    SizedBox(
-                      width: 1,
-                      height: 400,
-                      child: ColoredBox(color: LcColors.border),
-                    ),
                     Expanded(
                       flex: 6,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          AnnouncementCard(),
-                          SizedBox(height: LcSpace.lg),
                           SectionTitle(
                               icon: Icons.store, title: 'ข้อมูลร้านค้า'),
                           FormShopSection(),

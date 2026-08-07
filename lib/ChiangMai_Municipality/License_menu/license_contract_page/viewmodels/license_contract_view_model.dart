@@ -130,7 +130,6 @@ class LicenseContractViewModel extends ChangeNotifier {
   String? get selectedScname => _selectedScname;
 
   // ─── Billing (สำหรับ BillingTable ใน Step 2) ───
-  /// cid_sdate — วันที่เริ่มสัญญา (จาก data_cid[0].detail)
   String get cidSdate {
     if (_dataCid.isNotEmpty) {
       return (_dataCid[0]['detail'] ?? '').toString();
@@ -138,7 +137,6 @@ class LicenseContractViewModel extends ChangeNotifier {
     return '';
   }
 
-  /// cid_ldate — วันที่สิ้นสุดสัญญา (จาก data_cid[1].detail)
   String get cidLdate {
     if (_dataCid.length > 1) {
       return (_dataCid[1]['detail'] ?? '').toString();
@@ -146,12 +144,7 @@ class LicenseContractViewModel extends ChangeNotifier {
     return '';
   }
 
-  /// cid_zser — pay_status ของโซน (จาก AnnouncementZone)
-  String get cidZser {
-    // ถ้ามี announcementZone ที่ join มา → ใช้ payStatus
-    // (จะถูก join ใน BillingTable ผ่าน loadAnnounceMentGetzone)
-    return '0';
-  }
+  String get cidZser => '0';
 
   List<String> get zoneOptions => _zoneModels
       .map((z) => z.zn ?? '')
@@ -163,16 +156,12 @@ class LicenseContractViewModel extends ChangeNotifier {
       .where((zn) => zn.trim().isNotEmpty)
       .toList();
 
-  /// ล็อกทั้งหมด (AreaModel) — filter ตามโซนที่เลือก
   List<AreaModel> get filteredAreas {
     if (_selectedZn == null) return _zoneAreas;
     final zser = _getZoneSer(_selectedZn);
     return _zoneAreas.where((a) => (a.zser ?? '') == (zser ?? '')).toList();
   }
 
-  /// ตรวจว่าล็อกนี้ "มีผู้เช่าอยู่" หรือไม่ — ใช้ 2 แหล่งข้อมูล:
-  /// 1) `area.quantity == '1'` (จาก GC_areaAll.php)
-  /// 2) `area.properties.isNotEmpty` — join กับ PropertiesModel (จาก admin/requests/properties)
   bool isOccupied(AreaModel area) {
     if ((area.quantity ?? '').toString() == '1') return true;
     if (area.properties.isNotEmpty) return true;
@@ -246,7 +235,6 @@ class LicenseContractViewModel extends ChangeNotifier {
       ),
     );
 
-    // โหลด dropdown data (async)
     loadZones();
     loadSubZones();
   }
@@ -271,19 +259,15 @@ class LicenseContractViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// โหลดล็อกทั้งหมดของโซน (AreaModel + PropertiesModel joined)
-  /// เหมือน Data_Properties ใน ChaoArea_Screen — area.properties จะมี request ที่ active
   Future<void> loadAreas(String? zoneSer) async {
     _zoneAreas = await _service.fetchAreas(zoneSer: zoneSer);
     notifyListeners();
   }
 
-  /// Refetch areas + occupied asers สำหรับโซนที่เลือกอยู่
   Future<void> refreshProperties() async {
     if (_selectedZn == null) return;
     final zoneSer = _getZoneSer(_selectedZn);
     if (zoneSer == null || zoneSer.isEmpty) {
-      // ถ้าเลือก "ทั้งหมด" → โหลดทุกล็อก
       await loadAreas(null);
       return;
     }
@@ -330,7 +314,6 @@ class LicenseContractViewModel extends ChangeNotifier {
     _zoneAreas = [];
     notifyListeners();
     final zoneSer = _getZoneSer(value);
-    // ถ้าเลือก "ทั้งหมด" → โหลดทุกล็อก
     if (zoneSer == '0' || zoneSer == null) {
       await loadAreas(null);
       await _loadAnnouncement(null);
@@ -340,7 +323,6 @@ class LicenseContractViewModel extends ChangeNotifier {
     }
   }
 
-  /// โหลดประกาศของโซนที่เลือกจาก API
   Future<void> _loadAnnouncement(String? zoneSer) async {
     final result = await _service.fetchAnnouncement(
       zoneSer: zoneSer ?? '',
@@ -349,7 +331,6 @@ class LicenseContractViewModel extends ChangeNotifier {
     _announcementZone = result.zone;
     _announcementMessage = result.message;
 
-    // ถ้ามี c_date_start / c_date_end จากประกาศ → อัปเดต CID date fields
     if (_announcementZone != null) {
       final startIdx = _findCidIndex('1');
       final endIdx = _findCidIndex('2');
@@ -364,8 +345,6 @@ class LicenseContractViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// ผู้ใช้เลือก "รหัสพื้นที่" (AreaModel)
-  /// value = 'ln|aser|zser|scname'
   void onPropertyChanged(String? value) {
     if (value == null) return;
     final parts = value.split('|');
@@ -380,10 +359,6 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ===============================================================
   // Apply customer from registry (CustomerPickerDialog)
   // ===============================================================
-  /// Auto-fill ฟอร์มจากข้อมูลลูกค้าที่เลือกจากทะเบียน
-  ///
-  /// Pattern เดียวกับ new_contract_cmm.dart → Loading_Data_cid()
-  /// Map fields ตาม data_persons / data_shops
   void applyCustomerFromRegistry({
     String? custno,
     String? cname,
@@ -394,22 +369,18 @@ class LicenseContractViewModel extends ChangeNotifier {
     String? national,
     String? age,
   }) {
-    // ─── Person fields (ตาม data_persons) ───
-    // ser=1: ชื่อ-นามสกุล
     final nameIdx = _findPersonIndex('ชื่อ-นามสกุล');
     if (nameIdx >= 0 && cname != null) {
       _dataPerson[nameIdx].detail = cname;
       _controllersPerson[nameIdx].text = cname;
     }
 
-    // ser=2: เลขบัตรประจำตัวประชาชน
     final taxIdx = _findPersonIndex('เลขบัตรประจำตัว');
     if (taxIdx >= 0 && tax != null) {
       _dataPerson[taxIdx].detail = tax;
       _controllersPerson[taxIdx].text = tax;
     }
 
-    // ser=3: อายุ
     if (age != null) {
       final ageIdx = _findPersonIndex('อายุ');
       if (ageIdx >= 0) {
@@ -418,7 +389,6 @@ class LicenseContractViewModel extends ChangeNotifier {
       }
     }
 
-    // ser=4: สัญชาติ
     if (national != null) {
       final natIdx = _findPersonIndex('สัญชาติ');
       if (natIdx >= 0) {
@@ -427,14 +397,12 @@ class LicenseContractViewModel extends ChangeNotifier {
       }
     }
 
-    // ser=5: บ้านเลขที่ — map addr1 ไปที่นี่ (ใน new_contract_cmm ก็ใช้ addr.number)
     if (addr1 != null && addr1.isNotEmpty) {
       final houseIdx = _findPersonIndex('บ้านเลขที่');
       if (houseIdx >= 0) {
         _dataPerson[houseIdx].detail = addr1;
         _controllersPerson[houseIdx].text = addr1;
       }
-      // ser=13: หมายเหตุ — เก็บ full address
       final noteIdx = _findPersonIndex('หมายเหตุ');
       if (noteIdx >= 0) {
         _dataPerson[noteIdx].detail = addr1;
@@ -442,7 +410,6 @@ class LicenseContractViewModel extends ChangeNotifier {
       }
     }
 
-    // ser=12: เบอร์โทร
     if (tel != null) {
       final telIdx = _findPersonIndex('เบอร์โทร');
       if (telIdx >= 0) {
@@ -451,8 +418,6 @@ class LicenseContractViewModel extends ChangeNotifier {
       }
     }
 
-    // ─── Shop fields (ตาม data_shops) ───
-    // ser=4: ชื่อร้าน
     if (scname != null && scname.isNotEmpty) {
       final shopIdx = _findShopIndex('ชื่อร้าน');
       if (shopIdx >= 0) {
@@ -461,7 +426,6 @@ class LicenseContractViewModel extends ChangeNotifier {
       }
     }
 
-    // เก็บ custno ไว้ในตัวแปร (อาจใช้ตอน save)
     _registryCustno = custno;
 
     notifyListeners();
@@ -505,7 +469,6 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ===============================================================
   // Auto-fill from property
   // ===============================================================
-  /// Auto-fill ฟอร์มจาก AreaModel ที่เลือก (ใช้ field ของ AreaModel โดยตรง)
   void _autoFillFromArea() {
     if (_selectedLn == null) return;
     final selectedLnOnly = _selectedLn!.split('|').first;
@@ -514,34 +477,27 @@ class LicenseContractViewModel extends ChangeNotifier {
       orElse: () => AreaModel(),
     );
 
-    // ─── Shop fields ───
-    // ser=4: ชื่อร้าน
     if (_selectedScname != null && _selectedScname!.isNotEmpty) {
       final shopIndex = _findShopIndex('ชื่อร้าน');
       if (shopIndex >= 0) _controllersShop[shopIndex].text = _selectedScname!;
     }
 
-    // ser=3: ประเภทสินค้า ← AreaModel.stype (type ของร้าน)
     if (area.stype != null && area.stype!.isNotEmpty) {
       final shopIndex = _findShopIndex('ประเภทสินค้า');
       if (shopIndex >= 0) _controllersShop[shopIndex].text = area.stype!;
     }
 
-    // ─── Person fields ───
-    // ser=5: บ้านเลขที่ ← AreaModel.ln
     final lnAddr = area.ln ?? '';
     if (lnAddr.isNotEmpty) {
       final personIndex = _findPersonIndex('บ้านเลขที่');
       if (personIndex >= 0) _controllersPerson[personIndex].text = lnAddr;
     }
 
-    // ser=13: หมายเหตุ ← AreaModel.comment (lncode)
     if (area.lncode != null && area.lncode!.isNotEmpty) {
       final personIndex = _findPersonIndex('หมายเหตุ');
       if (personIndex >= 0) _controllersPerson[personIndex].text = area.lncode!;
     }
 
-    // ─── CID (Date) ───
     if (area.sdate != null && area.sdate!.isNotEmpty) {
       final idx = _findCidIndex('1');
       if (idx >= 0) _dataCid[idx]['detail'] = area.sdate!;
@@ -551,7 +507,6 @@ class LicenseContractViewModel extends ChangeNotifier {
       if (idx >= 0) _dataCid[idx]['detail'] = area.ldate!;
     }
 
-    // sync กลับ model
     for (int i = 0; i < _dataPerson.length; i++) {
       _dataPerson[i].detail = _controllersPerson[i].text;
     }
@@ -573,7 +528,6 @@ class LicenseContractViewModel extends ChangeNotifier {
   // Save
   // ===============================================================
   void submit() {
-    // sync controller → model
     for (int i = 0; i < _dataPerson.length; i++) {
       _dataPerson[i].detail = _controllersPerson[i].text;
     }
@@ -612,17 +566,11 @@ class LicenseContractViewModel extends ChangeNotifier {
     _eventController.add(LicenseContractSavedEvent(result));
   }
 
-  // ===============================================================
-  // Event helpers
-  // ===============================================================
   void _emitError(String message) {
     _eventController.add(LicenseContractErrorEvent(message));
     notifyListeners();
   }
 
-  // ===============================================================
-  // Lifecycle
-  // ===============================================================
   @override
   void dispose() {
     for (final c in _controllersPerson) {

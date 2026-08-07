@@ -15,6 +15,8 @@ import 'widgets/request_detail_step1.dart';
 import 'widgets/request_detail_step2.dart';
 
 class LicenseRequestDetailPage extends StatefulWidget {
+  /// UUID ของ Request (มาจาก ReviewModel.newRequest.requestUuid)
+  /// จะถูก forward ไปให้ RequestDetailStep1 เพื่อโหลดข้อมูล
   final String? routeData;
   final String title;
 
@@ -96,7 +98,7 @@ class _LicenseRequestDetailPageBodyState
             ),
             Expanded(
               child: step == 1
-                  ? const RequestDetailStep1()
+                  ? RequestDetailStep1(requestUuid: widget.routeData)
                   : const RequestDetailStep2(),
             ),
             RequestDetailFooter(

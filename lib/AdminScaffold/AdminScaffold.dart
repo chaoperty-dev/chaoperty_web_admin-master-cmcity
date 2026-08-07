@@ -3601,7 +3601,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       // ),
                     ),
                     AdminMenuItem(
-                      title: '  ↳ ทำสัญญา',
+                      title: '  ↳ คำขออนุญาต',
                       route: '/LicenseContract',
                       // icon: IconData(
                       //   int.parse('0xe873'),
@@ -6253,7 +6253,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                     icon: IconData(0xe7f4, fontFamily: 'MaterialIcons'),
                   ),
                   AdminMenuItem(
-                    title: 'ทำสัญญา',
+                    title: 'คำขออนุญาต',
                     route: '/LicenseContract',
                     icon: IconData(0xe53e, fontFamily: 'MaterialIcons'),
                   ),
