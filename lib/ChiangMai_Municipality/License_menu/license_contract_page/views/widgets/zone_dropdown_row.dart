@@ -5,6 +5,7 @@
 // - ใช้ _FieldDropdown + icon badge pattern เดียวกับ license_request_page
 // - **ทุก dropdown มี search box ภายใน** (กดแล้วพิมพ์ค้นหาได้)
 // - cascading: เลือก sub-zone → zone → property
+// - ปุ่ม "ค้นหาจากทะเบียน" จะ disabled ถ้ายังไม่ได้เลือกโซน
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -40,6 +41,7 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LicenseContractViewModel>();
+    final canSearchRegistry = vm.selectedZn != null && !vm.readOnly;
     return Container(
       padding: const EdgeInsets.all(LcSpace.md),
       decoration: LcDecor.card(),
@@ -59,7 +61,10 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
             children: [
               Expanded(flex: 3, child: _propertyField(context, vm)),
               const SizedBox(width: LcSpace.md),
-              Expanded(flex: 2, child: _searchFromRegistry()),
+              Expanded(
+                flex: 2,
+                child: _searchFromRegistry(enabled: canSearchRegistry),
+              ),
             ],
           ),
         ],
@@ -287,12 +292,13 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
   // ──────────────────────────────────────────────────────────────────
   // Search from registry button
   // ──────────────────────────────────────────────────────────────────
-  Widget _searchFromRegistry() {
+  Widget _searchFromRegistry({required bool enabled}) {
     return _FieldDropdown(
       icon: Icons.search_rounded,
       label: 'ค้นหาจากทะเบียน',
-      enabled: true,
+      enabled: enabled,
       child: _RegistryButton(
+        enabled: enabled,
         onTap: () => _openCustomerPicker(),
       ),
     );
@@ -541,7 +547,8 @@ class _PropertyDropRow extends StatelessWidget {
 
 class _RegistryButton extends StatefulWidget {
   final VoidCallback onTap;
-  const _RegistryButton({required this.onTap});
+  final bool enabled;
+  const _RegistryButton({required this.onTap, this.enabled = true});
 
   @override
   State<_RegistryButton> createState() => _RegistryButtonState();
@@ -549,50 +556,80 @@ class _RegistryButton extends StatefulWidget {
 
 class _RegistryButtonState extends State<_RegistryButton> {
   bool _hover = false;
+  bool _down = false;
 
   @override
   Widget build(BuildContext context) {
+    final enabled = widget.enabled;
+    // ปรับ UI ให้ "พอดี" — เต็มพื้นที่, จัดกลาง, ใช้ icon + text + arrow
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) {
+        if (enabled) setState(() => _hover = true);
+      },
       onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: LcAnimations.fast,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: _hover ? LcColors.primaryLight : LcColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(LcRadius.pill),
-            border: Border.all(
-              color: _hover ? LcColors.primary : LcColors.border,
-              width: 1,
+      child: AnimatedScale(
+        scale: _down ? 0.97 : (_hover ? 1.02 : 1.0),
+        duration: LcAnimations.fast,
+        curve: Curves.easeOut,
+        child: GestureDetector(
+          onTap: enabled ? widget.onTap : null,
+          onTapDown: (_) {
+            if (enabled) setState(() => _down = true);
+          },
+          onTapCancel: () => setState(() => _down = false),
+          onTapUp: (_) => setState(() => _down = false),
+          child: AnimatedContainer(
+            duration: LcAnimations.fast,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: !enabled
+                  ? LcColors.surfaceMuted.withOpacity(.3)
+                  : (_hover ? LcColors.headerAccent : LcColors.headerBg),
+              borderRadius: BorderRadius.circular(LcRadius.sm),
+              border: Border.all(
+                color: !enabled
+                    ? LcColors.border
+                    : (_hover ? LcColors.headerBg : LcColors.headerBg),
+                width: 1,
+              ),
+              boxShadow: !enabled
+                  ? []
+                  : [
+                      BoxShadow(
+                        color:
+                            LcColors.headerBg.withOpacity(_hover ? .55 : .35),
+                        blurRadius: _hover ? 12 : 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
             ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.search_rounded,
-                size: 14,
-                color: _hover ? LcColors.primaryDark : LcColors.textSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'ค้นหาจากทะเบียน',
-                style: LcText.caption.copyWith(
-                  color: _hover ? LcColors.primaryDark : LcColors.textSecondary,
-                  fontFamily: LcText.fontBold,
-                  fontSize: 12,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: 14,
+                  color: !enabled ? LcColors.textMuted : Colors.white,
                 ),
-              ),
-              const SizedBox(width: 6),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 12,
-                color: _hover ? LcColors.primaryDark : LcColors.textMuted,
-              ),
-            ],
+                const SizedBox(width: 6),
+                Text(
+                  'ค้นหาจากทะเบียน',
+                  style: LcText.caption.copyWith(
+                    color: !enabled ? LcColors.textMuted : Colors.white,
+                    fontFamily: LcText.fontBold,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ],
+            ),
           ),
         ),
       ),

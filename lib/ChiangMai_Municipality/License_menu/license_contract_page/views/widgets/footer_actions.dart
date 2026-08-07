@@ -137,7 +137,7 @@ class _CancelButtonState extends State<_CancelButton> {
   }
 }
 
-/// ปุ่ม "ถัดไป" — outlined style (รองจากบันทึก)
+/// ปุ่ม "ถัดไป" — filled green style (พื้นเขียวอ่อน + ขอบเขียวเข้ม + ตัวอักษรเขียวเข้ม)
 class _NextButton extends StatefulWidget {
   final VoidCallback onTap;
   const _NextButton({required this.onTap});
@@ -166,13 +166,15 @@ class _NextButtonState extends State<_NextButton> {
           onTapUp: (_) => setState(() => _down = false),
           onTap: widget.onTap,
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
             decoration: BoxDecoration(
-              color: _hover ? LcColors.primaryLight : Colors.white,
+              color: _hover
+                  ? LcColors.primary.withOpacity(.12)
+                  : LcColors.primaryLight,
               borderRadius: BorderRadius.circular(LcRadius.md),
               border: Border.all(
-                color: _hover ? LcColors.primary : LcColors.borderStrong,
-                width: 1.2,
+                color: _hover ? LcColors.primary : LcColors.primaryDark,
+                width: 1,
               ),
             ),
             child: Row(
@@ -181,16 +183,16 @@ class _NextButtonState extends State<_NextButton> {
                 Text(
                   'ถัดไป',
                   style: TextStyle(
-                    color: _hover ? LcColors.primaryDark : LcColors.primary,
+                    color: LcColors.primaryDark,
                     fontFamily: LcText.fontBold,
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(width: 6),
-                Icon(
+                const Icon(
                   Icons.arrow_forward_rounded,
-                  color: _hover ? LcColors.primaryDark : LcColors.primary,
+                  color: LcColors.primaryDark,
                   size: 16,
                 ),
               ],
