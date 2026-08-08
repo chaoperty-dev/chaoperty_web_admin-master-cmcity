@@ -50,6 +50,31 @@ class LcExpTransModel {
     this.wht,
     this.total,
   });
+
+  /// แปลง model → Map เพื่อส่งใน `debt_details` ของ POST /admin/requests
+  Map<String, dynamic> toJson() => {
+        'ser': ser,
+        'expname': expname,
+        'exptser': exptser,
+        'unitser': unitser,
+        'unit': unit,
+        'day': day,
+        'term': term,
+        'sdate': sdate,
+        'ldate': ldate,
+        'qty': qty,
+        'amt': amt,
+        'vser': vser,
+        'vtype': vtype,
+        'nvat': nvat,
+        'vat': vat,
+        'pvat': pvat,
+        'wser': wser,
+        'wtype': wtype,
+        'nwht': nwht,
+        'wht': wht,
+        'total': total,
+      };
 }
 
 class LcAutoExpModel {

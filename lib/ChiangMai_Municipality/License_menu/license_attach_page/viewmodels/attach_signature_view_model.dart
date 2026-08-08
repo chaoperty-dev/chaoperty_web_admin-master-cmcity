@@ -14,7 +14,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 
-import '../../../Model/Document_Model.dart';
+import '../models/license_attach_document.dart';
 import '../services/attach_signature_service.dart';
 
 class AttachSignatureViewModel extends ChangeNotifier {
@@ -25,19 +25,19 @@ class AttachSignatureViewModel extends ChangeNotifier {
 
   /// Callback ให้ AttachDocumentsViewModel ส่ง documents มาให้
   /// (ลายเซ็นใช้ document ที่ code = 'users_signature')
-  final List<DocumentModel> Function() documentsProvider;
+  final List<LicenseAttachDocument> Function() documentsProvider;
 
   final AttachSignatureService _service;
 
   bool _isUploading = false;
   String? _errorMessage;
-  DocumentModel? _signatureDoc;
+  LicenseAttachDocument? _signatureDoc;
 
   bool get isUploading => _isUploading;
   String? get errorMessage => _errorMessage;
 
   /// ค้นหา document ที่เป็นลายเซ็น (code = 'users_signature')
-  DocumentModel? get signatureDoc {
+  LicenseAttachDocument? get signatureDoc {
     if (_signatureDoc != null) return _signatureDoc;
     try {
       _signatureDoc =

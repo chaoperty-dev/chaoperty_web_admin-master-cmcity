@@ -19,7 +19,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../Model/Document_Model.dart';
+import '../../models/license_attach_document.dart';
 import '../../services/attach_documents_service.dart';
 import '../theme/license_attach_theme.dart';
 
@@ -28,13 +28,13 @@ import '../theme/license_attach_theme.dart';
 // =============================================================================
 
 /// เปิด Bottom Sheet สำหรับ batch upload
-/// คืนค่า `Map<int, AttachmentsModel>` ของ docId → uploaded attachment
-Future<Map<int, AttachmentsModel>?> showAttachBatchUploadSheet({
+/// คืนค่า `Map<int, LicenseAttachAttachment>` ของ docId → uploaded attachment
+Future<Map<int, LicenseAttachAttachment>?> showAttachBatchUploadSheet({
   required BuildContext context,
-  required List<DocumentModel> documents,
+  required List<LicenseAttachDocument> documents,
   required String requestUuid,
 }) {
-  return showModalBottomSheet<Map<int, AttachmentsModel>>(
+  return showModalBottomSheet<Map<int, LicenseAttachAttachment>>(
     context: context,
     isScrollControlled: true,
     enableDrag: false,
@@ -51,7 +51,7 @@ Future<Map<int, AttachmentsModel>?> showAttachBatchUploadSheet({
 // =============================================================================
 
 class AttachBatchUploadSheet extends StatefulWidget {
-  final List<DocumentModel> documents;
+  final List<LicenseAttachDocument> documents;
   final String requestUuid;
 
   const AttachBatchUploadSheet({
@@ -68,7 +68,7 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
     with SingleTickerProviderStateMixin {
   List<PlatformFile> _pickedFiles = [];
   Map<int, PlatformFile> _assignments = {};
-  Map<int, AttachmentsModel> _uploaded = {};
+  Map<int, LicenseAttachAttachment> _uploaded = {};
 
   bool _uploading = false;
   double _progress = 0;
@@ -100,12 +100,12 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
   // ---------------------------------------------------------------------------
   // Helpers
   // ---------------------------------------------------------------------------
-  int _docId(DocumentModel d) =>
+  int _docId(LicenseAttachDocument d) =>
       d.id is int ? d.id as int : int.tryParse('${d.id}') ?? 0;
 
-  String _docName(DocumentModel d) => (d.nameTh ?? '').toString();
+  String _docName(LicenseAttachDocument d) => (d.nameTh ?? '').toString();
 
-  bool _hasAttachment(DocumentModel d) =>
+  bool _hasAttachment(LicenseAttachDocument d) =>
       d.attachments != null && d.attachments!.isNotEmpty;
 
   bool _isMobile(BuildContext context) =>
@@ -215,7 +215,7 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
         );
 
         if (result.ok && result.body?['data'] is Map<String, dynamic>) {
-          final updated = AttachmentsModel.fromJson(
+          final updated = LicenseAttachAttachment.fromJson(
             result.body!['data'] as Map<String, dynamic>,
           );
           _uploaded[docId] = updated;
@@ -708,7 +708,7 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
     required int docId,
     required String name,
     required PlatformFile? assigned,
-    required AttachmentsModel? uploaded,
+    required LicenseAttachAttachment? uploaded,
     required bool isMobile,
   }) {
     final isUploaded = uploaded != null;
@@ -1120,3 +1120,4 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
     return '${value.toStringAsFixed(1)} ${units[idx]}';
   }
 }
+

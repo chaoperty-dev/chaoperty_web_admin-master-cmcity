@@ -392,10 +392,19 @@ class _LicenseContractBody extends StatelessWidget {
               cidLdate: vm.cidLdate,
               cidZser: vm.cidZser,
             )..load(),
-            child: BillingTable(
-              onRowsChanged: (rows) {
-                // Optional: callback เมื่อ rows เปลี่ยน
-                // vm.setBillingRows(rows);
+            child: Consumer<BillingViewModel>(
+              builder: (context, billingVm, _) {
+                // ✨ Sync rows จาก BillingViewModel → LicenseContractViewModel
+                // (เรียกทุกครั้งที่ rows เปลี่ยน — ทั้ง initial load และ user edit)
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  vm.setBillingRows(billingVm.rows);
+                });
+                return BillingTable(
+                  onRowsChanged: (rows) {
+                    // ส่ง billing rows กลับเข้า VM เพื่อใช้ตอน submit (POST /admin/requests)
+                    vm.setBillingRows(rows);
+                  },
+                );
               },
             ),
           ),

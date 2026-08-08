@@ -16,7 +16,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../license_contract_page/models/license_contract_result.dart';
+import '../models/license_attach_result.dart';
 import '../models/license_attach_config.dart';
 import '../models/license_attach_event.dart';
 import '../viewmodels/license_attach_view_model.dart';
@@ -32,7 +32,7 @@ import 'license_attach_detail_page.dart';
 /// Public API
 /// ═══════════════════════════════════════════════════════════════════════
 class LicenseAttachPage extends StatefulWidget {
-  final ValueChanged<LicenseContractResult>? onSave;
+  final ValueChanged<LicenseAttachResult>? onSave;
 
   const LicenseAttachPage._({super.key, this.onSave});
 
@@ -42,7 +42,7 @@ class LicenseAttachPage extends StatefulWidget {
     String? routeData,
     int? serTitle,
     String title = 'แนบหลักฐาน',
-    ValueChanged<LicenseContractResult>? onSave,
+    ValueChanged<LicenseAttachResult>? onSave,
     LicenseAttachConfig? config,
   }) {
     final cfg = config ??
@@ -77,7 +77,7 @@ class _LicenseAttachPageState extends State<LicenseAttachPage> {
 /// Body จริง — ต้องอยู่ใต้ Provider เสมอ
 class _LicenseAttachPageBody extends StatefulWidget {
   final String title;
-  final ValueChanged<LicenseContractResult>? onSave;
+  final ValueChanged<LicenseAttachResult>? onSave;
 
   const _LicenseAttachPageBody({
     required this.title,
@@ -180,7 +180,7 @@ class LicenseAttachHost extends StatelessWidget {
   final String? routeData;
   final int? serTitle;
   final String title;
-  final ValueChanged<LicenseContractResult>? onSave;
+  final ValueChanged<LicenseAttachResult>? onSave;
 
   const LicenseAttachHost({
     super.key,
@@ -200,3 +200,4 @@ class LicenseAttachHost extends StatelessWidget {
     );
   }
 }
+

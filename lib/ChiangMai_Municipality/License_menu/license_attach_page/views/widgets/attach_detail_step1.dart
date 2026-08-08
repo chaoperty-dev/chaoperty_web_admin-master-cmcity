@@ -21,8 +21,8 @@ import '../../viewmodels/attach_documents_view_model.dart';
 import '../theme/license_attach_theme.dart';
 import '../../services/attach_documents_service.dart';
 
-import '../../../../unity/API_admin_requests.dart';
-import '../../../../Model/Document_Model.dart';
+import '../../utils/attachment_utils.dart';
+import '../../models/license_attach_document.dart';
 import 'attach_signature_section.dart';
 import 'attach_batch_upload_sheet.dart';
 import 'attach_file_preview_dialog.dart';
@@ -164,7 +164,7 @@ class _DocumentsCard extends StatelessWidget {
 // Table — รายการเอกสาร (ใช้ LaColors token ตามธีมของหน้า)
 // =============================================================================
 class _DocumentsTable extends StatelessWidget {
-  final List<DocumentModel> documents;
+  final List<LicenseAttachDocument> documents;
   const _DocumentsTable({required this.documents});
 
   @override
@@ -206,7 +206,7 @@ class _DocumentsTable extends StatelessWidget {
 }
 
 class _TableHeaderBar extends StatelessWidget {
-  final List<DocumentModel> documents;
+  final List<LicenseAttachDocument> documents;
   const _TableHeaderBar({required this.documents});
 
   @override
@@ -338,7 +338,7 @@ class _SoftActionButton extends StatelessWidget {
 // =============================================================================
 class _DocumentRow extends StatelessWidget {
   final int index;
-  final DocumentModel doc;
+  final LicenseAttachDocument doc;
   const _DocumentRow({required this.index, required this.doc});
 
   bool get _hasFile => doc.attachments != null && doc.attachments!.isNotEmpty;
@@ -509,14 +509,14 @@ class _DocumentRow extends StatelessWidget {
     }
   }
 
-  String _statusLabel(DocumentModel doc) {
+  String _statusLabel(LicenseAttachDocument doc) {
     if (!_hasFile) return 'ยังไม่แนบ';
     final s = doc.attachments!.first.status_label?.toString().trim() ?? '';
     if (s.isEmpty || s == 'null') return 'รอตรวจสอบ';
     return s;
   }
 
-  StatusPalette _statusPalette(DocumentModel doc) {
+  StatusPalette _statusPalette(LicenseAttachDocument doc) {
     final raw =
         (_hasFile ? doc.attachments!.first.status : null)?.toString() ?? '';
     final label = _statusLabel(doc);
@@ -628,7 +628,7 @@ class _DocumentRow extends StatelessWidget {
 // =============================================================================
 class _DocumentCard extends StatelessWidget {
   final int index;
-  final DocumentModel doc;
+  final LicenseAttachDocument doc;
   const _DocumentCard({required this.index, required this.doc});
 
   bool get _hasFile => doc.attachments != null && doc.attachments!.isNotEmpty;
@@ -755,7 +755,7 @@ class _DocumentCard extends StatelessWidget {
   }
 
   // -------- shared helpers (ซ้ำกับ row เพื่อไม่ผูกกัน) --------
-  StatusPalette _statusPalette(DocumentModel doc) {
+  StatusPalette _statusPalette(LicenseAttachDocument doc) {
     final raw =
         (_hasFile ? doc.attachments!.first.status : null)?.toString() ?? '';
     final label = _statusLabel(doc);
@@ -777,7 +777,7 @@ class _DocumentCard extends StatelessWidget {
         LaColors.statusPendingBg, LaColors.statusPendingFg);
   }
 
-  String _statusLabel(DocumentModel doc) {
+  String _statusLabel(LicenseAttachDocument doc) {
     if (!_hasFile) return 'ยังไม่แนบ';
     final s = doc.attachments!.first.status_label?.toString().trim() ?? '';
     if (s.isEmpty || s == 'null') return 'รอตรวจสอบ';
@@ -883,28 +883,58 @@ class _DocumentCard extends StatelessWidget {
 // ปุ่ม "เรียกดูไฟล์" (เปิด preview)
 // =============================================================================
 class _FileButton extends StatelessWidget {
-  final DocumentModel doc;
+  final LicenseAttachDocument doc;
   final bool enabled;
   const _FileButton({required this.doc, required this.enabled});
 
-  /// เปิด preview ไฟล์แนบ (PDF / รูป) — popup ดู 1 ต่อ 1
+  /// เปิด preview ไฟล์แนบ (PDF / รูป) — popup gallery รองรับ Next/Prev
   void _openPreview(BuildContext context) {
     if (!enabled) return;
 
-    // หา attachment ที่ตรงกับ docId
+    // หา attachment ที่ตรงกับ docId ของ row นี้
     final docId =
         doc.id is int ? doc.id as int : int.tryParse('${doc.id}') ?? 0;
     final matched = findAttachmentByDocId(
-      doc.attachments ?? <AttachmentsModel>[],
+      doc.attachments ?? <LicenseAttachAttachment>[],
       docId,
     );
     final att = matched ?? doc.attachments!.first;
 
-    AttachFilePreviewDialog.show(
-      context,
-      attachment: att,
-      title: doc.nameTh ?? 'ไฟล์แนบ',
-    );
+    // รวบรวม attachments ทั้งหมดจากทุก docs ใน VM เพื่อให้ Next/Prev ทำงาน
+    final vm = context.read<AttachDocumentsViewModel>();
+    final allAttachments = <LicenseAttachAttachment>[];
+    final allTitles = <String?>[];
+    for (final d in vm.documents) {
+      if (d.attachments != null) {
+        for (final a in d.attachments!) {
+          allAttachments.add(a);
+          // ใช้ doc.nameTh เป็น title สำหรับแต่ละ attachment
+          allTitles.add(d.nameTh?.toString());
+        }
+      }
+    }
+
+    // หา index ของ attachment ปัจจุบัน
+    final initialIndex = allAttachments
+        .indexWhere((a) => a.uuid == att.uuid && a.filePath == att.filePath);
+
+    if (allAttachments.length <= 1) {
+      // ถ้ามีแค่ 1 ไฟล์ → ใช้ .show() ปกติ
+      AttachFilePreviewDialog.show(
+        context,
+        attachment: att,
+        title: doc.nameTh ?? 'ไฟล์แนบ',
+      );
+    } else {
+      // ถ้ามีหลายไฟล์ → ใช้ .showGallery() รองรับ Next/Prev + ส่ง titles list
+      AttachFilePreviewDialog.showGallery(
+        context,
+        attachments: allAttachments,
+        initialIndex: initialIndex >= 0 ? initialIndex : 0,
+        title: doc.nameTh ?? 'ไฟล์แนบ',
+        titles: allTitles,
+      );
+    }
   }
 
   @override
@@ -1102,7 +1132,7 @@ class _ViewModeToggle extends StatelessWidget {
 // Documents Grid — Grid view สูงสุด 4 คอลัมน์ + preview รูป/PDF
 // =============================================================================
 class _DocumentsGrid extends StatelessWidget {
-  final List<DocumentModel> documents;
+  final List<LicenseAttachDocument> documents;
   const _DocumentsGrid({required this.documents});
 
   @override
@@ -1145,7 +1175,7 @@ class _DocumentsGrid extends StatelessWidget {
 
 class _DocumentGridCard extends StatelessWidget {
   final int index;
-  final DocumentModel doc;
+  final LicenseAttachDocument doc;
   final int columns;
   const _DocumentGridCard({
     required this.index,
@@ -1172,14 +1202,14 @@ class _DocumentGridCard extends StatelessWidget {
     }
   }
 
-  String _statusLabel(DocumentModel doc) {
+  String _statusLabel(LicenseAttachDocument doc) {
     if (!_hasFile) return 'ยังไม่แนบ';
     final s = doc.attachments!.first.status_label?.toString().trim() ?? '';
     if (s.isEmpty || s == 'null') return 'รอตรวจสอบ';
     return s;
   }
 
-  StatusPalette _statusPalette(DocumentModel doc) {
+  StatusPalette _statusPalette(LicenseAttachDocument doc) {
     final raw =
         (_hasFile ? doc.attachments!.first.status : null)?.toString() ?? '';
     final label = _statusLabel(doc);
@@ -1433,7 +1463,7 @@ class _DocumentGridCard extends StatelessWidget {
 // Document Preview — โหลด thumbnail รูป/PDF (ใช้ service + auth header)
 // =============================================================================
 class _DocumentPreview extends StatelessWidget {
-  final DocumentModel doc;
+  final LicenseAttachDocument doc;
   final bool hasFile;
   const _DocumentPreview({required this.doc, required this.hasFile});
 
@@ -1492,10 +1522,16 @@ class _DocumentPreview extends StatelessWidget {
 
     // PDF / อื่นๆ → แสดง icon + คลิกเปิด preview เต็มจอ
     return GestureDetector(
-      onTap: () => _openPreview(context),
+      onTap: () {
+        // ignore: avoid_print
+        print(
+            '🔍 [_DocumentPreview] คลิก PDF/ไฟล์: "${att.fileName}" (uuid=${att.uuid})');
+        _openPreview(context);
+      },
       child: _placeholder(
         isPdf ? Icons.picture_as_pdf_rounded : Icons.insert_drive_file_rounded,
         isPdf ? 'PDF' : (fileType.isNotEmpty ? fileType.toUpperCase() : 'FILE'),
+        pdfColor: isPdf ? Colors.red.shade400 : null,
       ),
     );
   }
@@ -1536,21 +1572,29 @@ class _DocumentPreview extends StatelessWidget {
   }
 
   /// Placeholder: PDF / ไฟล์อื่น / โหลดไม่สำเร็จ
-  Widget _placeholder(IconData icon, String label) {
+  Widget _placeholder(IconData icon, String label, {Color? pdfColor}) {
     return Container(
       color: LaColors.surfaceMuted,
       alignment: Alignment.center,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 32, color: LaColors.textMuted),
+          Icon(icon, size: 36, color: pdfColor ?? LaColors.textMuted),
           const SizedBox(height: 4),
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
+              color: pdfColor ?? LaColors.textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 2),
+          const Text(
+            'คลิกเพื่อดู',
+            style: TextStyle(
               color: LaColors.textMuted,
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
+              fontSize: 9,
             ),
           ),
         ],
@@ -1558,7 +1602,7 @@ class _DocumentPreview extends StatelessWidget {
     );
   }
 
-  /// เปิด preview ไฟล์แนบ — popup ดู 1 ต่อ 1 (เหมือน _FileButton)
+  /// เปิด preview ไฟล์แนบ — popup gallery รองรับ Next/Prev + ส่ง titles list
   void _openPreview(BuildContext context) {
     if (!hasFile) return;
 
@@ -1570,15 +1614,45 @@ class _DocumentPreview extends StatelessWidget {
             ? raw.toInt()
             : (raw is String ? int.tryParse(raw) ?? 0 : 0));
     final matched = findAttachmentByDocId(
-      doc.attachments ?? <AttachmentsModel>[],
+      doc.attachments ?? <LicenseAttachAttachment>[],
       docId,
     );
     final att = matched ?? doc.attachments!.first;
 
-    AttachFilePreviewDialog.show(
-      context,
-      attachment: att,
-      title: doc.nameTh ?? 'ไฟล์แนบ',
-    );
+    // รวบรวม attachments + titles ทั้งหมดจากทุก docs ใน VM
+    final vm = context.read<AttachDocumentsViewModel>();
+    final allAttachments = <LicenseAttachAttachment>[];
+    final allTitles = <String?>[];
+    for (final d in vm.documents) {
+      if (d.attachments != null) {
+        for (final a in d.attachments!) {
+          allAttachments.add(a);
+          // ใช้ doc.nameTh เป็น title สำหรับแต่ละ attachment
+          allTitles.add(d.nameTh?.toString());
+        }
+      }
+    }
+
+    // หา index ของ attachment ปัจจุบัน
+    final initialIndex = allAttachments
+        .indexWhere((a) => a.uuid == att.uuid && a.filePath == att.filePath);
+
+    if (allAttachments.length <= 1) {
+      // ถ้ามีแค่ 1 ไฟล์ → ใช้ .show() ปกติ
+      AttachFilePreviewDialog.show(
+        context,
+        attachment: att,
+        title: doc.nameTh ?? 'ไฟล์แนบ',
+      );
+    } else {
+      // ถ้ามีหลายไฟล์ → ใช้ .showGallery() + ส่ง titles list เพื่อให้ title เปลี่ยนตามไฟล์
+      AttachFilePreviewDialog.showGallery(
+        context,
+        attachments: allAttachments,
+        initialIndex: initialIndex >= 0 ? initialIndex : 0,
+        title: doc.nameTh ?? 'ไฟล์แนบ',
+        titles: allTitles,
+      );
+    }
   }
 }

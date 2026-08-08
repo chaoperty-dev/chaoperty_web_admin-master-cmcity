@@ -4,8 +4,8 @@
 // Service — โหลด "รายการเอกสารที่ต้องแนบ" + อัปโหลด/ลบไฟล์แนบ
 //
 // เป็น service อิสระของ License Attach Detail Page
+// ใช้ model ของตัวเอง (LicenseAttachDocument / LicenseAttachAttachment)
 // ไม่ import / อ้างอิงไฟล์ใน Make_contract_CMM โดยตรง
-// (คัดลอก "ลอจิก" มาออกแบบใหม่ให้สะอาด ใช้ theme token ของ license_attach)
 // ============================================================================
 
 import 'dart:convert';
@@ -18,7 +18,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 
 import '../../../../Constant/Myconstant.dart';
-import '../../../Model/Document_Model.dart';
+import '../models/license_attach_document.dart';
 
 /// ผลลัพธ์หลังอัปโหลด (status + parsed body)
 class UploadResult {
@@ -34,8 +34,8 @@ class AttachDocumentsService {
   AttachDocumentsService();
 
   /// โหลดรายการเอกสาร (พร้อม attachments ที่แนบแล้ว) ตาม request uuid
-  /// คืน List<DocumentModel> (แต่ละ doc มี attachments ครบ)
-  Future<List<DocumentModel>> fetchDocuments(String requestUuid) async {
+  /// คืน List<LicenseAttachDocument> (แต่ละ doc มี attachments ครบ)
+  Future<List<LicenseAttachDocument>> fetchDocuments(String requestUuid) async {
     final headers = await MyHeaders.build();
     final url = Uri.parse(
       '${MyConstant().domain_v1}/admin/requests/$requestUuid',
@@ -44,19 +44,19 @@ class AttachDocumentsService {
     try {
       final response = await http.get(url, headers: headers);
       if (response.statusCode != 200) {
-        return <DocumentModel>[];
+        return <LicenseAttachDocument>[];
       }
 
       final jsonBody = json.decode(response.body);
       final documentsRaw = _findKeyAnywhere(jsonBody, 'documents');
-      if (documentsRaw is! List) return <DocumentModel>[];
+      if (documentsRaw is! List) return <LicenseAttachDocument>[];
 
       return documentsRaw
           .whereType<Map<String, dynamic>>()
-          .map<DocumentModel>((e) => DocumentModel.fromJson(e))
+          .map<LicenseAttachDocument>((e) => LicenseAttachDocument.fromJson(e))
           .toList();
     } catch (_) {
-      return <DocumentModel>[];
+      return <LicenseAttachDocument>[];
     }
   }
 
@@ -168,20 +168,26 @@ class AttachDocumentsService {
 
   /// โหลด bytes ของไฟล์แนบ (ใช้แสดง thumbnail / preview)
   ///
-  /// - ถ้า [AttachmentsModel.filePath] เป็น full URL → ใช้ตรงๆ พร้อม auth header
+  /// - ถ้า [LicenseAttachAttachment.filePath] เป็น full URL → ใช้ตรงๆ พร้อม auth header
   /// - ถ้าเป็น relative path → ต่อกับ domain_v1
-  /// - ถ้ามี [AttachmentsModel.uuid] → ใช้ endpoint
+  /// - ถ้ามี [LicenseAttachAttachment.uuid] → ใช้ endpoint
   ///   `/request-snapshot-attachments/{uuid}/preview` ซึ่งรองรับ auth
-  Future<Uint8List?> fetchAttachmentBytes(AttachmentsModel att) async {
+  Future<Uint8List?> fetchAttachmentBytes(LicenseAttachAttachment att) async {
     final uuid = att.uuid?.toString() ?? '';
     final filePath = att.filePath?.toString() ?? '';
-    if (uuid.isEmpty && filePath.isEmpty) return null;
+    final fileName = att.fileName?.toString() ?? '';
+    if (uuid.isEmpty && filePath.isEmpty) {
+      // ignore: avoid_print
+      print('[fetchAttachmentBytes] ❌ ไม่มีทั้ง uuid และ filePath');
+      return null;
+    }
 
     final headers = await MyHeaders.build();
     String url;
     if (uuid.isNotEmpty) {
+      // ✨ ใช้ endpoint ที่ถูกต้อง: /admin/requests/attachments/{uuid}/preview
       url =
-          '${MyConstant().domain_v1}/request-snapshot-attachments/$uuid/preview';
+          '${MyConstant().domain_v1}/admin/requests/attachments/$uuid/preview';
     } else if (filePath.startsWith('http')) {
       url = filePath;
     } else {
@@ -189,13 +195,46 @@ class AttachDocumentsService {
       url = filePath.startsWith('/') ? '$base$filePath' : '$base/$filePath';
     }
 
+    // ignore: avoid_print
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    // ignore: avoid_print
+    print('🔍 [fetchAttachmentBytes]');
+    // ignore: avoid_print
+    print('  fileName: $fileName');
+    // ignore: avoid_print
+    print('  uuid: $uuid');
+    // ignore: avoid_print
+    print('  filePath: $filePath');
+    // ignore: avoid_print
+    print('  url: $url');
+    // ignore: avoid_print
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     try {
       final response = await http.get(Uri.parse(url), headers: headers);
+
+      // ignore: avoid_print
+      print('📥 [fetchAttachmentBytes] Status: ${response.statusCode}');
+      // ignore: avoid_print
+      print(
+          '📥 [fetchAttachmentBytes] Content-Length: ${response.contentLength}');
+      // ignore: avoid_print
+      print(
+          '📥 [fetchAttachmentBytes] Content-Type: ${response.headers['content-type']}');
+      // ignore: avoid_print
+      print(
+          '📥 [fetchAttachmentBytes] Body bytes: ${response.bodyBytes.length}');
+
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return response.bodyBytes;
+      } else {
+        // ignore: avoid_print
+        print(
+            '❌ [fetchAttachmentBytes] ไม่สำเร็จ — Status ${response.statusCode}, bytes=${response.bodyBytes.length}');
       }
-    } catch (_) {
-      // ignore
+    } catch (e) {
+      // ignore: avoid_print
+      print('❌ [fetchAttachmentBytes] Exception: $e');
     }
     return null;
   }

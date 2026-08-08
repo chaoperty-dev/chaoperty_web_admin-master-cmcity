@@ -8,14 +8,18 @@
 // ============================================================================
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
+import '../../../../Constant/Myconstant.dart';
 import '../../../../Model/GetArea_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../Model/AnnouncementZone_Model.dart';
 import '../../../Model/Person&Shop_Model.dart';
+import '../models/billing_models.dart';
 import '../models/license_contract_config.dart';
 import '../models/license_contract_event.dart';
 import '../models/license_contract_result.dart';
@@ -53,6 +57,12 @@ class LicenseContractViewModel extends ChangeNotifier {
   String? _selectedZser;
   String? _selectedAser;
   String? _selectedScname;
+
+  // ---------- Client (ลูกค้าที่เลือกจาก CustomerPickerDialog) ----------
+  String? _clientUuid;
+
+  // ---------- Billing rows (จาก BillingViewModel ผ่าน onRowsChanged callback) ----------
+  final List<LcExpTransModel> _billingRows = [];
 
   // ---------- Data from service ----------
   List<ZoneModel> _zoneModels = [];
@@ -128,6 +138,8 @@ class LicenseContractViewModel extends ChangeNotifier {
   String? get selectedZser => _selectedZser;
   String? get selectedAser => _selectedAser;
   String? get selectedScname => _selectedScname;
+  String? get clientUuid => _clientUuid;
+  List<LcExpTransModel> get billingRows => List.unmodifiable(_billingRows);
 
   // ─── Billing (สำหรับ BillingTable ใน Step 2) ───
   String get cidSdate {
@@ -361,6 +373,7 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ===============================================================
   void applyCustomerFromRegistry({
     String? custno,
+    String? uuid,
     String? cname,
     String? scname,
     String? tax,
@@ -369,6 +382,11 @@ class LicenseContractViewModel extends ChangeNotifier {
     String? national,
     String? age,
   }) {
+    // เก็บ uuid ของ client ไว้ใช้ตอน submit (POST /admin/requests)
+    if (uuid != null && uuid.trim().isNotEmpty) {
+      _clientUuid = uuid.trim();
+    }
+
     final nameIdx = _findPersonIndex('ชื่อ-นามสกุล');
     if (nameIdx >= 0 && cname != null) {
       _dataPerson[nameIdx].detail = cname;
@@ -527,7 +545,18 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ===============================================================
   // Save
   // ===============================================================
-  void submit() {
+
+  /// รับรายการ billing rows จาก BillingTable (ผ่าน onRowsChanged callback)
+  /// — เก็บไว้ใช้ตอน submit() เพื่อสร้าง debt_details
+  void setBillingRows(List<LcExpTransModel> rows) {
+    _billingRows
+      ..clear()
+      ..addAll(rows);
+  }
+
+  /// POST /admin/requests (เหมือน new_contract_cmm.dart Step 1 → createRequestUuid)
+  Future<void> submit() async {
+    // 1) sync controllers → models
     for (int i = 0; i < _dataPerson.length; i++) {
       _dataPerson[i].detail = _controllersPerson[i].text;
     }
@@ -538,6 +567,7 @@ class LicenseContractViewModel extends ChangeNotifier {
       _dataShop[0].detailsub[i].detail = _controllersShopSub[i].text;
     }
 
+    // 2) validate
     if (_dataPerson[0].detail.trim().isEmpty) {
       _emitError('กรุณากรอกชื่อ-นามสกุล');
       return;
@@ -550,20 +580,126 @@ class LicenseContractViewModel extends ChangeNotifier {
       _emitError('กรุณาเลือกรหัสพื้นที่');
       return;
     }
+    if (_clientUuid == null || _clientUuid!.isEmpty) {
+      _emitError('กรุณาเลือกลูกค้าจากทะเบียน (Step 1)');
+      return;
+    }
+    if (_billingRows.isEmpty) {
+      _emitError('กรุณาเพิ่มรายการค่าบริการอย่างน้อย 1 รายการ (Step 2)');
+      return;
+    }
 
-    final result = LicenseContractResult(
-      personValues: _dataPerson.map((e) => e.detail).toList(),
-      shopValues: _dataShop.map((e) => e.detail).toList(),
-      shopSubValues: _dataShop[0].detailsub.map((e) => e.detail).toList(),
-      cidValues: _dataCid,
-      zn: _selectedZn,
-      ln: _selectedLn?.split('|').first,
-      zser: _selectedZser,
-      aser: _selectedAser,
-      scname: _selectedScname,
-    );
+    // 3) สร้าง requestData (เหมือน new_contract_cmm.dart → createRequestUuid)
+    //    หมายเหตุ: ฟิลด์ "บ้านเลขที่" ในฟอร์ม LicenseContract อาจมีที่อยู่เต็ม
+    //    → ตัดเฉพาะส่วน "เลขที่บ้าน" (ก่อนเว้นวรรคแรก) เพื่อไม่ให้เกิน 30 ตัวอักษร
+    String _safeAddress(String raw, {int max = 30}) {
+      final trimmed = raw.trim();
+      if (trimmed.isEmpty) return '';
+      // เอาเฉพาะก่อนเว้นวรรคแรก (เช่น "47/20 ต.ดอนแก้ว..." → "47/20")
+      final firstPart = trimmed.split(RegExp(r'\s+')).first;
+      return firstPart.length > max ? firstPart.substring(0, max) : firstPart;
+    }
 
-    _eventController.add(LicenseContractSavedEvent(result));
+    String _person(int idx) => (_controllersPerson.length > idx)
+        ? _controllersPerson[idx].text.trim()
+        : '';
+
+    final requestData = <String, dynamic>{
+      'module_id': _config.moduleId,
+      'clients_uuid': _clientUuid,
+      'announcement_uuid': announcementUuid ?? '',
+      'subzoneser': _getSubZoneSer(_selectedSubZone ?? '') ?? '0',
+      'subzone': (_selectedSubZone == null || _selectedSubZone!.isEmpty)
+          ? '-'
+          : _selectedSubZone!,
+      'lease_number': _config.leaseNumber ?? '',
+      'zser': _selectedZser ?? '',
+      'zn': _selectedZn ?? '',
+      'aser': _selectedAser ?? '',
+      'ln': _selectedLn?.split('|').first ?? '',
+      'sdate': cidSdate,
+      'ldate': cidLdate,
+      'sertype': '4',
+      'type': 'รายปี',
+      'qty': '1',
+      'json': {
+        // ✨ ใช้ _safeAddress() เพื่อตัด "เลขที่บ้าน" ออกจากที่อยู่เต็ม + จำกัด 30 ตัวอักษร
+        'number': _safeAddress(_person(4)),
+        'moo': _person(5),
+        'soi': _person(6),
+        'road': _person(7),
+        'tambon': _person(8),
+        'amphoe': _person(9),
+        'province': _person(10),
+        'raw': '',
+      },
+      'debt_details': _billingRows.map((r) => r.toJson()).toList(),
+    };
+
+    // 4) POST /admin/requests
+    try {
+      final url = Uri.parse('${MyConstant().domain_v1}/admin/requests');
+      final headers = await MyHeaders.build();
+      final bodyStr = jsonEncode(requestData);
+
+      // ── DEBUG ─────────────────────────────────────────────
+      // ignore: avoid_print
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      // ignore: avoid_print
+      print('🌐 [POST] $url');
+      // ignore: avoid_print
+      print('📋 Headers: $headers');
+      // ignore: avoid_print
+      print('📦 Body: $bodyStr');
+      // ignore: avoid_print
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      final response = await http.post(
+        url,
+        headers: headers,
+        body: bodyStr,
+      );
+
+      // ignore: avoid_print
+      print('✅ Status: ${response.statusCode}');
+      // ignore: avoid_print
+      print('📨 Response: ${response.body}');
+      // ignore: avoid_print
+      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
+      if (response.statusCode == 201) {
+        final body = json.decode(response.body);
+        String? createdUuid;
+        if (body is Map && body['data'] is Map) {
+          createdUuid = body['data']['uuid']?.toString();
+        }
+        final saved = LicenseContractResult(
+          personValues: _dataPerson.map((e) => e.detail).toList(),
+          shopValues: _dataShop.map((e) => e.detail).toList(),
+          shopSubValues:
+              _dataShop[0].detailsub.map((e) => e.detail).toList(),
+          cidValues: _dataCid,
+          zn: _selectedZn,
+          ln: _selectedLn?.split('|').first,
+          zser: _selectedZser,
+          aser: _selectedAser,
+          scname: _selectedScname,
+          uuid: createdUuid,
+        );
+        _eventController.add(LicenseContractSavedEvent(saved));
+      } else {
+        String errMsg = 'บันทึกไม่สำเร็จ (${response.statusCode})';
+        try {
+          final body = json.decode(response.body);
+          if (body is Map && body['message'] != null) {
+            errMsg = body['message'].toString();
+          }
+        } catch (_) {}
+        _emitError(errMsg);
+      }
+    } catch (e) {
+      _emitError('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์: $e');
+    }
   }
 
   void _emitError(String message) {

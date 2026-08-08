@@ -14,6 +14,7 @@ class LicenseContractResult {
   final String? zser; // zone serial
   final String? aser; // area serial
   final String? scname; // ชื่อร้าน
+  final String? uuid; // uuid ที่ได้จาก API POST /admin/requests
 
   const LicenseContractResult({
     required this.personValues,
@@ -25,5 +26,6 @@ class LicenseContractResult {
     this.zser,
     this.aser,
     this.scname,
+    this.uuid,
   });
 }

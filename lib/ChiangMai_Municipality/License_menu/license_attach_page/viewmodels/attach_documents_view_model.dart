@@ -4,20 +4,20 @@
 // ViewModel — state ของหน้า "แนบเอกสาร" (Step 1)
 //
 // เก็บ:
-//   - รายการเอกสารที่ต้องแนบ (List<DocumentModel>)
+//   - รายการเอกสารที่ต้องแนบ (List<LicenseAttachDocument>)
 //   - สถานะโหลด/อัปโหลด
 //   - เรียก service เพื่อ fetch / upload / delete
 //
 // ไม่ผูกกับ global state ของ Make_contract_CMM
-// (คัดลอก "ลอจิก" มาออกแบบใหม่ให้สะอาด)
+// ใช้ model ของตัวเอง (LicenseAttachDocument / LicenseAttachAttachment)
 // ============================================================================
 
 import 'package:flutter/foundation.dart';
 
-import '../../../Model/Document_Model.dart';
+import '../models/license_attach_document.dart';
 import '../services/attach_documents_service.dart';
 
-/// คอลัมน์ที่ใช้แสดงในตาราง — อ้างอิง data_title_doc แบบเดียวกับหน้า Make_contract_CMM
+/// คอลัมน์ที่ใช้แสดงในตาราง — อ้างอิง data_title_doc
 const List<Map<String, String>> kAttachDocDisplayFields = [
   {'ser': '1', 'title': 'ชื่อเอกสาร', 'data': 'title'},
   {'ser': '2', 'title': 'วันที่ทำรายการ', 'data': 'datex'},
@@ -36,7 +36,7 @@ class AttachDocumentsViewModel extends ChangeNotifier {
   final AttachDocumentsService _service;
 
   // ---------- State ----------
-  List<DocumentModel> _documents = [];
+  List<LicenseAttachDocument> _documents = [];
   bool _isLoading = false;
   bool _isUploading = false;
   String? _errorMessage;
@@ -44,7 +44,7 @@ class AttachDocumentsViewModel extends ChangeNotifier {
   /// มุมมองการแสดงผล: 'list' (แถวแนวนอน) หรือ 'grid' (สูงสุด 4 คอลัมน์)
   String _viewMode = 'list';
 
-  List<DocumentModel> get documents => List.unmodifiable(_documents);
+  List<LicenseAttachDocument> get documents => List.unmodifiable(_documents);
   bool get isLoading => _isLoading;
   bool get isUploading => _isUploading;
   String? get errorMessage => _errorMessage;
@@ -113,7 +113,7 @@ class AttachDocumentsViewModel extends ChangeNotifier {
       // อัปเดต attachments ใน state ทันที (ไม่ต้อง reload ทั้งหมด)
       final data = result.body?['data'];
       if (data is Map<String, dynamic>) {
-        final updated = AttachmentsModel.fromJson(data);
+        final updated = LicenseAttachAttachment.fromJson(data);
         _replaceAttachment(documentId, updated);
       } else {
         // ถ้า body ไม่มี data → reload
@@ -167,7 +167,7 @@ class AttachDocumentsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _replaceAttachment(int documentId, AttachmentsModel updated) {
+  void _replaceAttachment(int documentId, LicenseAttachAttachment updated) {
     final idx = _documents.indexWhere((d) => d.id == documentId);
     if (idx == -1) return;
     _documents[idx].attachments = [updated];

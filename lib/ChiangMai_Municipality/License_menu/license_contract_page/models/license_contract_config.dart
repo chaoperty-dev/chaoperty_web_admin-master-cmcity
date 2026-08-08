@@ -18,6 +18,12 @@ class LicenseContractConfig {
   final String? announcementMessage;
   final String title;
 
+  /// 1 = ทำสัญญาใหม่, 2 = Re-Contact (ต้องส่งมาจาก caller)
+  final int moduleId;
+
+  /// เลขที่สัญญาเดิม (ใช้เฉพาะกรณี Re-Contact / moduleId == 2)
+  final String? leaseNumber;
+
   const LicenseContractConfig({
     this.readOnly = false,
     this.properties,
@@ -27,5 +33,7 @@ class LicenseContractConfig {
     this.initialCidValues,
     this.announcementMessage,
     this.title = 'ผู้เช่า',
+    this.moduleId = 1,
+    this.leaseNumber,
   });
 }

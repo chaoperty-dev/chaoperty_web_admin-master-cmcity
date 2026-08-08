@@ -313,6 +313,7 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
     final vm = context.read<LicenseContractViewModel>();
     vm.applyCustomerFromRegistry(
       custno: customer.custno,
+      uuid: customer.uuid,
       cname: customer.cname,
       scname: customer.scname,
       tax: customer.tax,
