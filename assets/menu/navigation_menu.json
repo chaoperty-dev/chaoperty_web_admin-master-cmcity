@@ -1,0 +1,91 @@
+{
+  "header": {
+    "title": "Chaoperty",
+    "icon": "bolt_rounded"
+  },
+  "items": [
+    {
+      "type": "item",
+      "label": "ผู้เช่า",
+      "route": "/tenant",
+      "icon": "people_outline",
+      "activeIcon": "people",
+      "status": true
+    },
+    {
+      "type": "group",
+      "label": "ใบอนุญาต",
+      "icon": "description_outlined",
+      "activeIcon": "description",
+      "expandedByDefault": true,
+      "status": true,
+      "children": [
+        {
+          "label": "ทำสัญญา",
+          "route": "/contract",
+          "icon": "edit_note_outlined",
+          "activeIcon": "edit_note",
+          "status": true
+        },
+        {
+          "label": "ชำระเงิน",
+          "route": "/payment",
+          "icon": "payments_outlined",
+          "activeIcon": "payments",
+          "status": true
+        },
+        {
+          "label": "แนบเอกสาร",
+          "route": "/attach",
+          "icon": "attach_file_outlined",
+          "activeIcon": "attach_file",
+          "status": true
+        },
+        {
+          "label": "ตรวจสอบ",
+          "route": "/verify",
+          "icon": "rule_outlined",
+          "activeIcon": "rule",
+          "status": true
+        },
+        {
+          "label": "ตรวจสอบข้อเท็จจริง",
+          "route": "/fact-check",
+          "icon": "search_outlined",
+          "activeIcon": "search",
+          "status": true
+        },
+        {
+          "label": "อนุมัติ",
+          "route": "/approve",
+          "icon": "check_circle_outline",
+          "activeIcon": "check_circle",
+          "status": true
+        },
+        {
+          "label": "ประกาศ",
+          "route": "/announce",
+          "icon": "campaign_outlined",
+          "activeIcon": "campaign",
+          "status": true
+        }
+      ]
+    },
+    {
+      "type": "item",
+      "label": "ทะเบียน",
+      "route": "/registration",
+      "icon": "app_registration_outlined",
+      "activeIcon": "app_registration",
+      "status": true
+    },
+    {
+      "type": "item",
+      "label": "จัดการข้อมูลส่วนตัว",
+      "route": "/profile/manage",
+      "icon": "manage_accounts_outlined",
+      "activeIcon": "manage_accounts",
+      "status": true
+    }
+  ]
+}

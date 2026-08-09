@@ -161,37 +161,39 @@ class _TenantLicensePageBodyState extends State<_TenantLicensePageBody> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<TenantLicenseViewModel>();
-    return Container(
-      color: LaColors.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(LaSpace.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            TenantLicenseHeader(
-              title: vm.title,
-              subtitle: 'จัดการรายชื่อผู้เช่า — ตรวจสอบและค้นหาข้อมูลผู้เช่า',
-              totalCount: vm.total,
-            ),
-            const SizedBox(height: LaSpace.lg),
-            const TenantLicenseZoneFilter(),
-            const SizedBox(height: LaSpace.md),
-            // Search + Pagination row
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: TenantLicenseSearchBar()),
-                SizedBox(width: LaSpace.md),
-                TenantLicensePagination(),
-              ],
-            ),
-            const SizedBox(height: LaSpace.lg),
-            const Expanded(
-              child: SingleChildScrollView(
-                child: TenantLicenseTable(),
+    return Scaffold(
+      backgroundColor: LaColors.surface,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(LaSpace.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              TenantLicenseHeader(
+                title: vm.title,
+                subtitle: 'จัดการรายชื่อผู้เช่า — ตรวจสอบและค้นหาข้อมูลผู้เช่า',
+                totalCount: vm.total,
               ),
-            ),
-          ],
+              const SizedBox(height: LaSpace.lg),
+              const TenantLicenseZoneFilter(),
+              const SizedBox(height: LaSpace.md),
+              // Search + Pagination row
+              const Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Expanded(child: TenantLicenseSearchBar()),
+                  SizedBox(width: LaSpace.md),
+                  TenantLicensePagination(),
+                ],
+              ),
+              const SizedBox(height: LaSpace.lg),
+              const Expanded(
+                child: SingleChildScrollView(
+                  child: TenantLicenseTable(),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

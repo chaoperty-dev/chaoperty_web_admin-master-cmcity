@@ -5328,7 +5328,7 @@ class _Account_BillPayVerifiState extends State<Account_BillPayVerifi> {
                                                           Center(
                                                             child: Translate
                                                                 .TranslateAndSetText(
-                                                                    '123ถูกต้อง/อนุมัติ การรับชำระ',
+                                                                    'ถูกต้อง/อนุมัติ การรับชำระ',
                                                                     Colors
                                                                         .orange,
                                                                     TextAlign
