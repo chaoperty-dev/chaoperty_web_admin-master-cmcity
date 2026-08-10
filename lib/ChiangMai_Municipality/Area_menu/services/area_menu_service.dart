@@ -162,6 +162,7 @@ class AreaMenuService {
   // ===============================================================
   Future<List<Map<String, dynamic>>> fetchRequestsFromProperties({
     String? zoneSer,
+    String? typecid,
   }) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -183,7 +184,11 @@ class AreaMenuService {
       }
 
       // ── Step 2: โหลด areaAll (Dio) + quot ──
-      final areaList = await _loadAreaAll(ren: ren, zone: zone);
+      final areaList = await _loadAreaAll(
+        ren: ren,
+        zone: zone,
+        typecid: typecid ?? '1',
+      );
 
       // ── Step 3: Map properties + area เป็น Map<String, dynamic> ──
       final propMap = <String, _PropertyModel>{};
@@ -263,11 +268,12 @@ class AreaMenuService {
   Future<List<_AreaModel>> _loadAreaAll({
     required String? ren,
     String? zone,
+    String? typecid,
   }) async {
     try {
       final url = Uri.parse(
         '${MyConstant().domain}/GC_areaAll.php'
-        '?isAdd=true&ren=$ren&zone=${zone ?? '0'}&typecid=1',
+        '?isAdd=true&ren=$ren&zone=${zone ?? '0'}&typecid=${typecid ?? '1'}',
       );
       print('🔗 _loadAreaAll: $url');
       final res = await _dio.getUri(url, cancelToken: _cancelToken);

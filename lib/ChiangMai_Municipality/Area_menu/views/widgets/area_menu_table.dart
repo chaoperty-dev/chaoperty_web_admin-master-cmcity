@@ -24,7 +24,7 @@ class AreaMenuTable extends StatelessWidget {
   // Map status label — ใช้ field 'st' จาก area API (เช่น "สัญญาปัจจุบัน")
   String _statusLabel(Map<String, dynamic> m) {
     final st = m['st']?.toString() ?? '';
-    if (st.isEmpty) return 'พื้นที่ว่าง';
+    if (st.isEmpty) return 'ว่าง';
     return st;
   }
 

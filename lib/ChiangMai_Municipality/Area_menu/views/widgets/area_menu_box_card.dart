@@ -56,11 +56,11 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   }
 
   String get _statusText {
-    // ✅ ใช้ 'st' จาก area API เป็นหลัก (เช่น "สัญญาปัจจุบัน" / "พื้นที่ว่าง")
+    // ✅ ใช้ 'st' จาก area API เป็นหลัก (เช่น "สัญญาปัจจุบัน" / "ว่าง")
     final v = widget.model['st']?.toString() ??
         widget.model['status']?.toString() ??
         widget.model['status_label']?.toString();
-    return (v == null || v.isEmpty) ? 'พื้นที่ว่าง' : v;
+    return (v == null || v.isEmpty) ? 'ว่าง' : v;
   }
 
   String get _zoneText {

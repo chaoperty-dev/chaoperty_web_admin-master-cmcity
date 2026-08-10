@@ -37,26 +37,27 @@ class AreaMenuViewModel extends ChangeNotifier {
 
   // ---------- Data ----------
   List<Map<String, dynamic>> _requests = [];
-  List<Map<String, dynamic>> get requests {
-    if (_selectedStatus == null || _selectedStatus == 'ทั้งหมด') {
-      return _requests;
-    }
-    return _requests.where((m) {
-      final st = m['st']?.toString() ?? '';
-      return st == _selectedStatus;
-    }).toList();
-  }
+  List<Map<String, dynamic>> get requests => _requests;
 
-  // ---------- Status filter ----------
-  String? _selectedStatus = 'ทั้งหมด';
-  String? get selectedStatus => _selectedStatus;
-  List<String> get statusOptions {
-    final set = <String>{};
-    for (final m in _requests) {
-      final st = m['st']?.toString() ?? '';
-      if (st.isNotEmpty) set.add(st);
-    }
-    return ['ทั้งหมด', ...set.toList()..sort()];
+  // ---------- Status filter (เหมือน ChaoArea: typecid) ----------
+  static const List<String> _statusLabels = [
+    'ทั้งหมด',
+    'เช่าอยู่',
+    'ใกล้หมดสัญญา',
+    'หมดสัญญา',
+    'เสนอราคา',
+    'เสนอราคา(มัดจำ)',
+    'ว่าง',
+  ];
+
+  String _selectedStatus = 'ทั้งหมด';
+  String get selectedStatus => _selectedStatus;
+  List<String> get statusOptions => _statusLabels;
+
+  /// แปลงสถานะที่เลือกเป็น typecid สำหรับยิง API (index + 1)
+  String _statusToTypecid(String status) {
+    final idx = _statusLabels.indexOf(status);
+    return idx <= 0 ? '1' : (idx + 1).toString();
   }
 
   // ---------- Config ----------
@@ -143,6 +144,7 @@ class AreaMenuViewModel extends ChangeNotifier {
       if (zoneSer != null) _selectedZoneSer = zoneSer;
       final list = await _service.fetchRequestsFromProperties(
         zoneSer: _selectedZoneSer,
+        typecid: _statusToTypecid(_selectedStatus),
       );
       _requests = list;
       _currentPage = 1;
@@ -221,10 +223,11 @@ class AreaMenuViewModel extends ChangeNotifier {
     await loadFromProperties();
   }
 
-  /// ผู้ใช้เลือกสถานะ
-  void onStatusChanged(String? value) {
+  /// ผู้ใช้เลือกสถานะ → ยิง API ใหม่ด้วย typecid ตาม ChaoArea
+  Future<void> onStatusChanged(String? value) async {
     _selectedStatus = value ?? 'ทั้งหมด';
     notifyListeners();
+    await loadFromProperties();
   }
 
   /// ผู้ใช้กด "เรียกดู" → ส่ง event ให้ View เปิด full-page route

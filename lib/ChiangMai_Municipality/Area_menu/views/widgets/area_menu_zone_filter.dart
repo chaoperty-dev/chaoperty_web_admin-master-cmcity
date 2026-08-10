@@ -23,13 +23,11 @@ class AreaMenuZoneFilter extends StatefulWidget {
 class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
-  final TextEditingController _statusSearchCtrl = TextEditingController();
 
   @override
   void dispose() {
     _subZoneSearchCtrl.dispose();
     _zoneSearchCtrl.dispose();
-    _statusSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -389,14 +387,10 @@ extension on _AreaMenuZoneFilterState {
             ),
           ],
         ),
-        searchController: _statusSearchCtrl,
-        searchInnerWidget: _SearchInner(_statusSearchCtrl),
         hint: AutoSizeText(
-          vm.selectedStatus ?? 'ทั้งหมด',
+          vm.selectedStatus,
           style: LaText.body.copyWith(
-            color: vm.selectedStatus == null
-                ? LaColors.textMuted
-                : LaColors.textPrimary,
+            color: LaColors.textPrimary,
           ),
           maxFontSize: 14,
           minFontSize: 11,
@@ -432,15 +426,6 @@ extension on _AreaMenuZoneFilterState {
           );
         }).toList(),
         onChanged: (v) => vm.onStatusChanged(v),
-        searchMatchFn: (item, searchValue) {
-          return item.value
-              .toString()
-              .toLowerCase()
-              .contains(searchValue.toLowerCase());
-        },
-        onMenuStateChange: (isOpen) {
-          if (!isOpen) _statusSearchCtrl.clear();
-        },
       ),
     );
   }
