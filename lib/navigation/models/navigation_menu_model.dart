@@ -197,6 +197,8 @@ const Map<String, IconData> _materialIconMap = <String, IconData>{
   'app_registration': Icons.app_registration,
   'manage_accounts': Icons.manage_accounts,
   'bolt': Icons.bolt,
+  'map': Icons.map,
+  'settings': Icons.settings,
   // outlined (exact name)
   'people_outline': Icons.people_outline,
   'description_outlined': Icons.description_outlined,
@@ -210,6 +212,8 @@ const Map<String, IconData> _materialIconMap = <String, IconData>{
   'app_registration_outlined': Icons.app_registration_outlined,
   'manage_accounts_outlined': Icons.manage_accounts_outlined,
   'bolt_outlined': Icons.bolt_outlined,
+  'map_outlined': Icons.map_outlined,
+  'settings_outlined': Icons.settings_outlined,
 };
 
 // สำหรับ suffix _outlined/_rounded/_sharp ที่ไม่มีใน _materialIconMap
