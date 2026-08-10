@@ -10,6 +10,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../theme/area_menu_theme.dart';
+import '../../../unity/FormatDate.dart';
+import '../../../unity/Enum.dart';
 import '../../viewmodels/area_menu_view_model.dart';
 
 class AreaMenuBoxCard extends StatefulWidget {
@@ -54,9 +56,11 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   }
 
   String get _statusText {
-    final v = widget.model['status_label']?.toString() ??
-        widget.model['status']?.toString();
-    return (v == null || v.isEmpty) ? '-' : v;
+    // ✅ ใช้ 'st' จาก area API เป็นหลัก (เช่น "สัญญาปัจจุบัน" / "พื้นที่ว่าง")
+    final v = widget.model['st']?.toString() ??
+        widget.model['status']?.toString() ??
+        widget.model['status_label']?.toString();
+    return (v == null || v.isEmpty) ? 'พื้นที่ว่าง' : v;
   }
 
   String get _zoneText {
@@ -69,14 +73,39 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   String get _endDateText {
     final ldate = widget.model['ldate']?.toString() ?? '';
     if (ldate.isEmpty) return '';
-    return ldate; // ส่งตรงๆ ไม่ต้อง format
+    return formatDate(ldate, type: DateFormatType.dmy); // ✅ dd-MM-yyyy
   }
 
   String get _clientText {
     final c = widget.model['cname']?.toString() ??
         widget.model['scname']?.toString() ??
         '';
-    return c;
+    return _maskName(c);
+  }
+
+  /// Mask ชื่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
+  /// เช่น "นางกชกร วิชชุชัยมงคล" → "นางกชกร วิชชุชัยม***"
+  String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty) return '';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '';
+
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
   }
 
   String get _phoneText {

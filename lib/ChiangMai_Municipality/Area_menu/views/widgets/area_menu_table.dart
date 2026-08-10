@@ -24,7 +24,7 @@ class AreaMenuTable extends StatelessWidget {
   // Map status label — ใช้ field 'st' จาก area API (เช่น "สัญญาปัจจุบัน")
   String _statusLabel(Map<String, dynamic> m) {
     final st = m['st']?.toString() ?? '';
-    if (st.isEmpty) return '-';
+    if (st.isEmpty) return 'พื้นที่ว่าง';
     return st;
   }
 
@@ -35,6 +35,33 @@ class AreaMenuTable extends StatelessWidget {
     if (ln.isEmpty && lnQ.isEmpty) return '-';
     if (lnQ.isEmpty || lnQ == '-') return ln;
     return '$ln-$lnQ';
+  }
+
+  /// Mask ชื่อผู้ติดต่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
+  /// เช่น "นางกชกร วิชชุชัยมงคล" → "นางกชกร วิชชุชัยม***"
+  String _maskName(String? raw) {
+    final name = raw?.toString().trim() ?? '';
+    if (name.isEmpty) return '-';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '-';
+
+    // ถ้ามีคำเดียว: mask 3 ตัวอักษรท้ายของคำนั้น
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+
+    // ถ้ามีหลายคำ: คำสุดท้าย mask 3 ตัวอักษรท้าย คำอื่นแสดงเต็ม
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
   }
 
   String _formatEndDate(String raw) {
@@ -129,7 +156,7 @@ class AreaMenuTable extends StatelessWidget {
           _Cell(value: (model['sub_zonename'] ?? '-').toString(), flex: 1),
           _Cell(value: (model['zn'] ?? '-').toString(), flex: 2),
           _Cell(value: _formatLocationCode(model), flex: 2, isMono: true),
-          _Cell(value: (model['cname'] ?? '-').toString(), flex: 3),
+          _Cell(value: _maskName(model['cname']), flex: 3),
           _Cell(
               value: _formatEndDate((model['ldate'] ?? '').toString()),
               flex: 2,

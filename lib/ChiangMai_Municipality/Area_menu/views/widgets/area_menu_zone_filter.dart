@@ -23,11 +23,13 @@ class AreaMenuZoneFilter extends StatefulWidget {
 class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
+  final TextEditingController _statusSearchCtrl = TextEditingController();
 
   @override
   void dispose() {
     _subZoneSearchCtrl.dispose();
     _zoneSearchCtrl.dispose();
+    _statusSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -40,9 +42,11 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(flex: 5, child: _subZoneSection(vm)),
+          Expanded(flex: 4, child: _subZoneSection(vm)),
           _divider(),
-          Expanded(flex: 5, child: _zoneSection(vm)),
+          Expanded(flex: 4, child: _zoneSection(vm)),
+          _divider(),
+          Expanded(flex: 4, child: _statusSection(vm)),
         ],
       ),
     );
@@ -71,6 +75,14 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
       icon: Icons.place_outlined,
       label: 'โซนพื้นที่',
       child: _zoneDropdown(vm),
+    );
+  }
+
+  Widget _statusSection(AreaMenuViewModel vm) {
+    return _FilterField(
+      icon: Icons.flag_outlined,
+      label: 'สถานะ',
+      child: _statusDropdown(vm),
     );
   }
 }
@@ -354,6 +366,80 @@ extension on _AreaMenuZoneFilterState {
         },
         onMenuStateChange: (isOpen) {
           if (!isOpen) _zoneSearchCtrl.clear();
+        },
+      ),
+    );
+  }
+
+  Widget _statusDropdown(AreaMenuViewModel vm) {
+    return _DropdownShell(
+      child: DropdownButton2<String>(
+        isExpanded: true,
+        iconSize: 18,
+        iconEnabledColor: LaColors.textSecondary,
+        buttonHeight: 40,
+        dropdownDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        searchController: _statusSearchCtrl,
+        searchInnerWidget: _SearchInner(_statusSearchCtrl),
+        hint: AutoSizeText(
+          vm.selectedStatus ?? 'ทั้งหมด',
+          style: LaText.body.copyWith(
+            color: vm.selectedStatus == null
+                ? LaColors.textMuted
+                : LaColors.textPrimary,
+          ),
+          maxFontSize: 14,
+          minFontSize: 11,
+        ),
+        value: vm.selectedStatus,
+        items: vm.statusOptions.map((status) {
+          final isAll = status == 'ทั้งหมด';
+          return DropdownMenuItem<String>(
+            value: status,
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: isAll ? LaColors.textMuted : LaColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Expanded(
+                  child: AutoSizeText(
+                    status.isEmpty ? '-' : status,
+                    style: LaText.body,
+                    maxFontSize: 14,
+                    minFontSize: 11,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        onChanged: (v) => vm.onStatusChanged(v),
+        searchMatchFn: (item, searchValue) {
+          return item.value
+              .toString()
+              .toLowerCase()
+              .contains(searchValue.toLowerCase());
+        },
+        onMenuStateChange: (isOpen) {
+          if (!isOpen) _statusSearchCtrl.clear();
         },
       ),
     );

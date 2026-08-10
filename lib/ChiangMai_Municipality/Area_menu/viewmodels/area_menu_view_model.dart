@@ -37,7 +37,27 @@ class AreaMenuViewModel extends ChangeNotifier {
 
   // ---------- Data ----------
   List<Map<String, dynamic>> _requests = [];
-  List<Map<String, dynamic>> get requests => _requests;
+  List<Map<String, dynamic>> get requests {
+    if (_selectedStatus == null || _selectedStatus == 'ทั้งหมด') {
+      return _requests;
+    }
+    return _requests.where((m) {
+      final st = m['st']?.toString() ?? '';
+      return st == _selectedStatus;
+    }).toList();
+  }
+
+  // ---------- Status filter ----------
+  String? _selectedStatus = 'ทั้งหมด';
+  String? get selectedStatus => _selectedStatus;
+  List<String> get statusOptions {
+    final set = <String>{};
+    for (final m in _requests) {
+      final st = m['st']?.toString() ?? '';
+      if (st.isNotEmpty) set.add(st);
+    }
+    return ['ทั้งหมด', ...set.toList()..sort()];
+  }
 
   // ---------- Config ----------
   final String _title;
@@ -199,6 +219,12 @@ class AreaMenuViewModel extends ChangeNotifier {
 
   Future<void> executeSearch() async {
     await loadFromProperties();
+  }
+
+  /// ผู้ใช้เลือกสถานะ
+  void onStatusChanged(String? value) {
+    _selectedStatus = value ?? 'ทั้งหมด';
+    notifyListeners();
   }
 
   /// ผู้ใช้กด "เรียกดู" → ส่ง event ให้ View เปิด full-page route

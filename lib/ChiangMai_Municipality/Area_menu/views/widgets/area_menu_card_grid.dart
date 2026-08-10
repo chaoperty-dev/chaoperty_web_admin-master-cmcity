@@ -26,8 +26,7 @@ class AreaMenuCardGrid extends StatelessWidget {
     if (vm.requests.isEmpty) {
       return _EmptyState(
         hasFilter: vm.searchQuery.isNotEmpty ||
-            (vm.selectedZoneSub != null &&
-                vm.selectedZoneSub != 'ทั้งหมด') ||
+            (vm.selectedZoneSub != null && vm.selectedZoneSub != 'ทั้งหมด') ||
             (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด'),
         onClear: vm.refresh,
       );
@@ -57,7 +56,7 @@ class AreaMenuCardGrid extends StatelessWidget {
               crossAxisCount: cols,
               crossAxisSpacing: LaSpace.sm,
               mainAxisSpacing: LaSpace.sm,
-              childAspectRatio: 1.35,
+              childAspectRatio: 1.8,
             ),
             itemBuilder: (context, i) {
               return AreaMenuBoxCard(model: vm.requests[i]);
