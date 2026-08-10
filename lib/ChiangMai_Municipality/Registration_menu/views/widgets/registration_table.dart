@@ -71,7 +71,7 @@ class RegistrationTable extends StatelessWidget {
           _HeaderCell(label: '', flex: 0, width: 110),
           _HeaderCell(label: 'รหัสลูกค้า', flex: 2),
           _HeaderCell(label: 'ชื่อลูกค้า', flex: 3),
-          _HeaderCell(label: 'ประเภท', flex: 2),
+          _HeaderCell(label: 'เลขบัตรประชาชน', flex: 2),
           _HeaderCell(label: 'เบอร์โทร', flex: 2),
           _HeaderCell(label: 'อีเมล', flex: 2),
           _HeaderCell(label: 'ที่อยู่', flex: 3),
@@ -103,10 +103,12 @@ class RegistrationTable extends StatelessWidget {
             ),
           ),
           _Cell(value: model.custno ?? '-', flex: 2, isMono: true),
-          _Cell(value: model.cname ?? model.scname ?? '-', flex: 3),
-          _Cell(value: model.type ?? '-', flex: 2),
+          _Cell(value: _maskName(model.cname ?? model.scname ?? '-'), flex: 3),
+          _Cell(value: _maskTax(model.tax ?? '-'), flex: 2),
           _Cell(
-              value: formatPhoneNumber(model.tel ?? ''), flex: 2, isMono: true),
+              value: _maskPhone(formatPhoneNumber(model.tel ?? '')),
+              flex: 2,
+              isMono: true),
           _Cell(value: model.email ?? '-', flex: 2),
           _Cell(value: _shortAddr(model), flex: 3),
           _Cell(value: model.zn ?? '-', flex: 2),
@@ -122,6 +124,62 @@ class RegistrationTable extends StatelessWidget {
     if (combined.isEmpty) return '-';
     if (combined.length <= 32) return combined;
     return '${combined.substring(0, 32)}…';
+  }
+
+  /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
+  String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty || name == '-') return '-';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '-';
+
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
+  }
+
+  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
+  String _maskPhone(String raw) {
+    if (raw.isEmpty || raw == '-') return '-';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 3) return raw;
+
+    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+
+    if (digits.length == 10) {
+      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+    }
+    if (digits.length == 9) {
+      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+    }
+    return maskedDigits;
+  }
+
+  /// Mask เลขบัตรประชาชน — ซ่อน 3 ตัวท้าย รูปแบบ x-xxxx-xxxxx-xxx-x
+  String _maskTax(String raw) {
+    if (raw.isEmpty || raw == '-') return '-';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length != 13) {
+      // ไม่ใช่เลขบัตร 13 หลัก → ซ่อน 3 ตัวท้ายแทน
+      if (digits.length <= 3) return raw;
+      return digits.substring(0, digits.length - 3) + '***';
+    }
+
+    final visible = digits.substring(0, 10);
+    final masked = digits.substring(10).replaceAll(RegExp(r'[0-9]'), 'X');
+    return '${visible.substring(0, 1)}-${visible.substring(1, 5)}-${visible.substring(5, 10)}-${masked.substring(0, 2)}-${masked.substring(2, 3)}';
   }
 }
 

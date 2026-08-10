@@ -24,7 +24,16 @@ Future<List<PropertiesModel>> read_GC_properties(
 
     if (jsonRes != null && jsonRes['data'] is List) {
       final List list = jsonRes['data'];
-      return list.map((e) => PropertiesModel.fromJson(e)).toList();
+      // ✅ กรองรายการที่ parse ไม่ผ่านออก — บาง entry มี field ผิด type (เช่น payment_json เป็น object ไม่ใช่ string)
+      final out = <PropertiesModel>[];
+      for (final e in list) {
+        try {
+          out.add(PropertiesModel.fromJson(e));
+        } catch (parseErr) {
+          print('⚠️ skip malformed property entry: $parseErr');
+        }
+      }
+      return out;
     }
     print(jsonRes);
   } catch (e, stackTrace) {

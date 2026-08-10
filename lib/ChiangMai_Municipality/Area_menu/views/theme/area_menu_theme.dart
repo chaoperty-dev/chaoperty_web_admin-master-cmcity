@@ -43,6 +43,20 @@ class LaColors {
   static const Color statusInfoFg = Color(0xFF1D4ED8); // blue-700
   static const Color statusNeutralBg = Color(0xFFF1F5F9); // slate-100
   static const Color statusNeutralFg = Color(0xFF475569); // slate-600
+
+  // Area-specific status colors
+  static const Color statusVacantBg = Color(0xFFE0F2FE); // sky-100
+  static const Color statusVacantFg = Color(0xFF0369A1); // sky-700
+  static const Color statusCurrentBg = Color(0xFFDCFCE7); // green-100
+  static const Color statusCurrentFg = Color(0xFF15803D); // green-700
+  static const Color statusNearExpiryBg = Color(0xFFFEF9C3); // yellow-100
+  static const Color statusNearExpiryFg = Color(0xFFA16207); // yellow-700
+  static const Color statusExpiredBg = Color(0xFFFEE2E2); // red-100
+  static const Color statusExpiredFg = Color(0xFFB91C1C); // red-700
+  static const Color statusDraftBg = Color(0xFFF3F4F6); // gray-100
+  static const Color statusDraftFg = Color(0xFF4B5563); // gray-600
+  static const Color statusReviewBg = Color(0xFFF3E8FF); // purple-100
+  static const Color statusReviewFg = Color(0xFF7E22CE); // purple-700
 }
 
 /// 📐 Spacing & Radius
@@ -168,6 +182,37 @@ class StatusPalette {
       return const StatusPalette(
           LaColors.statusNeutralBg, LaColors.statusNeutralFg);
     }
+
+    // ── Area-specific statuses (exact / strong match first) ───────────────
+    if (s == 'ว่าง') {
+      return const StatusPalette(
+          LaColors.statusVacantBg, LaColors.statusVacantFg);
+    }
+    if (s == 'สัญญาปัจจุบัน' || s == 'current' || s == 'active') {
+      return const StatusPalette(
+          LaColors.statusCurrentBg, LaColors.statusCurrentFg);
+    }
+    if (s == 'ใกล้หมดสัญญา' || s == 'near expiry' || s == 'near_expiry') {
+      return const StatusPalette(
+          LaColors.statusNearExpiryBg, LaColors.statusNearExpiryFg);
+    }
+    if (s == 'หมดสัญญา' || s == 'expired' || s == 'expiry') {
+      return const StatusPalette(
+          LaColors.statusExpiredBg, LaColors.statusExpiredFg);
+    }
+    if (s == 'ร่างคำขอ' || s == 'draft') {
+      return const StatusPalette(
+          LaColors.statusDraftBg, LaColors.statusDraftFg);
+    }
+    if (s == 'กำลังตรวจสอบ' ||
+        s == 'under review' ||
+        s == 'under_review' ||
+        s == 'review') {
+      return const StatusPalette(
+          LaColors.statusReviewBg, LaColors.statusReviewFg);
+    }
+
+    // ── Generic fallback mapping ──────────────────────────────────────────
     // Pending / รอ / รออนุมัติ / in_progress / กำลังดำเนินการ
     if (s.contains('รอ') ||
         s.contains('pending') ||

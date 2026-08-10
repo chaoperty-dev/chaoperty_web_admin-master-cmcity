@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'Login_page_cmm.dart';
 import 'dart:html' as html;
 
@@ -38,16 +39,8 @@ class _SetupPageState extends State<SetupPage> {
 
   void _navigateToHome() {
     _timer.cancel();
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const HomePage()),
-      (route) => false, // ❌ ลบทุก route ออก
-    );
-
-    // Navigator.pushReplacement(
-    //   context,
-    //   MaterialPageRoute(builder: (_) => const HomePage()),
-    // );
+    // ใช้ GoRouter แทน Navigator เพราะหน้าหลังจาก SetupPage อยู่ใน StatefulShellRoute
+    GoRouter.of(context).go('/contract');
   }
 
   @override

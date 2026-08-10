@@ -17,10 +17,10 @@ class AuthStateNotifier extends ChangeNotifier {
   /// สถานะ login ปัจจุบัน
   bool get isLoggedIn => _isLoggedIn;
 
-  /// เริ่ม polling เช็ค auth state ทุก 1 วินาที
+  /// เริ่ม polling เช็ค auth state ทุก 5 นาที
   void startPolling() {
     if (_poller != null) return;
-    _poller = Timer.periodic(const Duration(seconds: 1), (_) => _check());
+    _poller = Timer.periodic(const Duration(minutes: 5), (_) => _check());
     // เช็คครั้งแรกทันที
     _check();
   }

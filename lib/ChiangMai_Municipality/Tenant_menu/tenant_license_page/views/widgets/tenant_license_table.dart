@@ -139,11 +139,17 @@ class TenantLicenseTable extends StatelessWidget {
           _Cell(value: model.subzone ?? '-', flex: 2),
           _Cell(value: model.zn ?? '-', flex: 2),
           _Cell(value: model.ln ?? '-', flex: 2, isMono: true),
-          _Cell(value: model.cname ?? '-', flex: 3),
           _Cell(
-              value: formatPhoneNumber(model.tel ?? "-"),
-              flex: 2,
-              isMono: true),
+            value: _maskName(model.cname ?? '-'),
+            tooltip: model.cname,
+            flex: 3,
+          ),
+          _Cell(
+            value: _maskPhone(formatPhoneNumber(model.tel ?? "-")),
+            tooltip: formatPhoneNumber(model.tel ?? "-"),
+            flex: 2,
+            isMono: true,
+          ),
           _Cell(
               value: _formatEndDate(model.ldate_q ?? model.ldate ?? '-'),
               flex: 2,
@@ -180,6 +186,47 @@ class TenantLicenseTable extends StatelessWidget {
     if (raw.isEmpty) return '-';
     return formatDate(raw, type: DateFormatType.dmy);
   }
+
+  /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
+  String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty || name == '-') return '-';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '-';
+
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
+  }
+
+  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
+  String _maskPhone(String raw) {
+    if (raw.isEmpty || raw == '-') return '-';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 3) return raw;
+
+    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+
+    if (digits.length == 10) {
+      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+    }
+    if (digits.length == 9) {
+      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+    }
+    return maskedDigits;
+  }
 }
 
 // ============================================================================
@@ -212,11 +259,13 @@ class _Cell extends StatelessWidget {
   final int flex;
   final bool isMono;
   final bool muted;
+  final String? tooltip;
   const _Cell({
     required this.value,
     this.flex = 1,
     this.isMono = false,
     this.muted = false,
+    this.tooltip,
   });
 
   @override
@@ -225,16 +274,20 @@ class _Cell extends StatelessWidget {
       flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: AutoSizeText(
-          value.isEmpty ? '-' : value,
-          minFontSize: 11,
-          maxFontSize: 14,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LaText.tableCell.copyWith(
-            color: muted ? LaColors.textSecondary : LaColors.textPrimary,
-            fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-            fontFamilyFallback: const [LaText.fontRegular],
+        child: Tooltip(
+          message: tooltip ?? value,
+          waitDuration: const Duration(milliseconds: 300),
+          child: AutoSizeText(
+            value.isEmpty ? '-' : value,
+            minFontSize: 11,
+            maxFontSize: 14,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LaText.tableCell.copyWith(
+              color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+              fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+              fontFamilyFallback: const [LaText.fontRegular],
+            ),
           ),
         ),
       ),

@@ -398,6 +398,9 @@ extension on _AreaMenuZoneFilterState {
         value: vm.selectedStatus,
         items: vm.statusOptions.map((status) {
           final isAll = status == 'ทั้งหมด';
+          final palette = isAll
+              ? const StatusPalette(LaColors.textMuted, LaColors.textMuted)
+              : StatusPalette.of(status);
           return DropdownMenuItem<String>(
             value: status,
             child: Row(
@@ -407,7 +410,7 @@ extension on _AreaMenuZoneFilterState {
                   height: 6,
                   margin: const EdgeInsets.only(right: 8),
                   decoration: BoxDecoration(
-                    color: isAll ? LaColors.textMuted : LaColors.primary,
+                    color: palette.fg,
                     shape: BoxShape.circle,
                   ),
                 ),

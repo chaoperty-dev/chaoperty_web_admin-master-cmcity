@@ -6,6 +6,14 @@
   "items": [
     {
       "type": "item",
+      "label": "พื้นที่เช่า",
+      "route": "/area",
+      "icon": "map_outlined",
+      "activeIcon": "map",
+      "status": true
+    },
+    {
+      "type": "item",
       "label": "ผู้เช่า",
       "route": "/tenant",
       "icon": "people_outline",
@@ -77,6 +85,14 @@
       "route": "/registration",
       "icon": "app_registration_outlined",
       "activeIcon": "app_registration",
+      "status": true
+    },
+    {
+      "type": "item",
+      "label": "ตั้งค่า",
+      "route": "/setting",
+      "icon": "settings_outlined",
+      "activeIcon": "settings",
       "status": true
     },
     {

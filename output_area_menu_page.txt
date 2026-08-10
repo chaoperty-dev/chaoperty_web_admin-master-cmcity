@@ -1,0 +1,205 @@
+﻿// ============================================================================
+// area_menu_page.dart
+// ============================================================================
+// Main View â€” "à¸„à¸³à¸‚à¸­à¸•à¹ˆà¸­à¸ªà¸±à¸à¸à¸²" (Tab à¹à¸£à¸)
+//
+// à¹ƒà¸Šà¹‰à¸‡à¸²à¸™à¹„à¸”à¹‰ 2 à¸£à¸¹à¸›à¹à¸šà¸š:
+//   âœ… AreaMenuPage.create(...) â€” à¸ªà¸£à¹‰à¸²à¸‡ + wrap Provider à¹ƒà¸«à¹‰à¸­à¸±à¸•à¹‚à¸™à¸¡à¸±à¸•à¸´ (à¹à¸™à¸°à¸™à¸³)
+//   âœ… AreaMenuHost(...)       â€” alias
+//
+// IMPORTANT: à¸«à¹‰à¸²à¸¡ new AreaMenuPage() à¸•à¸£à¸‡à¹† à¹€à¸žà¸£à¸²à¸° child widgets
+// à¸ˆà¸°à¹€à¸£à¸µà¸¢à¸ context.watch<AreaMenuViewModel>() à¸‹à¸¶à¹ˆà¸‡à¸•à¹‰à¸­à¸‡à¸à¸²à¸£ Provider
+// ============================================================================
+
+import 'dart:async';
+
+import 'package:chaoperty/ChiangMai_Municipality/License_menu/license_contract_page/models/license_contract_result.dart';
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../models/area_menu_config.dart';
+import '../models/area_menu_event.dart';
+import '../viewmodels/area_menu_view_model.dart';
+import 'theme/area_menu_theme.dart';
+import 'widgets/area_menu_header.dart';
+import 'widgets/area_menu_pagination.dart';
+import 'widgets/area_menu_search_bar.dart';
+import 'widgets/area_menu_table.dart';
+import 'widgets/area_menu_zone_filter.dart';
+import 'area_menu_detail_page.dart';
+
+/// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+/// Public API
+/// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+class AreaMenuPage extends StatefulWidget {
+  final ValueChanged<LicenseContractResult>? onSave;
+
+  const AreaMenuPage._({super.key, this.onSave});
+
+  /// Factory à¸ªà¸£à¹‰à¸²à¸‡ Page à¸žà¸£à¹‰à¸­à¸¡ Provider (à¹ƒà¸Šà¹‰à¹ƒà¸™ AdminScaffold / Navigator)
+  static Widget create({
+    Key? key,
+    String? routeData,
+    int? serTitle,
+    String title = 'à¸à¸²à¸£à¸£à¸±à¸šà¸Šà¸³à¸£à¸°',
+    ValueChanged<LicenseContractResult>? onSave,
+    AreaMenuConfig? config,
+  }) {
+    final cfg = config ??
+        AreaMenuConfig(
+          title: title,
+          routeData: routeData,
+          serTitle: serTitle,
+        );
+    return ChangeNotifierProvider<AreaMenuViewModel>(
+      create: (_) => AreaMenuViewModel(config: cfg),
+      child: _AreaMenuPageBody(
+        title: title,
+        onSave: onSave,
+      ),
+    );
+  }
+
+  @override
+  State<AreaMenuPage> createState() => _AreaMenuPageState();
+}
+
+class _AreaMenuPageState extends State<AreaMenuPage> {
+  @override
+  Widget build(BuildContext context) {
+    return AreaMenuPage.create(
+      key: widget.key,
+      onSave: widget.onSave,
+    );
+  }
+}
+
+/// Body à¸ˆà¸£à¸´à¸‡ â€” à¸•à¹‰à¸­à¸‡à¸­à¸¢à¸¹à¹ˆà¹ƒà¸•à¹‰ Provider à¹€à¸ªà¸¡à¸­
+class _AreaMenuPageBody extends StatefulWidget {
+  final String title;
+  final ValueChanged<LicenseContractResult>? onSave;
+
+  const _AreaMenuPageBody({
+    required this.title,
+    this.onSave,
+  });
+
+  @override
+  State<_AreaMenuPageBody> createState() =>
+      _AreaMenuPageBodyState();
+}
+
+class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
+  StreamSubscription<AreaMenuEvent>? _sub;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final vm = context.read<AreaMenuViewModel>();
+    _sub ??= vm.events.listen(_onEvent);
+  }
+
+  void _onEvent(AreaMenuEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case AreaMenuErrorEvent(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: LaColors.statusRejectedFg,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(LaRadius.md),
+            ),
+          ),
+        );
+        break;
+      case AreaMenuNavigateEvent(:final routeData):
+        // à¹€à¸›à¸´à¸” full-page detail route (à¹€à¸•à¹‡à¸¡à¸ˆà¸­)
+        final title = context.read<AreaMenuViewModel>().title;
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => AreaMenuDetailPage.create(
+              routeData: routeData,
+              title: title,
+            ),
+            fullscreenDialog: true,
+          ),
+        );
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<AreaMenuViewModel>();
+    return Container(
+      color: LaColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(LaSpace.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AreaMenuHeader(
+              title: vm.title,
+              subtitle:
+                  'à¸£à¸±à¸šà¸Šà¸³à¸£à¸°à¸„à¹ˆà¸²à¸˜à¸£à¸£à¸¡à¹€à¸™à¸µà¸¢à¸¡à¹ƒà¸šà¸­à¸™à¸¸à¸à¸²à¸• â€” à¸•à¸£à¸§à¸ˆà¸ªà¸­à¸šà¹à¸¥à¸°à¸šà¸±à¸™à¸—à¸¶à¸à¸à¸²à¸£à¸Šà¸³à¸£à¸°à¹€à¸‡à¸´à¸™',
+              totalCount: vm.total,
+            ),
+            const SizedBox(height: LaSpace.lg),
+            const AreaMenuZoneFilter(),
+            const SizedBox(height: LaSpace.md),
+            // Search + Pagination row
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: AreaMenuSearchBar()),
+                SizedBox(width: LaSpace.md),
+                AreaMenuPagination(),
+              ],
+            ),
+            const SizedBox(height: LaSpace.lg),
+            const Expanded(
+              child: SingleChildScrollView(
+                child: AreaMenuTable(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Alias à¸ªà¸³à¸«à¸£à¸±à¸šà¹€à¸‚à¹‰à¸²à¸à¸±à¸™à¹„à¸”à¹‰à¸à¸±à¸š API à¹€à¸”à¸´à¸¡
+class AreaMenuHost extends StatelessWidget {
+  final String? routeData;
+  final int? serTitle;
+  final String title;
+  final ValueChanged<LicenseContractResult>? onSave;
+
+  const AreaMenuHost({
+    super.key,
+    this.routeData,
+    this.serTitle,
+    this.title = 'à¸à¸²à¸£à¸£à¸±à¸šà¸Šà¸³à¸£à¸°',
+    this.onSave,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AreaMenuPage.create(
+      routeData: routeData,
+      serTitle: serTitle,
+      title: title,
+      onSave: onSave,
+    );
+  }
+}
+

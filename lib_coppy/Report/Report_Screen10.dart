@@ -1,0 +1,7919 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:ui';
+
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:dropdown_button2/dropdown_button2.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
+import 'package:group_radio_button/group_radio_button.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
+import 'package:syncfusion_flutter_datepicker/datepicker.dart';
+import '../Constant/Myconstant.dart';
+import '../INSERT_Log/Insert_log.dart';
+import '../Model/GetC_Quot_Select_Model.dart';
+import '../Model/GetContract_Photo_Model.dart';
+import '../Model/GetExp_Model.dart';
+import '../Model/GetPakan_Contractx_Model.dart';
+import '../Model/GetPayMent_Model.dart';
+import '../Model/GetRenTal_Model.dart';
+import '../Model/GetTeNant_Model.dart';
+import '../Model/GetTrans_Kon_Model.dart';
+import '../Model/GetZone_Model.dart';
+import '../Model/Get_TenantAll_billpay_Model.dart';
+import '../Model/Get_TransReteNantModels.dart';
+import '../Responsive/responsive.dart';
+import '../Style/Translate.dart';
+import '../Style/colors.dart';
+import 'Excel_GetPakan_Report.dart';
+import 'Excel_PayPakan_Report.dart';
+import 'Excel_PeopleChoAllbill_Report.dart';
+import 'Excel_PeopleChoStart_Report.dart';
+import 'Excel_PeopleCho_Report.dart';
+
+class ReportScreen10 extends StatefulWidget {
+  const ReportScreen10({super.key});
+
+  @override
+  State<ReportScreen10> createState() => _ReportScreen10State();
+}
+
+class _ReportScreen10State extends State<ReportScreen10> {
+  GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  var nFormat = NumberFormat("#,##0.00", "en_US");
+  DateTime datex = DateTime.now();
+  int? Await_Status_Report1,
+      Await_Status_Report2,
+      Await_Status_Report3,
+      Await_Status_Report4;
+  double Text_Size = 13.00;
+//-------------------------------------->
+  String _verticalGroupValue_PassW = "EXCEL";
+  String _ReportValue_type = "ปกติ";
+  String _verticalGroupValue_NameFile = "จากระบบ";
+  String Value_Report = ' ';
+  String NameFile_ = '';
+  String Pre_and_Dow = '';
+  final _formKey = GlobalKey<FormState>();
+  final FormNameFile_text = TextEditingController();
+  ///////////--------------------------------------------->
+  String? renTal_user, renTal_name, zone_ser, zone_name;
+  DateTime now = DateTime.now();
+  String? rtname, type, typex, renname, bill_name, bill_addr, bill_tax;
+  String? bill_tel, bill_email, expbill, expbill_name, bill_default;
+  String? bill_tser, foder;
+  String? name_slip, name_slip_ser, bills_name_;
+  String? base64_Slip, fileName_Slip;
+
+  ///------------------------>
+  String? Status_pe, Status_pe_ser, YE_Transte_People;
+  String? Value_Chang_Zone_People, Value_Chang_Zone_People_Ser;
+  String? Value_Chang_Zone_Pakan, Value_Chang_Zone_Pakan_Ser;
+  ////////--------------------------------------------->
+  String? YE_People_Start,
+      Mon_People_Start,
+      Status_pe_Start,
+      Status_pe_ser_Start;
+  String? Value_Chang_Zone_People_Start, Value_Chang_Zone_People_Ser_Start;
+  ////////--------------------------------------------->
+  List<String> YE_Th = [];
+  List<String> Mont_Th = [];
+  List<ZoneModel> zoneModels = [];
+  List<ZoneModel> zoneModels_report = [];
+  List<ExpModel> expModels = [];
+  List<PayMentModel> payMentModels = [];
+  List<RenTalModel> renTalModels = [];
+  ////////--------------------------------------------->
+
+  List<TenantAllbillPayModel> teNantModels = [];
+  List<TenantAllbillPayModel> _teNantModels = <TenantAllbillPayModel>[];
+  List<TransteNantModels> transteNantModels = [];
+  List<TransteNantModels> transteNantModels_Select = [];
+  List<ContractxPakanModel> contractxPakanModels = [];
+  List<ContractxPakanModel> _contractxPakanModels = <ContractxPakanModel>[];
+
+  List<TransKonModel> transKonModels = [];
+  List<TransKonModel> _transKonModels = <TransKonModel>[];
+  List<TeNantModel> teNantModels_Start = [];
+  List<TeNantModel> _teNantModels_Start = <TeNantModel>[];
+  List<ContractPhotoModel> contractPhotoModels = [];
+  late List<List<QuotxSelectModel>> quotxSelectModels;
+
+  List<QuotxSelectModel> quotxSelectModels_Select = [];
+///////----------------------------------->
+  // List Status = [
+  //   'ปัจจุบัน',
+  //   'หมดสัญญา',
+  //   'ผู้สนใจ',
+  // ];
+  List Status = [
+    'ปัจจุบัน',
+    'หมดสัญญา',
+    'ใกล้หมดสัญญา',
+    'ผู้สนใจ',
+  ];
+  List<String> monthsInThai = [
+    'มกราคม', // January
+    'กุมภาพันธ์', // February
+    'มีนาคม', // March
+    'เมษายน', // April
+    'พฤษภาคม', // May
+    'มิถุนายน', // June
+    'กรกฎาคม', // July
+    'สิงหาคม', // August
+    'กันยายน', // September
+    'ตุลาคม', // October
+    'พฤศจิกายน', // November
+    'ธันวาคม', // December
+  ];
+  List<String> monthsAbbreviationInThai = [
+    'ม.ค.', // มกราคม (January)
+    'ก.พ.', // กุมภาพันธ์ (February)
+    'มี.ค.', // มีนาคม (March)
+    'เม.ย.', // เมษายน (April)
+    'พ.ค.', // พฤษภาคม (May)
+    'มิ.ย.', // มิถุนายน (June)
+    'ก.ค.', // กรกฎาคม (July)
+    'ส.ค.', // สิงหาคม (August)
+    'ก.ย.', // กันยายน (September)
+    'ต.ค.', // ตุลาคม (October)
+    'พ.ย.', // พฤศจิกายน (November)
+    'ธ.ค.', // ธันวาคม (December)
+  ];
+  List<TextEditingController> Dropdown_Controller_zone = [];
+  @override
+  void initState() {
+    Dropdown_Controller_zone = List.generate(4, (_) => TextEditingController());
+    super.initState();
+    checkPreferance();
+    read_GC_rental();
+    read_GC_zone();
+    read_GC_Exp();
+    read_GC_PayMentModel();
+  }
+
+///////------------------------------------------------------------------>
+  Future<Null> read_GC_PayMentModel() async {
+    if (payMentModels.length != 0) {
+      payMentModels.clear();
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+    var zone = preferences.getString('zoneSer');
+
+    // print('ren >>>>>> $ren');
+
+    String url =
+        '${MyConstant().domain}/GC_Bank_Paytype.php?isAdd=true&ren=$ren';
+
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result != null) {
+        for (var map in result) {
+          PayMentModel payMentModel = PayMentModel.fromJson(map);
+          setState(() {
+            payMentModels.add(payMentModel);
+          });
+        }
+      } else {}
+    } catch (e) {}
+  }
+
+  /////////------------------------------------------------------------->
+  Future<Null> checkPreferance() async {
+    int currentYear = DateTime.now().year + 1;
+    for (int i = currentYear; i >= currentYear - 11; i--) {
+      YE_Th.add(i.toString());
+    }
+    for (int i2 = 0; i2 < 12; i2++) {
+      Mont_Th.add('${i2 + 1}');
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    setState(() {
+      renTal_user = preferences.getString('renTalSer');
+      renTal_name = preferences.getString('renTalName');
+    });
+    // System_New_Update();
+  }
+
+  ///////////--------------------------------------------->
+  Future<Null> read_GC_rental() async {
+    if (renTalModels.isNotEmpty) {
+      renTalModels.clear();
+    }
+
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    var ren = preferences.getString('renTalSer');
+    String url =
+        '${MyConstant().domain}/GC_rental_setring.php?isAdd=true&ren=$ren';
+    renTal_name = preferences.getString('renTalName');
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result != null) {
+        for (var map in result) {
+          RenTalModel renTalModel = RenTalModel.fromJson(map);
+          var rtnamex = renTalModel.rtname!.trim();
+          var typexs = renTalModel.type!.trim();
+          var typexx = renTalModel.typex!.trim();
+          var bill_namex = renTalModel.bill_name!.trim();
+          var bill_addrx = renTalModel.bill_addr!.trim();
+          var bill_taxx = renTalModel.bill_tax!.trim();
+          var bill_telx = renTalModel.bill_tel!.trim();
+          var bill_emailx = renTalModel.bill_email!.trim();
+          var bill_defaultx = renTalModel.bill_default;
+          var bill_tserx = renTalModel.tser;
+          var name = renTalModel.pn!.trim();
+          var foderx = renTalModel.dbn;
+          setState(() {
+            foder = foderx;
+            rtname = rtnamex;
+            type = typexs;
+            typex = typexx;
+            renname = name;
+            bill_name = bill_namex;
+            bill_addr = bill_addrx;
+            bill_tax = bill_taxx;
+            bill_tel = bill_telx;
+            bill_email = bill_emailx;
+            bill_default = bill_defaultx;
+            bill_tser = bill_tserx;
+            renTalModels.add(renTalModel);
+            // if (bill_defaultx == 'P') {
+            //   bills_name_ = 'บิลธรรมดา';
+            // } else {
+            //   bills_name_ = 'ใบกำกับภาษี';
+            // }
+          });
+        }
+      } else {}
+    } catch (e) {
+      // print('Error-Dis(read_GC_rental) : ${e}');
+    }
+    // print('name>>>>>  $renname');
+  }
+
+////////--------------------------------------------------------------->
+  System_New_Update() async {
+    // String accept_ = showst_update_!;
+    showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) => AlertDialog(
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(20.0))),
+        title: const Text(
+          '📢ขออภัย !!!! ',
+          textAlign: TextAlign.end,
+          style: TextStyle(
+            fontSize: 12,
+            color: Colors.red,
+            fontFamily: Font_.Fonts_T,
+          ),
+        ),
+        content: Container(
+          decoration: const BoxDecoration(
+            image: DecorationImage(
+              image: AssetImage("images/pngegg.png"),
+              // fit: BoxFit.cover,
+            ),
+          ),
+          child: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                    'ขออภัย ขณะนี้ฟังก์ชั่นก์ รายงานหน้า 9 อยู่ในช่วงทดสอบ... !!!!!! ',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: FontWeight_.Fonts_T,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: <Widget>[
+          StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 1)),
+              builder: (context, snapshot) {
+                return Column(
+                  children: [
+                    const SizedBox(
+                      height: 5.0,
+                    ),
+                    const Divider(
+                      color: Colors.grey,
+                      height: 4.0,
+                    ),
+                    const SizedBox(
+                      height: 5.0,
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.red,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: TextButton(
+                              onPressed: () async {
+                                Navigator.pop(context, 'OK');
+                              },
+                              child: const Text(
+                                'รับทราบ',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: FontWeight_.Fonts_T),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              })
+        ],
+      ),
+    );
+  }
+
+  ////////--------------------------------------------------------------->
+  Future<Null> read_GC_Exp() async {
+    if (expModels.isNotEmpty) {
+      expModels.clear();
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+
+    String url = '${MyConstant().domain}/GC_exp_Report.php?isAdd=true&ren=$ren';
+
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result != null) {
+        for (var map in result) {
+          ExpModel expModel = ExpModel.fromJson(map);
+
+          setState(() {
+            expModels.add(expModel);
+          });
+        }
+      } else {}
+    } catch (e) {}
+  }
+
+////////--------------------------------------------------------------->
+  Future<Null> read_GC_zone() async {
+    if (zoneModels.length != 0) {
+      zoneModels.clear();
+      zoneModels_report.clear();
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+
+    String url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
+
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      Map<String, dynamic> map = Map();
+      map['ser'] = '0';
+      map['rser'] = '0';
+      map['zn'] = 'ทั้งหมด';
+      map['qty'] = '0';
+      map['img'] = '0';
+      map['data_update'] = '0';
+
+      ZoneModel zoneModelx = ZoneModel.fromJson(map);
+
+      setState(() {
+        zoneModels.add(zoneModelx);
+        zoneModels_report.add(zoneModelx);
+      });
+
+      for (var map in result) {
+        ZoneModel zoneModel = ZoneModel.fromJson(map);
+        setState(() {
+          zoneModels.add(zoneModel);
+          zoneModels_report.add(zoneModel);
+        });
+      }
+      // zoneModels_report.sort((a, b) => a.zn!.compareTo(b.zn!));
+      zoneModels_report.sort((a, b) {
+        if (a.zn == 'ทั้งหมด') {
+          return -1; // 'all' should come before other elements
+        } else if (b.zn == 'ทั้งหมด') {
+          return 1; // 'all' should come after other elements
+        } else {
+          return a.zn!
+              .compareTo(b.zn!); // sort other elements in ascending order
+        }
+      });
+      zoneModels.sort((a, b) {
+        if (a.zn == 'ทั้งหมด') {
+          return -1; // 'all' should come before other elements
+        } else if (b.zn == 'ทั้งหมด') {
+          return 1; // 'all' should come after other elements
+        } else {
+          return a.zn!
+              .compareTo(b.zn!); // sort other elements in ascending order
+        }
+      });
+    } catch (e) {}
+  }
+
+////////////------------------------------------------> ////GC_tenantAll_bill_pay_Report
+  /////GC_tenantAll_billpaySelect_Report
+  ///
+  Future<Null> read_tenantAll_billpay() async {
+    if (teNantModels.isNotEmpty) {
+      setState(() {
+        teNantModels.clear();
+        _teNantModels.clear();
+      });
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+    var zone = (Value_Chang_Zone_People_Ser == null)
+        ? '0'
+        : Value_Chang_Zone_People_Ser;
+
+    // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $Status_pe_ser');
+
+    String url = (zone == '0')
+        ? '${MyConstant().domain}/GC_tenantAllbill_Report.php?isAdd=true&ren=$ren&zone=$zone&quan_tity=$Status_pe_ser'
+        : '${MyConstant().domain}/GC_tenantAllbill_Report.php?isAdd=true&ren=$ren&zone=$zone&quan_tity=$Status_pe_ser';
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result != null) {
+        for (var map in result) {
+          TenantAllbillPayModel teNantModel =
+              TenantAllbillPayModel.fromJson(map);
+          var daterx = teNantModel.ldate == null
+              ? teNantModel.ldate_q
+              : teNantModel.ldate;
+
+          if (daterx != null) {
+            int daysBetween(DateTime from, DateTime to) {
+              from = DateTime(from.year, from.month, from.day);
+              to = DateTime(to.year, to.month, to.day);
+              return (to.difference(from).inHours / 24).round();
+            }
+
+            var birthday = DateTime.parse('$daterx 00:00:00.000')
+                .add(const Duration(days: -30));
+            var date2 = DateTime.now();
+            var difference = daysBetween(birthday, date2);
+
+            // print('difference == $difference');
+
+            var daterx_now = DateTime.now();
+
+            var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+            final now = DateTime.now();
+            final earlier = daterx_ldate.subtract(const Duration(days: 0));
+            var daterx_A = now.isAfter(earlier);
+            // print(now.isAfter(earlier)); // true
+            // print(now.isBefore(earlier)); // true
+
+            if (daterx_A != true) {
+              setState(() {
+                teNantModels.add(teNantModel);
+              });
+            }
+          }
+        }
+        // print('teNantModels.length');
+        // print(teNantModels.length);
+        setState(() {
+          _teNantModels = teNantModels;
+        });
+      } else {}
+    } catch (e) {}
+  }
+
+  ////////--------------------------------------------------------------->
+  Future<Null> tenant_billpay_Select() async {
+    if (transteNantModels_Select.isNotEmpty) {
+      transteNantModels_Select.clear();
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+    var zone = (Value_Chang_Zone_People_Ser == null)
+        ? '0'
+        : Value_Chang_Zone_People_Ser;
+    String url =
+        '${MyConstant().domain}/GC_tenantAll_billpaySelect_Report.php?isAdd=true&ren=$ren&zone=$zone&yea_r=$YE_Transte_People';
+
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result != null) {
+        for (var map in result) {
+          TransteNantModels transteNantModels_Selects =
+              TransteNantModels.fromJson(map);
+
+          setState(() {
+            transteNantModels_Select.add(transteNantModels_Selects);
+          });
+        }
+      } else {}
+    } catch (e) {}
+
+    setState(() {
+      Await_Status_Report1 = 1;
+    });
+  }
+
+  ////////-------------------------------------------------------->(รับเงินประกัน)
+  Future<Null> tenant_Pakan() async {
+    if (contractxPakanModels.isNotEmpty) {
+      contractxPakanModels.clear();
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+    var zone =
+        (Value_Chang_Zone_Pakan_Ser == null) ? '0' : Value_Chang_Zone_Pakan_Ser;
+    String url =
+        '${MyConstant().domain}/GC_PakanReport.php?isAdd=true&ren=$ren&zser=$zone';
+
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result != null) {
+        for (var map in result) {
+          ContractxPakanModel contractxPakanModelss =
+              ContractxPakanModel.fromJson(map);
+
+          setState(() {
+            contractxPakanModels.add(contractxPakanModelss);
+          });
+        }
+        setState(() {
+          _contractxPakanModels = contractxPakanModels;
+        });
+      } else {}
+    } catch (e) {}
+    // print('tenant_Pakan : ${contractxPakanModels.length}');
+    setState(() {
+      Await_Status_Report2 = 1;
+    });
+  }
+
+////////////------------------------------------------>(คืนเงินประกัน)
+  Future<Null> red_Trans_Kon() async {
+    if (transKonModels.isNotEmpty) {
+      setState(() {
+        transKonModels.clear();
+      });
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+    var ren = preferences.getString('renTalSer');
+    var zone =
+        (Value_Chang_Zone_Pakan_Ser == null) ? '0' : Value_Chang_Zone_Pakan_Ser;
+    String url =
+        '${MyConstant().domain}/GC_tran_Kon_pakanReport.php?isAdd=true&ren=$ren&zser_zone=$zone';
+    try {
+      var response = await http.get(Uri.parse(url));
+
+      var result = json.decode(response.body);
+      // print(result);
+      if (result.toString() != 'null') {
+        for (var map in result) {
+          TransKonModel transKonModel = TransKonModel.fromJson(map);
+          var sum_amtx = double.parse(transKonModel.total!);
+          setState(() {
+            // sum_Kon = sum_Kon + sum_amtx;
+            // bot = 1;
+            transKonModels.add(transKonModel);
+          });
+        }
+      }
+    } catch (e) {}
+    setState(() {
+      _transKonModels = transKonModels;
+    });
+    if (transKonModels.length != 0) {
+      // read_his_list();
+    }
+    // print('red_Trans_Kon : ${transKonModels.length}');
+    setState(() {
+      Await_Status_Report3 = 1;
+    });
+  }
+
+////////////------------------------------------------>(วันที่ผู้เช่าเริ่มสัญญา)
+  Future<Null> read_GC_tenantSelect_Start() async {
+    int open_set_date = 30;
+    if (teNantModels_Start.isNotEmpty) {
+      setState(() {
+        teNantModels_Start.clear();
+        _teNantModels_Start.clear();
+      });
+    }
+    SharedPreferences preferences = await SharedPreferences.getInstance();
+
+    var ren = preferences.getString('renTalSer');
+    var zone = Value_Chang_Zone_People_Ser_Start;
+
+    var Mon_People_Start_ = Mon_People_Start;
+    var YE_People_Start_ = YE_People_Start;
+    // print('>>>>>>>>>>>>>>>>>>>>>>>>>>>> $Status_pe_ser');
+
+    if (Status_pe_ser_Start == '1') {
+      String url = zone == null
+          ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+          : zone == '0'
+              ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+              : '${MyConstant().domain}/GC_tenant_Start.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_';
+
+      try {
+        var response = await http.get(Uri.parse(url));
+
+        var result = json.decode(response.body);
+        // print(result);
+        if (result != null) {
+          for (var map in result) {
+            TeNantModel teNantModel = TeNantModel.fromJson(map);
+            if (teNantModel.quantity == '1') {
+              var daterx = teNantModel.ldate == null
+                  ? teNantModel.ldate_q
+                  : teNantModel.ldate;
+
+              if (daterx != null) {
+                int daysBetween(DateTime from, DateTime to) {
+                  from = DateTime(from.year, from.month, from.day);
+                  to = DateTime(to.year, to.month, to.day);
+                  return (to.difference(from).inHours / 24).round();
+                }
+
+                var birthday = DateTime.parse('$daterx 00:00:00.000')
+                    .add(const Duration(days: -30));
+                var date2 = DateTime.now();
+                var difference = daysBetween(birthday, date2);
+
+                // print('difference == $difference');
+
+                var daterx_now = DateTime.now();
+
+                var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+                final now = DateTime.now();
+                final earlier = daterx_ldate.subtract(const Duration(days: 0));
+                var daterx_A = now.isAfter(earlier);
+                // print(now.isAfter(earlier)); // true
+                // print(now.isBefore(earlier)); // true
+
+                if (daterx_A != true) {
+                  setState(() {
+                    teNantModels_Start.add(teNantModel);
+                  });
+                  // read_GC_photo(
+                  //     teNantModel.docno == null
+                  //         ? teNantModel.cid == null
+                  //             ? ''
+                  //             : '${teNantModel.cid}'
+                  //         : '${teNantModel.docno}',
+                  //     teNantModel.quantity);
+                }
+              }
+            }
+          }
+        } else {}
+
+        setState(() {
+          _teNantModels_Start = teNantModels_Start;
+        });
+      } catch (e) {}
+    } else if (Status_pe_ser_Start == '2') {
+      String url = zone == null
+          ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+          : zone == '0'
+              ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+              : '${MyConstant().domain}/GC_tenant_Start.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_';
+
+      try {
+        var response = await http.get(Uri.parse(url));
+
+        var result = json.decode(response.body);
+        // print(result);
+        if (result != null) {
+          for (var map in result) {
+            TeNantModel teNantModel = TeNantModel.fromJson(map);
+            var daterx = teNantModel.ldate == null
+                ? teNantModel.ldate_q
+                : teNantModel.ldate;
+
+            if (daterx != null) {
+              int daysBetween(DateTime from, DateTime to) {
+                from = DateTime(from.year, from.month, from.day);
+                to = DateTime(to.year, to.month, to.day);
+                return (to.difference(from).inHours / 24).round();
+              }
+
+              var birthday = DateTime.parse('$daterx 00:00:00.000')
+                  .add(const Duration(days: -30));
+              var date2 = DateTime.now();
+              var difference = daysBetween(birthday, date2);
+
+              // print('difference == $difference');
+
+              var daterx_now = DateTime.now();
+
+              var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+              final now = DateTime.now();
+              final earlier = daterx_ldate.subtract(const Duration(days: 0));
+              var daterx_A = now.isAfter(earlier);
+              // print(now.isAfter(earlier)); // true
+              // print(now.isBefore(earlier)); // true
+
+              if (daterx_A == true) {
+                setState(() {
+                  if (teNantModel.quantity == '1') {
+                    teNantModels_Start.add(teNantModel);
+                  }
+                });
+                // read_GC_photo(
+                //     teNantModel.docno == null
+                //         ? teNantModel.cid == null
+                //             ? ''
+                //             : '${teNantModel.cid}'
+                //         : '${teNantModel.docno}',
+                //     teNantModel.quantity);
+              }
+            }
+          }
+        } else {}
+        setState(() {
+          _teNantModels_Start = teNantModels_Start;
+        });
+      } catch (e) {}
+    } else if (Status_pe_ser_Start == '3') {
+      String url = zone == null
+          ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+          : zone == '0'
+              ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+              : '${MyConstant().domain}/GC_tenant_Start.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_';
+      try {
+        var response = await http.get(Uri.parse(url));
+
+        var result = json.decode(response.body);
+        // print(result);
+        if (result != null) {
+          for (var map in result) {
+            TeNantModel teNantModel = TeNantModel.fromJson(map);
+            if (teNantModel.quantity == '1') {
+              if (datex.isAfter(
+                      DateTime.parse('${teNantModel.ldate} 00:00:00.000')
+                          .subtract(Duration(days: open_set_date))) ==
+                  true) {
+                var daterx = teNantModel.ldate == null
+                    ? teNantModel.ldate_q
+                    : teNantModel.ldate;
+
+                if (daterx != null) {
+                  int daysBetween(DateTime from, DateTime to) {
+                    from = DateTime(from.year, from.month, from.day);
+                    to = DateTime(to.year, to.month, to.day);
+                    return (to.difference(from).inHours / 24).round();
+                  }
+
+                  var birthday = DateTime.parse('$daterx 00:00:00.000')
+                      .add(const Duration(days: -30));
+                  var date2 = DateTime.now();
+                  var difference = daysBetween(birthday, date2);
+
+                  // print('difference == $difference');
+
+                  var daterx_now = DateTime.now();
+
+                  var daterx_ldate = DateTime.parse('$daterx 00:00:00.000');
+
+                  final now = DateTime.now();
+                  final earlier =
+                      daterx_ldate.subtract(const Duration(days: 0));
+                  var daterx_A = now.isAfter(earlier);
+                  // print(now.isAfter(earlier)); // true
+                  // print(now.isBefore(earlier)); // true
+
+                  if (daterx_A != true) {
+                    setState(() {
+                      teNantModels_Start.add(teNantModel);
+                    });
+                    // read_GC_photo(
+                    //     teNantModel.docno == null
+                    //         ? teNantModel.cid == null
+                    //             ? ''
+                    //             : '${teNantModel.cid}'
+                    //         : '${teNantModel.docno}',
+                    //     teNantModel.quantity);
+                  }
+                }
+              }
+            }
+          }
+        } else {}
+        setState(() {
+          _teNantModels_Start = teNantModels_Start;
+        });
+      } catch (e) {}
+    } else if (Status_pe_ser_Start == '4') {
+      String url = zone == null
+          ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+          : zone == '0'
+              ? '${MyConstant().domain}/GC_tenantAllStart.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_'
+              : '${MyConstant().domain}/GC_tenant_Start.php?isAdd=true&ren=$ren&zone=$zone&mont_h=$Mon_People_Start_&yea_r=$YE_People_Start_';
+
+      try {
+        var response = await http.get(Uri.parse(url));
+
+        var result = json.decode(response.body);
+        // print(result);
+        if (result != null) {
+          for (var map in result) {
+            TeNantModel teNantModel = TeNantModel.fromJson(map);
+            if (teNantModel.quantity == '2' || teNantModel.quantity == '3') {
+              setState(() {
+                teNantModels_Start.add(teNantModel);
+              });
+              // read_GC_photo(
+              //     teNantModel.docno == null
+              //         ? teNantModel.cid == null
+              //             ? ''
+              //             : '${teNantModel.cid}'
+              //         : '${teNantModel.docno}',
+              //     teNantModel.quantity);
+            }
+          }
+        } else {}
+        setState(() {
+          _teNantModels_Start = teNantModels_Start;
+        });
+      } catch (e) {}
+    }
+    setState(() {
+      Await_Status_Report4 = 1;
+    });
+    // quotxSelectModels = List.generate(teNantModels.length, (_) => []);
+    // red_report();
+  }
+
+  //////////----------------------------------------->(รายละเอียดค่าบริการ)
+  // Future<Null> red_report() async {
+  //   SharedPreferences preferences = await SharedPreferences.getInstance();
+  //   var ren = preferences.getString('renTalSer');
+  //   for (int index = 0; index < teNantModels_Start.length; index++) {
+  //     setState(() {
+  //       quotxSelectModels[index].clear();
+  //     });
+  //     var ciddoc = teNantModels_Start[index].docno == null
+  //         ? teNantModels_Start[index].cid == null
+  //             ? ''
+  //             : '${teNantModels_Start[index].cid}'
+  //         : '${teNantModels_Start[index].docno}';
+  //     var qutser = teNantModels_Start[index].quantity;
+
+  //     String url =
+  //         '${MyConstant().domain}/GC_quot_conx.php?isAdd=true&ren=$ren&ciddoc=$ciddoc&qutser=$qutser';
+  //     try {
+  //       var response = await http.get(Uri.parse(url));
+
+  //       var result = json.decode(response.body);
+  //       // print(result);
+  //       if (result != null) {
+  //         for (var map in result) {
+  //           QuotxSelectModel quotxSelectModel = QuotxSelectModel.fromJson(map);
+  //           setState(() {
+  //             quotxSelectModels[index].add(quotxSelectModel);
+  //           });
+  //         }
+  //       } else {}
+  //       // quotxSelectModels[index].sort((a, b) => a.expser!.compareTo(b.expser!));
+  //     } catch (e) {}
+  //   }
+  //   setState(() {
+  //     Await_Status_Report4 = 1;
+  //   });
+  // }
+
+  ////////////------------------------------------------>
+  _searchBar_tenantSelect() {
+    return StreamBuilder(
+        stream: Stream.periodic(const Duration(seconds: 0)),
+        builder: (context, snapshot) {
+          return TextField(
+            autofocus: false,
+            keyboardType: TextInputType.text,
+            style: const TextStyle(
+              // fontSize: 22.0,
+              color: TextHome_Color.TextHome_Colors,
+            ),
+            decoration: InputDecoration(
+              filled: true,
+              // fillColor: Colors.white,
+              hintText: ' Search...',
+              hintStyle: const TextStyle(
+                  color: CustomerScreen_Color.Colors_Text2_,
+                  // fontWeight: FontWeight.bold,
+                  fontFamily: Font_.Fonts_T),
+              contentPadding:
+                  const EdgeInsets.only(left: 14.0, bottom: 8.0, top: 8.0),
+              // focusedBorder: OutlineInputBorder(
+              //   borderSide: const BorderSide(color: Colors.white),
+              //   borderRadius: BorderRadius.circular(10),
+              // ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: const BorderSide(color: Colors.white),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onChanged: (text) {
+              text = text.toLowerCase();
+              // print(text);_teNantModels
+
+              // print(customerModels.map((e) => e.docno));
+              // print(_customerModels.map((e) => e.docno));
+
+              setState(() {
+                teNantModels = _teNantModels.where((teNantModel) {
+                  var notTitle = teNantModel.cid.toString().toLowerCase();
+                  var notTitle2 = teNantModel.cname.toString().toLowerCase();
+                  var notTitle3 = teNantModel.cname_q.toString().toLowerCase();
+                  var notTitle4 = teNantModel.sname.toString().toLowerCase();
+                  var notTitle5 = teNantModel.ln_c.toString().toLowerCase();
+                  var notTitle6 = teNantModel.area_c.toString().toLowerCase();
+                  return notTitle.contains(text) ||
+                      notTitle2.contains(text) ||
+                      notTitle3.contains(text) ||
+                      notTitle4.contains(text) ||
+                      notTitle5.contains(text) ||
+                      notTitle6.contains(text);
+                }).toList();
+              });
+            },
+          );
+        });
+  }
+
+  _searchBar_Pakan() {
+    return StreamBuilder(
+        stream: Stream.periodic(const Duration(seconds: 0)),
+        builder: (context, snapshot) {
+          return TextField(
+            autofocus: false,
+            keyboardType: TextInputType.text,
+            style: const TextStyle(
+              // fontSize: 22.0,
+              color: TextHome_Color.TextHome_Colors,
+            ),
+            decoration: InputDecoration(
+              filled: true,
+              // fillColor: Colors.white,
+              hintText: ' Search...',
+              hintStyle: const TextStyle(
+                  color: CustomerScreen_Color.Colors_Text2_,
+                  // fontWeight: FontWeight.bold,
+                  fontFamily: Font_.Fonts_T),
+              contentPadding:
+                  const EdgeInsets.only(left: 14.0, bottom: 8.0, top: 8.0),
+              // focusedBorder: OutlineInputBorder(
+              //   borderSide: const BorderSide(color: Colors.white),
+              //   borderRadius: BorderRadius.circular(10),
+              // ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: const BorderSide(color: Colors.white),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onChanged: (text) {
+              text = text.toLowerCase();
+              // print(text);_teNantModels
+
+              // print(customerModels.map((e) => e.docno));
+              // print(_customerModels.map((e) => e.docno));
+
+              setState(() {
+                contractxPakanModels =
+                    _contractxPakanModels.where((contractxPakanModel) {
+                  var notTitle =
+                      contractxPakanModel.cid.toString().toLowerCase();
+                  var notTitle2 =
+                      contractxPakanModel.cname.toString().toLowerCase();
+                  var notTitle3 =
+                      contractxPakanModel.zn.toString().toLowerCase();
+
+                  var notTitle4 =
+                      contractxPakanModel.sname.toString().toLowerCase();
+                  var notTitle5 =
+                      contractxPakanModel.unit.toString().toLowerCase();
+                  var notTitle6 =
+                      contractxPakanModel.expname.toString().toLowerCase();
+                  return notTitle.contains(text) ||
+                      notTitle2.contains(text) ||
+                      notTitle3.contains(text) ||
+                      notTitle4.contains(text) ||
+                      notTitle5.contains(text) ||
+                      notTitle6.contains(text);
+                }).toList();
+              });
+            },
+          );
+        });
+  }
+
+  _searchBar_GetbackPakan() {
+    return StreamBuilder(
+        stream: Stream.periodic(const Duration(seconds: 0)),
+        builder: (context, snapshot) {
+          return TextField(
+            autofocus: false,
+            keyboardType: TextInputType.text,
+            style: const TextStyle(
+              // fontSize: 22.0,
+              color: TextHome_Color.TextHome_Colors,
+            ),
+            decoration: InputDecoration(
+              filled: true,
+              // fillColor: Colors.white,
+              hintText: ' Search...',
+              hintStyle: const TextStyle(
+                  color: CustomerScreen_Color.Colors_Text2_,
+                  // fontWeight: FontWeight.bold,
+                  fontFamily: Font_.Fonts_T),
+              contentPadding:
+                  const EdgeInsets.only(left: 14.0, bottom: 8.0, top: 8.0),
+              // focusedBorder: OutlineInputBorder(
+              //   borderSide: const BorderSide(color: Colors.white),
+              //   borderRadius: BorderRadius.circular(10),
+              // ),
+              enabledBorder: UnderlineInputBorder(
+                borderSide: const BorderSide(color: Colors.white),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            onChanged: (text) {
+              text = text.toLowerCase();
+              // print(text);_teNantModels
+
+              // print(customerModels.map((e) => e.docno));
+              // print(_customerModels.map((e) => e.docno));
+
+              setState(() {
+                transKonModels = _transKonModels.where((transKonModel) {
+                  var notTitle = transKonModel.cid.toString().toLowerCase();
+                  var notTitle2 = transKonModel.cname.toString().toLowerCase();
+                  var notTitle3 = transKonModel.zn.toString().toLowerCase();
+
+                  var notTitle4 = transKonModel.pdate.toString().toLowerCase();
+                  var notTitle5 = transKonModel.type.toString().toLowerCase();
+                  var notTitle6 = transKonModel.docno.toString().toLowerCase();
+                  return notTitle.contains(text) ||
+                      notTitle2.contains(text) ||
+                      notTitle3.contains(text) ||
+                      notTitle4.contains(text) ||
+                      notTitle5.contains(text) ||
+                      notTitle6.contains(text);
+                }).toList();
+              });
+            },
+          );
+        });
+  }
+
+//////////////------------------------------------->
+  Widget getDateRangePicker(type) {
+    // final localeObj = Locale('th');
+    return Container(
+      height: 250,
+      width: 300,
+      child: Card(
+        child: SfDateRangePicker(
+          allowViewNavigation: false,
+          startRangeSelectionColor: Colors.purple,
+          endRangeSelectionColor: Colors.deepPurple,
+          rangeSelectionColor: Colors.green[100],
+          view: DateRangePickerView.year,
+          // monthViewSettings:
+          //     DateRangePickerMonthViewSettings(viewHeaderHeight: 100),
+          selectionMode: DateRangePickerSelectionMode.single,
+          enableMultiView: false,
+          toggleDaySelection: false,
+          // showTodayButton: true,
+          onSelectionChanged:
+              (type == 1) ? selectionChanged_month1 : selectionChanged_month2,
+          // backgroundColor: AppBarColors.ABar_Colors,
+        ),
+      ),
+    );
+  }
+
+  /////////////////---------------------------->
+
+  void selectionChanged_month1(DateRangePickerSelectionChangedArgs args) {
+    // Handle the selection change
+    if (args.value is DateTime) {
+      DateTime selectedDate = args.value;
+      //  (Mon_Invoice_Mon == null ||
+      //                                         YE_Invoice_Mon == '')
+      setState(() {
+        YE_Transte_People = DateFormat('yyyy').format(selectedDate);
+      });
+
+      print('Selected Year: ${YE_Transte_People}');
+    }
+  }
+
+  void selectionChanged_month2(DateRangePickerSelectionChangedArgs args) {
+    // Handle the selection change
+    if (args.value is DateTime) {
+      DateTime selectedDate = args.value;
+      //  (Mon_Invoice_Mon == null ||
+      //                                         YE_Invoice_Mon == '')
+      setState(() {
+        Mon_People_Start = DateFormat('MM').format(selectedDate);
+        YE_People_Start = DateFormat('yyyy').format(selectedDate);
+      });
+
+      //  print('Selected month: ${Mon_People_Start}, Year: ${YE_People_Start}');
+    }
+  }
+
+  ////////////------------------------------------------>
+  Widget build(BuildContext context) {
+    return Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Container(
+            height: MediaQuery.of(context).size.height * 0.6,
+            decoration: const BoxDecoration(
+              // color: Colors.lime[200],
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(10),
+                  topRight: Radius.circular(10),
+                  bottomLeft: Radius.circular(10),
+                  bottomRight: Radius.circular(10)),
+              // border: Border.all(color: Colors.grey, width: 1),
+            ),
+            child:
+                ListView(padding: const EdgeInsets.all(8), children: <Widget>[
+              // ScrollConfiguration(
+              //   behavior:
+              //       ScrollConfiguration.of(context).copyWith(dragDevices: {
+              //     PointerDeviceKind.touch,
+              //     PointerDeviceKind.mouse,
+              //   }),
+              //   child: SingleChildScrollView(
+              //     scrollDirection: Axis.horizontal,
+              //     child: Row(
+              //       children: [
+              //         Padding(
+              //           padding: EdgeInsets.all(8.0),
+              //           child: Translate.TranslateAndSetText(
+              //               'ผู้เช่า :',
+              //               ReportScreen_Color.Colors_Text1_,
+              //               TextAlign.center,
+              //               FontWeight.w500,
+              //               Font_.Fonts_T,
+              //               Text_Size,
+              //               1),
+              //         ),
+              //         Padding(
+              //           padding: const EdgeInsets.all(8.0),
+              //           child: Container(
+              //             decoration: const BoxDecoration(
+              //               color: AppbackgroundColor.Sub_Abg_Colors,
+              //               borderRadius: BorderRadius.only(
+              //                   topLeft: Radius.circular(10),
+              //                   topRight: Radius.circular(10),
+              //                   bottomLeft: Radius.circular(10),
+              //                   bottomRight: Radius.circular(10)),
+              //               // border: Border.all(color: Colors.grey, width: 1),
+              //             ),
+              //             width: 150,
+              //             padding: const EdgeInsets.all(8.0),
+              //             child: DropdownButtonFormField2(
+              //               value: Status_pe,
+
+              //               alignment: Alignment.center,
+              //               focusColor: Colors.white,
+              //               autofocus: false,
+              //               decoration: InputDecoration(
+              //                 enabled: true,
+              //                 hoverColor: Colors.brown,
+              //                 prefixIconColor: Colors.blue,
+              //                 fillColor: Colors.white.withOpacity(0.05),
+              //                 filled: false,
+              //                 isDense: true,
+              //                 contentPadding: EdgeInsets.zero,
+              //                 border: OutlineInputBorder(
+              //                   borderSide: const BorderSide(color: Colors.red),
+              //                   borderRadius: BorderRadius.circular(10),
+              //                 ),
+              //                 focusedBorder: const OutlineInputBorder(
+              //                   borderRadius: BorderRadius.only(
+              //                     topRight: Radius.circular(10),
+              //                     topLeft: Radius.circular(10),
+              //                     bottomRight: Radius.circular(10),
+              //                     bottomLeft: Radius.circular(10),
+              //                   ),
+              //                   borderSide: BorderSide(
+              //                     width: 1,
+              //                     color: Color.fromARGB(255, 231, 227, 227),
+              //                   ),
+              //                 ),
+              //               ),
+              //               isExpanded: false,
+              //               // hint: StreamBuilder(
+              //               //     stream: Stream.periodic(const Duration(seconds: 1)),
+              //               //     builder: (context, snapshot) {
+              //               //       return Text(
+              //               //         Status_pe == null ? 'เลือก' : '$Status_pe',
+              //               //         maxLines: 2,
+              //               //         textAlign: TextAlign.center,
+              //               //         style: const TextStyle(
+              //               //           overflow: TextOverflow.ellipsis,
+              //               //           fontSize: 14,
+              //               //           color: Colors.grey,
+              //               //         ),
+              //               //       );
+              //               //     }),
+              //               icon: const Icon(
+              //                 Icons.arrow_drop_down,
+              //                 color: Colors.black,
+              //               ),
+              //               style: const TextStyle(
+              //                 color: Colors.grey,
+              //               ),
+              //               iconSize: 20,
+              //               buttonHeight: 40,
+              //               buttonWidth: 250,
+              //               // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+              //               dropdownDecoration: BoxDecoration(
+              //                 // color: Colors
+              //                 //     .amber,
+              //                 borderRadius: BorderRadius.circular(10),
+              //                 border: Border.all(color: Colors.white, width: 1),
+              //               ),
+              //               items:
+              //                   Status.map((item) => DropdownMenuItem<String>(
+              //                         value: '${item}',
+              //                         child: Translate.TranslateAndSetText(
+              //                             '${item}',
+              //                             Colors.grey,
+              //                             TextAlign.center,
+              //                             FontWeight.w500,
+              //                             Font_.Fonts_T,
+              //                             Text_Size,
+              //                             1),
+              //                       )).toList(),
+
+              //               onChanged: (value) async {
+              //                 int selectedIndex =
+              //                     Status.indexWhere((item) => item == value);
+              //                 setState(() {
+              //                   Status_pe = Status[selectedIndex]!;
+              //                   Status_pe_ser = '${selectedIndex + 1}';
+              //                 });
+              //                 // print(Status_pe_ser);
+              //               },
+              //             ),
+              //           ),
+              //         ),
+              //         Padding(
+              //           padding: EdgeInsets.all(8.0),
+              //           child: Translate.TranslateAndSetText(
+              //               'โซน :',
+              //               ReportScreen_Color.Colors_Text2_,
+              //               TextAlign.center,
+              //               FontWeight.w500,
+              //               Font_.Fonts_T,
+              //               Text_Size,
+              //               1),
+              //         ),
+              //         Padding(
+              //           padding: const EdgeInsets.all(8.0),
+              //           child: Container(
+              //             decoration: BoxDecoration(
+              //               color: AppbackgroundColor.Sub_Abg_Colors,
+              //               borderRadius: BorderRadius.only(
+              //                   topLeft: Radius.circular(10),
+              //                   topRight: Radius.circular(10),
+              //                   bottomLeft: Radius.circular(10),
+              //                   bottomRight: Radius.circular(10)),
+              //               border: Border.all(color: Colors.grey, width: 1),
+              //             ),
+              //             width: 300,
+              //             // padding: const EdgeInsets.all(8.0),
+              //             child: DropdownButtonHideUnderline(
+              //               child: DropdownButton2<String>(
+              //                   isExpanded: false,
+              //                   searchController: Dropdown_Controller_zone[0],
+              //                   value: (Value_Chang_Zone_People == null)
+              //                       ? null
+              //                       : Value_Chang_Zone_People,
+              //                   alignment: Alignment.center,
+              //                   focusColor: Colors.white,
+              //                   searchInnerWidget: Container(
+              //                     // width: 200,
+              //                     height: 40,
+              //                     decoration: BoxDecoration(
+              //                       color: Colors.red[100]!.withOpacity(0.5),
+              //                       borderRadius: const BorderRadius.only(
+              //                           topLeft: Radius.circular(8),
+              //                           topRight: Radius.circular(8),
+              //                           bottomLeft: Radius.circular(8),
+              //                           bottomRight: Radius.circular(8)),
+              //                       border: Border.all(
+              //                           color: Colors.grey, width: 1),
+              //                     ),
+              //                     child: TextFormField(
+              //                       expands: true,
+              //                       maxLines: null,
+              //                       controller: Dropdown_Controller_zone[0],
+              //                       decoration: InputDecoration(
+              //                         isDense: true,
+              //                         contentPadding:
+              //                             const EdgeInsets.symmetric(
+              //                           horizontal: 10,
+              //                           vertical: 8,
+              //                         ),
+              //                         hintText: 'Search...',
+              //                         // fillColor: Colors.red[300],
+              //                         hintStyle: const TextStyle(fontSize: 12),
+              //                         border: OutlineInputBorder(
+              //                           borderRadius: BorderRadius.circular(8),
+              //                           borderSide: BorderSide(
+              //                             width: 1,
+              //                             color: Color.fromARGB(
+              //                                 255, 231, 227, 227),
+              //                           ),
+              //                         ),
+              //                       ),
+              //                     ),
+              //                   ),
+              //                   hint: (Value_Chang_Zone_People == null)
+              //                       ? null
+              //                       : Text(
+              //                           '$Value_Chang_Zone_People',
+              //                           maxLines: 1,
+              //                           style: TextStyle(
+              //                               fontSize: Text_Size,
+              //                               color: PeopleChaoScreen_Color
+              //                                   .Colors_Text2_,
+              //                               fontFamily: Font_.Fonts_T),
+              //                         ),
+              //                   icon: const Icon(
+              //                     Icons.arrow_drop_down,
+              //                     color: TextHome_Color.TextHome_Colors,
+              //                   ),
+              //                   style: TextStyle(
+              //                       fontSize: Text_Size,
+              //                       color: Colors.grey,
+              //                       fontFamily: Font_.Fonts_T),
+              //                   iconSize: 20,
+              //                   buttonHeight: 35,
+              //                   buttonWidth: 250,
+              //                   dropdownDecoration: BoxDecoration(
+              //                     // color: Colors.red[100]!.withOpacity(0.5),
+              //                     borderRadius: BorderRadius.circular(10),
+              //                     border:
+              //                         Border.all(color: Colors.grey, width: 1),
+              //                   ),
+              //                   //  BoxDecoration(
+              //                   //   borderRadius: BorderRadius.circular(10),
+              //                   // ),
+              //                   items: zoneModels_report
+              //                       .map((item) => DropdownMenuItem<String>(
+              //                             value: '${item.zn}',
+              //                             child: Column(
+              //                               crossAxisAlignment:
+              //                                   CrossAxisAlignment.start,
+              //                               mainAxisAlignment:
+              //                                   MainAxisAlignment.center,
+              //                               children: [
+              //                                 Text(
+              //                                   item.zn!,
+              //                                   maxLines: 2,
+              //                                   style: TextStyle(
+              //                                       fontSize: Text_Size,
+              //                                       fontFamily: Font_.Fonts_T),
+              //                                 ),
+              //                                 Divider(
+              //                                   color: Colors.grey[300],
+              //                                   height: 4.0,
+              //                                 ),
+              //                               ],
+              //                             ),
+              //                           ))
+              //                       .toList(),
+
+              //                   // value: selectedValue,
+
+              //                   onChanged: (value) async {
+              //                     int selectedIndex = zoneModels_report
+              //                         .indexWhere((item) => item.zn == value);
+
+              //                     setState(() {
+              //                       Value_Chang_Zone_People = value!;
+              //                       Value_Chang_Zone_People_Ser =
+              //                           zoneModels_report[selectedIndex].ser!;
+              //                     });
+              //                     // print(
+              //                     //     'Selected Index: $Value_Chang_Zone_People  //${Value_Chang_Zone_People_Ser}');
+              //                   },
+              //                   onMenuStateChange: (isOpen) {
+              //                     if (!isOpen) {
+              //                       Dropdown_Controller_zone[2].clear();
+              //                     }
+              //                   }),
+              //             ),
+              //             //  DropdownButtonFormField2(
+              //             //   alignment: Alignment.center,
+              //             //   focusColor: Colors.white,
+              //             //   autofocus: false,
+              //             //   decoration: InputDecoration(
+              //             //     enabled: true,
+              //             //     hoverColor: Colors.brown,
+              //             //     prefixIconColor: Colors.blue,
+              //             //     fillColor: Colors.white.withOpacity(0.05),
+              //             //     filled: false,
+              //             //     isDense: true,
+              //             //     contentPadding: EdgeInsets.zero,
+              //             //     border: OutlineInputBorder(
+              //             //       borderSide: const BorderSide(color: Colors.red),
+              //             //       borderRadius: BorderRadius.circular(10),
+              //             //     ),
+              //             //     focusedBorder: const OutlineInputBorder(
+              //             //       borderRadius: BorderRadius.only(
+              //             //         topRight: Radius.circular(10),
+              //             //         topLeft: Radius.circular(10),
+              //             //         bottomRight: Radius.circular(10),
+              //             //         bottomLeft: Radius.circular(10),
+              //             //       ),
+              //             //       borderSide: BorderSide(
+              //             //         width: 1,
+              //             //         color: Color.fromARGB(255, 231, 227, 227),
+              //             //       ),
+              //             //     ),
+              //             //   ),
+              //             //   isExpanded: false,
+              //             //   value: Value_Chang_Zone_People,
+              //             //   icon: const Icon(
+              //             //     Icons.arrow_drop_down,
+              //             //     color: Colors.black,
+              //             //   ),
+              //             //   style: const TextStyle(
+              //             //     color: Colors.grey,
+              //             //   ),
+              //             //   iconSize: 20,
+              //             //   buttonHeight: 40,
+              //             //   buttonWidth: 250,
+              //             //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+              //             //   dropdownDecoration: BoxDecoration(
+              //             //     // color: Colors
+              //             //     //     .amber,
+              //             //     borderRadius: BorderRadius.circular(10),
+              //             //     border: Border.all(color: Colors.white, width: 1),
+              //             //   ),
+              //             //   items: zoneModels_report
+              //             //       .map((item) => DropdownMenuItem<String>(
+              //             //             value: '${item.zn}',
+              //             //             child: Text(
+              //             //               '${item.zn}',
+              //             //               textAlign: TextAlign.center,
+              //             //               style: const TextStyle(
+              //             //                 overflow: TextOverflow.ellipsis,
+              //             //                 fontSize: 14,
+              //             //                 color: Colors.grey,
+              //             //               ),
+              //             //             ),
+              //             //           ))
+              //             //       .toList(),
+
+              //             //   onChanged: (value) async {
+              //             //     int selectedIndex = zoneModels_report
+              //             //         .indexWhere((item) => item.zn == value);
+
+              //             //     setState(() {
+              //             //       Value_Chang_Zone_People = value!;
+              //             //       Value_Chang_Zone_People_Ser =
+              //             //           zoneModels_report[selectedIndex].ser!;
+              //             //     });
+              //             //     // print(
+              //             //     //     'Selected Index: $Value_Chang_Zone_People  //${Value_Chang_Zone_People_Ser}');
+              //             //   },
+              //             // ),
+              //           ),
+              //         ),
+              //         Padding(
+              //           padding: EdgeInsets.all(8.0),
+              //           child: Translate.TranslateAndSetText(
+              //               'ปี :',
+              //               ReportScreen_Color.Colors_Text2_,
+              //               TextAlign.center,
+              //               FontWeight.w500,
+              //               Font_.Fonts_T,
+              //               Text_Size,
+              //               1),
+              //         ),
+              //         Padding(
+              //           padding: const EdgeInsets.all(8.0),
+              //           child: Container(
+              //             decoration: const BoxDecoration(
+              //               color: AppbackgroundColor.Sub_Abg_Colors,
+              //               borderRadius: BorderRadius.only(
+              //                   topLeft: Radius.circular(10),
+              //                   topRight: Radius.circular(10),
+              //                   bottomLeft: Radius.circular(10),
+              //                   bottomRight: Radius.circular(10)),
+              //               // border: Border.all(color: Colors.grey, width: 1),
+              //             ),
+              //             width: 120,
+              //             padding: const EdgeInsets.all(8.0),
+              //             child: DropdownButtonFormField2(
+              //               alignment: Alignment.center,
+              //               focusColor: Colors.white,
+              //               autofocus: false,
+              //               decoration: InputDecoration(
+              //                 floatingLabelAlignment:
+              //                     FloatingLabelAlignment.center,
+              //                 enabled: true,
+              //                 hoverColor: Colors.brown,
+              //                 prefixIconColor: Colors.blue,
+              //                 fillColor: Colors.white.withOpacity(0.05),
+              //                 filled: false,
+              //                 isDense: true,
+              //                 contentPadding: EdgeInsets.zero,
+              //                 border: OutlineInputBorder(
+              //                   borderSide: const BorderSide(color: Colors.red),
+              //                   borderRadius: BorderRadius.circular(10),
+              //                 ),
+              //                 focusedBorder: const OutlineInputBorder(
+              //                   borderRadius: BorderRadius.only(
+              //                     topRight: Radius.circular(10),
+              //                     topLeft: Radius.circular(10),
+              //                     bottomRight: Radius.circular(10),
+              //                     bottomLeft: Radius.circular(10),
+              //                   ),
+              //                   borderSide: BorderSide(
+              //                     width: 1,
+              //                     color: Color.fromARGB(255, 231, 227, 227),
+              //                   ),
+              //                 ),
+              //               ),
+              //               isExpanded: false,
+              //               value: (YE_Transte_People == null)
+              //                   ? null
+              //                   : YE_Transte_People,
+
+              //               icon: const Icon(
+              //                 Icons.arrow_drop_down,
+              //                 color: Colors.black,
+              //               ),
+              //               style: const TextStyle(
+              //                 color: Colors.grey,
+              //               ),
+              //               iconSize: 20,
+              //               buttonHeight: 40,
+              //               buttonWidth: 200,
+              //               // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+              //               dropdownDecoration: BoxDecoration(
+              //                 // color: Colors
+              //                 //     .amber,
+              //                 borderRadius: BorderRadius.circular(10),
+              //                 border: Border.all(color: Colors.white, width: 1),
+              //               ),
+              //               items: YE_Th.map((item) => DropdownMenuItem<String>(
+              //                     value: '${item}',
+              //                     child: Text(
+              //                       '${item}',
+              //                       // '${int.parse(item) + 543}',
+              //                       textAlign: TextAlign.center,
+              //                       style: TextStyle(
+              //                         overflow: TextOverflow.ellipsis,
+              //                         fontSize: Text_Size,
+              //                         color: Colors.grey,
+              //                       ),
+              //                     ),
+              //                   )).toList(),
+
+              //               onChanged: (value) async {
+              //                 setState(() {
+              //                   YE_Transte_People = value.toString();
+              //                 });
+              //               },
+              //             ),
+              //           ),
+              //         ),
+              //         Padding(
+              //           padding: const EdgeInsets.all(8.0),
+              //           child: InkWell(
+              //             onTap: () async {
+              //               if (Status_pe != null &&
+              //                   Value_Chang_Zone_People != null) {
+              //                 setState(() {
+              //                   Await_Status_Report1 = 0;
+              //                 });
+              //                 Dia_log();
+              //               }
+
+              //               read_tenantAll_billpay();
+              //               tenant_billpay_Select();
+              //             },
+              //             child: Container(
+              //                 width: 100,
+              //                 padding: const EdgeInsets.all(6.0),
+              //                 decoration: BoxDecoration(
+              //                   color: Colors.green[700],
+              //                   borderRadius: const BorderRadius.only(
+              //                       topLeft: Radius.circular(10),
+              //                       topRight: Radius.circular(10),
+              //                       bottomLeft: Radius.circular(10),
+              //                       bottomRight: Radius.circular(10)),
+              //                 ),
+              //                 child: Center(
+              //                   child: Translate.TranslateAndSetText(
+              //                       'ค้นหา',
+              //                       Colors.white,
+              //                       TextAlign.center,
+              //                       FontWeight.w500,
+              //                       Font_.Fonts_T,
+              //                       Text_Size,
+              //                       1),
+              //                 )),
+              //           ),
+              //         ),
+              //       ],
+              //     ),
+              //   ),
+              // ),
+              // Padding(
+              //   padding: const EdgeInsets.all(8.0),
+              //   child: Row(
+              //     children: [
+              //       InkWell(
+              //           child: Container(
+              //             decoration: BoxDecoration(
+              //               color: Colors.yellow[600],
+              //               borderRadius: const BorderRadius.only(
+              //                   topLeft: Radius.circular(10),
+              //                   topRight: Radius.circular(10),
+              //                   bottomLeft: Radius.circular(10),
+              //                   bottomRight: Radius.circular(10)),
+              //               border: Border.all(color: Colors.grey, width: 1),
+              //             ),
+              //             padding: const EdgeInsets.all(4.0),
+              //             child: Center(
+              //               child: Row(
+              //                 mainAxisAlignment: MainAxisAlignment.center,
+              //                 children: [
+              //                   Translate.TranslateAndSetText(
+              //                       'เรียกดู',
+              //                       ReportScreen_Color.Colors_Text1_,
+              //                       TextAlign.center,
+              //                       FontWeight.w500,
+              //                       Font_.Fonts_T,
+              //                       Text_Size,
+              //                       1),
+              //                   Icon(
+              //                     Icons.navigate_next,
+              //                     color: Colors.grey,
+              //                   )
+              //                 ],
+              //               ),
+              //             ),
+              //           ),
+              //           onTap: (Status_pe == null ||
+              //                   Value_Chang_Zone_People == null ||
+              //                   YE_Transte_People == null ||
+              //                   teNantModels.isEmpty)
+              //               ? null
+              //               : () async {
+              //                   Insert_log.Insert_logs(
+              //                       'รายงาน', 'กดดูรายงานรายรับตามผู้เช่า');
+              //                   RE_People_Widget();
+              //                 }),
+              //       (teNantModels.isEmpty || Await_Status_Report1 == null)
+              //           ? Padding(
+              //               padding: const EdgeInsets.all(8.0),
+              //               child: Translate.TranslateAndSetText(
+              //                   (Status_pe != null &&
+              //                           teNantModels.isEmpty &&
+              //                           Value_Chang_Zone_People != null &&
+              //                           YE_Transte_People != null &&
+              //                           Await_Status_Report1 != null)
+              //                       ? 'รายงานรายรับตามผู้เช่า (ไม่พบข้อมูล ✖️)'
+              //                       : 'รายงานรายรับตามผู้เช่า',
+              //                   ReportScreen_Color.Colors_Text1_,
+              //                   TextAlign.center,
+              //                   FontWeight.w500,
+              //                   Font_.Fonts_T,
+              //                   Text_Size,
+              //                   1),
+              //             )
+              //           : (Await_Status_Report1 == 0)
+              //               ? SizedBox(
+              //                   // height: 20,
+              //                   child: Row(
+              //                   children: [
+              //                     Container(
+              //                         padding: const EdgeInsets.all(4.0),
+              //                         child: const CircularProgressIndicator()),
+              //                     Padding(
+              //                       padding: EdgeInsets.all(8.0),
+              //                       child: Translate.TranslateAndSetText(
+              //                           'กำลังโหลดรายงานรายรับตามผู้เช่า...',
+              //                           ReportScreen_Color.Colors_Text1_,
+              //                           TextAlign.center,
+              //                           FontWeight.w500,
+              //                           Font_.Fonts_T,
+              //                           Text_Size,
+              //                           1),
+              //                     ),
+              //                   ],
+              //                 ))
+              //               : Padding(
+              //                   padding: EdgeInsets.all(8.0),
+              //                   child: Translate.TranslateAndSetText(
+              //                       'รายงานรายรับตามผู้เช่า ✔️',
+              //                       ReportScreen_Color.Colors_Text1_,
+              //                       TextAlign.center,
+              //                       FontWeight.w500,
+              //                       Font_.Fonts_T,
+              //                       Text_Size,
+              //                       1),
+              //                 )
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(
+              //   height: 5.0,
+              // ),
+              // Row(
+              //   children: [
+              //     Container(
+              //       width: MediaQuery.of(context).size.width / 2,
+              //       height: 4.0,
+              //       child: Divider(
+              //         color: Colors.grey[300],
+              //         height: 4.0,
+              //       ),
+              //     ),
+              //   ],
+              // ),
+              // const SizedBox(
+              //   height: 5.0,
+              // ),
+              ScrollConfiguration(
+                behavior:
+                    ScrollConfiguration.of(context).copyWith(dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                }),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Translate.TranslateAndSetText(
+                            'โซน :',
+                            ReportScreen_Color.Colors_Text2_,
+                            TextAlign.center,
+                            FontWeight.w500,
+                            Font_.Fonts_T,
+                            Text_Size,
+                            1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppbackgroundColor.Sub_Abg_Colors,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          width: 300,
+                          // padding: const EdgeInsets.all(8.0),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton2<String>(
+                                isExpanded: false,
+                                searchController: Dropdown_Controller_zone[1],
+                                value: (Value_Chang_Zone_Pakan == null)
+                                    ? null
+                                    : Value_Chang_Zone_Pakan,
+                                alignment: Alignment.center,
+                                focusColor: Colors.white,
+                                searchInnerWidget: Container(
+                                  // width: 200,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[100]!.withOpacity(0.5),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                        bottomLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  child: TextFormField(
+                                    expands: true,
+                                    maxLines: null,
+                                    controller: Dropdown_Controller_zone[1],
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      hintText: 'Search...',
+                                      // fillColor: Colors.red[300],
+                                      hintStyle: const TextStyle(fontSize: 12),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          width: 1,
+                                          color: Color.fromARGB(
+                                              255, 231, 227, 227),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                hint: (Value_Chang_Zone_Pakan == null)
+                                    ? null
+                                    : Text(
+                                        '$Value_Chang_Zone_Pakan',
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                            fontSize: Text_Size,
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text2_,
+                                            fontFamily: Font_.Fonts_T),
+                                      ),
+                                icon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: TextHome_Color.TextHome_Colors,
+                                ),
+                                style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.grey,
+                                    fontFamily: Font_.Fonts_T),
+                                iconSize: 20,
+                                buttonHeight: 35,
+                                buttonWidth: 250,
+                                dropdownDecoration: BoxDecoration(
+                                  // color: Colors.red[100]!.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1),
+                                ),
+                                //  BoxDecoration(
+                                //   borderRadius: BorderRadius.circular(10),
+                                // ),
+                                items: zoneModels_report
+                                    .map((item) => DropdownMenuItem<String>(
+                                          value: '${item.zn}',
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item.zn!,
+                                                maxLines: 2,
+                                                style: TextStyle(
+                                                    fontSize: Text_Size,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                              Divider(
+                                                color: Colors.grey[300],
+                                                height: 4.0,
+                                              ),
+                                            ],
+                                          ),
+                                        ))
+                                    .toList(),
+
+                                // value: selectedValue,
+
+                                onChanged: (value) async {
+                                  int selectedIndex = zoneModels_report
+                                      .indexWhere((item) => item.zn == value);
+
+                                  setState(() {
+                                    Value_Chang_Zone_Pakan = value!;
+                                    Value_Chang_Zone_Pakan_Ser =
+                                        zoneModels_report[selectedIndex].ser!;
+                                  });
+                                  // print(
+                                  //     'Selected Index: $Value_Chang_Zone_Pakan  //${Value_Chang_Zone_Pakan_Ser}');
+                                },
+                                onMenuStateChange: (isOpen) {
+                                  if (!isOpen) {
+                                    Dropdown_Controller_zone[1].clear();
+                                  }
+                                }),
+                          ),
+
+                          //  DropdownButtonFormField2(
+                          //   alignment: Alignment.center,
+                          //   focusColor: Colors.white,
+                          //   autofocus: false,
+                          //   decoration: InputDecoration(
+                          //     enabled: true,
+                          //     hoverColor: Colors.brown,
+                          //     prefixIconColor: Colors.blue,
+                          //     fillColor: Colors.white.withOpacity(0.05),
+                          //     filled: false,
+                          //     isDense: true,
+                          //     contentPadding: EdgeInsets.zero,
+                          //     border: OutlineInputBorder(
+                          //       borderSide: const BorderSide(color: Colors.red),
+                          //       borderRadius: BorderRadius.circular(10),
+                          //     ),
+                          //     focusedBorder: const OutlineInputBorder(
+                          //       borderRadius: BorderRadius.only(
+                          //         topRight: Radius.circular(10),
+                          //         topLeft: Radius.circular(10),
+                          //         bottomRight: Radius.circular(10),
+                          //         bottomLeft: Radius.circular(10),
+                          //       ),
+                          //       borderSide: BorderSide(
+                          //         width: 1,
+                          //         color: Color.fromARGB(255, 231, 227, 227),
+                          //       ),
+                          //     ),
+                          //   ),
+                          //   isExpanded: false,
+                          //   value: Value_Chang_Zone_Pakan,
+                          //   icon: const Icon(
+                          //     Icons.arrow_drop_down,
+                          //     color: Colors.black,
+                          //   ),
+                          //   style: const TextStyle(
+                          //     color: Colors.grey,
+                          //   ),
+                          //   iconSize: 20,
+                          //   buttonHeight: 40,
+                          //   buttonWidth: 250,
+                          //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                          //   dropdownDecoration: BoxDecoration(
+                          //     // color: Colors
+                          //     //     .amber,
+                          //     borderRadius: BorderRadius.circular(10),
+                          //     border: Border.all(color: Colors.white, width: 1),
+                          //   ),
+                          //   items: zoneModels_report
+                          //       .map((item) => DropdownMenuItem<String>(
+                          //             value: '${item.zn}',
+                          //             child: Text(
+                          //               '${item.zn}',
+                          //               textAlign: TextAlign.center,
+                          //               style: const TextStyle(
+                          //                 overflow: TextOverflow.ellipsis,
+                          //                 fontSize: 14,
+                          //                 color: Colors.grey,
+                          //               ),
+                          //             ),
+                          //           ))
+                          //       .toList(),
+
+                          //   onChanged: (value) async {
+                          //     int selectedIndex = zoneModels_report
+                          //         .indexWhere((item) => item.zn == value);
+
+                          //     setState(() {
+                          //       Value_Chang_Zone_Pakan = value!;
+                          //       Value_Chang_Zone_Pakan_Ser =
+                          //           zoneModels_report[selectedIndex].ser!;
+                          //     });
+                          //     // print(
+                          //     //     'Selected Index: $Value_Chang_Zone_Pakan  //${Value_Chang_Zone_Pakan_Ser}');
+                          //   },
+                          // ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () async {
+                            if (Value_Chang_Zone_Pakan != null) {
+                              setState(() {
+                                Await_Status_Report2 = 0;
+                                Await_Status_Report3 = 0;
+                              });
+                              Dia_log();
+                            }
+
+                            tenant_Pakan();
+                            red_Trans_Kon();
+                          },
+                          child: Container(
+                              width: 100,
+                              padding: const EdgeInsets.all(6.0),
+                              decoration: BoxDecoration(
+                                color: Colors.green[700],
+                                borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                              ),
+                              child: Center(
+                                child: Translate.TranslateAndSetText(
+                                    'ค้นหา',
+                                    Colors.white,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                              )),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    InkWell(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[600],
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          padding: const EdgeInsets.all(4.0),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Translate.TranslateAndSetText(
+                                    'เรียกดู',
+                                    ReportScreen_Color.Colors_Text1_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                                Icon(
+                                  Icons.navigate_next,
+                                  color: Colors.grey,
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                        onTap: (Value_Chang_Zone_Pakan == null ||
+                                contractxPakanModels.isEmpty)
+                            ? null
+                            : () async {
+                                Insert_log.Insert_logs(
+                                    'รายงาน', 'กดดูรายงานรับเงินประกันผู้เช่า');
+                                RE_Pakan_Widget();
+                              }),
+                    (contractxPakanModels.isEmpty ||
+                            Await_Status_Report2 == null)
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Translate.TranslateAndSetText(
+                                (contractxPakanModels.isEmpty &&
+                                        Value_Chang_Zone_Pakan != null &&
+                                        Await_Status_Report2 != null)
+                                    ? 'รายงานรับเงินประกันผู้เช่า (ไม่พบข้อมูล ✖️)'
+                                    : 'รายงานรับเงินประกันผู้เช่า',
+                                ReportScreen_Color.Colors_Text2_,
+                                TextAlign.center,
+                                FontWeight.w500,
+                                Font_.Fonts_T,
+                                Text_Size,
+                                1),
+                          )
+                        : (Await_Status_Report2 == 0)
+                            ? SizedBox(
+                                // height: 20,
+                                child: Row(
+                                children: [
+                                  Container(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: const CircularProgressIndicator()),
+                                  Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'กำลังโหลดรายงานรับเงินประกันผู้เช่า...',
+                                        ReportScreen_Color.Colors_Text2_,
+                                        TextAlign.center,
+                                        FontWeight.w500,
+                                        Font_.Fonts_T,
+                                        Text_Size,
+                                        1),
+                                  ),
+                                ],
+                              ))
+                            : Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Translate.TranslateAndSetText(
+                                    'รายงานรับเงินประกันผู้เช่า ✔️',
+                                    ReportScreen_Color.Colors_Text2_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                              )
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    InkWell(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[600],
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          padding: const EdgeInsets.all(4.0),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Translate.TranslateAndSetText(
+                                    'เรียกดู',
+                                    ReportScreen_Color.Colors_Text2_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                                Icon(
+                                  Icons.navigate_next,
+                                  color: Colors.grey,
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                        onTap: (Value_Chang_Zone_Pakan == null ||
+                                transKonModels.isEmpty)
+                            ? null
+                            : () async {
+                                Insert_log.Insert_logs(
+                                    'รายงาน', 'กดดูรายงานคืนเงินประกันผู้เช่า');
+                                RE_Getback_Pakan_Widget();
+                              }),
+                    (transKonModels.isEmpty || Await_Status_Report3 == null)
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Translate.TranslateAndSetText(
+                                (transKonModels.isEmpty &&
+                                        Value_Chang_Zone_Pakan != null &&
+                                        Await_Status_Report3 != null)
+                                    ? 'รายงานคืนเงินประกันผู้เช่า (ไม่พบข้อมูล ✖️)'
+                                    : 'รายงานคืนเงินประกันผู้เช่า',
+                                ReportScreen_Color.Colors_Text2_,
+                                TextAlign.center,
+                                FontWeight.w500,
+                                Font_.Fonts_T,
+                                Text_Size,
+                                1),
+                          )
+                        : (Await_Status_Report3 == 0)
+                            ? SizedBox(
+                                // height: 20,
+                                child: Row(
+                                children: [
+                                  Container(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: const CircularProgressIndicator()),
+                                  Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'กำลังโหลดรายงานคืนเงินประกันผู้เช่า...',
+                                        ReportScreen_Color.Colors_Text2_,
+                                        TextAlign.center,
+                                        FontWeight.w500,
+                                        Font_.Fonts_T,
+                                        Text_Size,
+                                        1),
+                                  ),
+                                ],
+                              ))
+                            : Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Translate.TranslateAndSetText(
+                                    'รายงานคืนเงินประกันผู้เช่า ✔️',
+                                    ReportScreen_Color.Colors_Text2_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                              )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 5.0,
+              ),
+              Row(
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width / 2,
+                    height: 4.0,
+                    child: Divider(
+                      color: Colors.grey[300],
+                      height: 4.0,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(
+                height: 5.0,
+              ),
+              ScrollConfiguration(
+                behavior:
+                    ScrollConfiguration.of(context).copyWith(dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                }),
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Translate.TranslateAndSetText(
+                            'ผู้เช่า :',
+                            ReportScreen_Color.Colors_Text2_,
+                            TextAlign.center,
+                            FontWeight.w500,
+                            Font_.Fonts_T,
+                            Text_Size,
+                            1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppbackgroundColor.Sub_Abg_Colors,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                            // border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          width: 150,
+                          padding: const EdgeInsets.all(8.0),
+                          child: DropdownButtonFormField2(
+                            value: Status_pe_Start,
+
+                            alignment: Alignment.center,
+                            focusColor: Colors.white,
+                            autofocus: false,
+                            decoration: InputDecoration(
+                              enabled: true,
+                              hoverColor: Colors.brown,
+                              prefixIconColor: Colors.blue,
+                              fillColor: Colors.white.withOpacity(0.05),
+                              filled: false,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                              border: OutlineInputBorder(
+                                borderSide: const BorderSide(color: Colors.red),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              focusedBorder: const OutlineInputBorder(
+                                borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(10),
+                                  topLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                ),
+                                borderSide: BorderSide(
+                                  width: 1,
+                                  color: Color.fromARGB(255, 231, 227, 227),
+                                ),
+                              ),
+                            ),
+                            isExpanded: false,
+                            // hint: StreamBuilder(
+                            //     stream: Stream.periodic(const Duration(seconds: 1)),
+                            //     builder: (context, snapshot) {
+                            //       return Text(
+                            //         Status_pe == null ? 'เลือก' : '$Status_pe',
+                            //         maxLines: 2,
+                            //         textAlign: TextAlign.center,
+                            //         style: const TextStyle(
+                            //           overflow: TextOverflow.ellipsis,
+                            //           fontSize: 14,
+                            //           color: Colors.grey,
+                            //         ),
+                            //       );
+                            //     }),
+                            icon: const Icon(
+                              Icons.arrow_drop_down,
+                              color: Colors.black,
+                            ),
+                            style: const TextStyle(
+                              color: Colors.grey,
+                            ),
+                            iconSize: 20,
+                            buttonHeight: 40,
+                            buttonWidth: 250,
+                            // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                            dropdownDecoration: BoxDecoration(
+                              // color: Colors
+                              //     .amber,
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: Colors.white, width: 1),
+                            ),
+                            items:
+                                Status.map((item) => DropdownMenuItem<String>(
+                                      value: '${item}',
+                                      child: Translate.TranslateAndSetText(
+                                          '${item}',
+                                          Colors.grey,
+                                          TextAlign.center,
+                                          FontWeight.w500,
+                                          Font_.Fonts_T,
+                                          Text_Size,
+                                          1),
+                                    )).toList(),
+
+                            onChanged: (value) async {
+                              int selectedIndex =
+                                  Status.indexWhere((item) => item == value);
+                              setState(() {
+                                Status_pe_Start = Status[selectedIndex]!;
+                                Status_pe_ser_Start = '${selectedIndex + 1}';
+                              });
+                              // print(selectedIndex);
+                            },
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Translate.TranslateAndSetText(
+                            'โซน :',
+                            Colors.grey,
+                            TextAlign.center,
+                            FontWeight.w500,
+                            Font_.Fonts_T,
+                            Text_Size,
+                            1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppbackgroundColor.Sub_Abg_Colors,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          width: 300,
+                          // padding: const EdgeInsets.all(8.0),
+                          child: DropdownButtonHideUnderline(
+                            child: DropdownButton2<String>(
+                                isExpanded: false,
+                                searchController: Dropdown_Controller_zone[2],
+                                value: (Value_Chang_Zone_People_Start == null)
+                                    ? null
+                                    : Value_Chang_Zone_People_Start,
+                                alignment: Alignment.center,
+                                focusColor: Colors.white,
+                                searchInnerWidget: Container(
+                                  // width: 200,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.red[100]!.withOpacity(0.5),
+                                    borderRadius: const BorderRadius.only(
+                                        topLeft: Radius.circular(8),
+                                        topRight: Radius.circular(8),
+                                        bottomLeft: Radius.circular(8),
+                                        bottomRight: Radius.circular(8)),
+                                    border: Border.all(
+                                        color: Colors.grey, width: 1),
+                                  ),
+                                  child: TextFormField(
+                                    expands: true,
+                                    maxLines: null,
+                                    controller: Dropdown_Controller_zone[2],
+                                    decoration: InputDecoration(
+                                      isDense: true,
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 8,
+                                      ),
+                                      hintText: 'Search...',
+                                      // fillColor: Colors.red[300],
+                                      hintStyle: const TextStyle(fontSize: 12),
+                                      border: OutlineInputBorder(
+                                        borderRadius: BorderRadius.circular(8),
+                                        borderSide: BorderSide(
+                                          width: 1,
+                                          color: Color.fromARGB(
+                                              255, 231, 227, 227),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                hint: (Value_Chang_Zone_People_Start == null)
+                                    ? null
+                                    : Text(
+                                        '$Value_Chang_Zone_People_Start',
+                                        maxLines: 1,
+                                        style: TextStyle(
+                                            fontSize: Text_Size,
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text2_,
+                                            fontFamily: Font_.Fonts_T),
+                                      ),
+                                icon: const Icon(
+                                  Icons.arrow_drop_down,
+                                  color: TextHome_Color.TextHome_Colors,
+                                ),
+                                style: TextStyle(
+                                    fontSize: Text_Size,
+                                    color: Colors.grey,
+                                    fontFamily: Font_.Fonts_T),
+                                iconSize: 20,
+                                buttonHeight: 35,
+                                buttonWidth: 250,
+                                dropdownDecoration: BoxDecoration(
+                                  // color: Colors.red[100]!.withOpacity(0.5),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border:
+                                      Border.all(color: Colors.grey, width: 1),
+                                ),
+                                //  BoxDecoration(
+                                //   borderRadius: BorderRadius.circular(10),
+                                // ),
+                                items: zoneModels_report
+                                    .map((item) => DropdownMenuItem<String>(
+                                          value: '${item.zn}',
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                item.zn!,
+                                                maxLines: 2,
+                                                style: TextStyle(
+                                                    fontSize: Text_Size,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                              Divider(
+                                                color: Colors.grey[300],
+                                                height: 4.0,
+                                              ),
+                                            ],
+                                          ),
+                                        ))
+                                    .toList(),
+
+                                // value: selectedValue,
+
+                                onChanged: (value) async {
+                                  int selectedIndex = zoneModels_report
+                                      .indexWhere((item) => item.zn == value);
+
+                                  setState(() {
+                                    Value_Chang_Zone_People_Start = value!;
+                                    Value_Chang_Zone_People_Ser_Start =
+                                        zoneModels_report[selectedIndex].ser!;
+                                  });
+                                  // print(
+                                  //     'Selected Index: $Value_Chang_Zone_People_Start  //${Value_Chang_Zone_People_Ser_Start}');
+                                },
+                                onMenuStateChange: (isOpen) {
+                                  if (!isOpen) {
+                                    Dropdown_Controller_zone[2].clear();
+                                  }
+                                }),
+                          ),
+                          // DropdownButtonFormField2(
+                          //   alignment: Alignment.center,
+                          //   focusColor: Colors.white,
+                          //   autofocus: false,
+                          //   decoration: InputDecoration(
+                          //     enabled: true,
+                          //     hoverColor: Colors.brown,
+                          //     prefixIconColor: Colors.blue,
+                          //     fillColor: Colors.white.withOpacity(0.05),
+                          //     filled: false,
+                          //     isDense: true,
+                          //     contentPadding: EdgeInsets.zero,
+                          //     border: OutlineInputBorder(
+                          //       borderSide: const BorderSide(color: Colors.red),
+                          //       borderRadius: BorderRadius.circular(10),
+                          //     ),
+                          //     focusedBorder: const OutlineInputBorder(
+                          //       borderRadius: BorderRadius.only(
+                          //         topRight: Radius.circular(10),
+                          //         topLeft: Radius.circular(10),
+                          //         bottomRight: Radius.circular(10),
+                          //         bottomLeft: Radius.circular(10),
+                          //       ),
+                          //       borderSide: BorderSide(
+                          //         width: 1,
+                          //         color: Color.fromARGB(255, 231, 227, 227),
+                          //       ),
+                          //     ),
+                          //   ),
+                          //   isExpanded: false,
+                          //   value: Value_Chang_Zone_People_Start,
+                          //   icon: const Icon(
+                          //     Icons.arrow_drop_down,
+                          //     color: Colors.black,
+                          //   ),
+                          //   style: const TextStyle(
+                          //     color: Colors.grey,
+                          //   ),
+                          //   iconSize: 20,
+                          //   buttonHeight: 40,
+                          //   buttonWidth: 250,
+                          //   // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                          //   dropdownDecoration: BoxDecoration(
+                          //     // color: Colors
+                          //     //     .amber,
+                          //     borderRadius: BorderRadius.circular(10),
+                          //     border: Border.all(color: Colors.white, width: 1),
+                          //   ),
+                          //   items: zoneModels_report
+                          //       .map((item) => DropdownMenuItem<String>(
+                          //             value: '${item.zn}',
+                          //             child: Text(
+                          //               '${item.zn}',
+                          //               textAlign: TextAlign.center,
+                          //               style: const TextStyle(
+                          //                 overflow: TextOverflow.ellipsis,
+                          //                 fontSize: 14,
+                          //                 color: Colors.grey,
+                          //               ),
+                          //             ),
+                          //           ))
+                          //       .toList(),
+
+                          //   onChanged: (value) async {
+                          //     int selectedIndex = zoneModels_report
+                          //         .indexWhere((item) => item.zn == value);
+
+                          //     setState(() {
+                          //       Value_Chang_Zone_People_Start = value!;
+                          //       Value_Chang_Zone_People_Ser_Start =
+                          //           zoneModels_report[selectedIndex].ser!;
+                          //     });
+                          //     // print(
+                          //     //     'Selected Index: $Value_Chang_Zone_People_Start  //${Value_Chang_Zone_People_Ser_Start}');
+                          //   },
+                          // ),
+                        ),
+                      ),
+
+/////----------------------------->
+                      Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Translate.TranslateAndSetText(
+                            'เดือน/ปีที่เริ่มสัญญา :',
+                            ReportScreen_Color.Colors_Text2_,
+                            TextAlign.center,
+                            FontWeight.w500,
+                            Font_.Fonts_T,
+                            Text_Size,
+                            1),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () {
+                            showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      backgroundColor:
+                                          AppbackgroundColor.Sub_Abg_Colors,
+                                      titlePadding: const EdgeInsets.all(0.0),
+                                      contentPadding:
+                                          const EdgeInsets.all(10.0),
+                                      actionsPadding: const EdgeInsets.all(6.0),
+                                      title: Text(''),
+                                      content: Container(
+                                        height: 300,
+                                        child: Column(
+                                          children: <Widget>[
+                                            getDateRangePicker(2),
+                                            MaterialButton(
+                                              child: Text("OK"),
+                                              onPressed: () {
+                                                Navigator.pop(context);
+                                              },
+                                            )
+                                          ],
+                                        ),
+                                      ));
+                                });
+                            // _select_Date_Daily(context);
+                          },
+                          child: Container(
+                              decoration: BoxDecoration(
+                                color: AppbackgroundColor.Sub_Abg_Colors,
+                                borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                                border:
+                                    Border.all(color: Colors.grey, width: 1),
+                              ),
+                              width: 180,
+                              padding: const EdgeInsets.all(8.0),
+                              child: Center(
+                                child: Translate.TranslateAndSetText(
+                                    (Mon_People_Start == null ||
+                                            YE_People_Start == '')
+                                        ? 'เลือก'
+                                        : '$Mon_People_Start / $YE_People_Start',
+                                    ReportScreen_Color.Colors_Text2_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size - 2,
+                                    1),
+                              )),
+                        ),
+                      ),
+                      // Padding(
+                      //   padding: const EdgeInsets.all(8.0),
+                      //   child: Container(
+                      //     decoration: const BoxDecoration(
+                      //       color: AppbackgroundColor.Sub_Abg_Colors,
+                      //       borderRadius: BorderRadius.only(
+                      //           topLeft: Radius.circular(10),
+                      //           topRight: Radius.circular(10),
+                      //           bottomLeft: Radius.circular(10),
+                      //           bottomRight: Radius.circular(10)),
+                      //       // border: Border.all(color: Colors.grey, width: 1),
+                      //     ),
+                      //     width: 120,
+                      //     padding: const EdgeInsets.all(8.0),
+                      //     child: DropdownButtonFormField2(
+                      //       alignment: Alignment.center,
+                      //       focusColor: Colors.white,
+                      //       autofocus: false,
+                      //       decoration: InputDecoration(
+                      //         floatingLabelAlignment:
+                      //             FloatingLabelAlignment.center,
+                      //         enabled: true,
+                      //         hoverColor: Colors.brown,
+                      //         prefixIconColor: Colors.blue,
+                      //         fillColor: Colors.white.withOpacity(0.05),
+                      //         filled: false,
+                      //         isDense: true,
+                      //         contentPadding: EdgeInsets.zero,
+                      //         border: OutlineInputBorder(
+                      //           borderSide: const BorderSide(color: Colors.red),
+                      //           borderRadius: BorderRadius.circular(10),
+                      //         ),
+                      //         focusedBorder: const OutlineInputBorder(
+                      //           borderRadius: BorderRadius.only(
+                      //             topRight: Radius.circular(10),
+                      //             topLeft: Radius.circular(10),
+                      //             bottomRight: Radius.circular(10),
+                      //             bottomLeft: Radius.circular(10),
+                      //           ),
+                      //           borderSide: BorderSide(
+                      //             width: 1,
+                      //             color: Color.fromARGB(255, 231, 227, 227),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //       isExpanded: false,
+                      //       value: (Mon_People_Start == null)
+                      //           ? null
+                      //           : Mon_People_Start,
+
+                      //       icon: const Icon(
+                      //         Icons.arrow_drop_down,
+                      //         color: Colors.black,
+                      //       ),
+                      //       style: const TextStyle(
+                      //         color: Colors.grey,
+                      //       ),
+                      //       iconSize: 20,
+                      //       buttonHeight: 40,
+                      //       buttonWidth: 200,
+                      //       // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                      //       dropdownDecoration: BoxDecoration(
+                      //         // color: Colors
+                      //         //     .amber,
+                      //         borderRadius: BorderRadius.circular(10),
+                      //         border: Border.all(color: Colors.white, width: 1),
+                      //       ),
+                      //       items: [
+                      //         for (int item = 1; item < 13; item++)
+                      //           DropdownMenuItem<String>(
+                      //             value: '${item}',
+                      //             child: Translate.TranslateAndSetText(
+                      //                 '${monthsInThai[item - 1]}',
+                      //                 Colors.grey,
+                      //                 TextAlign.center,
+                      //                 FontWeight.w500,
+                      //                 Font_.Fonts_T,
+                      //                 Text_Size,
+                      //                 1),
+                      //           )
+                      //       ],
+
+                      //       onChanged: (value) async {
+                      //         Mon_People_Start = value.toString();
+                      //       },
+                      //     ),
+                      //   ),
+                      // ),
+                      // Padding(
+                      //   padding: EdgeInsets.all(8.0),
+                      //   child: Translate.TranslateAndSetText(
+                      //       'ปีที่เริ่มสัญญา :',
+                      //       ReportScreen_Color.Colors_Text2_,
+                      //       TextAlign.center,
+                      //       FontWeight.w500,
+                      //       Font_.Fonts_T,
+                      //       Text_Size,
+                      //       1),
+                      // ),
+                      // Padding(
+                      //   padding: const EdgeInsets.all(8.0),
+                      //   child: Container(
+                      //     decoration: const BoxDecoration(
+                      //       color: AppbackgroundColor.Sub_Abg_Colors,
+                      //       borderRadius: BorderRadius.only(
+                      //           topLeft: Radius.circular(10),
+                      //           topRight: Radius.circular(10),
+                      //           bottomLeft: Radius.circular(10),
+                      //           bottomRight: Radius.circular(10)),
+                      //       // border: Border.all(color: Colors.grey, width: 1),
+                      //     ),
+                      //     width: 120,
+                      //     padding: const EdgeInsets.all(8.0),
+                      //     child: DropdownButtonFormField2(
+                      //       alignment: Alignment.center,
+                      //       focusColor: Colors.white,
+                      //       autofocus: false,
+                      //       decoration: InputDecoration(
+                      //         floatingLabelAlignment:
+                      //             FloatingLabelAlignment.center,
+                      //         enabled: true,
+                      //         hoverColor: Colors.brown,
+                      //         prefixIconColor: Colors.blue,
+                      //         fillColor: Colors.white.withOpacity(0.05),
+                      //         filled: false,
+                      //         isDense: true,
+                      //         contentPadding: EdgeInsets.zero,
+                      //         border: OutlineInputBorder(
+                      //           borderSide: const BorderSide(color: Colors.red),
+                      //           borderRadius: BorderRadius.circular(10),
+                      //         ),
+                      //         focusedBorder: const OutlineInputBorder(
+                      //           borderRadius: BorderRadius.only(
+                      //             topRight: Radius.circular(10),
+                      //             topLeft: Radius.circular(10),
+                      //             bottomRight: Radius.circular(10),
+                      //             bottomLeft: Radius.circular(10),
+                      //           ),
+                      //           borderSide: BorderSide(
+                      //             width: 1,
+                      //             color: Color.fromARGB(255, 231, 227, 227),
+                      //           ),
+                      //         ),
+                      //       ),
+                      //       isExpanded: false,
+                      //       value: (YE_People_Start == null)
+                      //           ? null
+                      //           : YE_People_Start,
+
+                      //       icon: const Icon(
+                      //         Icons.arrow_drop_down,
+                      //         color: Colors.black,
+                      //       ),
+                      //       style: const TextStyle(
+                      //         color: Colors.grey,
+                      //       ),
+                      //       iconSize: 20,
+                      //       buttonHeight: 40,
+                      //       buttonWidth: 200,
+                      //       // buttonPadding: const EdgeInsets.only(left: 20, right: 10),
+                      //       dropdownDecoration: BoxDecoration(
+                      //         // color: Colors
+                      //         //     .amber,
+                      //         borderRadius: BorderRadius.circular(10),
+                      //         border: Border.all(color: Colors.white, width: 1),
+                      //       ),
+                      //       items: YE_Th.map((item) => DropdownMenuItem<String>(
+                      //             value: '${item}',
+                      //             child: Text(
+                      //               '${item}',
+                      //               // '${int.parse(item) + 543}',
+                      //               textAlign: TextAlign.center,
+                      //               style: TextStyle(
+                      //                 overflow: TextOverflow.ellipsis,
+                      //                 fontSize: Text_Size,
+                      //                 color: Colors.grey,
+                      //               ),
+                      //             ),
+                      //           )).toList(),
+
+                      //       onChanged: (value) async {
+                      //         YE_People_Start = value.toString();
+                      //       },
+                      //     ),
+                      //   ),
+                      // ),
+
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () async {
+                            if (Status_pe_Start != null) {
+                              setState(() {
+                                Await_Status_Report4 = 0;
+                              });
+                              Dia_log();
+                            }
+
+                            if (Status_pe_Start != null) {
+                              read_GC_tenantSelect_Start();
+                            }
+                          },
+                          child: Container(
+                              width: 100,
+                              padding: const EdgeInsets.all(6.0),
+                              decoration: BoxDecoration(
+                                color: Colors.green[700],
+                                borderRadius: const BorderRadius.only(
+                                    topLeft: Radius.circular(10),
+                                    topRight: Radius.circular(10),
+                                    bottomLeft: Radius.circular(10),
+                                    bottomRight: Radius.circular(10)),
+                              ),
+                              child: Center(
+                                child: Translate.TranslateAndSetText(
+                                    'ค้นหา',
+                                    Colors.white,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                              )),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Row(
+                  children: [
+                    InkWell(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.yellow[600],
+                            borderRadius: const BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                            border: Border.all(color: Colors.grey, width: 1),
+                          ),
+                          padding: const EdgeInsets.all(4.0),
+                          child: Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Translate.TranslateAndSetText(
+                                    'เรียกดู',
+                                    ReportScreen_Color.Colors_Text1_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                                Icon(
+                                  Icons.navigate_next,
+                                  color: Colors.grey,
+                                )
+                              ],
+                            ),
+                          ),
+                        ),
+                        onTap: (Status_pe_Start == null ||
+                                teNantModels_Start.isEmpty)
+                            ? null
+                            : () async {
+                                Insert_log.Insert_logs(
+                                    'รายงาน', 'กดดูรายงานผู้เช่าเริ่มสัญญา');
+                                RE_People_WidgetStart();
+                              }),
+                    (teNantModels_Start.isEmpty || Await_Status_Report4 == null)
+                        ? Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Translate.TranslateAndSetText(
+                                (Status_pe_Start != null &&
+                                        teNantModels_Start.isEmpty &&
+                                        Await_Status_Report4 != null)
+                                    ? 'รายงานรายงานผู้เช่าเริ่มสัญญา (ไม่พบข้อมูล ✖️)'
+                                    : 'รายงานรายงานผู้เช่าเริ่มสัญญา',
+                                ReportScreen_Color.Colors_Text1_,
+                                TextAlign.center,
+                                FontWeight.w500,
+                                Font_.Fonts_T,
+                                Text_Size,
+                                1),
+                          )
+                        : (Await_Status_Report4 == 0)
+                            ? SizedBox(
+                                // height: 20,
+                                child: Row(
+                                children: [
+                                  Container(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: const CircularProgressIndicator()),
+                                  Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Translate.TranslateAndSetText(
+                                        'กำลังโหลดรายงานผู้เช่าเริ่มสัญญา...',
+                                        ReportScreen_Color.Colors_Text1_,
+                                        TextAlign.center,
+                                        FontWeight.w500,
+                                        Font_.Fonts_T,
+                                        Text_Size,
+                                        1),
+                                  ),
+                                ],
+                              ))
+                            : Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Translate.TranslateAndSetText(
+                                    'รายงานผู้เช่าเริ่มสัญญา ✔️',
+                                    ReportScreen_Color.Colors_Text1_,
+                                    TextAlign.center,
+                                    FontWeight.w500,
+                                    Font_.Fonts_T,
+                                    Text_Size,
+                                    1),
+                              )
+                    //     onTap:
+                    //         (Value_Chang_Zone_Pakan == null ||
+                    //                 transKonModels.isEmpty)
+                    //             ? null
+                    //             :
+                    //         () async {
+                    //       Insert_log.Insert_logs(
+                    //           'รายงาน', 'กดดูรายงานผู้เช่าเริ่มสัญญา');
+                    //       RE_People_WidgetStart();
+                    //     }),
+                    // (transKonModels.isEmpty || Await_Status_Report4 == null)
+                    //     ? Padding(
+                    //         padding: const EdgeInsets.all(8.0),
+                    //         child: Text(
+                    //           (transKonModels.isEmpty &&
+                    //                   Value_Chang_Zone_Pakan != null &&
+                    //                   Await_Status_Report4 != null)
+                    //               ? 'รายงานผู้เช่าเริ่มสัญญา (ไม่พบข้อมูล ✖️)'
+                    //               : 'รายงานผู้เช่าเริ่มสัญญา',
+                    //           style: const TextStyle(
+                    //             color: ReportScreen_Color.Colors_Text2_,
+                    //             // fontWeight: FontWeight.bold,
+                    //             fontFamily: Font_.Fonts_T,
+                    //           ),
+                    //         ),
+                    //       )
+                    //     : (Await_Status_Report4 == 0)
+                    //         ? SizedBox(
+                    //             // height: 20,
+                    //             child: Row(
+                    //             children: [
+                    //               Container(
+                    //                   padding: const EdgeInsets.all(4.0),
+                    //                   child: const CircularProgressIndicator()),
+                    //               const Padding(
+                    //                 padding: EdgeInsets.all(8.0),
+                    //                 child: Text(
+                    //                   'กำลังโหลดรายงานผู้เช่าเริ่มสัญญา...',
+                    //                   style: TextStyle(
+                    //                     color: ReportScreen_Color.Colors_Text2_,
+                    //                     // fontWeight: FontWeight.bold,
+                    //                     fontFamily: Font_.Fonts_T,
+                    //                   ),
+                    //                 ),
+                    //               ),
+                    //             ],
+                    //           ))
+                    //         : const Padding(
+                    //             padding: EdgeInsets.all(8.0),
+                    //             child: Text(
+                    //               'รายงานผู้เช่าเริ่มสัญญา ✔️',
+                    //               style: TextStyle(
+                    //                 color: ReportScreen_Color.Colors_Text2_,
+                    //                 // fontWeight: FontWeight.bold,
+                    //                 fontFamily: Font_.Fonts_T,
+                    //               ),
+                    //             ),
+                    //           )
+                  ],
+                ),
+              ),
+              const SizedBox(
+                height: 5.0,
+              ),
+            ])));
+  }
+
+///////////////-------------------------------->
+  Dia_log() {
+    return showDialog(
+        barrierDismissible: false,
+        context: context,
+        builder: (_) {
+          Timer(const Duration(milliseconds: 3600), () {
+            Navigator.of(context).pop();
+          });
+          return Dialog(
+            child: SizedBox(
+              height: 20,
+              width: 80,
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: Image.asset(
+                  "images/gif-LOGOchao.gif",
+                  fit: BoxFit.cover,
+                  height: 20,
+                  width: 80,
+                ),
+              ),
+            ),
+          );
+        });
+
+    // showDialog(
+    //     barrierDismissible: false,
+    //     context: context,
+    //     builder: (BuildContext builderContext) {
+    //       Timer(Duration(seconds: 3), () {
+    //         Navigator.of(context).pop();
+    //       });
+
+    //       return AlertDialog(
+    //         backgroundColor: Colors.transparent,
+    //         elevation: 0,
+    //         content: Container(
+    //           child: Center(
+    //             child: CircularProgressIndicator(),
+    //           ),
+    //         ),
+    //       );
+    //     });
+  }
+
+  ///////////////////////////----------------------------------------------->(รายงานผู้เช่า)
+  RE_People_Widget() {
+    int? ser_index;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          title: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 0)),
+              builder: (context, snapshot) {
+                return Column(
+                  children: [
+                    Center(
+                        child: Text(
+                      (Value_Chang_Zone_People == null)
+                          ? 'รายงานรายรับตามผู้เช่า $YE_Transte_People (กรุณาเลือกโซน)'
+                          : 'รายงานรายรับตามผู้เช่า $YE_Transte_People (โซน : $Value_Chang_Zone_People)',
+                      style: const TextStyle(
+                        color: ReportScreen_Color.Colors_Text1_,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: FontWeight_.Fonts_T,
+                      ),
+                    )),
+                    Row(
+                      children: [
+                        Expanded(
+                            flex: 1,
+                            child: Text(
+                              'ผู้เช่า: ${Status_pe}',
+                              textAlign: TextAlign.start,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: ReportScreen_Color.Colors_Text1_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T,
+                              ),
+                            )),
+                        Expanded(
+                            flex: 1,
+                            child: Text(
+                              'ทั้งหมด: ${teNantModels.length}',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: ReportScreen_Color.Colors_Text1_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T,
+                              ),
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    const Divider(),
+                    const SizedBox(height: 1),
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      // padding: EdgeInsets.all(10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _searchBar_tenantSelect(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+          content: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 1)),
+              builder: (context, snapshot) {
+                return ScrollConfiguration(
+                  behavior:
+                      ScrollConfiguration.of(context).copyWith(dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                  }),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Container(
+                          // color: Colors.grey[50],
+                          width: (Responsive.isDesktop(context))
+                              ? MediaQuery.of(context).size.width + 350
+                              : (teNantModels.length == 0)
+                                  ? MediaQuery.of(context).size.width + 350
+                                  : 1200,
+                          // height:
+                          //     MediaQuery.of(context)
+                          //             .size
+                          //             .height *
+                          //         0.3,
+                          child:
+                              // (teNantModels.length == 0)
+                              //     ? const Column(
+                              //         mainAxisAlignment: MainAxisAlignment.center,
+                              //         children: [
+                              //           Center(
+                              //             child: Text(
+                              //               'ไม่พบข้อมูล ณ วันที่เลือก',
+                              //               style: TextStyle(
+                              //                 color:
+                              //                     ReportScreen_Color.Colors_Text1_,
+                              //                 fontWeight: FontWeight.bold,
+                              //                 fontFamily: FontWeight_.Fonts_T,
+                              //               ),
+                              //             ),
+                              //           ),
+                              //         ],
+                              //       )
+                              //     :
+                              Column(
+                            children: <Widget>[
+                              Container(
+                                // width: 1050,
+                                decoration: BoxDecoration(
+                                  color: AppbackgroundColor.TiTile_Colors,
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(10),
+                                      topRight: Radius.circular(10),
+                                      bottomLeft: Radius.circular(0),
+                                      bottomRight: Radius.circular(0)),
+                                ),
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    const Expanded(
+                                      flex: 1,
+                                      child: Text(
+                                        'เลขที่สัญญา',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ชื่อผู้ติดต่อ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'เบอร์ติดต่อ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ชื่อร้านค้า',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'โซนพื้นที่',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'รหัสพื้นที่',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ค่าเช่า',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    for (int index = 0; index < 12; index++)
+                                      Expanded(
+                                        flex: 1,
+                                        child: Column(
+                                          children: [
+                                            Text(
+                                              '${monthsAbbreviationInThai[index]}',
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(
+                                                  color: ReportScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0),
+                                            ),
+                                            Text(
+                                              '(ล่าสุด)',
+                                              textAlign: TextAlign.right,
+                                              style: const TextStyle(
+                                                  color: Colors.grey,
+                                                  fontFamily: Font_.Fonts_T,
+                                                  fontSize: 14.0),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                  // height: (Responsive.isDesktop(context))
+                                  //     ? MediaQuery.of(context).size.width * 0.255
+                                  //     : MediaQuery.of(context).size.height * 0.45,
+                                  child: ListView.builder(
+                                itemCount: teNantModels.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return ListTile(
+                                    title: Container(
+                                      decoration: BoxDecoration(
+                                        // color: Colors.green[100]!
+                                        //     .withOpacity(0.5),
+                                        border: const Border(
+                                          bottom: BorderSide(
+                                            color: Colors.black12,
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Tooltip(
+                                                richMessage: TextSpan(
+                                                  text: teNantModels[index]
+                                                              .docno ==
+                                                          null
+                                                      ? teNantModels[index]
+                                                                  .cid ==
+                                                              null
+                                                          ? ''
+                                                          : '${teNantModels[index].cid}'
+                                                      : '${teNantModels[index].docno}',
+                                                  style: const TextStyle(
+                                                    color: HomeScreen_Color
+                                                        .Colors_Text1_,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                    //fontSize: 10.0
+                                                  ),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  color: Colors.grey[200],
+                                                ),
+                                                child: AutoSizeText(
+                                                  minFontSize: 10,
+                                                  maxFontSize: 25,
+                                                  maxLines: 1,
+                                                  teNantModels[index].docno ==
+                                                          null
+                                                      ? teNantModels[index]
+                                                                  .cid ==
+                                                              null
+                                                          ? ''
+                                                          : '${teNantModels[index].cid}'
+                                                      : '${teNantModels[index].docno}',
+                                                  textAlign: TextAlign.start,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                teNantModels[index].cname ==
+                                                        null
+                                                    ? teNantModels[index]
+                                                                .cname_q ==
+                                                            null
+                                                        ? ''
+                                                        : '${teNantModels[index].cname_q}'
+                                                    : '${teNantModels[index].cname}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                '${teNantModels[index].tel}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Tooltip(
+                                                richMessage: TextSpan(
+                                                  text: teNantModels[index]
+                                                              .sname ==
+                                                          null
+                                                      ? teNantModels[index]
+                                                                  .sname_q ==
+                                                              null
+                                                          ? ''
+                                                          : '${teNantModels[index].sname_q}'
+                                                      : '${teNantModels[index].sname}',
+                                                  style: const TextStyle(
+                                                    color: HomeScreen_Color
+                                                        .Colors_Text1_,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                    //fontSize: 10.0
+                                                  ),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  color: Colors.grey[200],
+                                                ),
+                                                child: AutoSizeText(
+                                                  minFontSize: 10,
+                                                  maxFontSize: 25,
+                                                  maxLines: 1,
+                                                  teNantModels[index].sname ==
+                                                          null
+                                                      ? teNantModels[index]
+                                                                  .sname_q ==
+                                                              null
+                                                          ? ''
+                                                          : '${teNantModels[index].sname_q}'
+                                                      : '${teNantModels[index].sname}',
+                                                  textAlign: TextAlign.start,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: AutoSizeText(
+                                              minFontSize: 10,
+                                              maxFontSize: 25,
+                                              maxLines: 1,
+                                              '${teNantModels[index].zn}',
+                                              textAlign: TextAlign.start,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: Font_.Fonts_T),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text: teNantModels[index]
+                                                            .ln_c ==
+                                                        null
+                                                    ? teNantModels[index]
+                                                                .ln_q ==
+                                                            null
+                                                        ? ''
+                                                        : '${teNantModels[index].ln_q}'
+                                                    : '${teNantModels[index].ln_c}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 2,
+                                                teNantModels[index].ln_c == null
+                                                    ? teNantModels[index]
+                                                                .ln_q ==
+                                                            null
+                                                        ? ''
+                                                        : '${teNantModels[index].ln_q}'
+                                                    : '${teNantModels[index].ln_c}',
+                                                textAlign: TextAlign.start,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: AutoSizeText(
+                                              minFontSize: 10,
+                                              maxFontSize: 25,
+                                              maxLines: 1,
+                                              nFormat
+                                                  .format(double.parse(
+                                                      '${teNantModels[index].total_contractx}'))
+                                                  .toString(),
+                                              textAlign: TextAlign.right,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: Font_.Fonts_T),
+                                            ),
+                                          ),
+                                          // for (int index = 0;
+                                          //     index < 12;
+                                          //     index++)
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m1 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m1)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m1}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m1 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m1)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m1).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m2 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m2)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m2}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m2 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m2)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m2).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m3 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m3)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m3}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m3 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m3)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m3).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m4 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m4)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m4}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m4 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m4)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m4).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m5 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m5)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m5}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m5 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m5)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m5).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m6 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m6)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m6}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m6 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m6)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m6).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m7 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m7)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m7}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m7 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m7)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m7).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m8 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m8)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m8}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m8 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m8)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m8).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m9 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m9)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m9}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m9 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m9)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m9).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m10 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m10)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m10}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m10 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m10)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m10).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m11 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m11)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m11}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m11 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m11)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m11).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.end,
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_date_m12 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_date_m12)
+                                                          .isEmpty
+                                                      ? '-'
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => DateFormat('d MMM', 'th_TH').format(DateTime.parse('${model.l_date_m12}'))).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                                Text(
+                                                  transteNantModels_Select
+                                                          .where((model) =>
+                                                              model.cid ==
+                                                                  '${teNantModels[index].cid}' &&
+                                                              model.l_docno_m12 !=
+                                                                  null)
+                                                          .map((model) =>
+                                                              model.l_docno_m12)
+                                                          .isEmpty
+                                                      ? ''
+                                                      : '${transteNantModels_Select.where((model) => model.cid == '${teNantModels[index].cid}').map((model) => model.l_docno_m12).join(',')}',
+                                                  textAlign: TextAlign.right,
+                                                  style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontFamily: Font_.Fonts_T,
+                                                      fontSize: 12.0),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          actions: <Widget>[
+            const SizedBox(height: 1),
+            const Divider(),
+            const SizedBox(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (teNantModels.length != 0)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          child: Container(
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: const Center(
+                              child: Text(
+                                'Export file',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: Font_.Fonts_T,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onTap: () async {
+                            setState(() {
+                              Value_Report = 'รายงานรายรับตามผู้เช่า';
+                              Pre_and_Dow = 'Download';
+                            });
+                            _showMyDialog_SAVE();
+                          },
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        child: Container(
+                          width: 100,
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Center(
+                            child: Text(
+                              'ปิด',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: Font_.Fonts_T,
+                              ),
+                            ),
+                          ),
+                        ),
+                        onTap: () async {
+                          setState(() {
+                            formKey.currentState?.reset();
+                            Value_Chang_Zone_People_Ser = null;
+                            Value_Chang_Zone_People = null;
+                            Status_pe = null;
+                            Await_Status_Report1 = null;
+                            YE_Transte_People = null;
+                            teNantModels.clear();
+                            _teNantModels.clear();
+                            transteNantModels.clear();
+                            transteNantModels_Select.clear();
+                          });
+                          // check_clear();
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  ///////////////////////////----------------------------------------------->(รายงานรับเงินประกันผู้เช่า)
+  RE_Pakan_Widget() {
+    int? ser_index;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          title: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 0)),
+              builder: (context, snapshot) {
+                return Column(
+                  children: [
+                    Center(
+                        child: Text(
+                      (Value_Chang_Zone_Pakan == null)
+                          ? 'รายงานรับเงินประกันผู้เช่า  (กรุณาเลือกโซน)'
+                          : 'รายงานรับเงินประกันผู้เช่า  (โซน : $Value_Chang_Zone_Pakan)',
+                      style: const TextStyle(
+                        color: ReportScreen_Color.Colors_Text1_,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: FontWeight_.Fonts_T,
+                      ),
+                    )),
+                    Row(
+                      children: [
+                        // Expanded(
+                        //     flex: 1,
+                        //     child: Text(
+                        //       'ผู้เช่า: ${Status_pe}',
+                        //       textAlign: TextAlign.start,
+                        //       style: const TextStyle(
+                        //         fontSize: 14,
+                        //         color: ReportScreen_Color.Colors_Text1_,
+                        //         // fontWeight: FontWeight.bold,
+                        //         fontFamily: FontWeight_.Fonts_T,
+                        //       ),
+                        //     )),
+                        Expanded(
+                            flex: 1,
+                            child: Text(
+                              'ทั้งหมด: ${contractxPakanModels.length}',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: ReportScreen_Color.Colors_Text1_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T,
+                              ),
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    const Divider(),
+                    const SizedBox(height: 1),
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      // padding: EdgeInsets.all(10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _searchBar_Pakan(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+          content: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 1)),
+              builder: (context, snapshot) {
+                return ScrollConfiguration(
+                  behavior:
+                      ScrollConfiguration.of(context).copyWith(dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                  }),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Container(
+                          // color: Colors.grey[50],
+                          width: (Responsive.isDesktop(context))
+                              ? MediaQuery.of(context).size.width * 0.925
+                              : (contractxPakanModels.length == 0)
+                                  ? MediaQuery.of(context).size.width
+                                  : 1200,
+                          // height:
+                          //     MediaQuery.of(context)
+                          //             .size
+                          //             .height *
+                          //         0.3,
+                          child:
+                              // (teNantModels.length == 0)
+                              //     ? const Column(
+                              //         mainAxisAlignment: MainAxisAlignment.center,
+                              //         children: [
+                              //           Center(
+                              //             child: Text(
+                              //               'ไม่พบข้อมูล ณ วันที่เลือก',
+                              //               style: TextStyle(
+                              //                 color:
+                              //                     ReportScreen_Color.Colors_Text1_,
+                              //                 fontWeight: FontWeight.bold,
+                              //                 fontFamily: FontWeight_.Fonts_T,
+                              //               ),
+                              //             ),
+                              //           ),
+                              //         ],
+                              //       )
+                              //     :
+                              Column(
+                            children: <Widget>[
+                              Container(
+                                // width: 1050,
+                                decoration: BoxDecoration(
+                                  color: AppbackgroundColor.TiTile_Colors,
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(10),
+                                      topRight: Radius.circular(10),
+                                      bottomLeft: Radius.circular(0),
+                                      bottomRight: Radius.circular(0)),
+                                ),
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'เลขที่ใบเสร็จ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'เลขที่สัญญา',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    const Expanded(
+                                      flex: 1,
+                                      child: Text(
+                                        'โซน',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ชื่อผู้ติดต่อ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ชื่อร้านค้า',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'เลขตั้งหนี้',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'รายการ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ยอดสุทธิ',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                  // height: (Responsive.isDesktop(context))
+                                  //     ? MediaQuery.of(context).size.width * 0.255
+                                  //     : MediaQuery.of(context).size.height * 0.45,
+                                  child: ListView.builder(
+                                itemCount: contractxPakanModels.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return ListTile(
+                                    title: Container(
+                                      decoration: BoxDecoration(
+                                        // color: Colors.green[100]!
+                                        //     .withOpacity(0.5),
+                                        border: const Border(
+                                          bottom: BorderSide(
+                                            color: Colors.black12,
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Tooltip(
+                                                richMessage: TextSpan(
+                                                  text:
+                                                      '${contractxPakanModels[index].docno}',
+                                                  style: const TextStyle(
+                                                    color: HomeScreen_Color
+                                                        .Colors_Text1_,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                    //fontSize: 10.0
+                                                  ),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  color: Colors.grey[200],
+                                                ),
+                                                child: AutoSizeText(
+                                                  minFontSize: 10,
+                                                  maxFontSize: 25,
+                                                  maxLines: 1,
+                                                  '${contractxPakanModels[index].docno}',
+                                                  textAlign: TextAlign.start,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Tooltip(
+                                                richMessage: TextSpan(
+                                                  text:
+                                                      '${contractxPakanModels[index].cid}',
+                                                  style: const TextStyle(
+                                                    color: HomeScreen_Color
+                                                        .Colors_Text1_,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                    //fontSize: 10.0
+                                                  ),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  color: Colors.grey[200],
+                                                ),
+                                                child: AutoSizeText(
+                                                  minFontSize: 10,
+                                                  maxFontSize: 25,
+                                                  maxLines: 1,
+                                                  '${contractxPakanModels[index].cid}',
+                                                  textAlign: TextAlign.start,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text: (contractxPakanModels[
+                                                                index]
+                                                            .zn !=
+                                                        null)
+                                                    ? '${contractxPakanModels[index].zn}'
+                                                    : '${contractxPakanModels[index].zn1}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 2,
+                                                (contractxPakanModels[index]
+                                                            .zn !=
+                                                        null)
+                                                    ? '${contractxPakanModels[index].zn}'
+                                                    : '${contractxPakanModels[index].zn1}',
+                                                textAlign: TextAlign.start,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                (contractxPakanModels[index]
+                                                            .cname ==
+                                                        null)
+                                                    ? '${contractxPakanModels[index].remark}'
+                                                    : '${contractxPakanModels[index].cname}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Tooltip(
+                                                richMessage: TextSpan(
+                                                  text: (contractxPakanModels[
+                                                                  index]
+                                                              .sname ==
+                                                          null)
+                                                      ? '${contractxPakanModels[index].remark}'
+                                                      : '${contractxPakanModels[index].sname}',
+                                                  style: const TextStyle(
+                                                    color: HomeScreen_Color
+                                                        .Colors_Text1_,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontFamily:
+                                                        FontWeight_.Fonts_T,
+                                                    //fontSize: 10.0
+                                                  ),
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  borderRadius:
+                                                      BorderRadius.circular(5),
+                                                  color: Colors.grey[200],
+                                                ),
+                                                child: AutoSizeText(
+                                                  minFontSize: 10,
+                                                  maxFontSize: 25,
+                                                  maxLines: 1,
+                                                  (contractxPakanModels[index]
+                                                              .sname ==
+                                                          null)
+                                                      ? '${contractxPakanModels[index].remark}'
+                                                      : '${contractxPakanModels[index].sname}',
+                                                  textAlign: TextAlign.start,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: const TextStyle(
+                                                      color:
+                                                          PeopleChaoScreen_Color
+                                                              .Colors_Text2_,
+                                                      //fontWeight: FontWeight.bold,
+                                                      fontFamily:
+                                                          Font_.Fonts_T),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: AutoSizeText(
+                                              minFontSize: 10,
+                                              maxFontSize: 25,
+                                              maxLines: 1,
+                                              '${contractxPakanModels[index].refno}',
+                                              textAlign: TextAlign.start,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: Font_.Fonts_T),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                '${contractxPakanModels[index].expname}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: AutoSizeText(
+                                              minFontSize: 10,
+                                              maxFontSize: 25,
+                                              maxLines: 1,
+                                              nFormat
+                                                  .format(double.parse(
+                                                      '${contractxPakanModels[index].total}'))
+                                                  .toString(),
+                                              textAlign: TextAlign.right,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: Font_.Fonts_T),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          actions: <Widget>[
+            const SizedBox(height: 1),
+            const Divider(),
+            const SizedBox(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (contractxPakanModels.length != 0)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          child: Container(
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: const Center(
+                              child: Text(
+                                'Export file',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: Font_.Fonts_T,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onTap: () async {
+                            setState(() {
+                              Value_Report = 'รายงานรับเงินประกันผู้เช่า';
+                              Pre_and_Dow = 'Download';
+                            });
+                            _showMyDialog_SAVE();
+                          },
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        child: Container(
+                          width: 100,
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Center(
+                            child: Text(
+                              'ปิด',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: Font_.Fonts_T,
+                              ),
+                            ),
+                          ),
+                        ),
+                        onTap: () async {
+                          setState(() {
+                            Value_Chang_Zone_Pakan_Ser = null;
+                            Value_Chang_Zone_Pakan = null;
+
+                            Await_Status_Report2 = null;
+
+                            contractxPakanModels.clear();
+                            _contractxPakanModels.clear();
+                          });
+                          // check_clear();
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  ///////////////////////////----------------------------------------------->(รายงาน คืนเงินประกันผู้เช่า)
+  RE_Getback_Pakan_Widget() {
+    int? ser_index;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          title: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 0)),
+              builder: (context, snapshot) {
+                return Column(
+                  children: [
+                    Center(
+                        child: Text(
+                      (Value_Chang_Zone_Pakan == null)
+                          ? 'รายงานคืนเงินประกันผู้เช่า  (กรุณาเลือกโซน)'
+                          : 'รายงานคืนเงินประกันผู้เช่า  (โซน : $Value_Chang_Zone_Pakan)',
+                      style: const TextStyle(
+                        color: ReportScreen_Color.Colors_Text1_,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: FontWeight_.Fonts_T,
+                      ),
+                    )),
+                    Row(
+                      children: [
+                        // Expanded(
+                        //     flex: 1,
+                        //     child: Text(
+                        //       'ผู้เช่า: ${Status_pe}',
+                        //       textAlign: TextAlign.start,
+                        //       style: const TextStyle(
+                        //         fontSize: 14,
+                        //         color: ReportScreen_Color.Colors_Text1_,
+                        //         // fontWeight: FontWeight.bold,
+                        //         fontFamily: FontWeight_.Fonts_T,
+                        //       ),
+                        //     )),
+                        Expanded(
+                            flex: 1,
+                            child: Text(
+                              'ทั้งหมด: ${transKonModels.length}',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: ReportScreen_Color.Colors_Text1_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T,
+                              ),
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    const Divider(),
+                    const SizedBox(height: 1),
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      // padding: EdgeInsets.all(10),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: _searchBar_GetbackPakan(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              }),
+          content: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 1)),
+              builder: (context, snapshot) {
+                return ScrollConfiguration(
+                  behavior:
+                      ScrollConfiguration.of(context).copyWith(dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                  }),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Container(
+                          // color: Colors.grey[50],
+                          width: (Responsive.isDesktop(context))
+                              ? MediaQuery.of(context).size.width * 0.925
+                              : (transKonModels.length == 0)
+                                  ? MediaQuery.of(context).size.width
+                                  : 1200,
+                          // height:
+                          //     MediaQuery.of(context)
+                          //             .size
+                          //             .height *
+                          //         0.3,
+                          child:
+                              // (teNantModels.length == 0)
+                              //     ? const Column(
+                              //         mainAxisAlignment: MainAxisAlignment.center,
+                              //         children: [
+                              //           Center(
+                              //             child: Text(
+                              //               'ไม่พบข้อมูล ณ วันที่เลือก',
+                              //               style: TextStyle(
+                              //                 color:
+                              //                     ReportScreen_Color.Colors_Text1_,
+                              //                 fontWeight: FontWeight.bold,
+                              //                 fontFamily: FontWeight_.Fonts_T,
+                              //               ),
+                              //             ),
+                              //           ),
+                              //         ],
+                              //       )
+                              //     :
+                              Column(
+                            children: <Widget>[
+                              Container(
+                                // width: 1050,
+                                decoration: BoxDecoration(
+                                  color: AppbackgroundColor.TiTile_Colors,
+                                  borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(10),
+                                      topRight: Radius.circular(10),
+                                      bottomLeft: Radius.circular(0),
+                                      bottomRight: Radius.circular(0)),
+                                ),
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'เลขที่ใบเสร็จ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'วันที่',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    const Expanded(
+                                      flex: 1,
+                                      child: Text(
+                                        'โซน',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    const Expanded(
+                                      flex: 1,
+                                      child: Text(
+                                        'รหัสพื้นที่',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'เลขที่สัญญา',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ชื่อผู้ติดต่อ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ชื่อร้านค้า',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'รูปแบบชำระ',
+                                        textAlign: TextAlign.start,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      flex: 1,
+                                      child: const Text(
+                                        'ยอดคืนสุทธิ',
+                                        textAlign: TextAlign.right,
+                                        style: TextStyle(
+                                            color: PeopleChaoScreen_Color
+                                                .Colors_Text1_,
+                                            fontWeight: FontWeight.bold,
+                                            fontFamily: FontWeight_.Fonts_T,
+                                            fontSize: 14.0
+                                            //fontSize: 10.0
+                                            //fontSize: 10.0
+                                            ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Expanded(
+                                  // height: (Responsive.isDesktop(context))
+                                  //     ? MediaQuery.of(context).size.width * 0.255
+                                  //     : MediaQuery.of(context).size.height * 0.45,
+                                  child: ListView.builder(
+                                itemCount: transKonModels.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return ListTile(
+                                    title: Container(
+                                      decoration: BoxDecoration(
+                                        // color: Colors.green[100]!
+                                        //     .withOpacity(0.5),
+                                        border: const Border(
+                                          bottom: BorderSide(
+                                            color: Colors.black12,
+                                            width: 1,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text:
+                                                    '${transKonModels[index].docno}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                '${transKonModels[index].docno}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: AutoSizeText(
+                                              minFontSize: 10,
+                                              maxFontSize: 25,
+                                              maxLines: 1,
+                                              '${DateFormat('dd-MM').format(DateTime.parse('${transKonModels[index].pdate} 00:00:00'))}-${int.parse('${DateFormat('yyyy').format(DateTime.parse('${transKonModels[index].pdate} 00:00:00'))}') + 543}',
+                                              // '${transKonModels[index].pdate}',
+                                              textAlign: TextAlign.start,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: Font_.Fonts_T),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text: (transKonModels[index]
+                                                            .zn ==
+                                                        null)
+                                                    ? '${transKonModels[index].zn1}'
+                                                    : '${transKonModels[index].zn}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 2,
+                                                (transKonModels[index].zn !=
+                                                        null)
+                                                    ? '${transKonModels[index].zn}'
+                                                    : '${transKonModels[index].zn1}',
+                                                textAlign: TextAlign.start,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text:
+                                                    '${transKonModels[index].ln}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 2,
+                                                '${transKonModels[index].ln}',
+                                                textAlign: TextAlign.start,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text:
+                                                    '${transKonModels[index].cid}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 2,
+                                                '${transKonModels[index].cid}',
+                                                textAlign: TextAlign.start,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text:
+                                                    '${transKonModels[index].cname}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                '${transKonModels[index].cname}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text:
+                                                    '${transKonModels[index].sname}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                '${transKonModels[index].sname}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: Tooltip(
+                                              richMessage: TextSpan(
+                                                text:
+                                                    '${transKonModels[index].type}',
+                                                style: const TextStyle(
+                                                  color: HomeScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  //fontSize: 10.0
+                                                ),
+                                              ),
+                                              decoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(5),
+                                                color: Colors.grey[200],
+                                              ),
+                                              child: AutoSizeText(
+                                                minFontSize: 10,
+                                                maxFontSize: 25,
+                                                maxLines: 1,
+                                                '${transKonModels[index].type}',
+                                                textAlign: TextAlign.start,
+                                                overflow: TextOverflow.ellipsis,
+                                                style: const TextStyle(
+                                                    color:
+                                                        PeopleChaoScreen_Color
+                                                            .Colors_Text2_,
+                                                    //fontWeight: FontWeight.bold,
+                                                    fontFamily: Font_.Fonts_T),
+                                              ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: AutoSizeText(
+                                              minFontSize: 10,
+                                              maxFontSize: 25,
+                                              maxLines: 1,
+                                              nFormat
+                                                  .format(double.parse(
+                                                      '${transKonModels[index].total}'))
+                                                  .toString(),
+                                              textAlign: TextAlign.right,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text2_,
+                                                  //fontWeight: FontWeight.bold,
+                                                  fontFamily: Font_.Fonts_T),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              )),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          actions: <Widget>[
+            const SizedBox(height: 1),
+            const Divider(),
+            const SizedBox(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (transKonModels.length != 0)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          child: Container(
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: const Center(
+                              child: Text(
+                                'Export file',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: Font_.Fonts_T,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onTap: () async {
+                            setState(() {
+                              Value_Report = 'รายงานคืนเงินประกันผู้เช่า';
+                              Pre_and_Dow = 'Download';
+                            });
+                            _showMyDialog_SAVE();
+                          },
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        child: Container(
+                          width: 100,
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Center(
+                            child: Text(
+                              'ปิด',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: Font_.Fonts_T,
+                              ),
+                            ),
+                          ),
+                        ),
+                        onTap: () async {
+                          setState(() {
+                            Value_Chang_Zone_Pakan_Ser = null;
+                            Value_Chang_Zone_Pakan = null;
+
+                            Await_Status_Report2 = null;
+
+                            transKonModels.clear();
+                            _transKonModels.clear();
+                          });
+                          // check_clear();
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+///////////////////////////----------------------------------------------->(รายงานผู้เช่าเริ่มสัญญา)
+  RE_People_WidgetStart() {
+    int? ser_index;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: const RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(20.0))),
+          title: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 0)),
+              builder: (context, snapshot) {
+                return Column(
+                  children: [
+                    Center(
+                        child: Text(
+                      // 'รายงานข้อมูลผู้เช่าเริ่มสัญญา (โซน : ทั้งหมด)',
+                      (Value_Chang_Zone_People_Start == null)
+                          ? 'รายงานผู้เช่า (กรุณาเลือกโซน)'
+                          : 'รายงานผู้เช่า (โซน : $Value_Chang_Zone_People_Start)',
+                      style: const TextStyle(
+                        color: ReportScreen_Color.Colors_Text1_,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: FontWeight_.Fonts_T,
+                      ),
+                    )),
+                    Row(
+                      children: [
+                        Expanded(
+                            flex: 1,
+                            child: Text(
+                              'ผู้เช่า: ${Status_pe_Start}',
+                              textAlign: TextAlign.start,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: ReportScreen_Color.Colors_Text1_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T,
+                              ),
+                            )),
+                        Expanded(
+                            flex: 1,
+                            child: Text(
+                              'ทั้งหมด: ${teNantModels_Start.length}',
+                              textAlign: TextAlign.end,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: ReportScreen_Color.Colors_Text1_,
+                                // fontWeight: FontWeight.bold,
+                                fontFamily: FontWeight_.Fonts_T,
+                              ),
+                            )),
+                      ],
+                    ),
+                    const SizedBox(height: 1),
+                    const Divider(),
+                    const SizedBox(height: 1),
+                    // Container(
+                    //   width: MediaQuery.of(context).size.width,
+                    //   // padding: EdgeInsets.all(10),
+                    //   child: Row(
+                    //     mainAxisAlignment: MainAxisAlignment.start,
+                    //     children: [
+                    //       Expanded(
+                    //         child: _searchBar_tenantSelect(),
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                  ],
+                );
+              }),
+          content: StreamBuilder(
+              stream: Stream.periodic(const Duration(seconds: 0)),
+              builder: (context, snapshot) {
+                return ScrollConfiguration(
+                  behavior:
+                      ScrollConfiguration.of(context).copyWith(dragDevices: {
+                    PointerDeviceKind.touch,
+                    PointerDeviceKind.mouse,
+                  }),
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        Container(
+                          // color: Colors.grey[50],
+                          width: (Responsive.isDesktop(context))
+                              ? MediaQuery.of(context).size.width * 0.93
+                              : (teNantModels_Start.length == 0)
+                                  ? MediaQuery.of(context).size.width
+                                  : 1200,
+                          // height:
+                          //     MediaQuery.of(context)
+                          //             .size
+                          //             .height *
+                          //         0.3,
+                          child: (teNantModels_Start.length == 0)
+                              ? const Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Center(
+                                      child: Text(
+                                        'ไม่พบข้อมูล ณ วันที่เลือก',
+                                        style: TextStyle(
+                                          color:
+                                              ReportScreen_Color.Colors_Text1_,
+                                          fontWeight: FontWeight.bold,
+                                          fontFamily: FontWeight_.Fonts_T,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                              : Column(
+                                  children: <Widget>[
+                                    Container(
+                                      // width: 1050,
+                                      decoration: BoxDecoration(
+                                        color: AppbackgroundColor.TiTile_Colors,
+                                        borderRadius: BorderRadius.only(
+                                            topLeft: Radius.circular(10),
+                                            topRight: Radius.circular(10),
+                                            bottomLeft: Radius.circular(0),
+                                            bottomRight: Radius.circular(0)),
+                                      ),
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Row(
+                                        children: [
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'เลขที่สัญญา/เสนอราคา',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'ชื่อผู้ติดต่อ',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'ชื่อร้านค้า',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'โซนพื้นที่',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'รหัสพื้นที่',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'ขนาดพื้นที่(ต.ร.ม.)',
+                                              textAlign: TextAlign.start,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'ระยะเวลาการเช่า',
+                                              textAlign: TextAlign.end,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'วันเริ่มสัญญา',
+                                              textAlign: TextAlign.end,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'วันสิ้นสุดสัญญา',
+                                              textAlign: TextAlign.end,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          Expanded(
+                                            flex: 1,
+                                            child: const Text(
+                                              'สถานะ',
+                                              textAlign: TextAlign.end,
+                                              style: TextStyle(
+                                                  color: PeopleChaoScreen_Color
+                                                      .Colors_Text1_,
+                                                  fontWeight: FontWeight.bold,
+                                                  fontFamily:
+                                                      FontWeight_.Fonts_T,
+                                                  fontSize: 14.0
+                                                  //fontSize: 10.0
+                                                  //fontSize: 10.0
+                                                  ),
+                                            ),
+                                          ),
+                                          // Expanded(
+                                          //   flex: 1,
+                                          //   child: Text(
+                                          //     '...',
+                                          //     textAlign: TextAlign.end,
+                                          //     style: TextStyle(
+                                          //         color: PeopleChaoScreen_Color
+                                          //             .Colors_Text1_,
+                                          //         fontWeight: FontWeight.bold,
+                                          //         fontFamily:
+                                          //             FontWeight_.Fonts_T,
+                                          //         fontSize: 14.0
+                                          //         //fontSize: 10.0
+                                          //         //fontSize: 10.0
+                                          //         ),
+                                          //   ),
+                                          // ),
+                                        ],
+                                      ),
+                                    ),
+                                    Expanded(
+                                        // height: (Responsive.isDesktop(context))
+                                        //     ? MediaQuery.of(context).size.width * 0.255
+                                        //     : MediaQuery.of(context).size.height * 0.45,
+                                        child: ListView.builder(
+                                      itemCount: teNantModels_Start.length,
+                                      itemBuilder:
+                                          (BuildContext context, int index) {
+                                        return (ser_index != index)
+                                            ? ListTile(
+                                                title: Container(
+                                                  decoration: BoxDecoration(
+                                                    // color: Colors.green[100]!
+                                                    //     .withOpacity(0.5),
+                                                    border: const Border(
+                                                      bottom: BorderSide(
+                                                        color: Colors.black12,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  child: Row(children: [
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Tooltip(
+                                                          richMessage: TextSpan(
+                                                            text: teNantModels_Start[
+                                                                            index]
+                                                                        .docno ==
+                                                                    null
+                                                                ? teNantModels_Start[index]
+                                                                            .cid ==
+                                                                        null
+                                                                    ? ''
+                                                                    : '${teNantModels_Start[index].cid}'
+                                                                : '${teNantModels_Start[index].docno}',
+                                                            style:
+                                                                const TextStyle(
+                                                              color: HomeScreen_Color
+                                                                  .Colors_Text1_,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontFamily:
+                                                                  FontWeight_
+                                                                      .Fonts_T,
+                                                              //fontSize: 10.0
+                                                            ),
+                                                          ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        5),
+                                                            color: Colors
+                                                                .grey[200],
+                                                          ),
+                                                          child: AutoSizeText(
+                                                            minFontSize: 10,
+                                                            maxFontSize: 25,
+                                                            maxLines: 1,
+                                                            teNantModels_Start[
+                                                                            index]
+                                                                        .docno ==
+                                                                    null
+                                                                ? teNantModels_Start[index]
+                                                                            .cid ==
+                                                                        null
+                                                                    ? ''
+                                                                    : '${teNantModels_Start[index].cid}'
+                                                                : '${teNantModels_Start[index].docno}',
+                                                            textAlign:
+                                                                TextAlign.start,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text2_,
+                                                                    //fontWeight: FontWeight.bold,
+                                                                    fontFamily:
+                                                                        Font_
+                                                                            .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 10,
+                                                          maxFontSize: 25,
+                                                          maxLines: 1,
+                                                          teNantModels_Start[
+                                                                          index]
+                                                                      .cname ==
+                                                                  null
+                                                              ? teNantModels_Start[
+                                                                              index]
+                                                                          .cname_q ==
+                                                                      null
+                                                                  ? ''
+                                                                  : '${teNantModels_Start[index].cname_q}'
+                                                              : '${teNantModels_Start[index].cname}',
+                                                          textAlign:
+                                                              TextAlign.start,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: Tooltip(
+                                                          richMessage: TextSpan(
+                                                            text: teNantModels_Start[
+                                                                            index]
+                                                                        .sname ==
+                                                                    null
+                                                                ? teNantModels_Start[index]
+                                                                            .sname_q ==
+                                                                        null
+                                                                    ? ''
+                                                                    : '${teNantModels_Start[index].sname_q}'
+                                                                : '${teNantModels_Start[index].sname}',
+                                                            style:
+                                                                const TextStyle(
+                                                              color: HomeScreen_Color
+                                                                  .Colors_Text1_,
+                                                              fontWeight:
+                                                                  FontWeight
+                                                                      .bold,
+                                                              fontFamily:
+                                                                  FontWeight_
+                                                                      .Fonts_T,
+                                                              //fontSize: 10.0
+                                                            ),
+                                                          ),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        5),
+                                                            color: Colors
+                                                                .grey[200],
+                                                          ),
+                                                          child: AutoSizeText(
+                                                            minFontSize: 10,
+                                                            maxFontSize: 25,
+                                                            maxLines: 1,
+                                                            teNantModels_Start[
+                                                                            index]
+                                                                        .sname ==
+                                                                    null
+                                                                ? teNantModels_Start[index]
+                                                                            .sname_q ==
+                                                                        null
+                                                                    ? ''
+                                                                    : '${teNantModels_Start[index].sname_q}'
+                                                                : '${teNantModels_Start[index].sname}',
+                                                            textAlign:
+                                                                TextAlign.start,
+                                                            overflow:
+                                                                TextOverflow
+                                                                    .ellipsis,
+                                                            style:
+                                                                const TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text2_,
+                                                                    //fontWeight: FontWeight.bold,
+                                                                    fontFamily:
+                                                                        Font_
+                                                                            .Fonts_T),
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 25,
+                                                        maxLines: 1,
+                                                        '${teNantModels_Start[index].zn}',
+                                                        textAlign:
+                                                            TextAlign.start,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            //fontWeight: FontWeight.bold,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Tooltip(
+                                                        richMessage: TextSpan(
+                                                          text: teNantModels_Start[
+                                                                          index]
+                                                                      .ln_c ==
+                                                                  null
+                                                              ? teNantModels_Start[
+                                                                              index]
+                                                                          .ln_q ==
+                                                                      null
+                                                                  ? ''
+                                                                  : '${teNantModels_Start[index].ln_q}'
+                                                              : '${teNantModels_Start[index].ln_c}',
+                                                          style:
+                                                              const TextStyle(
+                                                            color: HomeScreen_Color
+                                                                .Colors_Text1_,
+                                                            fontWeight:
+                                                                FontWeight.bold,
+                                                            fontFamily:
+                                                                FontWeight_
+                                                                    .Fonts_T,
+                                                            //fontSize: 10.0
+                                                          ),
+                                                        ),
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(5),
+                                                          color:
+                                                              Colors.grey[200],
+                                                        ),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 10,
+                                                          maxFontSize: 25,
+                                                          maxLines: 1,
+                                                          teNantModels_Start[
+                                                                          index]
+                                                                      .ln_c ==
+                                                                  null
+                                                              ? teNantModels_Start[
+                                                                              index]
+                                                                          .ln_q ==
+                                                                      null
+                                                                  ? ''
+                                                                  : '${teNantModels_Start[index].ln_q}'
+                                                              : '${teNantModels_Start[index].ln_c}',
+                                                          textAlign:
+                                                              TextAlign.start,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 25,
+                                                        maxLines: 1,
+                                                        teNantModels_Start[
+                                                                        index]
+                                                                    .area_c ==
+                                                                null
+                                                            ? teNantModels_Start[
+                                                                            index]
+                                                                        .area_q ==
+                                                                    null
+                                                                ? ''
+                                                                : '${teNantModels_Start[index].area_q}'
+                                                            : '${teNantModels_Start[index].area_c}',
+                                                        textAlign:
+                                                            TextAlign.start,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            //fontWeight: FontWeight.bold,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 25,
+                                                        maxLines: 1,
+                                                        teNantModels_Start[
+                                                                        index]
+                                                                    .period ==
+                                                                null
+                                                            ? teNantModels_Start[
+                                                                            index]
+                                                                        .period_q ==
+                                                                    null
+                                                                ? ''
+                                                                : '${teNantModels_Start[index].period_q}  ${teNantModels_Start[index].rtname_q!.substring(3)}'
+                                                            : '${teNantModels_Start[index].period}  ${teNantModels_Start[index].rtname!.substring(3)}',
+                                                        textAlign:
+                                                            TextAlign.end,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: const TextStyle(
+                                                            color: PeopleChaoScreen_Color
+                                                                .Colors_Text2_,
+                                                            //fontWeight: FontWeight.bold,
+                                                            fontFamily:
+                                                                Font_.Fonts_T),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 10,
+                                                          maxFontSize: 25,
+                                                          maxLines: 1,
+                                                          teNantModels_Start[
+                                                                          index]
+                                                                      .sdate_q ==
+                                                                  null
+                                                              ? teNantModels_Start[
+                                                                              index]
+                                                                          .sdate ==
+                                                                      null
+                                                                  ? ''
+                                                                  : DateFormat(
+                                                                          'dd-MM-yyyy')
+                                                                      .format(DateTime
+                                                                          .parse(
+                                                                              '${teNantModels_Start[index].sdate} 00:00:00'))
+                                                                      .toString()
+                                                              : DateFormat(
+                                                                      'dd-MM-yyyy')
+                                                                  .format(DateTime
+                                                                      .parse(
+                                                                          '${teNantModels_Start[index].sdate_q} 00:00:00'))
+                                                                  .toString(),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .all(8.0),
+                                                        child: AutoSizeText(
+                                                          minFontSize: 10,
+                                                          maxFontSize: 25,
+                                                          maxLines: 1,
+                                                          teNantModels_Start[
+                                                                          index]
+                                                                      .ldate_q ==
+                                                                  null
+                                                              ? teNantModels_Start[
+                                                                              index]
+                                                                          .ldate ==
+                                                                      null
+                                                                  ? ''
+                                                                  : DateFormat(
+                                                                          'dd-MM-yyyy')
+                                                                      .format(DateTime
+                                                                          .parse(
+                                                                              '${teNantModels_Start[index].ldate} 00:00:00'))
+                                                                      .toString()
+                                                              : DateFormat(
+                                                                      'dd-MM-yyyy')
+                                                                  .format(DateTime
+                                                                      .parse(
+                                                                          '${teNantModels_Start[index].ldate_q} 00:00:00'))
+                                                                  .toString(),
+                                                          textAlign:
+                                                              TextAlign.end,
+                                                          overflow: TextOverflow
+                                                              .ellipsis,
+                                                          style:
+                                                              const TextStyle(
+                                                                  color: PeopleChaoScreen_Color
+                                                                      .Colors_Text2_,
+                                                                  //fontWeight: FontWeight.bold,
+                                                                  fontFamily: Font_
+                                                                      .Fonts_T),
+                                                        ),
+                                                      ),
+                                                    ),
+                                                    Expanded(
+                                                      flex: 1,
+                                                      child: AutoSizeText(
+                                                        minFontSize: 10,
+                                                        maxFontSize: 25,
+                                                        maxLines: 1,
+                                                        teNantModels_Start[
+                                                                        index]
+                                                                    .quantity ==
+                                                                '1'
+                                                            ? datex.isAfter(DateTime.parse(
+                                                                            '${teNantModels_Start[index].ldate} 00:00:00.000')
+                                                                        .subtract(const Duration(
+                                                                            days:
+                                                                                0))) ==
+                                                                    true
+                                                                ? 'หมดสัญญา'
+                                                                : datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(days: 30))) ==
+                                                                        true
+                                                                    ? 'ใกล้หมดสัญญา'
+                                                                    : 'เช่าอยู่'
+                                                            : teNantModels_Start[
+                                                                            index]
+                                                                        .quantity ==
+                                                                    '2'
+                                                                ? 'เสนอราคา'
+                                                                : teNantModels_Start[index]
+                                                                            .quantity ==
+                                                                        '3'
+                                                                    ? 'เสนอราคา(มัดจำ)'
+                                                                    : 'ว่าง',
+                                                        textAlign:
+                                                            TextAlign.end,
+                                                        overflow: TextOverflow
+                                                            .ellipsis,
+                                                        style: TextStyle(
+                                                            color: teNantModels_Start[
+                                                                            index]
+                                                                        .quantity ==
+                                                                    '1'
+                                                                ? datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) ==
+                                                                        true
+                                                                    ? Colors.red
+                                                                    : datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(days: 30))) ==
+                                                                            true
+                                                                        ? Colors
+                                                                            .orange
+                                                                            .shade900
+                                                                        : Colors
+                                                                            .black
+                                                                : teNantModels_Start[index]
+                                                                            .quantity ==
+                                                                        '2'
+                                                                    ? Colors
+                                                                        .blue
+                                                                    : teNantModels_Start[index]
+                                                                                .quantity ==
+                                                                            '3'
+                                                                        ? Colors
+                                                                            .blue
+                                                                        : Colors
+                                                                            .green,
+                                                            fontFamily:
+                                                                Font_.Fonts_T
+                                                            //fontSize: 10.0
+                                                            ),
+                                                      ),
+                                                    ),
+                                                    // Expanded(
+                                                    //   flex: 1,
+                                                    //   child: Padding(
+                                                    //     padding:
+                                                    //         const EdgeInsets
+                                                    //             .all(8.0),
+                                                    //     child: InkWell(
+                                                    //       child: Container(
+                                                    //         decoration:
+                                                    //             BoxDecoration(
+                                                    //           color:
+                                                    //               Colors.green,
+                                                    //           borderRadius: const BorderRadius
+                                                    //                   .only(
+                                                    //               topLeft:
+                                                    //                   Radius.circular(
+                                                    //                       10),
+                                                    //               topRight: Radius
+                                                    //                   .circular(
+                                                    //                       10),
+                                                    //               bottomLeft: Radius
+                                                    //                   .circular(
+                                                    //                       10),
+                                                    //               bottomRight: Radius
+                                                    //                   .circular(
+                                                    //                       10)),
+                                                    //         ),
+                                                    //         padding:
+                                                    //             const EdgeInsets
+                                                    //                 .all(2.0),
+                                                    //         child: Center(
+                                                    //           child:
+                                                    //               AutoSizeText(
+                                                    //             minFontSize: 10,
+                                                    //             maxFontSize: 25,
+                                                    //             maxLines: 1,
+                                                    //             'เพิ่มเติม',
+                                                    //             textAlign:
+                                                    //                 TextAlign
+                                                    //                     .end,
+                                                    //             style:
+                                                    //                 TextStyle(
+                                                    //               color: PeopleChaoScreen_Color
+                                                    //                   .Colors_Text1_,
+                                                    //               fontWeight:
+                                                    //                   FontWeight
+                                                    //                       .bold,
+                                                    //               fontFamily: Font_
+                                                    //                   .Fonts_T,
+                                                    //             ),
+                                                    //           ),
+                                                    //         ),
+                                                    //       ),
+                                                    //       onTap: () async {
+                                                    //         setState(() {
+                                                    //           ser_index = index;
+                                                    //         });
+                                                    //         // red_report_Select(
+                                                    //         //     index);
+                                                    //       },
+                                                    //     ),
+                                                    //   ),
+                                                    // ),
+                                                  ]),
+                                                ),
+                                              )
+                                            : Container(
+                                                child: Column(
+                                                  children: [
+                                                    ListTile(
+                                                      title: Container(
+                                                        decoration:
+                                                            BoxDecoration(
+                                                          color:
+                                                              Colors.green[100],
+                                                          border: const Border(
+                                                            bottom: BorderSide(
+                                                              color: Colors
+                                                                  .black12,
+                                                              width: 1,
+                                                            ),
+                                                          ),
+                                                        ),
+                                                        child: Row(children: [
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child: Tooltip(
+                                                                richMessage:
+                                                                    TextSpan(
+                                                                  text: teNantModels_Start[index]
+                                                                              .docno ==
+                                                                          null
+                                                                      ? teNantModels_Start[index].cid ==
+                                                                              null
+                                                                          ? ''
+                                                                          : '${teNantModels_Start[index].cid}'
+                                                                      : '${teNantModels_Start[index].docno}',
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    color: HomeScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                    //fontSize: 10.0
+                                                                  ),
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              5),
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      200],
+                                                                ),
+                                                                child:
+                                                                    AutoSizeText(
+                                                                  minFontSize:
+                                                                      10,
+                                                                  maxFontSize:
+                                                                      25,
+                                                                  maxLines: 1,
+                                                                  teNantModels_Start[index]
+                                                                              .docno ==
+                                                                          null
+                                                                      ? teNantModels_Start[index].cid ==
+                                                                              null
+                                                                          ? ''
+                                                                          : '${teNantModels_Start[index].cid}'
+                                                                      : '${teNantModels_Start[index].docno}',
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .start,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  style: const TextStyle(
+                                                                      color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily: Font_.Fonts_T),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child:
+                                                                  AutoSizeText(
+                                                                minFontSize: 10,
+                                                                maxFontSize: 25,
+                                                                maxLines: 1,
+                                                                teNantModels_Start[index]
+                                                                            .cname ==
+                                                                        null
+                                                                    ? teNantModels_Start[index].cname_q ==
+                                                                            null
+                                                                        ? ''
+                                                                        : '${teNantModels_Start[index].cname_q}'
+                                                                    : '${teNantModels_Start[index].cname}',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .start,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: const TextStyle(
+                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                    //fontWeight: FontWeight.bold,
+                                                                    fontFamily: Font_.Fonts_T),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child: Tooltip(
+                                                                richMessage:
+                                                                    TextSpan(
+                                                                  text: teNantModels_Start[index]
+                                                                              .sname ==
+                                                                          null
+                                                                      ? teNantModels_Start[index].sname_q ==
+                                                                              null
+                                                                          ? ''
+                                                                          : '${teNantModels_Start[index].sname_q}'
+                                                                      : '${teNantModels_Start[index].sname}',
+                                                                  style:
+                                                                      const TextStyle(
+                                                                    color: HomeScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T,
+                                                                    //fontSize: 10.0
+                                                                  ),
+                                                                ),
+                                                                decoration:
+                                                                    BoxDecoration(
+                                                                  borderRadius:
+                                                                      BorderRadius
+                                                                          .circular(
+                                                                              5),
+                                                                  color: Colors
+                                                                          .grey[
+                                                                      200],
+                                                                ),
+                                                                child:
+                                                                    AutoSizeText(
+                                                                  minFontSize:
+                                                                      10,
+                                                                  maxFontSize:
+                                                                      25,
+                                                                  maxLines: 1,
+                                                                  teNantModels_Start[index]
+                                                                              .sname ==
+                                                                          null
+                                                                      ? teNantModels_Start[index].sname_q ==
+                                                                              null
+                                                                          ? ''
+                                                                          : '${teNantModels_Start[index].sname_q}'
+                                                                      : '${teNantModels_Start[index].sname}',
+                                                                  textAlign:
+                                                                      TextAlign
+                                                                          .start,
+                                                                  overflow:
+                                                                      TextOverflow
+                                                                          .ellipsis,
+                                                                  style: const TextStyle(
+                                                                      color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily: Font_.Fonts_T),
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: AutoSizeText(
+                                                              minFontSize: 10,
+                                                              maxFontSize: 25,
+                                                              maxLines: 1,
+                                                              '${teNantModels_Start[index].zn}',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .start,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style:
+                                                                  const TextStyle(
+                                                                      color: PeopleChaoScreen_Color
+                                                                          .Colors_Text2_,
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily:
+                                                                          Font_
+                                                                              .Fonts_T),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Tooltip(
+                                                              richMessage:
+                                                                  TextSpan(
+                                                                text: teNantModels_Start[index]
+                                                                            .ln_c ==
+                                                                        null
+                                                                    ? teNantModels_Start[index].ln_q ==
+                                                                            null
+                                                                        ? ''
+                                                                        : '${teNantModels_Start[index].ln_q}'
+                                                                    : '${teNantModels_Start[index].ln_c}',
+                                                                style:
+                                                                    const TextStyle(
+                                                                  color: HomeScreen_Color
+                                                                      .Colors_Text1_,
+                                                                  fontWeight:
+                                                                      FontWeight
+                                                                          .bold,
+                                                                  fontFamily:
+                                                                      FontWeight_
+                                                                          .Fonts_T,
+                                                                  //fontSize: 10.0
+                                                                ),
+                                                              ),
+                                                              decoration:
+                                                                  BoxDecoration(
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            5),
+                                                                color: Colors
+                                                                    .grey[200],
+                                                              ),
+                                                              child:
+                                                                  AutoSizeText(
+                                                                minFontSize: 10,
+                                                                maxFontSize: 25,
+                                                                maxLines: 1,
+                                                                teNantModels_Start[index]
+                                                                            .ln_c ==
+                                                                        null
+                                                                    ? teNantModels_Start[index].ln_q ==
+                                                                            null
+                                                                        ? ''
+                                                                        : '${teNantModels_Start[index].ln_q}'
+                                                                    : '${teNantModels_Start[index].ln_c}',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .start,
+                                                                style: const TextStyle(
+                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                    //fontWeight: FontWeight.bold,
+                                                                    fontFamily: Font_.Fonts_T),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: AutoSizeText(
+                                                              minFontSize: 10,
+                                                              maxFontSize: 25,
+                                                              maxLines: 1,
+                                                              teNantModels_Start[
+                                                                              index]
+                                                                          .area_c ==
+                                                                      null
+                                                                  ? teNantModels_Start[index]
+                                                                              .area_q ==
+                                                                          null
+                                                                      ? ''
+                                                                      : '${teNantModels_Start[index].area_q}'
+                                                                  : '${teNantModels_Start[index].area_c}',
+                                                              textAlign:
+                                                                  TextAlign
+                                                                      .start,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style:
+                                                                  const TextStyle(
+                                                                      color: PeopleChaoScreen_Color
+                                                                          .Colors_Text2_,
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily:
+                                                                          Font_
+                                                                              .Fonts_T),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: AutoSizeText(
+                                                              minFontSize: 10,
+                                                              maxFontSize: 25,
+                                                              maxLines: 1,
+                                                              teNantModels_Start[
+                                                                              index]
+                                                                          .period ==
+                                                                      null
+                                                                  ? teNantModels_Start[index]
+                                                                              .period_q ==
+                                                                          null
+                                                                      ? ''
+                                                                      : '${teNantModels_Start[index].period_q}  ${teNantModels_Start[index].rtname_q!.substring(3)}'
+                                                                  : '${teNantModels_Start[index].period}  ${teNantModels_Start[index].rtname!.substring(3)}',
+                                                              textAlign:
+                                                                  TextAlign.end,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style:
+                                                                  const TextStyle(
+                                                                      color: PeopleChaoScreen_Color
+                                                                          .Colors_Text2_,
+                                                                      //fontWeight: FontWeight.bold,
+                                                                      fontFamily:
+                                                                          Font_
+                                                                              .Fonts_T),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child:
+                                                                  AutoSizeText(
+                                                                minFontSize: 10,
+                                                                maxFontSize: 25,
+                                                                maxLines: 1,
+                                                                teNantModels_Start[index]
+                                                                            .sdate_q ==
+                                                                        null
+                                                                    ? teNantModels_Start[index].sdate ==
+                                                                            null
+                                                                        ? ''
+                                                                        : DateFormat('dd-MM-yyyy')
+                                                                            .format(DateTime.parse(
+                                                                                '${teNantModels_Start[index].sdate} 00:00:00'))
+                                                                            .toString()
+                                                                    : DateFormat(
+                                                                            'dd-MM-yyyy')
+                                                                        .format(
+                                                                            DateTime.parse('${teNantModels_Start[index].sdate_q} 00:00:00'))
+                                                                        .toString(),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: const TextStyle(
+                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                    //fontWeight: FontWeight.bold,
+                                                                    fontFamily: Font_.Fonts_T),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child:
+                                                                  AutoSizeText(
+                                                                minFontSize: 10,
+                                                                maxFontSize: 25,
+                                                                maxLines: 1,
+                                                                teNantModels_Start[index]
+                                                                            .ldate_q ==
+                                                                        null
+                                                                    ? teNantModels_Start[index].ldate ==
+                                                                            null
+                                                                        ? ''
+                                                                        : DateFormat('dd-MM-yyyy')
+                                                                            .format(DateTime.parse(
+                                                                                '${teNantModels_Start[index].ldate} 00:00:00'))
+                                                                            .toString()
+                                                                    : DateFormat(
+                                                                            'dd-MM-yyyy')
+                                                                        .format(
+                                                                            DateTime.parse('${teNantModels_Start[index].ldate_q} 00:00:00'))
+                                                                        .toString(),
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                overflow:
+                                                                    TextOverflow
+                                                                        .ellipsis,
+                                                                style: const TextStyle(
+                                                                    color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                                    //fontWeight: FontWeight.bold,
+                                                                    fontFamily: Font_.Fonts_T),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: AutoSizeText(
+                                                              minFontSize: 10,
+                                                              maxFontSize: 25,
+                                                              maxLines: 1,
+                                                              teNantModels_Start[
+                                                                              index]
+                                                                          .quantity ==
+                                                                      '1'
+                                                                  ? datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(
+                                                                              days:
+                                                                                  0))) ==
+                                                                          true
+                                                                      ? 'หมดสัญญา'
+                                                                      : datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(days: 30))) ==
+                                                                              true
+                                                                          ? 'ใกล้หมดสัญญา'
+                                                                          : 'เช่าอยู่'
+                                                                  : teNantModels_Start[index]
+                                                                              .quantity ==
+                                                                          '2'
+                                                                      ? 'เสนอราคา'
+                                                                      : teNantModels_Start[index].quantity ==
+                                                                              '3'
+                                                                          ? 'เสนอราคา(มัดจำ)'
+                                                                          : 'ว่าง',
+                                                              textAlign:
+                                                                  TextAlign.end,
+                                                              overflow:
+                                                                  TextOverflow
+                                                                      .ellipsis,
+                                                              style: TextStyle(
+                                                                  color: teNantModels_Start[index]
+                                                                              .quantity ==
+                                                                          '1'
+                                                                      ? datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(days: 0))) ==
+                                                                              true
+                                                                          ? Colors
+                                                                              .red
+                                                                          : datex.isAfter(DateTime.parse('${teNantModels_Start[index].ldate} 00:00:00.000').subtract(const Duration(days: 30))) ==
+                                                                                  true
+                                                                              ? Colors
+                                                                                  .orange.shade900
+                                                                              : Colors
+                                                                                  .black
+                                                                      : teNantModels_Start[index].quantity ==
+                                                                              '2'
+                                                                          ? Colors
+                                                                              .blue
+                                                                          : teNantModels_Start[index].quantity ==
+                                                                                  '3'
+                                                                              ? Colors
+                                                                                  .blue
+                                                                              : Colors
+                                                                                  .green,
+                                                                  fontFamily:
+                                                                      Font_
+                                                                          .Fonts_T
+                                                                  //fontSize: 10.0
+                                                                  ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  const EdgeInsets
+                                                                      .all(8.0),
+                                                              child: InkWell(
+                                                                child:
+                                                                    Container(
+                                                                  decoration:
+                                                                      BoxDecoration(
+                                                                    color: Colors
+                                                                        .red,
+                                                                    borderRadius: const BorderRadius
+                                                                            .only(
+                                                                        topLeft:
+                                                                            Radius.circular(
+                                                                                10),
+                                                                        topRight:
+                                                                            Radius.circular(
+                                                                                10),
+                                                                        bottomLeft:
+                                                                            Radius.circular(
+                                                                                10),
+                                                                        bottomRight:
+                                                                            Radius.circular(10)),
+                                                                  ),
+                                                                  padding:
+                                                                      const EdgeInsets
+                                                                              .all(
+                                                                          2.0),
+                                                                  child: Center(
+                                                                    child:
+                                                                        AutoSizeText(
+                                                                      minFontSize:
+                                                                          10,
+                                                                      maxFontSize:
+                                                                          25,
+                                                                      maxLines:
+                                                                          1,
+                                                                      'X',
+                                                                      textAlign:
+                                                                          TextAlign
+                                                                              .end,
+                                                                      style:
+                                                                          TextStyle(
+                                                                        color: PeopleChaoScreen_Color
+                                                                            .Colors_Text1_,
+                                                                        fontWeight:
+                                                                            FontWeight.bold,
+                                                                        fontFamily:
+                                                                            Font_.Fonts_T,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                ),
+                                                                onTap: () {
+                                                                  setState(() {
+                                                                    ser_index =
+                                                                        null;
+                                                                  });
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ]),
+                                                      ),
+                                                    ),
+                                                    Container(
+                                                      decoration: BoxDecoration(
+                                                        color:
+                                                            Colors.green[100],
+                                                        borderRadius:
+                                                            BorderRadius.only(
+                                                                topLeft: Radius
+                                                                    .circular(
+                                                                        8),
+                                                                topRight:
+                                                                    Radius
+                                                                        .circular(
+                                                                            8),
+                                                                bottomLeft: Radius
+                                                                    .circular(
+                                                                        0),
+                                                                bottomRight:
+                                                                    Radius
+                                                                        .circular(
+                                                                            0)),
+                                                      ),
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              2.0),
+                                                      child: const Row(
+                                                        children: [
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(2.0),
+                                                              child: Text(
+                                                                'งวด',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .start,
+                                                                style: TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T
+                                                                    //fontSize: 10.0
+                                                                    //fontSize: 10.0
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(2.0),
+                                                              child: Text(
+                                                                'วันที่',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .start,
+                                                                style: TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T
+                                                                    //fontSize: 10.0
+                                                                    //fontSize: 10.0
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(2.0),
+                                                              child: Text(
+                                                                'รายการ',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .start,
+                                                                style: TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T
+                                                                    //fontSize: 10.0
+                                                                    //fontSize: 10.0
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(2.0),
+                                                              child: Text(
+                                                                'ยอด/งวด',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                style: TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T
+                                                                    //fontSize: 10.0
+                                                                    //fontSize: 10.0
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                          Expanded(
+                                                            flex: 1,
+                                                            child: Padding(
+                                                              padding:
+                                                                  EdgeInsets
+                                                                      .all(2.0),
+                                                              child: Text(
+                                                                'ยอด',
+                                                                textAlign:
+                                                                    TextAlign
+                                                                        .end,
+                                                                style: TextStyle(
+                                                                    color: PeopleChaoScreen_Color
+                                                                        .Colors_Text1_,
+                                                                    fontWeight:
+                                                                        FontWeight
+                                                                            .bold,
+                                                                    fontFamily:
+                                                                        FontWeight_
+                                                                            .Fonts_T
+                                                                    //fontSize: 10.0
+                                                                    //fontSize: 10.0
+                                                                    ),
+                                                              ),
+                                                            ),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ),
+                                                    // if (quotxSelectModels_Select
+                                                    //         .length ==
+                                                    //     0)
+                                                    //   Container(
+                                                    //       decoration:
+                                                    //           BoxDecoration(
+                                                    //         color: Colors
+                                                    //             .green[50],
+                                                    //         border:
+                                                    //             const Border(
+                                                    //           bottom:
+                                                    //               BorderSide(
+                                                    //             color: Colors
+                                                    //                 .black12,
+                                                    //             width: 1,
+                                                    //           ),
+                                                    //         ),
+                                                    //       ),
+                                                    //       child: ListTile(
+                                                    //           title: Row(
+                                                    //               mainAxisAlignment:
+                                                    //                   MainAxisAlignment
+                                                    //                       .center,
+                                                    //               children: [
+                                                    //             Expanded(
+                                                    //               flex: 1,
+                                                    //               child:
+                                                    //                   AutoSizeText(
+                                                    //                 minFontSize:
+                                                    //                     10,
+                                                    //                 maxFontSize:
+                                                    //                     25,
+                                                    //                 maxLines: 1,
+                                                    //                 'ไม่พบข้อมูล',
+                                                    //                 textAlign:
+                                                    //                     TextAlign
+                                                    //                         .center,
+                                                    //                 style: const TextStyle(
+                                                    //                     color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                    //                     //fontWeight: FontWeight.bold,
+                                                    //                     fontFamily: Font_.Fonts_T),
+                                                    //               ),
+                                                    //             ),
+                                                    //           ]))),
+                                                    // for (int index2 = 0;
+                                                    //     index2 <
+                                                    //         quotxSelectModels_Select
+                                                    //             .length;
+                                                    //     index2++)
+                                                    //   Container(
+                                                    //     decoration:
+                                                    //         BoxDecoration(
+                                                    //       color:
+                                                    //           Colors.green[50],
+                                                    //       border: const Border(
+                                                    //         bottom: BorderSide(
+                                                    //           color: Colors
+                                                    //               .black12,
+                                                    //           width: 1,
+                                                    //         ),
+                                                    //       ),
+                                                    //     ),
+                                                    //     child: ListTile(
+                                                    //         title: Row(
+                                                    //       mainAxisAlignment:
+                                                    //           MainAxisAlignment
+                                                    //               .center,
+                                                    //       children: [
+                                                    //         Expanded(
+                                                    //           flex: 1,
+                                                    //           child:
+                                                    //               AutoSizeText(
+                                                    //             maxLines: 2,
+                                                    //             minFontSize: 8,
+                                                    //             // maxFontSize: 15,
+                                                    //             '${quotxSelectModels_Select[index2].unit} / ${quotxSelectModels_Select[index2].term} (งวด)',
+                                                    //             textAlign:
+                                                    //                 TextAlign
+                                                    //                     .start,
+                                                    //             style: const TextStyle(
+                                                    //                 color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                    //                 //fontWeight: FontWeight.bold,
+                                                    //                 fontFamily: Font_.Fonts_T),
+                                                    //           ),
+                                                    //         ),
+                                                    //         Expanded(
+                                                    //           flex: 1,
+                                                    //           child:
+                                                    //               AutoSizeText(
+                                                    //             maxLines: 2,
+                                                    //             minFontSize: 8,
+                                                    //             // maxFontSize: 15,
+                                                    //             '${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].sdate!} 00:00:00'))} - ${DateFormat('dd-MM-yyyy').format(DateTime.parse('${quotxSelectModels_Select[index2].ldate!} 00:00:00'))}',
+                                                    //             textAlign:
+                                                    //                 TextAlign
+                                                    //                     .start,
+                                                    //             style: const TextStyle(
+                                                    //                 color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                    //                 //fontWeight: FontWeight.bold,
+                                                    //                 fontFamily: Font_.Fonts_T),
+                                                    //           ),
+                                                    //         ),
+                                                    //         Expanded(
+                                                    //           flex: 1,
+                                                    //           child: Tooltip(
+                                                    //             richMessage:
+                                                    //                 TextSpan(
+                                                    //               text:
+                                                    //                   '${quotxSelectModels_Select[index2].expname}',
+                                                    //               style:
+                                                    //                   const TextStyle(
+                                                    //                 color: HomeScreen_Color
+                                                    //                     .Colors_Text1_,
+                                                    //                 fontWeight:
+                                                    //                     FontWeight
+                                                    //                         .bold,
+                                                    //                 fontFamily:
+                                                    //                     FontWeight_
+                                                    //                         .Fonts_T,
+                                                    //                 //fontSize: 10.0
+                                                    //               ),
+                                                    //             ),
+                                                    //             decoration:
+                                                    //                 BoxDecoration(
+                                                    //               borderRadius:
+                                                    //                   BorderRadius
+                                                    //                       .circular(
+                                                    //                           5),
+                                                    //               color: Colors
+                                                    //                       .grey[
+                                                    //                   200],
+                                                    //             ),
+                                                    //             child:
+                                                    //                 AutoSizeText(
+                                                    //               maxLines: 2,
+                                                    //               minFontSize:
+                                                    //                   8,
+                                                    //               // maxFontSize: 15,
+                                                    //               '${quotxSelectModels_Select[index2].expname}',
+                                                    //               textAlign:
+                                                    //                   TextAlign
+                                                    //                       .start,
+                                                    //               style: const TextStyle(
+                                                    //                   color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                    //                   //fontWeight: FontWeight.bold,
+                                                    //                   fontFamily: Font_.Fonts_T),
+                                                    //             ),
+                                                    //           ),
+                                                    //         ),
+                                                    //         Expanded(
+                                                    //           flex: 1,
+                                                    //           child:
+                                                    //               AutoSizeText(
+                                                    //             maxLines: 2,
+                                                    //             minFontSize: 8,
+                                                    //             // maxFontSize: 15,
+                                                    //             '${nFormat.format(double.parse(quotxSelectModels_Select[index2].total!))}',
+                                                    //             textAlign:
+                                                    //                 TextAlign
+                                                    //                     .end,
+                                                    //             style: const TextStyle(
+                                                    //                 color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                    //                 //fontWeight: FontWeight.bold,
+                                                    //                 fontFamily: Font_.Fonts_T),
+                                                    //           ),
+                                                    //         ),
+                                                    //         Expanded(
+                                                    //           flex: 1,
+                                                    //           child:
+                                                    //               AutoSizeText(
+                                                    //             maxLines: 2,
+                                                    //             minFontSize: 8,
+                                                    //             // maxFontSize: 15,
+                                                    //             '${nFormat.format(int.parse(quotxSelectModels_Select[index2].term!) * double.parse(quotxSelectModels_Select[index2].total!))}',
+                                                    //             textAlign:
+                                                    //                 TextAlign
+                                                    //                     .end,
+                                                    //             style: const TextStyle(
+                                                    //                 color: PeopleChaoScreen_Color.Colors_Text2_,
+                                                    //                 //fontWeight: FontWeight.bold,
+                                                    //                 fontFamily: Font_.Fonts_T),
+                                                    //           ),
+                                                    //         ),
+                                                    //       ],
+                                                    //     )),
+                                                    //   )
+                                                  ],
+                                                ),
+                                              );
+                                      },
+                                    )),
+                                  ],
+                                ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+          actions: <Widget>[
+            const SizedBox(height: 1),
+            const Divider(),
+            const SizedBox(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 4),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    if (teNantModels_Start.length != 0)
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          child: Container(
+                            width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.blue,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: const Center(
+                              child: Text(
+                                'Export file',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: Font_.Fonts_T,
+                                ),
+                              ),
+                            ),
+                          ),
+                          onTap: () async {
+                            setState(() {
+                              Value_Report = 'รายงานข้อมูลผู้เช่าเริ่มสัญญา';
+                              Pre_and_Dow = 'Download';
+                            });
+                            _showMyDialog_SAVE();
+                          },
+                        ),
+                      ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        child: Container(
+                          width: 100,
+                          decoration: const BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(10),
+                                topRight: Radius.circular(10),
+                                bottomLeft: Radius.circular(10),
+                                bottomRight: Radius.circular(10)),
+                          ),
+                          padding: const EdgeInsets.all(8.0),
+                          child: const Center(
+                            child: Text(
+                              'ปิด',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: Font_.Fonts_T,
+                              ),
+                            ),
+                          ),
+                        ),
+                        onTap: () async {
+                          setState(() {
+                            formKey.currentState?.reset();
+                            Value_Chang_Zone_People_Ser_Start = null;
+
+                            Value_Chang_Zone_People_Start = null;
+                            Status_pe_Start = null;
+                            Await_Status_Report4 = null;
+                            teNantModels_Start.clear();
+                            Mon_People_Start = null;
+                            YE_People_Start = null;
+
+                            // contractPhotoModels.clear();
+                            // Ser_Cid_ldate = 0;
+                            // Mon_Cid_ldate = null;
+                            // YE_Cid_ldate = null;
+                          });
+                          // check_clear();
+                          Navigator.of(context).pop();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  ////////////------------------------------------------------------>(Export file 2)
+  Future<void> _showMyDialog_SAVE() async {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false, // user must tap button!
+      builder: (BuildContext context) {
+        return StreamBuilder(
+          stream: Stream.periodic(const Duration(seconds: 0)),
+          builder: (context, snapshot) {
+            return Form(
+              key: _formKey,
+              child: AlertDialog(
+                shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(15.0))),
+                title: Container(
+                  width: 300,
+                  height: 80,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: 200,
+                        child: Center(
+                          child: Text(
+                            '$Value_Report',
+                            style: const TextStyle(
+                              color: ReportScreen_Color.Colors_Text1_,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: FontWeight_.Fonts_T,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 0,
+                        right: 0,
+                        child: Container(
+                            // width: 100,
+                            decoration: const BoxDecoration(
+                              color: Colors.black,
+                              borderRadius: BorderRadius.only(
+                                  topLeft: Radius.circular(10),
+                                  topRight: Radius.circular(10),
+                                  bottomLeft: Radius.circular(10),
+                                  bottomRight: Radius.circular(10)),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: InkWell(
+                              onTap: () => Navigator.pop(context, 'OK'),
+                              child: const Text(
+                                'ปิด',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  //fontWeight: FontWeight.bold, color:
+
+                                  // fontWeight: FontWeight.bold,
+                                  fontFamily: Font_.Fonts_T,
+                                ),
+                              ),
+                            )),
+                      )
+                    ],
+                  ),
+                ),
+                content: SingleChildScrollView(
+                  child: ListBody(
+                    children: <Widget>[
+                      const Text(
+                        'สกุลไฟล์ :',
+                        style: TextStyle(
+                          color: ReportScreen_Color.Colors_Text2_,
+                          // fontWeight: FontWeight.bold,
+                          fontFamily: Font_.Fonts_T,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                            topRight: Radius.circular(15),
+                            bottomLeft: Radius.circular(15),
+                            bottomRight: Radius.circular(15),
+                          ),
+                          border: Border.all(color: Colors.grey, width: 1),
+                        ),
+                        padding: const EdgeInsets.all(8.0),
+                        child: RadioGroup<String>.builder(
+                          direction: Axis.horizontal,
+                          groupValue: _verticalGroupValue_PassW,
+                          horizontalAlignment: MainAxisAlignment.spaceAround,
+                          onChanged: (value) {
+                            setState(() {
+                              FormNameFile_text.clear();
+                            });
+                            setState(() {
+                              _verticalGroupValue_PassW = value ?? '';
+                            });
+                          },
+                          items: const <String>[
+                            // "PDF",
+                            "EXCEL",
+                          ],
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            color: ReportScreen_Color.Colors_Text2_,
+                            // fontWeight: FontWeight.bold,
+                            fontFamily: Font_.Fonts_T,
+                          ),
+                          itemBuilder: (item) => RadioButtonBuilder(
+                            item,
+                          ),
+                        ),
+                      ),
+                      const Text(
+                        'รูปแบบ :',
+                        style: TextStyle(
+                          color: ReportScreen_Color.Colors_Text2_,
+                          // fontWeight: FontWeight.bold,
+                          fontFamily: Font_.Fonts_T,
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.3),
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(15),
+                            topRight: Radius.circular(15),
+                            bottomLeft: Radius.circular(15),
+                            bottomRight: Radius.circular(15),
+                          ),
+                          border: Border.all(color: Colors.grey, width: 1),
+                        ),
+                        padding: const EdgeInsets.all(8.0),
+                        child: RadioGroup<String>.builder(
+                          direction: Axis.horizontal,
+                          groupValue: _ReportValue_type,
+                          horizontalAlignment: MainAxisAlignment.spaceAround,
+                          onChanged: (value) {
+                            // setState(() {
+                            //   FormNameFile_text.clear();
+                            // });
+                            setState(() {
+                              _ReportValue_type = value ?? '';
+                            });
+                          },
+                          items: const <String>[
+                            "ปกติ",
+                            // "ย่อ",
+                          ],
+                          textStyle: const TextStyle(
+                            fontSize: 15,
+                            color: ReportScreen_Color.Colors_Text2_,
+                            // fontWeight: FontWeight.bold,
+                            fontFamily: Font_.Fonts_T,
+                          ),
+                          itemBuilder: (item) => RadioButtonBuilder(
+                            item,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                actions: <Widget>[
+                  Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Container(
+                        width: 180,
+                        decoration: const BoxDecoration(
+                          color: Colors.black,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(10),
+                            topRight: Radius.circular(10),
+                            bottomLeft: Radius.circular(10),
+                            bottomRight: Radius.circular(10),
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(8.0),
+                        child: TextButton(
+                          onPressed: () async {
+                            InkWell_onTap(context);
+                          },
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.black,
+                                radius: 25,
+                                backgroundImage: (_verticalGroupValue_PassW ==
+                                        'PDF')
+                                    ? const AssetImage('images/IconPDF.gif')
+                                    : const AssetImage('images/excel_icon.gif'),
+                              ),
+                              Container(
+                                width: 80,
+                                child: const Text(
+                                  'Download',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontFamily: FontWeight_.Fonts_T,
+                                  ),
+                                ),
+                                // decoration: const BoxDecoration(
+                                //   border: Border(
+                                //     bottom: BorderSide(
+                                //         color: Colors.white),
+                                //   ),
+                                // ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+////////////------------------------------------------>
+  void InkWell_onTap(context) async {
+    setState(() {
+      NameFile_ = '';
+      NameFile_ = FormNameFile_text.text;
+    });
+
+    if (_verticalGroupValue_NameFile == 'กำหนดเอง') {
+    } else {
+      if (_verticalGroupValue_PassW == 'PDF') {
+        Navigator.of(context).pop();
+      } else {
+        if (Value_Report == 'รายงานรับเงินประกันผู้เช่า') {
+          Excgen_GetPakanReport.exportExcel_GetPakanReport(
+              context,
+              NameFile_,
+              _verticalGroupValue_NameFile,
+              renTal_name,
+              Value_Chang_Zone_Pakan,
+              contractxPakanModels);
+        } else if (Value_Report == 'รายงานคืนเงินประกันผู้เช่า') {
+          Excgen_PayPakanReport.exportExcel_PayPakanReport(
+              context,
+              NameFile_,
+              _verticalGroupValue_NameFile,
+              renTal_name,
+              Value_Chang_Zone_Pakan,
+              transKonModels);
+        } else if (Value_Report == 'รายงานข้อมูลผู้เช่าเริ่มสัญญา') {
+          Excgen_PeopleStart_ChoReport.exportExcel_PeopleStart_ChoReport(
+            expModels,
+            context,
+            NameFile_,
+            _verticalGroupValue_NameFile,
+            Value_Chang_Zone_People_Start,
+            (Status_pe_Start == null) ? 'ปัจจุบัน' : Status_pe_Start,
+            teNantModels_Start,
+          );
+        }
+      }
+      Navigator.of(context).pop();
+    }
+  }
+}
+
+///​กรรมกรข่าว X ​ทีมพากย์พันธมิตร

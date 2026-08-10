@@ -13,9 +13,7 @@ import 'services/navigation_menu_service.dart';
 /// - Desktop (≥ 600px): แสดง sidebar 240px (persistent)
 /// - Mobile (< 600px): ไม่แสดง (ให้ AppShell จัดการ Drawer)
 class AppNavigationRail extends StatefulWidget {
-  final StatefulNavigationShell navigationShell;
-
-  const AppNavigationRail({super.key, required this.navigationShell});
+  const AppNavigationRail({super.key});
 
   @override
   State<AppNavigationRail> createState() => _AppNavigationRailState();

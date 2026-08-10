@@ -35,7 +35,10 @@ class TenantLicenseService {
     String? zone,
     String? status,
   }) async {
-    final ren = await _getRenTalSer();
+    final rawRen = await _getRenTalSer();
+    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
+    final ren =
+        (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
     final statusParam = _statusParam(status);
     final cacheKey =
         'tenant_license_tenants_${ren}_${zone ?? 'all'}_${statusParam ?? 'all'}';
@@ -94,7 +97,10 @@ class TenantLicenseService {
   // ---------- Zones ----------
   /// โหลดรายการ "โซน" (zones) — default คือทั้งหมด
   Future<List<ZoneModel>> fetchZones({String? zoneSubSer}) async {
-    final ren = await _getRenTalSer();
+    final rawRen = await _getRenTalSer();
+    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
+    final ren =
+        (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
     final cacheKey = 'tenant_license_zone_${ren}_$zoneSubSer';
 
     if (_cache.isValid(cacheKey)) {
@@ -146,7 +152,10 @@ class TenantLicenseService {
   // ---------- SubZones ----------
   /// โหลดรายการ "โซนพื้นที่เช่า" (subzones) — default คือทั้งหมด
   Future<List<SubZoneModel>> fetchSubZones() async {
-    final ren = await _getRenTalSer();
+    final rawRen = await _getRenTalSer();
+    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
+    final ren =
+        (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
     final cacheKey = 'tenant_license_subzone_$ren';
 
     if (_cache.isValid(cacheKey)) {

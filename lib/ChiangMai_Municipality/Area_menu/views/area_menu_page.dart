@@ -90,7 +90,7 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
   StreamSubscription<AreaMenuEvent>? _sub;
 
   /// โหมดการแสดงผล: false = ตาราง (Table), true = การ์ด (Card grid)
-  bool _useGrid = false;
+  bool _useGrid = true;
 
   @override
   void didChangeDependencies() {
@@ -238,16 +238,16 @@ class _ViewModeToggle extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           _SegmentBtn(
-            icon: Icons.table_rows_outlined,
-            label: 'ตาราง',
-            selected: !useGrid,
-            onTap: () => onChanged(false),
-          ),
-          _SegmentBtn(
             icon: Icons.grid_view_rounded,
             label: 'การ์ด',
             selected: useGrid,
             onTap: () => onChanged(true),
+          ),
+          _SegmentBtn(
+            icon: Icons.table_rows_outlined,
+            label: 'ตาราง',
+            selected: !useGrid,
+            onTap: () => onChanged(false),
           ),
         ],
       ),

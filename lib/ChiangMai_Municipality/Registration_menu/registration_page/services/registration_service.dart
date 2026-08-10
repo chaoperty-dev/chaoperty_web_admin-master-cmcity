@@ -30,7 +30,10 @@ class RegistrationService {
   /// - ข้อมูลใหม่มี regis_data[] (มีข้อมูล line) และ contract_data[]
   /// - map field lineid จาก regis_data[0].reg_displayname / reg_userid / reg_username
   Future<List<CustomerModel>> fetchCustomers({String? ren}) async {
-    final r = ren ?? (await _getRenTalSer());
+    final rawRen = ren ?? (await _getRenTalSer());
+    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
+    // แต่ถ้า caller ส่ง '0' มาโดยตั้งใจ ให้ใช้ '0' เลย (ไม่แปลงเป็น null)
+    final r = (rawRen.isEmpty) ? 'null' : rawRen;
     final cacheKey = 'registration_customers_$r';
 
     if (_cache.isValid(cacheKey)) {
@@ -45,6 +48,7 @@ class RegistrationService {
     final url =
         '${MyConstant().domain}/customer_register_V2.php?isAdd=true&ren=$r';
     debugPrint('🔄 [RegistrationService.fetchCustomers]');
+    debugPrint('   rawRen = $rawRen, resolvedRen = $r');
     debugPrint('   URL = $url');
     try {
       final response = await http.get(Uri.parse(url));

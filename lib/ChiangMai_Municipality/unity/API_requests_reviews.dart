@@ -24,48 +24,37 @@ Future<ReviewResponse> read_GC_Reviews({
   required List<Map<String, String>> fild,
 }) async {
   final headers = await MyHeaders.build();
-  print(
-      '[read_GC_Reviews][start] urlCustom=$urlCustom query="$query" perPage=$perPage zser=$zser orderBy=$orderBy sortDir=$sortDir zn=$zn');
-  print('[read_GC_Reviews][fild] $fild');
-  print('[read_GC_Reviews][headers] $headers');
+  // print(
+  //     '[read_GC_Reviews][start] urlCustom=$urlCustom query="$query" perPage=$perPage zser=$zser orderBy=$orderBy sortDir=$sortDir zn=$zn');
+  // print('[read_GC_Reviews][fild] $fild');
+  // print('[read_GC_Reviews][headers] $headers');
   final selectedFields = fild
       .where((e) => e['st'] == '1')
       .map((e) => e['value'])
       .whereType<String>()
       .where((v) => v.trim().isNotEmpty)
       .toList();
-  print('[read_GC_Reviews][selectedFields] $selectedFields');
+  // print('[read_GC_Reviews][selectedFields] $selectedFields');
 
   Uri _buildUri() {
     final baseDomain = Uri.parse('${MyConstant().domain_v1}/admin/approvals');
-    print('[read_GC_Reviews][baseDomain] $baseDomain');
 
     void applySelectedFields(Map<String, String> qp) {
       final q = query.trim();
-      print('[read_GC_Reviews][applySelectedFields][before] q="$q" qp=$qp');
-      if (q.isEmpty) {
-        print(
-            '[read_GC_Reviews][applySelectedFields] skip because query is empty');
-        return;
-      }
+      if (q.isEmpty) return;
       if (selectedFields.isEmpty) {
         qp['q'] = q;
-        print('[read_GC_Reviews][applySelectedFields] use q=$q');
         return;
       }
       qp.remove('q');
       for (final field in selectedFields) {
         qp[field] = q;
       }
-      print('[read_GC_Reviews][applySelectedFields][after] qp=$qp');
     }
 
     void applyZone(Map<String, String> qp) {
       if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
         qp['zn'] = zn!;
-        print('[read_GC_Reviews][applyZone] zn=$zn');
-      } else {
-        print('[read_GC_Reviews][applyZone] skip zn=$zn');
       }
     }
 
@@ -73,46 +62,35 @@ Future<ReviewResponse> read_GC_Reviews({
       if (orderBy != null && orderBy.isNotEmpty) {
         qp['order_by'] = orderBy!;
         qp['sort_dir'] = sortDir;
-        print(
-            '[read_GC_Reviews][applySort] order_by=$orderBy sort_dir=$sortDir');
-      } else {
-        print('[read_GC_Reviews][applySort] skip orderBy=$orderBy');
       }
     }
 
     if (urlCustom != null && urlCustom.isNotEmpty) {
       final sourceUri = Uri.parse(urlCustom);
       final qp = Map<String, String>.from(sourceUri.queryParameters);
-      print('[read_GC_Reviews][customUrl][source] $sourceUri');
-      print('[read_GC_Reviews][customUrl][queryParameters-before] $qp');
       qp['per_page'] = '50';
       applySelectedFields(qp);
       applyZone(qp);
       applySort(qp);
-      print('[read_GC_Reviews][customUrl][queryParameters-after] $qp');
       final finalUri = baseDomain.replace(
         queryParameters: {...baseDomain.queryParameters, ...qp},
       );
-      print('[read_GC_Reviews][customUrl][finalUri] $finalUri');
       return finalUri;
     }
 
     final qp = <String, String>{'per_page': '50'};
-    print('[read_GC_Reviews][firstLoad][queryParameters-before] $qp');
     applySelectedFields(qp);
     applyZone(qp);
     applySort(qp);
-    print('[read_GC_Reviews][firstLoad][queryParameters-after] $qp');
     final finalUri = baseDomain.replace(
       queryParameters: {...baseDomain.queryParameters, ...qp},
     );
-    print('[read_GC_Reviews][firstLoad][finalUri] $finalUri');
     return finalUri;
   }
 
   try {
     final uri = _buildUri();
-    print('[GET] $uri');
+    print('[read_GC_Reviews][GET] $uri');
 
     final resp = await http
         .get(uri, headers: headers)
@@ -142,7 +120,7 @@ Future<ReviewResponse> read_GC_Reviews({
     }
 
     final decoded = json.decode(resp.body);
-    print('[decoded] $decoded');
+    // print('[decoded] $decoded'); // ปิด log body ยาว
     if (decoded is! Map) {
       return ReviewResponse(
           data: [], currentPage: 0, lastPage: 0, perPage: 0, total: 0);
@@ -206,7 +184,7 @@ Future<ReviewResponse> read_GC_Reviews({
     );
   } catch (e, st) {
     print('[read_GC_Reviews][exception] $e');
-    print('[read_GC_Reviews][stacktrace] $st');
+    // print('[read_GC_Reviews][stacktrace] $st');
     return ReviewResponse(
         data: [], currentPage: 0, lastPage: 0, perPage: 0, total: 0);
   }

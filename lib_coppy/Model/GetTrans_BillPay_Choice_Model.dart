@@ -1,0 +1,409 @@
+class TransBillPayChoiceModel {
+  String? ser;
+  String? datex;
+  String? rser;
+  String? daterec;
+  String? date;
+  String? duedate;
+  String? dateacc;
+  String? shopno;
+  String? pos;
+  String? st;
+  String? docno;
+  String? doctax;
+  String? cid;
+  String? fid;
+  String? inv;
+  String? refno;
+  String? room_number;
+  String? remark;
+  String? zn;
+  String? znn;
+  String? zser;
+  String? ln;
+  String? tax;
+  String? cname;
+  String? sdate;
+  String? ldate;
+  String? pdate;
+  String? user;
+  String? name_user;
+  String? count_pakan;
+  String? pakan_amt;
+  String? pakan_pvat;
+  String? pakan_vat;
+  String? pakan_total;
+  String? service_amt;
+  String? service_pvat;
+  String? service_vat;
+  String? service_wht;
+  String? service_total;
+  String? service_total_future;
+  String? equip_amt;
+  String? equip_pvat;
+  String? equip_vat;
+  String? equip_wht;
+  String? equip_total;
+  String? equip_total_future;
+  String? total_bill;
+  String? total_dis;
+  String? total_bill_amt;
+  String? total_bill_pvat;
+  String? total_bill_vat;
+  String? total_bill_wht;
+
+  String? water_electri;
+  String? rent_name;
+  String? rent_amt;
+  String? rent_wht;
+  String? rent_pvat;
+  String? rent_vat;
+  String? rent_total;
+  String? land_name;
+  String? land_amt;
+  String? land_pvat;
+  String? land_wht;
+  String? land_vat;
+  String? land_total;
+  String? water;
+  String? electricity;
+  String? water_fees;
+  String? electricity_fees;
+  String? fine;
+  String? stype;
+  String? renew_cid;
+  String? total_bill_pay;
+  String? exp_array;
+  String? ref1;
+  String? ref2;
+  String? ref3;
+  String? ref4;
+  String? wnote;
+  String? type;
+  String? tel;
+  String? total_wht;
+
+  String? water_pvat;
+  String? water_vat;
+  String? water_wht;
+  String? electricity_pvat;
+  String? electricity_vat;
+  String? electricity_wht;
+  String? equip_total_pvat;
+  String? equip_total_vat;
+  String? equip_total_wht;
+  String? fine_pvat;
+  String? fine_vat;
+  String? fine_wht;
+
+  String? disendbill;
+  String? zn_code;
+
+  TransBillPayChoiceModel(
+      {this.ser,
+      this.datex,
+      this.rser,
+      this.daterec,
+      this.date,
+      this.duedate,
+      this.dateacc,
+      this.shopno,
+      this.pos,
+      this.st,
+      this.docno,
+      this.doctax,
+      this.cid,
+      this.fid,
+      this.inv,
+      this.refno,
+      this.room_number,
+      this.remark,
+      this.zn,
+      this.znn,
+      this.zser,
+      this.ln,
+      this.tax,
+      this.cname,
+      this.sdate,
+      this.ldate,
+      this.pdate,
+      this.user,
+      this.name_user,
+      this.count_pakan,
+      this.pakan_amt,
+      this.pakan_pvat,
+      this.pakan_vat,
+      this.pakan_total,
+      this.service_amt,
+      this.service_pvat,
+      this.service_vat,
+      this.service_wht,
+      this.service_total,
+      this.service_total_future,
+      this.equip_amt,
+      this.equip_pvat,
+      this.equip_vat,
+      this.equip_wht,
+      this.equip_total,
+      this.equip_total_future,
+      this.total_bill,
+      this.total_dis,
+      this.total_bill_amt,
+      this.total_bill_pvat,
+      this.total_bill_vat,
+      this.total_bill_wht,
+      this.water_electri,
+      this.rent_name,
+      this.rent_amt,
+      this.rent_pvat,
+      this.rent_wht,
+      this.rent_vat,
+      this.rent_total,
+      this.land_name,
+      this.land_amt,
+      this.land_pvat,
+      this.land_wht,
+      this.land_vat,
+      this.land_total,
+      this.water,
+      this.electricity,
+      this.water_fees,
+      this.electricity_fees,
+      this.fine,
+      this.stype,
+      this.renew_cid,
+      this.total_bill_pay,
+      this.exp_array,
+      this.ref1,
+      this.ref2,
+      this.ref3,
+      this.ref4,
+      this.wnote,
+      this.type,
+      this.tel,
+      this.total_wht,
+      this.water_pvat,
+      this.water_vat,
+      this.water_wht,
+      this.electricity_pvat,
+      this.electricity_vat,
+      this.electricity_wht,
+      this.equip_total_pvat,
+      this.equip_total_vat,
+      this.equip_total_wht,
+      this.fine_pvat,
+      this.fine_vat,
+      this.fine_wht,
+      this.disendbill,
+      this.zn_code});
+
+  TransBillPayChoiceModel.fromJson(Map<String, dynamic> json) {
+    ser = json['ser'];
+    datex = json['datex'];
+    rser = json['rser'];
+    daterec = json['daterec'];
+    date = json['date'];
+    duedate = json['duedate'];
+    dateacc = json['dateacc'];
+    shopno = json['shopno'];
+    pos = json['pos'];
+    st = json['st'];
+    docno = json['docno'];
+    doctax = json['doctax'];
+    cid = json['cid'];
+    fid = json['fid'];
+    inv = json['inv'];
+    refno = json['refno'];
+    room_number = json['room_number'];
+    remark = json['remark'];
+    zn = json['zn'];
+    znn = json['znn'];
+    zser = json['zser'];
+    ln = json['ln'];
+    tax = json['tax'];
+    cname = json['cname'];
+    sdate = json['sdate'];
+    ldate = json['ldate'];
+    pdate = json['pdate'];
+    user = json['user'];
+    name_user = json['name_user'];
+    count_pakan = json['count_pakan'];
+    pakan_amt = json['pakan_amt'];
+    pakan_pvat = json['pakan_pvat'];
+    pakan_vat = json['pakan_vat'];
+    pakan_total = json['pakan_total'];
+    service_amt = json['service_amt'];
+    service_pvat = json['service_pvat'];
+    service_vat = json['service_vat'];
+    service_wht = json['service_wht'];
+    service_total = json['service_total'];
+    service_total_future = json['service_total_future'];
+    equip_amt = json['equip_amt'];
+    equip_pvat = json['equip_pvat'];
+    equip_vat = json['equip_vat'];
+    equip_wht = json['equip_wht'];
+    equip_total = json['equip_total'];
+    equip_total_future = json['equip_total_future'];
+    total_bill = json['total_bill'];
+    total_dis = json['total_dis'];
+
+    total_bill_amt = json['total_bill_amt'];
+    total_bill_vat = json['total_bill_vat'];
+    total_bill_pvat = json['total_bill_pvat'];
+    total_bill_wht = json['total_bill_wht'];
+
+    water_electri = json['water_electri'];
+    rent_name = json['rent_name'];
+    rent_amt = json['rent_amt'];
+    rent_wht = json['rent_wht'];
+    rent_pvat = json['rent_pvat'];
+    rent_vat = json['rent_vat'];
+    rent_total = json['rent_total'];
+
+    land_name = json['land_name'];
+    land_amt = json['land_amt'];
+    land_pvat = json['land_pvat'];
+    land_wht = json['land_wht'];
+    land_vat = json['land_vat'];
+    land_total = json['land_total'];
+
+    water = json['water'];
+    electricity = json['electricity'];
+    water_fees = json['water_fees'];
+    electricity_fees = json['electricity_fees'];
+    fine = json['fine'];
+    stype = json['stype'];
+    renew_cid = json['renew_cid'];
+    total_bill_pay = json['total_bill_pay'];
+    exp_array = json['exp_array'];
+    ref1 = json['ref1'];
+    ref2 = json['ref2'];
+    ref3 = json['ref3'];
+    ref4 = json['ref4'];
+    wnote = json['wnote'];
+    type = json['type'];
+    tel = json['tel'];
+    total_wht = json['total_wht'];
+
+    water_pvat = json['water_pvat'];
+    water_vat = json['water_vat'];
+    water_wht = json['water_wht'];
+    electricity_pvat = json['electricity_pvat'];
+    electricity_vat = json['electricity_vat'];
+    electricity_wht = json['electricity_wht'];
+    equip_total_pvat = json['equip_total_pvat'];
+    equip_total_vat = json['equip_total_vat'];
+    equip_total_wht = json['equip_total_wht'];
+    fine_pvat = json['fine_pvat'];
+    fine_vat = json['fine_vat'];
+    fine_wht = json['fine_wht'];
+    disendbill = json['disendbill'];
+    zn_code = json['zn_code'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['ser'] = this.ser;
+    data['datex'] = this.datex;
+    data['rser'] = this.rser;
+    data['daterec'] = this.daterec;
+    data['date'] = this.date;
+    data['duedate'] = this.duedate;
+    data['dateacc'] = this.dateacc;
+    data['shopno'] = this.shopno;
+    data['pos'] = this.pos;
+    data['st'] = this.st;
+    data['docno'] = this.docno;
+    data['doctax'] = this.doctax;
+    data['cid'] = this.cid;
+    data['fid'] = this.fid;
+    data['inv'] = this.inv;
+    data['refno'] = this.refno;
+    data['room_number'] = this.room_number;
+    data['remark'] = this.remark;
+    data['zn'] = this.zn;
+    data['znn'] = this.znn;
+    data['zser'] = this.zser;
+    data['ln'] = this.ln;
+    data['tax'] = this.tax;
+    data['cname'] = this.cname;
+    data['sdate'] = this.sdate;
+    data['ldate'] = this.ldate;
+    data['pdate'] = this.pdate;
+    data['user'] = this.user;
+    data['name_user'] = this.name_user;
+    data['count_pakan'] = this.count_pakan;
+    data['pakan_amt'] = this.pakan_amt;
+    data['pakan_pvat'] = this.pakan_pvat;
+    data['pakan_vat'] = this.pakan_vat;
+    data['pakan_total'] = this.pakan_total;
+    data['service_amt'] = this.service_amt;
+    data['service_pvat'] = this.service_pvat;
+    data['service_vat'] = this.service_vat;
+    data['service_wht'] = this.service_wht;
+    data['service_total'] = this.service_total;
+    data['service_total_future'] = this.service_total_future;
+    data['equip_amt'] = this.equip_amt;
+    data['equip_pvat'] = this.equip_pvat;
+    data['equip_vat'] = this.equip_vat;
+    data['equip_wht'] = this.equip_wht;
+    data['equip_total'] = this.equip_total;
+    data['equip_total_future'] = this.equip_total_future;
+    data['total_bill'] = this.total_bill;
+    data['total_dis'] = this.total_dis;
+    data['total_bill_amt'] = this.total_bill_amt;
+    data['total_bill_pvat'] = this.total_bill_pvat;
+    data['total_bill_vat'] = this.total_bill_vat;
+    data['total_bill_wht'] = this.total_bill_wht;
+
+    data['water_electri'] = this.water_electri;
+    data['rent_name'] = this.rent_name;
+    data['rent_amt'] = this.rent_amt;
+    data['rent_wht'] = this.rent_wht;
+    data['rent_pvat'] = this.rent_pvat;
+    data['rent_vat'] = this.rent_vat;
+    data['rent_total'] = this.rent_total;
+
+    data['land_name'] = this.land_name;
+    data['land_amt'] = this.land_amt;
+    data['land_wht'] = this.land_wht;
+    data['land_pvat'] = this.land_pvat;
+    data['land_vat'] = this.land_vat;
+    data['land_total'] = this.land_total;
+
+    data['water'] = this.water;
+    data['electricity'] = this.electricity;
+    data['water_fees'] = this.water_fees;
+    data['electricity_fees'] = this.electricity_fees;
+    data['fine'] = this.fine;
+    data['stype'] = this.stype;
+    data['renew_cid'] = this.renew_cid;
+    data['total_bill_pay'] = this.total_bill_pay;
+    data['exp_array'] = this.exp_array;
+    data['ref1'] = this.ref1;
+    data['ref2'] = this.ref2;
+    data['ref3'] = this.ref3;
+    data['ref4'] = this.ref4;
+    data['wnote'] = this.wnote;
+    data['type'] = this.type;
+    data['tel'] = this.tel;
+    data['total_wht'] = this.total_wht;
+
+    data['water_pvat'] = this.water_pvat;
+    data['water_vat'] = this.water_vat;
+    data['water_wht'] = this.water_wht;
+    data['electricity_pvat'] = this.electricity_pvat;
+    data['electricity_vat'] = this.electricity_vat;
+    data['electricity_wht'] = this.electricity_wht;
+    data['equip_total_pvat'] = this.equip_total_pvat;
+    data['equip_total_vat'] = this.equip_total_vat;
+    data['equip_total_wht'] = this.equip_total_wht;
+    data['fine_pvat'] = this.fine_pvat;
+    data['fine_vat'] = this.fine_vat;
+    data['fine_wht'] = this.fine_wht;
+    data['disendbill'] = this.disendbill;
+    data['zn_code'] = this.zn_code;
+
+    return data;
+  }
+}

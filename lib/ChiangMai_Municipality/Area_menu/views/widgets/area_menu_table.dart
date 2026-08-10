@@ -168,7 +168,11 @@ class AreaMenuTable extends StatelessWidget {
           _Cell(value: (model['sub_zonename'] ?? '-').toString(), flex: 1),
           _Cell(value: (model['zn'] ?? '-').toString(), flex: 2),
           _Cell(value: _formatLocationCode(model), flex: 2, isMono: true),
-          _Cell(value: _maskName(model['cname']), flex: 3),
+          _Cell(
+            value: _maskName(model['cname']),
+            tooltip: model['cname']?.toString(),
+            flex: 3,
+          ),
           _Cell(
               value: _formatEndDate((model['ldate'] ?? '').toString()),
               flex: 2,
@@ -216,11 +220,13 @@ class _Cell extends StatelessWidget {
   final int flex;
   final bool isMono;
   final bool muted;
+  final String? tooltip;
   const _Cell({
     required this.value,
     this.flex = 1,
     this.isMono = false,
     this.muted = false,
+    this.tooltip,
   });
 
   @override
@@ -229,16 +235,20 @@ class _Cell extends StatelessWidget {
       flex: flex,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: AutoSizeText(
-          value.isEmpty ? '-' : value,
-          minFontSize: 11,
-          maxFontSize: 14,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: LaText.tableCell.copyWith(
-            color: muted ? LaColors.textSecondary : LaColors.textPrimary,
-            fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-            fontFamilyFallback: const [LaText.fontRegular],
+        child: Tooltip(
+          message: tooltip ?? value,
+          waitDuration: const Duration(milliseconds: 300),
+          child: AutoSizeText(
+            value.isEmpty ? '-' : value,
+            minFontSize: 11,
+            maxFontSize: 14,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: LaText.tableCell.copyWith(
+              color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+              fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+              fontFamilyFallback: const [LaText.fontRegular],
+            ),
           ),
         ),
       ),

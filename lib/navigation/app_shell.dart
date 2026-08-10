@@ -13,10 +13,13 @@ import 'services/navigation_menu_service.dart';
 /// Layout หลักของแอปหลังล็อกอิน — responsive
 /// - Desktop (≥ 600px): Row(NavigationRail 240px, Content)
 /// - Mobile (< 600px): Scaffold(drawer: MobileDrawer, body: Content wrapped in Material)
+///
+/// ✅ ใช้ ShellRoute ธรรมดา (ไม่ใช่ StatefulShellRoute) แล้ว render child ตรง ๆ
+/// ทุกครั้งที่สลับเมนู child จะถูกสร้างใหม่ → state ของหน้าก่อนหน้าหายไปทั้งหมด
 class AppShell extends StatelessWidget {
-  final StatefulNavigationShell navigationShell;
+  final Widget child;
 
-  const AppShell({super.key, required this.navigationShell});
+  const AppShell({super.key, required this.child});
 
   static const double _kMobileBreakpoint = 600;
 
@@ -27,23 +30,19 @@ class AppShell extends StatelessWidget {
         final isWideScreen = constraints.maxWidth >= _kMobileBreakpoint;
 
         if (isWideScreen) {
-          // ── Desktop: NavigationRail + Content ──
-          // Wrap content ด้วย Material เพื่อหลีกเลี่ยง error "No Material widget found"
-          // (DropdownButton2, TextField, Card ฯลฯ ต้องการ Material ancestor)
           return Row(
             children: [
-              AppNavigationRail(navigationShell: navigationShell),
+              const AppNavigationRail(),
               Expanded(
                 child: Material(
                   type: MaterialType.transparency,
-                  child: navigationShell,
+                  child: child,
                 ),
               ),
             ],
           );
         } else {
-          // ── Mobile: AppBar + Drawer + Content ──
-          return _MobileLayout(navigationShell: navigationShell);
+          return _MobileLayout(child: child);
         }
       },
     );
@@ -52,9 +51,9 @@ class AppShell extends StatelessWidget {
 
 /// Layout สำหรับ Mobile — AppBar + Drawer + Content (wrap Material)
 class _MobileLayout extends StatelessWidget {
-  final StatefulNavigationShell navigationShell;
+  final Widget child;
 
-  const _MobileLayout({required this.navigationShell});
+  const _MobileLayout({required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -77,11 +76,11 @@ class _MobileLayout extends StatelessWidget {
           child: Divider(height: 1, color: Color(0xFFE5E7EB)),
         ),
       ),
-      drawer: _MobileDrawer(navigationShell: navigationShell),
+      drawer: const _MobileDrawer(),
       // Wrap content ด้วย Material เพื่อหลีกเลี่ยง error "No Material widget found"
       body: Material(
         type: MaterialType.transparency,
-        child: navigationShell,
+        child: child,
       ),
     );
   }
@@ -89,9 +88,7 @@ class _MobileLayout extends StatelessWidget {
 
 /// Drawer สำหรับ Mobile — โหลดเมนูจาก JSON
 class _MobileDrawer extends StatefulWidget {
-  final StatefulNavigationShell navigationShell;
-
-  const _MobileDrawer({required this.navigationShell});
+  const _MobileDrawer();
 
   @override
   State<_MobileDrawer> createState() => _MobileDrawerState();

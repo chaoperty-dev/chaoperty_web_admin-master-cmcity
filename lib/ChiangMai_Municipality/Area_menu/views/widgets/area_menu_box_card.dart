@@ -28,17 +28,19 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   // ---------------------------------------------------------------
   // Theme helpers — ใช้ค่าจาก Map เป็นหลัก
   // ---------------------------------------------------------------
+  StatusPalette get _palette => StatusPalette.of(_statusText);
+
   Color _bg() {
     // สีพื้นหลังตาม status (ใช้สีเทาอ่อนเป็น default)
-    return LaColors.surfaceMuted;
+    return _palette.bg;
   }
 
   Color _border() {
-    return _hover ? LaColors.primary : LaColors.border;
+    return _hover ? _palette.fg : LaColors.border;
   }
 
   Color _accent() {
-    return LaColors.primary;
+    return _palette.fg;
   }
 
   // ---------------------------------------------------------------
@@ -132,8 +134,23 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   bool get _showMaintenanceBadge => widget.model['needs_update'] == true;
   bool get _showRequestBadge =>
       widget.model['has_request'] == true ||
-      widget.model['need_review'] == true;
+      widget.model['need_review'] == true ||
+      _requestStatusText.isNotEmpty;
   bool get _showNewAttachment => widget.model['has_new_attachment'] == true;
+
+  String get _requestStatusText {
+    final v = widget.model['request_status']?.toString() ??
+        widget.model['status']?.toString() ??
+        widget.model['status_label']?.toString() ??
+        '';
+    return v;
+  }
+
+  Color get _requestStatusColor {
+    final status = _requestStatusText;
+    if (status.isEmpty) return LaColors.statusPendingFg;
+    return StatusPalette.of(status).fg;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -155,9 +172,9 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(_hover ? .10 : .03),
-              blurRadius: _hover ? 14 : 6,
-              offset: Offset(0, _hover ? 4 : 2),
+              color: Colors.black.withOpacity(_hover ? .12 : .04),
+              blurRadius: _hover ? 16 : 8,
+              offset: Offset(0, _hover ? 5 : 2),
             ),
           ],
         ),
@@ -262,6 +279,55 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
                           accent: LaColors.textPrimary,
                           bold: true,
                         ),
+                      // ▸ Request status pill (small, bottom)
+                      // if (_showRequestBadge)
+                      //   Padding(
+                      //     padding: const EdgeInsets.only(top: 6),
+                      //     child: Container(
+                      //       padding: const EdgeInsets.symmetric(
+                      //         horizontal: 8,
+                      //         vertical: 2,
+                      //       ),
+                      //       decoration: BoxDecoration(
+                      //         color: _requestStatusColor.withOpacity(.12),
+                      //         borderRadius:
+                      //             BorderRadius.circular(LaRadius.pill),
+                      //         border: Border.all(
+                      //           color: _requestStatusColor.withOpacity(.30),
+                      //           width: 1,
+                      //         ),
+                      //       ),
+                      //       child: Row(
+                      //         mainAxisSize: MainAxisSize.min,
+                      //         children: [
+                      //           Icon(
+                      //             Icons.edit_note_rounded,
+                      //             size: 10,
+                      //             color: _requestStatusColor,
+                      //           ),
+                      //           const SizedBox(width: 4),
+                      //           Flexible(
+                      //             child: AutoSizeText(
+                      //               _requestStatusText.isEmpty
+                      //                   ? 'มีคำขอ'
+                      //                   : _requestStatusText,
+                      //               minFontSize: 8,
+                      //               maxFontSize: 10,
+                      //               maxLines: 1,
+                      //               overflow: TextOverflow.ellipsis,
+                      //               style: TextStyle(
+                      //                 fontFamily: LaText.fontBold,
+                      //                 fontSize: 9,
+                      //                 color: _requestStatusColor,
+                      //                 fontWeight: FontWeight.w700,
+                      //                 letterSpacing: .2,
+                      //               ),
+                      //             ),
+                      //           ),
+                      //         ],
+                      //       ),
+                      //     ),
+                      //   ),
                     ],
                   ),
                 ),
@@ -269,8 +335,8 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
                 // ── Badges ─────────────────────────────────
                 if (_showMaintenanceBadge)
                   Positioned(
-                    top: 4,
-                    left: 4,
+                    top: 6,
+                    left: 6,
                     child: _BadgeIcon(
                       icon: Icons.build_rounded,
                       color: Colors.white,
@@ -278,26 +344,31 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
                       tooltip: 'ต้องอัปเดต',
                     ),
                   ),
-                if (_showRequestBadge)
-                  Positioned(
-                    top: 4,
-                    right: 4,
-                    child: _BadgeIcon(
-                      icon: Icons.edit_note_rounded,
-                      color: Colors.white,
-                      bg: _accent(),
-                      tooltip: 'มีคำขอ',
-                    ),
-                  ),
                 if (_showNewAttachment)
                   Positioned(
-                    bottom: 4,
-                    right: 4,
+                    top: 6,
+                    right: 6,
                     child: _BadgeIcon(
                       icon: Icons.attachment_rounded,
                       color: Colors.white,
                       bg: LaColors.primary,
                       tooltip: 'มีไฟล์แนบใหม่',
+                      size: 10,
+                      radius: 8,
+                    ),
+                  ),
+
+                if (_showRequestBadge)
+                  Positioned(
+                    top: 6,
+                    right: 6,
+                    child: _BadgeIcon(
+                      icon: Icons.edit_note_rounded,
+                      color: Colors.white,
+                      bg: _requestStatusColor,
+                      tooltip: _requestStatusText.isEmpty
+                          ? 'มีคำขอ'
+                          : _requestStatusText,
                       size: 10,
                       radius: 8,
                     ),

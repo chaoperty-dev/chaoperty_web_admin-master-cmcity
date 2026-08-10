@@ -1,7 +1,9 @@
+import 'package:chaoperty/ChiangMai_Municipality/Area_menu/views/area_menu_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../ChaoArea/ChaoArea_Screen.dart';
 import '../ChiangMai_Municipality/License_menu/license_announce_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license_attach_page.dart';
@@ -13,6 +15,7 @@ import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/SetupPage.dart';
 import '../ChiangMai_Municipality/Personal_information_menu/personal_information_page/views/personal_information_page.dart';
 import '../ChiangMai_Municipality/Registration_menu/registration_page/views/registration_page.dart';
+import '../ChiangMai_Municipality/Setting_menu/setting_page/views/setting_page.dart';
 import '../ChiangMai_Municipality/Tenant_menu/tenant_license_page/views/tenant_license_page.dart';
 import '../navigation/app_shell.dart';
 import 'auth_state_notifier.dart';
@@ -36,17 +39,21 @@ class AppRoute {
 
   // อื่นๆ
   static const String tenant = '/tenant';
+  static const String area = '/area';
   static const String registration = '/registration';
   static const String profileManage = '/profile/manage';
+  static const String setting = '/setting';
 }
 
 /// Fade transition สำหรับทุกหน้าใน Shell — ทำให้ navigation smooth
+/// รับ [locationKey] เพิ่มเติมเพื่อบังคับ rebuild ทุกครั้งที่เปลี่ยนหน้า
 CustomTransitionPage<T> _fadePage<T>({
   required LocalKey key,
   required Widget child,
+  required String locationKey,
 }) {
   return CustomTransitionPage<T>(
-    key: key,
+    key: ValueKey('page_${locationKey}_${key.toString()}'),
     child: child,
     transitionDuration: const Duration(milliseconds: 250),
     reverseTransitionDuration: const Duration(milliseconds: 200),
@@ -75,11 +82,16 @@ GoRouter buildAppRouter({
       final loggedIn = authNotifier.isLoggedIn;
 
       // Pre-shell routes: Login / Setup
-      if (loc == AppRoute.login || loc == AppRoute.setup) {
-        if (loggedIn) return AppRoute.contract;
+      if (loc == AppRoute.login) {
+        if (loggedIn) return AppRoute.setup;
+        return null;
+      }
+      if (loc == AppRoute.setup) {
+        if (!loggedIn) return AppRoute.login;
         return null;
       }
 
+      // ✅ ทุกหน้าใน shell: ต้อง login ก่อน แล้วค่อยให้ผ่าน SetupPage ก่อนเข้า shell
       if (!loggedIn) return AppRoute.login;
 
       return null;
@@ -90,6 +102,7 @@ GoRouter buildAppRouter({
         path: AppRoute.login,
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
+          locationKey: state.matchedLocation,
           child: const LoginPage(),
         ),
       ),
@@ -97,107 +110,124 @@ GoRouter buildAppRouter({
         path: AppRoute.setup,
         pageBuilder: (context, state) => _fadePage(
           key: state.pageKey,
+          locationKey: state.matchedLocation,
           child: const SetupPage(),
         ),
       ),
 
       // ── Shell route ──
-      StatefulShellRoute.indexedStack(
-        builder: (context, state, navigationShell) =>
-            AppShell(navigationShell: navigationShell),
-        branches: [
-          // Branch 0: ใบอนุญาต (7 sub-routes + fade transition)
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.contract,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: LicenseRequestPage.create(),
-                ),
-              ),
-              GoRoute(
-                path: AppRoute.payment,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: LicensePaymentPage.create(),
-                ),
-              ),
-              GoRoute(
-                path: AppRoute.attach,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: LicenseAttachPage.create(),
-                ),
-              ),
-              GoRoute(
-                path: AppRoute.verify,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: LicenseverifyPage.create(),
-                ),
-              ),
-              GoRoute(
-                path: AppRoute.factCheck,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: LicensefactcheckPage.create(),
-                ),
-              ),
-              GoRoute(
-                path: AppRoute.approve,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: LicenseApprovePage.create(),
-                ),
-              ),
-              GoRoute(
-                path: AppRoute.announce,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: const LicenseAnnouncePage(),
-                ),
-              ),
-            ],
+      // ใช้ ShellRoute ธรรมดาแทน StatefulShellRoute.indexedStack
+      // เพื่อให้ AppShell ควบคุมเองว่าจะ cache/dispose branch ไหน
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          // ใบอนุญาต (7 sub-routes)
+          GoRoute(
+            path: AppRoute.contract,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicenseRequestPage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.payment,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicensePaymentPage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.attach,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicenseAttachPage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.verify,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicenseverifyPage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.factCheck,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicensefactcheckPage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.approve,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicenseApprovePage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.announce,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: const LicenseAnnouncePage(),
+            ),
           ),
 
-          // Branch 1: ผู้เช่า
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.tenant,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: TenantLicensePage.create(),
-                ),
-              ),
-            ],
+          // พื้นที่เช่า (อยู่ก่อน ผู้เช่า)
+          GoRoute(
+            path: AppRoute.area,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: AreaMenuPage.create(),
+              // ChaoAreaScreen(),
+            ),
           ),
 
-          // Branch 2: ทะเบียน
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.registration,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: RegistrationPage.create(),
-                ),
-              ),
-            ],
+          // ผู้เช่า
+          GoRoute(
+            path: AppRoute.tenant,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: TenantLicensePage.create(),
+            ),
           ),
 
-          // Branch 3: จัดการข้อมูลส่วนตัว
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: AppRoute.profileManage,
-                pageBuilder: (context, state) => _fadePage(
-                  key: state.pageKey,
-                  child: ManagePersonalInformationPage.create(),
-                ),
-              ),
-            ],
+          // ทะเบียน
+          GoRoute(
+            path: AppRoute.registration,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: RegistrationPage.create(),
+            ),
+          ),
+
+          // ตั้งค่า (อยู่ก่อน จัดการข้อมูลส่วนตัว)
+          GoRoute(
+            path: AppRoute.setting,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: const SettingPage(),
+            ),
+          ),
+
+          // จัดการข้อมูลส่วนตัว
+          GoRoute(
+            path: AppRoute.profileManage,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: ManagePersonalInformationPage.create(),
+            ),
           ),
         ],
       ),

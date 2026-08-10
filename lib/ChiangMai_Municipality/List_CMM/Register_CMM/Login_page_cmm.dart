@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:chaoperty/ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import 'package:device_marketing_names/device_marketing_names.dart';
 import 'package:flutter/material.dart';
-import 'package:http/browser_client.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../AdminScaffold/AdminScaffold.dart';
@@ -11,13 +11,11 @@ import '../../../Responsive/responsive.dart';
 import '../../../Setting/Bill_Document_Template.dart';
 import '../../../Style/Translate.dart';
 import '../../../Style/colors.dart';
+import '../../../router/auth_state_notifier.dart';
 import '../../unity/SecurePrefs_helper.dart';
 import 'AuthService.dart';
 import 'SetupPage.dart';
-import 'package:http/http.dart' as http;
 
-import 'chiangMaiBackground.dart';
-import 'chiangMaiBackground2.dart';
 import 'privacyIcon.dart';
 
 class LoginPage extends StatefulWidget {
@@ -125,18 +123,12 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => loading = false);
 
     if (success && mounted) {
-      // if (_formKey.currentState!.validate()) {
-      //   // … ล็อกอินสำเร็จ
-      //   await _saveUsername(emailCtrl.text.trim());
-      // }
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const SetupPage()),
-      );
-      // Navigator.pushReplacement(
-      //   context,
-      //   MaterialPageRoute(builder: (_) => const SetupPage()),
-      // );
+      // ✅ GoRouter จะตรวจจับ auth state เปลี่ยน แล้ว redirect ไป /setup อัตโนมัติ
+      // trigger markLoggedIn() ทันที ไม่ต้องรอ polling 1 นาที
+      try {
+        final notifier = Provider.of<AuthStateNotifier>(context, listen: false);
+        notifier.markLoggedIn();
+      } catch (_) {}
     } else {
       Dialog_error(context, 'เข้าสู่ระบบไม่สำเร็จ');
       // ScaffoldMessenger.of(context).showSnackBar(
@@ -783,12 +775,19 @@ class _HomePageState extends State<HomePage> {
           'permission': '${userJson['permission'] ?? ''}',
           'rser': '${userJson['rser'] ?? '165'}',
           'lavel': '${userJson['lavel'] ?? '5'}',
+          // บันทึก ren / renTalSer / renTalName ให้หน้าอื่นๆ ใช้งานได้
+          // ลำดับ fallback: renTalSer → ren → rser → '195'
+          'ren': '${userJson['ren'] ?? userJson['rser'] ?? '195'}',
+          'renTalSer':
+              '${userJson['renTalSer'] ?? userJson['ren'] ?? userJson['rser'] ?? '195'}',
+          'renTalName':
+              '${userJson['renTalName'] ?? userJson['rname'] ?? userJson['ren_name'] ?? ''}',
         };
 
         fields.forEach((k, v) => preferences.setString(k, v));
 
-        //   print('✅ Preferences saved successfully');
-        fields.forEach((k, v) => print('$k: $v'));
+        print('✅ [routeToService] Preferences saved:');
+        fields.forEach((k, v) => print('   $k: $v'));
 
         Navigator.pushAndRemoveUntil(
           context,
