@@ -22,7 +22,19 @@ class AreaMenuTable extends StatelessWidget {
   const AreaMenuTable({super.key});
 
   // Map status label — ใช้ field 'st' จาก area API (เช่น "สัญญาปัจจุบัน")
+  // ถ้า ldate น้อยกว่าวันนี้ บังคับแสดง "หมดสัญญา"
   String _statusLabel(Map<String, dynamic> m) {
+    final ldateRaw = m['ldate']?.toString() ?? '';
+    if (ldateRaw.isNotEmpty) {
+      try {
+        final ldate = DateTime.parse(ldateRaw);
+        final today = DateTime.now();
+        final end = DateTime(ldate.year, ldate.month, ldate.day);
+        final now = DateTime(today.year, today.month, today.day);
+        if (end.isBefore(now)) return 'หมดสัญญา';
+      } catch (_) {}
+    }
+
     final st = m['st']?.toString() ?? '';
     if (st.isEmpty) return 'ว่าง';
     return st;

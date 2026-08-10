@@ -57,6 +57,18 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
 
   String get _statusText {
     // ✅ ใช้ 'st' จาก area API เป็นหลัก (เช่น "สัญญาปัจจุบัน" / "ว่าง")
+    // ถ้า ldate น้อยกว่าวันนี้ บังคับแสดง "หมดสัญญา"
+    final ldateRaw = widget.model['ldate']?.toString() ?? '';
+    if (ldateRaw.isNotEmpty) {
+      try {
+        final ldate = DateTime.parse(ldateRaw);
+        final today = DateTime.now();
+        final end = DateTime(ldate.year, ldate.month, ldate.day);
+        final now = DateTime(today.year, today.month, today.day);
+        if (end.isBefore(now)) return 'หมดสัญญา';
+      } catch (_) {}
+    }
+
     final v = widget.model['st']?.toString() ??
         widget.model['status']?.toString() ??
         widget.model['status_label']?.toString();
