@@ -105,58 +105,61 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
   }
 
   Widget _buildTable(List<BillingItem> items) {
-    // ─── Responsive width ───
-    // - Mobile/Small (< 600px):   minWidth = 1100 (scroll แนวนอน)
-    // - Tablet (600-1200px):       minWidth = mediaWidth (เต็มจอ)
-    // - Desktop (≥ 1200px):        minWidth = mediaWidth - 320 (ลบ sidebar)
-    final mediaWidth = MediaQuery.of(context).size.width;
-    final tableWidth = (mediaWidth < 600
-            ? 1100.0
-            : (mediaWidth < 1200 ? mediaWidth : mediaWidth - 320)
-                .clamp(1100, 5000))
-        .toDouble();
+    final table = Table(
+      border: TableBorder(
+        horizontalInside: BorderSide(
+            color: LrColors.border.withOpacity(.4), width: 0.6),
+      ),
+      columnWidths: const {
+        0: FlexColumnWidth(2.5), // ประเภทค่าบริการ
+        1: FlexColumnWidth(1.2), // ความถี่
+        2: FlexColumnWidth(1.0), // จำนวนงวด
+        3: FlexColumnWidth(1.8), // วันเริ่มต้น
+        4: FlexColumnWidth(1.2), // ยอด (บาท)
+        5: FlexColumnWidth(1.0), // ประเภท VAT
+        6: FlexColumnWidth(1.0), // VAT
+        7: FlexColumnWidth(1.0), // ประเภท WHT
+        8: FlexColumnWidth(1.0), // WHT
+        9: FlexColumnWidth(1.3), // ยอดสุทธิ
+        10: FlexColumnWidth(0.6), // action
+      },
+      defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+      children: [
+        _buildTableHeaderRow(),
+        for (int i = 0; i < items.length; i++)
+          _buildTableDataRow(items[i], isAlt: i.isEven),
+      ],
+    );
 
     return Container(
       decoration: LrDecor.card(),
       clipBehavior: Clip.antiAlias,
       width: double.infinity,
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
-          PointerDeviceKind.touch,
-          PointerDeviceKind.mouse,
-        }),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minWidth: tableWidth),
-            // ✅ ใช้ Table widget + FlexColumnWidth — คอลัมน์ขยายเต็มจอ
-            child: Table(
-              border: TableBorder(
-                horizontalInside: BorderSide(
-                    color: LrColors.border.withOpacity(.4), width: 0.6),
+      // ✅ ใช้ LayoutBuilder แยก mobile vs desktop
+      // - Mobile (< 600px): SingleChildScrollView (scroll แนวนอน)
+      // - Desktop (≥ 600px): Table ขยายเต็มจอโดยตรง (FlexColumnWidth กระจายเต็มพื้นที่)
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          if (constraints.maxWidth < 600) {
+            return ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                dragDevices: {
+                  PointerDeviceKind.touch,
+                  PointerDeviceKind.mouse,
+                },
               ),
-              columnWidths: const {
-                0: FlexColumnWidth(2.5), // ประเภทค่าบริการ
-                1: FlexColumnWidth(1.2), // ความถี่
-                2: FlexColumnWidth(1.0), // จำนวนงวด
-                3: FlexColumnWidth(1.8), // วันเริ่มต้น
-                4: FlexColumnWidth(1.2), // ยอด (บาท)
-                5: FlexColumnWidth(1.0), // ประเภท VAT
-                6: FlexColumnWidth(1.0), // VAT
-                7: FlexColumnWidth(1.0), // ประเภท WHT
-                8: FlexColumnWidth(1.0), // WHT
-                9: FlexColumnWidth(1.3), // ยอดสุทธิ
-                10: FlexColumnWidth(0.6), // action
-              },
-              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-              children: [
-                _buildTableHeaderRow(),
-                for (int i = 0; i < items.length; i++)
-                  _buildTableDataRow(items[i], isAlt: i.isEven),
-              ],
-            ),
-          ),
-        ),
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 1100),
+                  child: table,
+                ),
+              ),
+            );
+          }
+          // Desktop: Table fills the full width
+          return table;
+        },
       ),
     );
   }
@@ -246,9 +249,8 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
               Text(
                 text.isEmpty ? 'เลือกวันที่' : _formatDate(text),
                 style: LrText.tableCell.copyWith(
-                  color: text.isEmpty
-                      ? LrColors.textMuted
-                      : LrColors.primaryDark,
+                  color:
+                      text.isEmpty ? LrColors.textMuted : LrColors.primaryDark,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -306,14 +308,11 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
         chipCell(row.term,
             color: LrColors.primaryDark, bg: LrColors.primaryLight),
         dateCell(row.sdate),
-        textCell(_formatMoney(row.amount),
-            align: TextAlign.right, bold: true),
+        textCell(_formatMoney(row.amount), align: TextAlign.right, bold: true),
         selectCell(row.vatRate > 0 ? 'มี' : 'ไม่มี'),
-        textCell(row.vatRate.toStringAsFixed(2),
-            align: TextAlign.right),
+        textCell(row.vatRate.toStringAsFixed(2), align: TextAlign.right),
         selectCell(row.whtRate > 0 ? 'มี' : 'ไม่มี'),
-        textCell(row.whtRate.toStringAsFixed(2),
-            align: TextAlign.right),
+        textCell(row.whtRate.toStringAsFixed(2), align: TextAlign.right),
         pillNet(_formatMoney(row.net)),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
@@ -384,8 +383,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     );
   }
 
-  String _formatMoney(double v) =>
-      NumberFormat("#,##0.00", "en_US").format(v);
+  String _formatMoney(double v) => NumberFormat("#,##0.00", "en_US").format(v);
 
   /// ใช้ format DD-MM-YYYY (มี dash) ให้ตรงกับ BillingTable
   String _formatDate(String raw) {
