@@ -107,8 +107,8 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
   Widget _buildTable(List<BillingItem> items) {
     final table = Table(
       border: TableBorder(
-        horizontalInside: BorderSide(
-            color: LrColors.border.withOpacity(.4), width: 0.6),
+        horizontalInside:
+            BorderSide(color: LrColors.border.withOpacity(.4), width: 0.6),
       ),
       columnWidths: const {
         0: FlexColumnWidth(2.5), // ประเภทค่าบริการ

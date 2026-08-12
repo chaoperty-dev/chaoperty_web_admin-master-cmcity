@@ -111,17 +111,37 @@ class _LicenseRequestDetailPageBodyState
               currentStep: step,
               totalSteps: total,
               onNext: step < total ? vm.nextDetailStep : null,
-              onSave: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('บันทึกการดำเนินการ (placeholder)'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
-              },
+              onSave: step == total
+                  ? () async {
+                      // ✅ Step 2: เรียก submit() บน ViewModel
+                      //      POST /admin/requests/{uuid}/prepayment
+                      final vm2 = context
+                          .read<LicenseRequestDetailStep2ViewModel>();
+                      final err =
+                          await vm2.submit();
+                      if (!mounted) return;
+                      if (err == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('บันทึกสำเร็จ'),
+                            backgroundColor: LrColors.primary,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(err),
+                            backgroundColor: LrColors.statusRejectedFg,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  : null,
               onCancel: () {
                 if (step > 1) {
                   vm.previousDetailStep();

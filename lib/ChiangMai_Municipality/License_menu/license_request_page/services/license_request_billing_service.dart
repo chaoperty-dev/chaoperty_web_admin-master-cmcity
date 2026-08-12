@@ -73,6 +73,36 @@ class BillingItem {
       whtRate: double.tryParse((json['wht'] ?? '0').toString()) ?? 0,
     );
   }
+
+  /// แปลง BillingItem เป็น JSON ตาม format ที่ API POST /prepayment ต้องการ
+  /// (ใช้สำหรับ saveBillingItems)
+  Map<String, dynamic> toDebtJson() {
+    final isVat = vatRate > 0;
+    final isWht = whtRate > 0;
+    return {
+      'ser': ser,
+      'expname': expname,
+      'exptser': '1',
+      'unitser': '1',
+      'unit': unit,
+      'day': '365',
+      'term': term,
+      'sdate': sdate,
+      'ldate': ldate,
+      'qty': '1',
+      'amt': amount.toStringAsFixed(2),
+      'vser': isVat ? '1' : '0',
+      'vtype': isVat ? 'มี' : 'ไม่มี',
+      'nvat': isVat ? '1' : '0',
+      'vat': vatRate.toStringAsFixed(2),
+      'pvat': net.toStringAsFixed(2),
+      'wser': isWht ? '1' : '0',
+      'wtype': isWht ? 'มี' : 'ไม่มี',
+      'nwht': isWht ? '1' : '0',
+      'wht': whtRate.toStringAsFixed(2),
+      'total': net.toStringAsFixed(2),
+    };
+  }
 }
 
 class LicenseRequestBillingService {
@@ -132,5 +162,42 @@ class LicenseRequestBillingService {
     } catch (e) {
       return (items: <BillingItem>[], error: e.toString());
     }
+  }
+
+  /// POST /admin/requests/{uuid}/prepayment
+  /// บันทึก/ลบ/แก้ไข รายการ debt_details (overwrite ทั้งหมด)
+  ///
+  /// Body format:
+  /// ```
+  /// {
+  ///   "debt_details": [
+  ///     { "ser": "1", "expname": "...", "unit": "...", "term": "1",
+  ///       "sdate": "...", "ldate": "...", "amt": "500",
+  ///       "vser": "1", "vtype": "ไม่มี", "nvat": "0", "vat": "0.00",
+  ///       "wser": "1", "wtype": "ไม่มี", "nwht": "0", "wht": "0.00",
+  ///       "total": "500.00", ... }
+  ///   ]
+  /// }
+  /// ```
+  /// Return HttpResponse เพื่อให้ caller ตรวจ statusCode
+  Future<http.Response> saveBillingItems({
+    required String requestUuid,
+    required List<BillingItem> items,
+  }) async {
+    final headers = await MyHeaders.build();
+    final url = Uri.parse(
+        '${MyConstant().domain_v1}/admin/requests/$requestUuid/prepayment');
+
+    final debtDetails = items.map((e) => e.toDebtJson()).toList();
+
+    final body = json.encode({
+      'debt_details': debtDetails,
+    });
+
+    final response = await http
+        .post(url, headers: headers, body: body)
+        .timeout(const Duration(seconds: 15));
+
+    return response;
   }
 }

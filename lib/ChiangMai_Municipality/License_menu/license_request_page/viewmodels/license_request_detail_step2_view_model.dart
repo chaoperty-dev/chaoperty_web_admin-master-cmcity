@@ -7,6 +7,8 @@
 // - ไม่ผูกกับ Flutter UI โดยตรง
 // ============================================================================
 
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 
 import '../services/license_request_billing_service.dart';
@@ -115,5 +117,57 @@ class LicenseRequestDetailStep2ViewModel extends ChangeNotifier {
     _items = [];
     _currentUuid = null;
     _errorMessage = null;
+  }
+
+  // ===============================================================
+  // Save (POST /admin/requests/{uuid}/prepayment)
+  // ===============================================================
+  bool _isSaving = false;
+  bool get isSaving => _isSaving;
+
+  /// บันทึก/ลบ/แก้ไข รายการ debt_details ผ่าน API
+  /// - ส่ง items ปัจจุบัน (รวมการเพิ่ม/ลบ/แก้ไข)
+  /// - หลัง save สำเร็จ โหลดข้อมูลใหม่จาก API
+  /// - Return error message (null = สำเร็จ)
+  Future<String?> submit() async {
+    final uuid = _currentUuid;
+    if (uuid == null || uuid.isEmpty) {
+      return 'ไม่พบ Request UUID';
+    }
+
+    _isSaving = true;
+    _clearError();
+    notifyListeners();
+
+    try {
+      final response = await _service.saveBillingItems(
+        requestUuid: uuid,
+        items: _items,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        // โหลดข้อมูลใหม่จาก API เพื่อ sync state
+        await loadFromUuid(uuid);
+        _isSaving = false;
+        notifyListeners();
+        return null; // สำเร็จ
+      } else {
+        String errMsg = 'บันทึกไม่สำเร็จ (${response.statusCode})';
+        try {
+          final body = json.decode(response.body);
+          if (body is Map && body['message'] is String) {
+            errMsg = body['message'] as String;
+          }
+        } catch (_) {}
+        _isSaving = false;
+        _setError(errMsg);
+        return errMsg;
+      }
+    } catch (e) {
+      _isSaving = false;
+      final msg = 'บันทึกไม่สำเร็จ: $e';
+      _setError(msg);
+      return msg;
+    }
   }
 }
