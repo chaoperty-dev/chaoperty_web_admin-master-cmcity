@@ -12,10 +12,11 @@
 //   - Pill for total (ยอดสุทธิ)
 //   - Gradient grand total card
 //   - Responsive width (เต็มจอ / ไม่จำกัด 1400)
+//   - ใช้ Table widget (FlexColumnWidth) เพื่อให้คอลัมน์ขยายเต็มจอ
 // ============================================================================
 
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -24,12 +25,10 @@ import '../../viewmodels/license_request_detail_step2_view_model.dart';
 import '../theme/license_request_theme.dart';
 
 // ============================================================================
-// Main widget — wrap with ChangeNotifierProvider ใน parent (license_request_detail_page)
+// Main widget
 // ============================================================================
 
 class RequestDetailStep2 extends StatefulWidget {
-  /// UUID ของ Request (มาจาก ReviewModel.newRequest.requestUuid)
-  /// ใช้สำหรับ GET /admin/requests/{uuid}/prepayment
   final String? requestUuid;
 
   const RequestDetailStep2({super.key, this.requestUuid});
@@ -69,8 +68,6 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(LrSpace.lg),
       child: Column(
-        // ✅ stretch: บังคับให้ children ทุกตัวขยายเต็มความกว้างแนวนอน
-        // ทำให้ตาราง + Grand Total Card เต็มจอ edge-to-edge
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ─── Toolbar (gradient add + counter) ───
@@ -108,7 +105,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
   }
 
   Widget _buildTable(List<BillingItem> items) {
-    // ─── Responsive width: รองรับทุกขนาดหน้าจอ ───
+    // ─── Responsive width ───
     // - Mobile/Small (< 600px):   minWidth = 1100 (scroll แนวนอน)
     // - Tablet (600-1200px):       minWidth = mediaWidth (เต็มจอ)
     // - Desktop (≥ 1200px):        minWidth = mediaWidth - 320 (ลบ sidebar)
@@ -122,8 +119,6 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     return Container(
       decoration: LrDecor.card(),
       clipBehavior: Clip.antiAlias,
-      // ✅ ใช้ SizedBox(width: double.infinity) บังคับให้ Container ขยายเต็มจอ
-      // แล้ว SingleChildScrollView ข้างในจะ scroll แนวนอนเมื่อ content ยาวเกิน
       width: double.infinity,
       child: ScrollConfiguration(
         behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
@@ -134,34 +129,31 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
           scrollDirection: Axis.horizontal,
           child: ConstrainedBox(
             constraints: BoxConstraints(minWidth: tableWidth),
-            child: DataTable(
-              columnSpacing: 22,
-              headingRowHeight: 46,
-              dataRowMinHeight: 56,
-              dataRowMaxHeight: 68,
-              headingRowColor:
-                  MaterialStateColor.resolveWith((_) => LrColors.surfaceMuted),
-              headingTextStyle: LrText.tableHeader,
-              dataTextStyle: LrText.tableCell,
-              dividerThickness: 0.6,
-              showBottomBorder: true,
-              columns: const [
-                DataColumn(label: Text('ประเภทค่าบริการ')),
-                DataColumn(label: Text('ความถี่')),
-                DataColumn(label: Text('จำนวนงวด'), numeric: true),
-                DataColumn(label: Text('วันเริ่มต้น')),
-                DataColumn(label: Text('ยอด (บาท)'), numeric: true),
-                DataColumn(label: Text('ประเภท VAT')),
-                DataColumn(label: Text('VAT'), numeric: true),
-                DataColumn(label: Text('ประเภท WHT')),
-                DataColumn(label: Text('WHT'), numeric: true),
-                DataColumn(label: Text('ยอดสุทธิ'), numeric: true),
-                DataColumn(label: Text('')),
-              ],
-              rows: List<DataRow>.generate(
-                items.length,
-                (i) => _buildRow(i, items[i]),
+            // ✅ ใช้ Table widget + FlexColumnWidth — คอลัมน์ขยายเต็มจอ
+            child: Table(
+              border: TableBorder(
+                horizontalInside: BorderSide(
+                    color: LrColors.border.withOpacity(.4), width: 0.6),
               ),
+              columnWidths: const {
+                0: FlexColumnWidth(2.5), // ประเภทค่าบริการ
+                1: FlexColumnWidth(1.2), // ความถี่
+                2: FlexColumnWidth(1.0), // จำนวนงวด
+                3: FlexColumnWidth(1.8), // วันเริ่มต้น
+                4: FlexColumnWidth(1.2), // ยอด (บาท)
+                5: FlexColumnWidth(1.0), // ประเภท VAT
+                6: FlexColumnWidth(1.0), // VAT
+                7: FlexColumnWidth(1.0), // ประเภท WHT
+                8: FlexColumnWidth(1.0), // WHT
+                9: FlexColumnWidth(1.3), // ยอดสุทธิ
+                10: FlexColumnWidth(0.6), // action
+              },
+              defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+              children: [
+                _buildTableHeaderRow(),
+                for (int i = 0; i < items.length; i++)
+                  _buildTableDataRow(items[i], isAlt: i.isEven),
+              ],
             ),
           ),
         ),
@@ -169,158 +161,165 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     );
   }
 
-  DataRow _buildRow(int i, BillingItem row) {
-    final isAlt = i.isEven;
-    return DataRow(
-      color: MaterialStateColor.resolveWith(
-        (_) => isAlt ? LrColors.cardBg : LrColors.surfaceMuted.withOpacity(.5),
-      ),
-      cells: [
-        // 1. ประเภทค่าบริการ (read-only)
-        DataCell(
-          Container(
-            constraints: const BoxConstraints(maxWidth: 180),
-            child: Text(
-              row.expname.isEmpty ? '-' : row.expname,
-              style: LrText.tableCell.copyWith(fontWeight: FontWeight.w600),
-              overflow: TextOverflow.ellipsis,
+  TableRow _buildTableHeaderRow() {
+    Widget headerCell(String text) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        color: LrColors.surfaceMuted,
+        child: Text(text, style: LrText.tableHeader),
+      );
+    }
+
+    return TableRow(
+      decoration: const BoxDecoration(color: LrColors.surfaceMuted),
+      children: [
+        headerCell('ประเภทค่าบริการ'),
+        headerCell('ความถี่'),
+        headerCell('จำนวนงวด'),
+        headerCell('วันเริ่มต้น'),
+        headerCell('ยอด (บาท)'),
+        headerCell('ประเภท VAT'),
+        headerCell('VAT'),
+        headerCell('ประเภท WHT'),
+        headerCell('WHT'),
+        headerCell('ยอดสุทธิ'),
+        const SizedBox.shrink(),
+      ],
+    );
+  }
+
+  TableRow _buildTableDataRow(BillingItem row, {required bool isAlt}) {
+    final bg = isAlt ? LrColors.cardBg : LrColors.surfaceMuted.withOpacity(.5);
+
+    Widget textCell(String text,
+        {TextAlign align = TextAlign.left, bool bold = false, Color? color}) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        child: Text(
+          text.isEmpty ? '-' : text,
+          textAlign: align,
+          style: LrText.tableCell.copyWith(
+            fontWeight: bold ? FontWeight.w600 : FontWeight.w400,
+            color: color,
+          ),
+        ),
+      );
+    }
+
+    Widget chipCell(String text, {Color? color, Color? bg}) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: LrText.tableCell.copyWith(
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
           ),
         ),
-        // 2. ความถี่ (read-only)
-        DataCell(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: LrColors.surfaceMuted.withOpacity(.5),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: LrColors.border),
-            ),
-            child: Text(
-              row.unit.isEmpty ? '-' : row.unit,
-              style: LrText.tableCell.copyWith(fontWeight: FontWeight.w600),
-            ),
+      );
+    }
+
+    Widget dateCell(String text) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: LrColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: LrColors.border),
           ),
-        ),
-        // 3. จำนวนงวด (Badge)
-        DataCell(
-          Center(
-              child: _Badge(
-                  text: row.term,
-                  tone: LrColors.primaryDark,
-                  bg: LrColors.primaryLight)),
-        ),
-        // 4. วันเริ่มต้น (date picker style — read-only)
-        DataCell(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: LrColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: LrColors.border),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.event_outlined,
-                    size: 14, color: LrColors.textSecondary),
-                const SizedBox(width: 6),
-                Text(
-                  row.sdate.isEmpty ? 'เลือกวันที่' : _formatDate(row.sdate),
-                  style: LrText.tableCell.copyWith(
-                    color: row.sdate.isEmpty
-                        ? LrColors.textMuted
-                        : LrColors.primaryDark,
-                    fontWeight: FontWeight.w600,
-                  ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.event_outlined,
+                  size: 14, color: LrColors.textSecondary),
+              const SizedBox(width: 6),
+              Text(
+                text.isEmpty ? 'เลือกวันที่' : _formatDate(text),
+                style: LrText.tableCell.copyWith(
+                  color: text.isEmpty
+                      ? LrColors.textMuted
+                      : LrColors.primaryDark,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
-            ),
-          ),
-        ),
-        // 5. ยอด (บาท) (read-only text)
-        DataCell(
-          SizedBox(
-            width: 90,
-            child: Text(
-              _formatMoney(row.amount),
-              textAlign: TextAlign.right,
-              style: LrText.tableCell.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        // 6. ประเภท VAT (read-only)
-        DataCell(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: LrColors.surfaceMuted.withOpacity(.5),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: LrColors.border),
-            ),
-            child: Text(
-              row.vatRate > 0 ? 'มี' : 'ไม่มี',
-              style: LrText.tableCell.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        // 7. VAT value
-        DataCell(
-          Text(
-            row.vatRate.toStringAsFixed(2),
-            textAlign: TextAlign.right,
-            style: LrText.tableCell,
-          ),
-        ),
-        // 8. ประเภท WHT (read-only)
-        DataCell(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: LrColors.surfaceMuted.withOpacity(.5),
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: LrColors.border),
-            ),
-            child: Text(
-              row.whtRate > 0 ? 'มี' : 'ไม่มี',
-              style: LrText.tableCell.copyWith(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ),
-        // 9. WHT value
-        DataCell(
-          Text(
-            row.whtRate.toStringAsFixed(2),
-            textAlign: TextAlign.right,
-            style: LrText.tableCell,
-          ),
-        ),
-        // 10. ยอดสุทธิ (pill badge)
-        DataCell(
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: LrColors.primaryLight,
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              _formatMoney(row.net),
-              textAlign: TextAlign.right,
-              style: LrText.tableCell.copyWith(
-                fontWeight: FontWeight.w700,
-                color: LrColors.primaryDark,
               ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget selectCell(String text) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: LrColors.surfaceMuted.withOpacity(.5),
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(color: LrColors.border),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: LrText.tableCell.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+      );
+    }
+
+    Widget pillNet(String text) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: LrColors.primaryLight,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.right,
+            style: LrText.tableCell.copyWith(
+              fontWeight: FontWeight.w700,
+              color: LrColors.primaryDark,
             ),
           ),
         ),
-        // 11. Action (read-only: just info icon)
-        DataCell(
-          IconButton(
-            tooltip: 'อ่านอย่างเดียว',
-            icon: const Icon(Icons.visibility_outlined,
-                color: LrColors.textMuted, size: 20),
-            onPressed: null,
-          ),
+      );
+    }
+
+    return TableRow(
+      decoration: BoxDecoration(color: bg),
+      children: [
+        textCell(row.expname, bold: true),
+        selectCell(row.unit.isEmpty ? '-' : row.unit),
+        chipCell(row.term,
+            color: LrColors.primaryDark, bg: LrColors.primaryLight),
+        dateCell(row.sdate),
+        textCell(_formatMoney(row.amount),
+            align: TextAlign.right, bold: true),
+        selectCell(row.vatRate > 0 ? 'มี' : 'ไม่มี'),
+        textCell(row.vatRate.toStringAsFixed(2),
+            align: TextAlign.right),
+        selectCell(row.whtRate > 0 ? 'มี' : 'ไม่มี'),
+        textCell(row.whtRate.toStringAsFixed(2),
+            align: TextAlign.right),
+        pillNet(_formatMoney(row.net)),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+          alignment: Alignment.center,
+          child: const Icon(Icons.visibility_outlined,
+              color: LrColors.textMuted, size: 20),
         ),
       ],
     );
@@ -329,6 +328,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
   Widget _buildGrandTotal(List<BillingItem> items) {
     final total = items.fold(0.0, (sum, e) => sum + e.net);
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.symmetric(
           horizontal: LrSpace.lg, vertical: LrSpace.md),
       decoration: BoxDecoration(
@@ -384,7 +384,8 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     );
   }
 
-  String _formatMoney(double v) => NumberFormat("#,##0.00", "en_US").format(v);
+  String _formatMoney(double v) =>
+      NumberFormat("#,##0.00", "en_US").format(v);
 
   /// ใช้ format DD-MM-YYYY (มี dash) ให้ตรงกับ BillingTable
   String _formatDate(String raw) {
@@ -399,7 +400,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
 }
 
 // ============================================================================
-// Sub widgets (เลียนแบบ billing_table.dart)
+// Sub widgets
 // ============================================================================
 
 class _GradientAddButton extends StatelessWidget {
@@ -448,33 +449,6 @@ class _GradientAddButton extends StatelessWidget {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final String text;
-  final Color tone;
-  final Color bg;
-  const _Badge({required this.text, required this.tone, required this.bg});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontFamily: LrText.fontBold,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          color: tone,
         ),
       ),
     );
