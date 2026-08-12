@@ -316,6 +316,7 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
       uuid: customer.uuid,
       cname: customer.cname,
       scname: customer.scname,
+      stype: customer.stype,
       tax: customer.tax,
       tel: customer.tel,
       addr1: customer.addr1,

@@ -376,6 +376,7 @@ class LicenseContractViewModel extends ChangeNotifier {
     String? uuid,
     String? cname,
     String? scname,
+    String? stype,
     String? tax,
     String? tel,
     String? addr1,
@@ -444,6 +445,16 @@ class LicenseContractViewModel extends ChangeNotifier {
       }
     }
 
+    // ✨ "ประเภทสินค้า" (stype) ใช้ข้อมูลจากทะเบียนลูกค้า (CustomerModel.stype)
+    //    ไม่ใช่จาก area.stype — เพราะร้านค้านั้น "ประกอบกิจการ" ตามทะเบียน
+    if (stype != null && stype.trim().isNotEmpty) {
+      final stypeIdx = _findShopIndex('ประเภทสินค้า');
+      if (stypeIdx >= 0) {
+        _dataShop[stypeIdx].detail = stype;
+        _controllersShop[stypeIdx].text = stype;
+      }
+    }
+
     _registryCustno = custno;
 
     notifyListeners();
@@ -500,9 +511,17 @@ class LicenseContractViewModel extends ChangeNotifier {
       if (shopIndex >= 0) _controllersShop[shopIndex].text = _selectedScname!;
     }
 
-    if (area.stype != null && area.stype!.isNotEmpty) {
-      final shopIndex = _findShopIndex('ประเภทสินค้า');
-      if (shopIndex >= 0) _controllersShop[shopIndex].text = area.stype!;
+    // ⛔ "ประเภทสินค้า" ไม่ auto-fill จาก area.stype แล้ว
+    //    ใช้จาก CustomerModel.stype (เลือกจากทะเบียนลูกค้า) เท่านั้น
+    //    เหตุผล: ร้านค้า "ประกอบกิจการ" ตามที่ลูกทะเบียน ไม่ใช่ตามล็อก
+
+    // ✨ Auto-fill "ขนาดพื้นที่เช่า (ตร.ม.)" — ดึงจาก AreaModel.area
+    //    (เช่น "1.00", "2.50") — เหมือน area_info_card ที่แสดงอยู่ด้านบน
+    if (area.area != null && area.area!.toString().trim().isNotEmpty) {
+      final sizeIndex = _findShopIndex('ขนาดพื้นที่');
+      if (sizeIndex >= 0) {
+        _controllersShop[sizeIndex].text = area.area!.toString();
+      }
     }
 
     final lnAddr = area.ln ?? '';
@@ -525,12 +544,34 @@ class LicenseContractViewModel extends ChangeNotifier {
       if (idx >= 0) _dataCid[idx]['detail'] = area.ldate!;
     }
 
+    // ✨ Auto-fill "บริเวณ / โซน / ล็อกที่" (shop sub-fields) — เหมือน
+    //    license_request_detail_step1_view_model._setShopSubField(0..2)
+    //    * บริเวณ  = subzone ที่เลือก
+    //    * โซน     = zone name ที่เลือก
+    //    * ล็อกที่ = lncode ที่เลือก
+    if (_dataShop.isNotEmpty && _dataShop[0].detailsub.length >= 3) {
+      _setShopSubField(0, _selectedSubZone ?? ''); // บริเวณ
+      _setShopSubField(1, _selectedZn ?? ''); // โซน
+      _setShopSubField(2, _selectedLn?.split('|').first ?? ''); // ล็อกที่
+    }
+
     for (int i = 0; i < _dataPerson.length; i++) {
       _dataPerson[i].detail = _controllersPerson[i].text;
     }
     for (int i = 0; i < _dataShop.length; i++) {
       _dataShop[i].detail = _controllersShop[i].text;
     }
+  }
+
+  /// ตัวช่วยเซ็ตค่าฟิลด์ย่อยของร้านค้า (เช่น บริเวณ/โซน/ล็อกที่) — sync ทั้งใน
+  /// model (_dataShop[0].detailsub[i].detail) และ controller (_controllersShopSub[i])
+  /// เพื่อให้ UI อัปเดตทันที
+  void _setShopSubField(int index, String value) {
+    if (_dataShop.isEmpty) return;
+    if (index < 0 || index >= _dataShop[0].detailsub.length) return;
+    if (index < 0 || index >= _controllersShopSub.length) return;
+    _dataShop[0].detailsub[index].detail = value;
+    _controllersShopSub[index].text = value;
   }
 
   int _findPersonIndex(String titleKeyword) =>
@@ -676,8 +717,7 @@ class LicenseContractViewModel extends ChangeNotifier {
         final saved = LicenseContractResult(
           personValues: _dataPerson.map((e) => e.detail).toList(),
           shopValues: _dataShop.map((e) => e.detail).toList(),
-          shopSubValues:
-              _dataShop[0].detailsub.map((e) => e.detail).toList(),
+          shopSubValues: _dataShop[0].detailsub.map((e) => e.detail).toList(),
           cidValues: _dataCid,
           zn: _selectedZn,
           ln: _selectedLn?.split('|').first,
