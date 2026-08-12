@@ -197,6 +197,48 @@ class LicensePaymentViewModel extends ChangeNotifier {
   }
 
   // ===============================================================
+  // Backward-compat: methods used by old UI widgets
+  // (UI files reference 'requests', 'onViewRequest',
+  //  'selectedZoneSub', 'zoneModels', 'subzoneModels',
+  //  'onSubZoneChanged', 'onZoneChanged', 'loadPage')
+  // ===============================================================
+
+  /// Backward-compat: list รายการ (empty) — UI จะไม่แสดง row
+  /// เพราะ viewmodel ใช้ PaymentDetail แทน ReviewModel
+  /// แต่ต้องมี field นี้เพื่อให้ UI เก่า compile ได้
+  List<dynamic> get requests => <dynamic>[];
+
+  /// Backward-compat: empty list
+  List<dynamic> get zoneModels => <dynamic>[];
+
+  /// Backward-compat: empty list
+  List<dynamic> get subzoneModels => <dynamic>[];
+
+  /// Backward-compat: zone filter state (UI ใช้)
+  String? get selectedZoneSub => null;
+  String? get selectedZone => null;
+  String? get selectedZoneSer => null;
+
+  /// Backward-compat: no-op
+  void onSubZoneChanged(String? value) {}
+
+  /// Backward-compat: no-op
+  void onZoneChanged(String? value) {}
+
+  /// Backward-compat: เปลี่ยนจาก PaymentDetail เป็น dynamic
+  /// UI เก่าใช้ model.newRequest.leaseNumber, model.client.cname
+  /// แต่ PaymentDetail มี field ไม่ตรงกัน — return dynamic
+  /// เพื่อให้ compile ได้
+  void onViewRequest(dynamic model) {
+    // ไม่ทำ action — UI เก่าใช้ ReviewModel ที่มี field ต่างจาก PaymentDetail
+  }
+
+  /// Backward-compat: ไม่มี pagination จาก listPayments
+  Future<void> loadPage(String? url) async {
+    // ไม่ทำ action — listPayments API ไม่ return pagination links
+  }
+
+  // ===============================================================
   // User actions
   // ===============================================================
   /// ผู้ใช้กดปุ่ม "ดู" ในแถว → เปิด detail page

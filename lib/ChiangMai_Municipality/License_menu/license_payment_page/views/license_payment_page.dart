@@ -127,6 +127,31 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
           ),
         );
         break;
+      case LicensePaymentNavigateDetailEvent(
+          :final paymentUuid, :final title
+        ):
+        // เปิดหน้า Detail ของ Payment detail
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicensePaymentDetailPage.create(
+              routeData: paymentUuid,
+              title: title,
+            ),
+            fullscreenDialog: true,
+          ),
+        );
+        break;
+      case LicensePaymentCreatedEvent():
+      case LicensePaymentPaidEvent():
+        // แสดง snackbar success — viewmodel จะ refresh list อัตโนมัติ
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('ดำเนินการสำเร็จ'),
+            backgroundColor: LaColors.primary,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        break;
     }
   }
 
