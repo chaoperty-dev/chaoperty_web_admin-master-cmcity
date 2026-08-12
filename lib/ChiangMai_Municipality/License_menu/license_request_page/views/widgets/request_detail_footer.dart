@@ -66,11 +66,11 @@ class RequestDetailFooter extends StatelessWidget {
             onTap: onCancel,
           ),
           const SizedBox(width: LrSpace.sm),
-          // ปุ่มบันทึก: ตอมเม้นปิดไว้ชั่วคราว (ยังไม่พร้อมใช้งาน)
-          if (!readOnly && false)
-            isLast
-                ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
-                : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
+          // ✅ ปุ่มบันทึก: ตอมเม้นปิดไว้ชั่วคราว (ยังไม่พร้อมใช้งาน)
+          // - Step 1 → แสดงปุ่ม "ถัดไป"
+          // - Step 2 (last) → ไม่แสดงปุ่ม "บันทึก" (เฉพาะปุ่ม "ยกเลิก" แสดงอย่างเดียว)
+          if (!readOnly && !isLast)
+            _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
         ],
       ),
     );
