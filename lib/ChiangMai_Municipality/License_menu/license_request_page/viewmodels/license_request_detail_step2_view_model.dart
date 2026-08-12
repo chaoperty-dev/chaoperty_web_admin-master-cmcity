@@ -10,6 +10,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 
 import '../services/license_request_billing_service.dart';
 
@@ -93,6 +94,45 @@ class LicenseRequestDetailStep2ViewModel extends ChangeNotifier {
   void addItem(BillingItem created) {
     _items.add(created);
     notifyListeners();
+  }
+
+  /// เพิ่ม item ใหม่จากชื่อ + หน่วย (ใช้กับ BillingTable-style Add dialog)
+  /// - ใช้ค่า default: sdate=วันนี้, ldate=วันนี้+1ปี, term=1, amount=0
+  void addItemFromAutoExp(String expname, {String unit = 'รายปี'}) {
+    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final nextYear = DateFormat('yyyy-MM-dd')
+        .format(DateTime.now().add(const Duration(days: 365)));
+    final ser = DateTime.now().millisecondsSinceEpoch.toString();
+    _items.add(BillingItem(
+      ser: ser,
+      expname: expname,
+      sdate: today,
+      ldate: nextYear,
+      unit: unit,
+      term: '1',
+      amount: 0,
+    ));
+    notifyListeners();
+  }
+
+  /// กลุ่มของ expType สำหรับ Add dialog (เลียนแบบ BillingTable.groupedAutoExps)
+  /// - ถ้ายังไม่มี item เลย ใช้ default categories
+  /// - ถ้ามี item แล้ว group by expname
+  Map<String, List<String>> get groupedAutoExps {
+    if (_items.isEmpty) {
+      return {
+        'ค่าธรรมเนียม': ['ค่าธรรมเนียมใบอนุญาต', 'ค่าธรรมเนียมต่ออายุ'],
+        'ค่าเช่า': ['ค่าเช่ารายปี', 'ค่าเช่ารายเดือน'],
+        'ค่าสาธารณูปโภค': ['ค่าน้ำประปา', 'ค่าไฟฟ้า'],
+      };
+    }
+    final groups = <String, List<String>>{};
+    for (final item in _items) {
+      // group by first word (e.g., "ค่าธรรมเนียมใบอนุญาต" → "ค่าธรรมเนียม")
+      final firstWord = item.expname.split(' ').first;
+      groups.putIfAbsent(firstWord, () => []).add(item.expname);
+    }
+    return groups;
   }
 
   // ===============================================================
