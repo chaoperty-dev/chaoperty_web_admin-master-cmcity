@@ -1,8 +1,8 @@
 // ============================================================================
 // license_payment_view_model.dart
 // ============================================================================
-// ViewModel — จัดการ state + business logic ของหน้า "คำขอต่อสัญญา"
-// - เรียก Service โหลดรายการ tab แรก
+// ViewModel — จัดการ state + business logic ของหน้า "การรับชำระ" (Payment v2)
+// - เรียก Service โหลด PaymentDetail (list) + createPaymentDraft
 // - แจ้ง View ผ่าน Stream<LicensePaymentEvent>
 // - ไม่ผูกกับ Flutter UI
 // ============================================================================
@@ -10,26 +10,27 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
-import '../../../../Model/GetZone_Model.dart';
-import '../../../../Model/GetSubZone_Model.dart';
-import '../../../Model/Review_Model.dart';
+import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_config.dart';
 import '../models/license_payment_event.dart';
+import '../services/license_payment_detail_service.dart';
 import '../services/license_payment_service.dart';
 
 class LicensePaymentViewModel extends ChangeNotifier {
   LicensePaymentViewModel({
     required LicensePaymentConfig config,
-    LicensePaymentService? service,
+    LicensePaymentService? paymentService,
+    LicensePaymentDetailService? detailService,
   })  : _config = config,
-        _service = service ?? LicensePaymentService() {
+        _paymentService = paymentService ?? LicensePaymentService(),
+        _detailService = detailService ?? LicensePaymentDetailService() {
     _loadInitial();
   }
 
   final LicensePaymentConfig _config;
-  final LicensePaymentService _service;
+  final LicensePaymentService _paymentService;
+  final LicensePaymentDetailService _detailService;
 
   // ---------- Event channel ----------
   final StreamController<LicensePaymentEvent> _eventController =
@@ -37,8 +38,8 @@ class LicensePaymentViewModel extends ChangeNotifier {
   Stream<LicensePaymentEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
-  List<ReviewModel> _requests = [];
-  List<ReviewModel> get requests => _requests;
+  List<PaymentDetail> _payments = [];
+  List<PaymentDetail> get payments => _payments;
 
   // ---------- Pagination ----------
   int _currentPage = 0;
@@ -57,21 +58,12 @@ class LicensePaymentViewModel extends ChangeNotifier {
   bool _isLoading = false;
   bool get isLoading => _isLoading;
 
+  String? _errorMessage;
+  String? get errorMessage => _errorMessage;
+
+  // ---------- Search ----------
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
-
-  // ---------- Zones ----------
-  List<ZoneModel> _zoneModels = [];
-  List<SubZoneModel> _subzoneModels = [];
-  String? _selectedZoneSub;
-  String? _selectedZone;
-  String? _selectedZoneSer; // ser ของ zone ที่เลือก
-
-  List<ZoneModel> get zoneModels => _zoneModels;
-  List<SubZoneModel> get subzoneModels => _subzoneModels;
-  String? get selectedZoneSub => _selectedZoneSub;
-  String? get selectedZone => _selectedZone;
-  String? get selectedZoneSer => _selectedZoneSer;
 
   // ---------- Config getters ----------
   String get title => _config.title;
@@ -85,155 +77,116 @@ class LicensePaymentViewModel extends ChangeNotifier {
     if (_config.routeData != null && _config.routeData!.isNotEmpty) {
       _searchQuery = _config.routeData!;
     }
-    await Future.wait([
-      loadSubZones(),
-      loadZones(),
-    ]);
-    await refresh();
-  }
-
-  // ===============================================================
-  // Zone filters
-  // ===============================================================
-  Future<void> loadSubZones() async {
-    try {
-      _subzoneModels = await _service.fetchSubZones();
-      notifyListeners();
-    } catch (e) {
-      print('loadSubZones error: $e');
-    }
-  }
-
-  Future<void> loadZones({String? zoneSubSer}) async {
-    try {
-      _zoneModels = await _service.fetchZones(zoneSubSer: zoneSubSer);
-      notifyListeners();
-    } catch (e) {
-      print('loadZones error: $e');
-    }
-  }
-
-  /// ผู้ใช้เลือก "หมวดโซนพื้นที่" (sub-zone)
-  /// → reset "โซนพื้นที่" เป็น "ทั้งหมด"
-  /// → reload zones (filter ตาม sub_zone)
-  /// → ดึง API คำขอใหม่ (zn=null = ทั้งหมด)
-  Future<void> onSubZoneChanged(String? value) async {
-    if (value == null) return;
-
-    // 1) ตั้งค่า sub-zone ที่เลือก
-    _selectedZoneSub = value;
-
-    // 2) Reset "โซนพื้นที่" กลับเป็น "ทั้งหมด"
-    _selectedZone = 'ทั้งหมด';
-    _selectedZoneSer = '0';
-
-    notifyListeners();
-
-    // 3) Reload zones ตาม sub-zone
-    final sub = _subzoneModels.firstWhere(
-      (s) => s.zn == value,
-      orElse: () => SubZoneModel(),
-    );
-    final subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-    await loadZones(zoneSubSer: subSer);
-
-    // 4) ดึง API คำขอต่อสัญญาใหม่ (zn=null = ทั้งหมด)
-    await refresh();
-  }
-
-  /// ผู้ใช้เลือก "โซน" → reload คำขอต่อสัญญา filter ด้วย zn
-  Future<void> onZoneChanged(String? value) async {
-    if (value == null) return;
-    _selectedZone = value;
-    // หา ser จาก zn
-    final zone = _zoneModels.firstWhere(
-      (z) => z.zn == value,
-      orElse: () => ZoneModel(),
-    );
-    _selectedZoneSer = zone.ser;
-    notifyListeners();
-    // ดึง API คำขอต่อสัญญา filter ด้วย zn
     await refresh();
   }
 
   // ===============================================================
   // Service calls
   // ===============================================================
-  /// Auto-detect search field ตามค่าที่ผู้ใช้พิมพ์
-  /// - UUID  → 'uuid'
-  /// - ตัวเลข → 'tel' (เบอร์โทร)
-  /// - อื่นๆ → 'scname' (ชื่อผู้ติดต่อ)
-  String _autoSearchField(String value) {
-    final v = value.trim();
-    if (v.isEmpty) return 'scname';
-
-    // UUID pattern (8-4-4-4-12 hex)
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    if (uuidRegex.hasMatch(v)) return 'uuid';
-
-    // ตัวเลข 9-10 หลัก → น่าจะเป็นเบอร์โทร
-    final phoneRegex = RegExp(r'^[0-9]{8,12}$');
-    if (phoneRegex.hasMatch(v.replaceAll(RegExp(r'[\s\-]'), ''))) return 'tel';
-
-    return 'scname';
-  }
-
+  /// โหลดรายการ "Payment" ทั้งหมด
   Future<void> refresh() async {
     _setLoading(true);
+    _clearError();
     try {
-      final res = await _service.fetchRequests(
-        query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        // ถ้าเลือก "ทั้งหมด" (ser=0) ให้ส่ง null — ไม่ filter
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+      final results = await _paymentService.listPayments(
+        paymentUuid: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
-      _requests = res.data;
-      _currentPage = res.currentPage;
-      _lastPage = res.lastPage;
-      _total = res.total;
-      _linksNext = res.linksNext;
-      _linksPrev = res.linksPrev;
+      _payments = results;
+      // ไม่มี pagination จาก listPayments (ยังไม่ได้ implement)
+      _currentPage = 1;
+      _lastPage = 1;
+      _total = results.length;
     } catch (e) {
-      _emitError('โหลดข้อมูลไม่สำเร็จ: $e');
+      _setError('โหลดข้อมูลไม่สำเร็จ: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  Future<void> loadPage(String? url) async {
-    if (url == null || url.isEmpty) return;
+  /// สร้าง Payment Draft (Internal)
+  /// Returns the new PaymentDetail on success, or null on failure
+  Future<PaymentDetail?> createDraft({
+    required String requestUuid,
+    required String paymentSystem, // 'internal' | 'external'
+    required String payType, // 'fee' | 'fine'
+    int? paymentMethodId,
+    double? amount,
+  }) async {
     _setLoading(true);
+    _clearError();
     try {
-      final res = await _service.fetchRequests(
-        urlCustom: url,
-        query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+      final created = await _paymentService.createPaymentDraft(
+        requestUuid: requestUuid,
+        paymentSystem: paymentSystem,
+        payType: payType,
+        paymentMethodId: paymentMethodId,
+        amount: amount,
       );
-      _requests = res.data;
-      _currentPage = res.currentPage;
-      _lastPage = res.lastPage;
-      _total = res.total;
-      _linksNext = res.linksNext;
-      _linksPrev = res.linksPrev;
+      _emitCreated(created);
+      // Reload list after create
+      await refresh();
+      return created;
     } catch (e) {
-      _emitError('โหลดหน้าไม่สำเร็จ: $e');
+      _setError('สร้าง Payment draft ไม่สำเร็จ: $e');
+      return null;
     } finally {
       _setLoading(false);
     }
   }
 
+  /// โหลด Payment detail (delegate ไป detail service)
+  Future<PaymentDetail?> loadDetail(String uuid) async {
+    try {
+      return await _detailService.fetchPaymentDetail(uuid: uuid);
+    } catch (e) {
+      _setError('โหลดรายการ Payment ไม่สำเร็จ: $e');
+      return null;
+    }
+  }
+
+  /// โหลด Payment receipt (delegate ไป detail service)
+  Future<PaymentReceipt?> loadReceipt(String uuid) async {
+    try {
+      return await _detailService.fetchReceipt(uuid: uuid);
+    } catch (e) {
+      _setError('โหลดใบเสร็จไม่สำเร็จ: $e');
+      return null;
+    }
+  }
+
+  /// บันทึกการรับชำระ (delegate ไป detail service)
+  Future<PaymentDetail?> pay({
+    required String uuid,
+    required double amountReceived,
+    String? receiptNo,
+    String? bookNo,
+    String? bookDate,
+  }) async {
+    _setLoading(true);
+    _clearError();
+    try {
+      final paid = await _detailService.pay(
+        uuid: uuid,
+        amountReceived: amountReceived,
+        receiptNo: receiptNo,
+        bookNo: bookNo,
+        bookDate: bookDate,
+      );
+      _emitPaid(paid);
+      // Reload list after pay
+      await refresh();
+      return paid;
+    } catch (e) {
+      _setError('บันทึกการรับชำระไม่สำเร็จ: $e');
+      return null;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // ===============================================================
+  // Search
+  // ===============================================================
   void setSearch(String value) {
     _searchQuery = value;
     notifyListeners();
@@ -246,15 +199,13 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // ===============================================================
   // User actions
   // ===============================================================
-  /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
-
-  /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
-  void onViewRequest(ReviewModel model) {
-    final uuid = model.newRequest?.requestUuid?.toString() ??
-        model.uuid?.toString() ??
-        '';
+  /// ผู้ใช้กดปุ่ม "ดู" ในแถว → เปิด detail page
+  void onViewPayment(PaymentDetail payment) {
     _eventController.add(
-      LicensePaymentNavigateEvent('การรับชำระ', routeData: uuid),
+      LicensePaymentNavigateDetailEvent(
+        paymentUuid: payment.uuid,
+        title: 'รายละเอียดการรับชำระ',
+      ),
     );
   }
 
@@ -266,8 +217,21 @@ class LicensePaymentViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _emitError(String msg) {
-    _eventController.add(LicensePaymentErrorEvent(msg));
+  void _setError(String msg) {
+    _errorMessage = msg;
+    notifyListeners();
+  }
+
+  void _clearError() {
+    _errorMessage = null;
+  }
+
+  void _emitCreated(PaymentDetail payment) {
+    _eventController.add(LicensePaymentCreatedEvent(payment));
+  }
+
+  void _emitPaid(PaymentDetail payment) {
+    _eventController.add(LicensePaymentPaidEvent(payment));
   }
 
   @override
