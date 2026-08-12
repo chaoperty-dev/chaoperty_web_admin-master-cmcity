@@ -1,9 +1,7 @@
 // ============================================================================
 // license_verify_detail_page.dart
 // ============================================================================
-// Full-page detail route (2-step) — เปิดแบบเต็มจอเหมือน "สร้างคำขอ" ของ request
-// - มี Provider ของตัวเอง (ไม่ผูกกับ list page)
-// - ปิดได้ด้วย Navigator.pop (back button ใน header)
+// Full-page detail route (2-step) — เปิดแบบเต็มจอเหมือน "สร้างคำขอ"
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -16,34 +14,23 @@ import 'widgets/verify_detail_header.dart';
 import 'widgets/verify_detail_step1.dart';
 import 'widgets/verify_detail_step2.dart';
 
-/// ═══════════════════════════════════════════════════════════════════════
-/// Public API
-/// ═══════════════════════════════════════════════════════════════════════
-
-/// Full-page detail route — เปิดแบบเต็มจอ
-/// ใช้เหมือน "หน้าสร้างคำขอ" ของ license_request_page (push MaterialPageRoute
-/// fullscreenDialog: true)
 class LicenseverifyDetailPage extends StatefulWidget {
-  /// uuid ของรายการที่จะแสดง (optional — ถ้ามีให้ preload)
   final String? routeData;
-
-  /// Title ที่จะแสดงใน header
   final String title;
 
   const LicenseverifyDetailPage({
     super.key,
     this.routeData,
-    this.title = 'ตรวจสอบหลักฐาน',
+    this.title = 'แนบหลักฐาน',
   });
 
-  /// Factory สร้าง Page พร้อม Provider (ใช้ใน Navigator.push)
   static Widget create({
     Key? key,
     String? routeData,
-    String title = 'ตรวจสอบหลักฐาน',
+    String title = 'แนบหลักฐาน',
   }) {
     return ChangeNotifierProvider<LicenseverifyDetailViewModel>(
-      create: (_) => LicenseverifyDetailViewModel(),
+      create: (_) => LicenseverifyDetailViewModel(requestUuid: routeData),
       child: _LicenseverifyDetailPageBody(
         title: title,
         routeData: routeData,
@@ -67,7 +54,6 @@ class _LicenseverifyDetailPageState extends State<LicenseverifyDetailPage> {
   }
 }
 
-/// Body จริง — ต้องอยู่ใต้ Provider เสมอ
 class _LicenseverifyDetailPageBody extends StatefulWidget {
   final String title;
   final String? routeData;
@@ -89,8 +75,7 @@ class _LicenseverifyDetailPageBodyState
     final vm = context.watch<LicenseverifyDetailViewModel>();
     final step = vm.currentDetailStep;
     final total = vm.totalDetailSteps;
-    final subtitle =
-        step == 1 ? 'ตรวจสอบหลักฐานที่ผู้เช่าส่งมา' : 'สรุปผลการตรวจสอบ';
+    final subtitle = step == 1 ? 'เลือกเอกสารที่จะแนบ' : 'สรุปการแนบเอกสาร';
 
     return Scaffold(
       backgroundColor: LaColors.surface,
@@ -111,24 +96,80 @@ class _LicenseverifyDetailPageBodyState
             ),
             Expanded(
               child: step == 1
-                  ? const VerifyDetailStep1()
+                  ? VerifyDetailStep1(requestUuid: vm.requestUuid)
                   : const VerifyDetailStep2(),
             ),
             VerifyDetailFooter(
               readOnly: false,
               currentStep: step,
               totalSteps: total,
-              onNext: step < total ? vm.nextDetailStep : null,
-              onSave: () {
-                // TODO: ส่งข้อมูลบันทึก — รอ service จริง
-                ScaffoldMessenger.of(context).showSnackBar(
+              onNext: step < total
+                  ? () {
+                      // ignore: avoid_print
+                      print(
+                        'Next clicked — Request UUID: ${vm.requestUuid}',
+                      );
+                      vm.nextDetailStep();
+                    }
+                  : null,
+              onSave: () async {
+                final messenger = ScaffoldMessenger.of(context);
+                final navigator = Navigator.of(context);
+                if (vm.isSubmitting) return;
+
+                messenger.showSnackBar(
                   const SnackBar(
-                    content: Text('บันทึกผลการตรวจสอบ (placeholder)'),
+                    content: Row(
+                      children: [
+                        SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        ),
+                        SizedBox(width: 12),
+                        Text('กำลังบันทึก...'),
+                      ],
+                    ),
                     behavior: SnackBarBehavior.floating,
+                    duration: Duration(seconds: 2),
                   ),
                 );
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
+
+                final result = await vm.submitChecklist();
+
+                if (!mounted) return;
+                if (result == null) return;
+
+                if (result.success) {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        result.message != null && result.message!.isNotEmpty
+                            ? 'บันทึกสำเร็จ: ${result.message}'
+                            : 'บันทึกสำเร็จ (HTTP ${result.statusCode})',
+                      ),
+                      backgroundColor: Colors.green.shade700,
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  if (navigator.canPop()) {
+                    navigator.pop();
+                  }
+                } else {
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        'บันทึกไม่สำเร็จ (HTTP ${result.statusCode}): '
+                        '${result.message ?? '-'}',
+                      ),
+                      backgroundColor: Colors.red.shade700,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 4),
+                    ),
+                  );
                 }
               },
               onCancel: () {
@@ -147,3 +188,5 @@ class _LicenseverifyDetailPageBodyState
     );
   }
 }
+
+

@@ -1,5 +1,5 @@
 // ============================================================================
-// license_verify_table.dart
+// verify_table.dart
 // ============================================================================
 // ตารางแสดงรายการ "คำขอต่อสัญญา" — ดีไซน์ใหม่
 // - Card-based header + alternating rows + hover state
@@ -19,12 +19,12 @@ import '../../../../Model/Review_Model.dart';
 import '../theme/license_verify_theme.dart';
 import '../../viewmodels/license_verify_view_model.dart';
 
-class LicenseverifyTable extends StatelessWidget {
-  const LicenseverifyTable({super.key});
+class VerifyTable extends StatelessWidget {
+  const VerifyTable({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseverifyViewModel>();
+    final vm = context.watch<LicenseVerifyViewModel>();
 
     if (vm.isLoading && vm.requests.isEmpty) {
       return const _LoadingState();
@@ -94,7 +94,7 @@ class LicenseverifyTable extends StatelessWidget {
   // ========================================================================
   Widget _dataRow(
     BuildContext context,
-    LicenseverifyViewModel vm,
+    LicenseVerifyViewModel vm,
     ReviewModel model,
     int index,
   ) {
@@ -411,7 +411,7 @@ class _ViewButtonState extends State<_ViewButton> {
               ),
               const SizedBox(width: 4),
               Text(
-                'เรียกดู',
+                'ตรวจสอบ',
                 style: TextStyle(
                   fontFamily: LaText.fontBold,
                   fontSize: 11,
@@ -461,7 +461,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             hasFilter
                 ? 'ลองปรับตัวกรองหรือคำค้นหาใหม่อีกครั้ง'
-                : 'กดปุ่ม "สร้างคำขอ" เพื่อเริ่มต้นคำขอต่อสัญญาใหม่',
+                : 'ระบบยังไม่พบรายการการตรวจสอบหลักฐาน',
             style: LaText.bodyMuted,
             textAlign: TextAlign.center,
           ),

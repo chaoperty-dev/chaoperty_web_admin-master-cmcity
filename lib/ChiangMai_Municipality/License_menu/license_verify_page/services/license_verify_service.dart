@@ -17,8 +17,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../unity/API_requests_reviews.dart';
 import '../../../unity/API_approvals_lastaction.dart';
 
-class LicenseverifyService {
-  LicenseverifyService({ApiCache? cache})
+class LicenseVerifyService {
+  LicenseVerifyService({ApiCache? cache})
       : _cache = cache ?? ApiCache(ttl: const Duration(seconds: 60));
 
   final ApiCache _cache;
@@ -90,7 +90,7 @@ class LicenseverifyService {
       _cache.set(cacheKey, result);
       return _applyZoneFilter(result, zoneSubSer);
     } catch (e) {
-      print('LicenseverifyService.fetchZones error: $e');
+      print('LicenseVerifyService.fetchZones error: $e');
       return <ZoneModel>[];
     }
   }
@@ -139,7 +139,7 @@ class LicenseverifyService {
       _cache.set(cacheKey, result);
       return _buildSubZoneList(result);
     } catch (e) {
-      print('LicenseverifyService.fetchSubZones error: $e');
+      print('LicenseVerifyService.fetchSubZones error: $e');
       return _buildSubZoneList(<dynamic>[]);
     }
   }

@@ -1,10 +1,7 @@
 // ============================================================================
 // verify_detail_header.dart
 // ============================================================================
-// Header bar ของหน้า "ตรวจสอบหลักฐาน" (Step 1 / Step 2)
-// - Gradient slate-900 → slate-800 + glow (เหมือน contract_page)
-// - Back button (icon) — กดเพื่อกลับหน้า list
-// - Step badge "ขั้นตอนที่ 1 / 2"
+// Header bar ของหน้า "แนบหลักฐาน" (Step 1 / Step 2)
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -50,14 +47,12 @@ class VerifyDetailHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Back button
           _IconButton(
             icon: Icons.arrow_back_rounded,
             tooltip: 'กลับไปหน้ารายการ',
             onTap: onBack ?? () => Navigator.of(context).maybePop(),
           ),
           const SizedBox(width: LaSpace.md),
-          // Icon badge
           Container(
             width: 42,
             height: 42,
@@ -76,7 +71,6 @@ class VerifyDetailHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: LaSpace.md),
-          // Title block
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -85,14 +79,13 @@ class VerifyDetailHeader extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      'LICENSE VERIFY',
+                      'LICENSE Verify',
                       style: LaText.label.copyWith(
                         color: LaColors.primaryAccent.withOpacity(.9),
                         letterSpacing: 1.6,
                       ),
                     ),
                     const SizedBox(width: LaSpace.sm),
-                    // Step badge
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 2),
@@ -192,3 +185,5 @@ class _IconButtonState extends State<_IconButton> {
     );
   }
 }
+
+

@@ -8,7 +8,10 @@
 
 import 'package:flutter/material.dart';
 
+import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/access_rights/views/access_rights_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/area/views/area_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/general_data/views/general_data_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/payment/views/payment_page.dart';
 
 import 'theme/setting_page_theme.dart';
 import 'widgets/setting_menu_card.dart';
@@ -29,6 +32,36 @@ class SettingPage extends StatelessWidget {
       context,
       MaterialPageRoute(
         builder: (_) => GeneralDataPage.create(),
+      ),
+    );
+  }
+
+  /// เปิดหน้า "ตั้งค่าพื้นที่" (Area)
+  static void openArea(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AreaPage.create(),
+      ),
+    );
+  }
+
+  /// เปิดหน้า "การรับชำระ" (Payment)
+  static void openPayment(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => PaymentPage.create(),
+      ),
+    );
+  }
+
+  /// เปิดหน้า "สิทธิการเข้าถึง" (Access Rights)
+  static void openAccessRights(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AccessRightsPage.create(),
       ),
     );
   }
@@ -143,11 +176,17 @@ class SettingPage extends StatelessWidget {
         openGeneralData(context);
         break;
       case _MenuRoute.area:
+        openArea(context);
+        break;
       case _MenuRoute.rental:
       case _MenuRoute.document:
-      case _MenuRoute.payment:
-      case _MenuRoute.accessRights:
         openPlaceholder(context, menu.title, 'อยู่ระหว่างพัฒนา');
+        break;
+      case _MenuRoute.payment:
+        openPayment(context);
+        break;
+      case _MenuRoute.accessRights:
+        openAccessRights(context);
         break;
     }
   }

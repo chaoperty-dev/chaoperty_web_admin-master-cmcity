@@ -4,11 +4,11 @@
 // Main View — "คำขอต่อสัญญา" (Tab แรก)
 //
 // ใช้งานได้ 2 รูปแบบ:
-//   ✅ LicenseverifyPage.create(...) — สร้าง + wrap Provider ให้อัตโนมัติ (แนะนำ)
-//   ✅ LicenseverifyHost(...)       — alias
+//   ✅ LicenseVerifyPage.create(...) — สร้าง + wrap Provider ให้อัตโนมัติ (แนะนำ)
+//   ✅ LicenseVerifyHost(...)       — alias
 //
-// IMPORTANT: ห้าม new LicenseverifyPage() ตรงๆ เพราะ child widgets
-// จะเรียก context.watch<LicenseverifyViewModel>() ซึ่งต้องการ Provider
+// IMPORTANT: ห้าม new LicenseVerifyPage() ตรงๆ เพราะ child widgets
+// จะเรียก context.watch<LicenseVerifyViewModel>() ซึ่งต้องการ Provider
 // ============================================================================
 
 import 'dart:async';
@@ -16,25 +16,25 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../license_contract_page/models/license_contract_result.dart';
+import '../models/license_verify_result.dart';
 import '../models/license_verify_config.dart';
 import '../models/license_verify_event.dart';
 import '../viewmodels/license_verify_view_model.dart';
 import 'theme/license_verify_theme.dart';
-import 'widgets/license_verify_header.dart';
-import 'widgets/license_verify_pagination.dart';
-import 'widgets/license_verify_search_bar.dart';
-import 'widgets/license_verify_table.dart';
-import 'widgets/license_verify_zone_filter.dart';
+import 'widgets/verify_header.dart';
+import 'widgets/verify_pagination.dart';
+import 'widgets/verify_search_bar.dart';
+import 'widgets/verify_table.dart';
+import 'widgets/verify_zone_filter.dart';
 import 'license_verify_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
 /// ═══════════════════════════════════════════════════════════════════════
-class LicenseverifyPage extends StatefulWidget {
-  final ValueChanged<LicenseContractResult>? onSave;
+class LicenseVerifyPage extends StatefulWidget {
+  final ValueChanged<LicenseVerifyResult>? onSave;
 
-  const LicenseverifyPage._({super.key, this.onSave});
+  const LicenseVerifyPage._({super.key, this.onSave});
 
   /// Factory สร้าง Page พร้อม Provider (ใช้ใน AdminScaffold / Navigator)
   static Widget create({
@@ -42,18 +42,18 @@ class LicenseverifyPage extends StatefulWidget {
     String? routeData,
     int? serTitle,
     String title = 'ตรวจสอบหลักฐาน',
-    ValueChanged<LicenseContractResult>? onSave,
-    LicenseverifyConfig? config,
+    ValueChanged<LicenseVerifyResult>? onSave,
+    LicenseVerifyConfig? config,
   }) {
     final cfg = config ??
-        LicenseverifyConfig(
+        LicenseVerifyConfig(
           title: title,
           routeData: routeData,
           serTitle: serTitle,
         );
-    return ChangeNotifierProvider<LicenseverifyViewModel>(
-      create: (_) => LicenseverifyViewModel(config: cfg),
-      child: _LicenseverifyPageBody(
+    return ChangeNotifierProvider<LicenseVerifyViewModel>(
+      create: (_) => LicenseVerifyViewModel(config: cfg),
+      child: _LicenseVerifyPageBody(
         title: title,
         onSave: onSave,
       ),
@@ -61,13 +61,13 @@ class LicenseverifyPage extends StatefulWidget {
   }
 
   @override
-  State<LicenseverifyPage> createState() => _LicenseverifyPageState();
+  State<LicenseVerifyPage> createState() => _LicenseVerifyPageState();
 }
 
-class _LicenseverifyPageState extends State<LicenseverifyPage> {
+class _LicenseVerifyPageState extends State<LicenseVerifyPage> {
   @override
   Widget build(BuildContext context) {
-    return LicenseverifyPage.create(
+    return LicenseVerifyPage.create(
       key: widget.key,
       onSave: widget.onSave,
     );
@@ -75,34 +75,33 @@ class _LicenseverifyPageState extends State<LicenseverifyPage> {
 }
 
 /// Body จริง — ต้องอยู่ใต้ Provider เสมอ
-class _LicenseverifyPageBody extends StatefulWidget {
+class _LicenseVerifyPageBody extends StatefulWidget {
   final String title;
-  final ValueChanged<LicenseContractResult>? onSave;
+  final ValueChanged<LicenseVerifyResult>? onSave;
 
-  const _LicenseverifyPageBody({
+  const _LicenseVerifyPageBody({
     required this.title,
     this.onSave,
   });
 
   @override
-  State<_LicenseverifyPageBody> createState() => _LicenseverifyPageBodyState();
+  State<_LicenseVerifyPageBody> createState() => _LicenseVerifyPageBodyState();
 }
 
-class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
-  StreamSubscription<LicenseverifyEvent>? _sub;
+class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
+  StreamSubscription<LicenseVerifyEvent>? _sub;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final vm = context.read<LicenseverifyViewModel>();
+    final vm = context.read<LicenseVerifyViewModel>();
     _sub ??= vm.events.listen(_onEvent);
   }
 
-  void _onEvent(LicenseverifyEvent event) {
+  void _onEvent(LicenseVerifyEvent event) {
     if (!mounted) return;
-    final title = context.read<LicenseverifyViewModel>().title;
     switch (event) {
-      case LicenseverifyErrorEvent(:final message):
+      case LicenseVerifyErrorEvent(:final message):
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(message),
@@ -114,8 +113,9 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
           ),
         );
         break;
-      case LicenseverifyNavigateEvent(:final routeData):
+      case LicenseVerifyNavigateEvent(:final routeData):
         // เปิด full-page detail route (เต็มจอ)
+        final title = context.read<LicenseVerifyViewModel>().title;
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => LicenseverifyDetailPage.create(
@@ -137,7 +137,7 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseverifyViewModel>();
+    final vm = context.watch<LicenseVerifyViewModel>();
     return Container(
       color: LaColors.surface,
       child: Padding(
@@ -145,28 +145,27 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LicenseverifyHeader(
+            VerifyHeader(
               title: vm.title,
-              subtitle:
-                  'ตรวจสอบหลักฐานใบอนุญาต — ตรวจสอบความถูกต้องก่อนอนุมัติ',
+              subtitle: 'ตรวจสอบหลักฐานใบอนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
               totalCount: vm.total,
             ),
             const SizedBox(height: LaSpace.lg),
-            const LicenseverifyZoneFilter(),
+            const VerifyZoneFilter(),
             const SizedBox(height: LaSpace.md),
             // Search + Pagination row
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Expanded(child: LicenseverifySearchBar()),
+                Expanded(child: VerifySearchBar()),
                 SizedBox(width: LaSpace.md),
-                LicenseverifyPagination(),
+                VerifyPagination(),
               ],
             ),
             const SizedBox(height: LaSpace.lg),
             const Expanded(
               child: SingleChildScrollView(
-                child: LicenseverifyTable(),
+                child: VerifyTable(),
               ),
             ),
           ],
@@ -177,23 +176,23 @@ class _LicenseverifyPageBodyState extends State<_LicenseverifyPageBody> {
 }
 
 /// Alias สำหรับเข้ากันได้กับ API เดิม
-class LicenseverifyHost extends StatelessWidget {
+class LicenseVerifyHost extends StatelessWidget {
   final String? routeData;
   final int? serTitle;
   final String title;
-  final ValueChanged<LicenseContractResult>? onSave;
+  final ValueChanged<LicenseVerifyResult>? onSave;
 
-  const LicenseverifyHost({
+  const LicenseVerifyHost({
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'อนุมัติคำขอ',
+    this.title = 'ตรวจสอบหลักฐาน',
     this.onSave,
   });
 
   @override
   Widget build(BuildContext context) {
-    return LicenseverifyPage.create(
+    return LicenseVerifyPage.create(
       routeData: routeData,
       serTitle: serTitle,
       title: title,

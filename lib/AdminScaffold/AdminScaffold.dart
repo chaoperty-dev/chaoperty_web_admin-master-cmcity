@@ -31,7 +31,7 @@ import '../Account/Play_column.dart';
 import '../Beam/Beam_api_check_Pay.dart';
 import '../ChiangMai_Municipality/Registration_menu/registration_page/views/registration_page.dart';
 import '../ChaoArea/ChaoArea_Screen.dart';
-import '../ChiangMai_Municipality/License_menu/license_announce_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_announce_page/views/license_announce_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license_attach_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
@@ -4975,13 +4975,13 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                           : (Value_Route == 'LicenseAttach')
                               ? LicenseAttachPage.create()
                               : (Value_Route == 'LicenseVerify')
-                                  ? LicenseverifyPage.create()
+                                   ? LicenseVerifyPage.create()
                                   : (Value_Route == 'LicenseFactCheck')
                                       ? LicensefactcheckPage.create()
                                       : (Value_Route == 'LicenseApprove')
                                           ? LicenseApprovePage.create()
                                           : (Value_Route == 'LicenseAnnounce')
-                                              ? const LicenseAnnouncePage()
+                                              ? LicenseAnnouncePage.create()
                                               : (Value_Route ==
                                                       'RequestExaminer1_CMM')
                                                   ? const RequestExaminer1_CMM(

@@ -1,5 +1,5 @@
 // ============================================================================
-// license_verify_header.dart
+// verify_header.dart
 // ============================================================================
 // Header ของหน้า "อนุมัติคำขอ"
 // - Eyebrow + Title + subtitle (ไม่มีปุ่ม Create — ใช้สำหรับหน้าอนุมัติ)
@@ -10,11 +10,11 @@ import 'package:flutter/material.dart';
 
 import '../theme/license_verify_theme.dart';
 
-class LicenseverifyHeader extends StatelessWidget {
+class VerifyHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final int? totalCount;
-  const LicenseverifyHeader({
+  const VerifyHeader({
     super.key,
     required this.title,
     this.subtitle,
@@ -59,7 +59,7 @@ class LicenseverifyHeader extends StatelessWidget {
               ),
             ),
             child: const Icon(
-              Icons.fact_check_rounded,
+              Icons.attach_file_rounded,
               color: LaColors.primaryAccent,
               size: 22,
             ),

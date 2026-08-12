@@ -71,6 +71,19 @@ class _LicenseApproveDetailPageBody extends StatefulWidget {
 class _LicenseApproveDetailPageBodyState
     extends State<_LicenseApproveDetailPageBody> {
   @override
+  void initState() {
+    super.initState();
+    // โหลดข้อมูลคำขอจาก uuid ที่ส่งมา (routeData) หลัง frame แรก
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final uuid = widget.routeData ?? '';
+      if (uuid.isNotEmpty) {
+        context.read<LicenseApproveDetailViewModel>().loadByUuid(uuid);
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = context.watch<LicenseApproveDetailViewModel>();
     final step = vm.currentDetailStep;
@@ -100,7 +113,9 @@ class _LicenseApproveDetailPageBodyState
                   : const ApproveDetailStep2(),
             ),
             ApproveDetailFooter(
-              readOnly: false,
+              // Step 2 มีปุ่มบันทึก/ปฏิเสธของตัวเองอยู่แล้ว
+              // จึงซ่อนปุ่ม Save ใน footer (readOnly=true) เพื่อไม่ให้ซ้ำซ้อน
+              readOnly: step == total,
               currentStep: step,
               totalSteps: total,
               onNext: step < total ? vm.nextDetailStep : null,

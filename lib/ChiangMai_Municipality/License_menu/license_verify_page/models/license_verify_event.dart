@@ -4,18 +4,18 @@
 // Events ที่ ViewModel ส่งให้ View ฟัง (ผ่าน Stream)
 // ============================================================================
 
-sealed class LicenseverifyEvent {
-  const LicenseverifyEvent();
+sealed class LicenseVerifyEvent {
+  const LicenseVerifyEvent();
 }
 
-class LicenseverifyErrorEvent extends LicenseverifyEvent {
+class LicenseVerifyErrorEvent extends LicenseVerifyEvent {
   final String message;
-  const LicenseverifyErrorEvent(this.message);
+  const LicenseVerifyErrorEvent(this.message);
 }
 
 
-class LicenseverifyNavigateEvent extends LicenseverifyEvent {
+class LicenseVerifyNavigateEvent extends LicenseVerifyEvent {
   final String route;
   final String? routeData;
-  const LicenseverifyNavigateEvent(this.route, {this.routeData});
+  const LicenseVerifyNavigateEvent(this.route, {this.routeData});
 }

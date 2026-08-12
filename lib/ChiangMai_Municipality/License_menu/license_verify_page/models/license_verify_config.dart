@@ -4,14 +4,14 @@
 // Config / Params
 // ============================================================================
 
-class LicenseverifyConfig {
+class LicenseVerifyConfig {
   final String title;
   final String? routeData;
   final int? serTitle;
   final bool readOnly;
 
-  const LicenseverifyConfig({
-    this.title = 'อนุมัติคำขอ',
+  const LicenseVerifyConfig({
+    this.title = 'ตรวจสอบหลักฐาน',
     this.routeData,
     this.serTitle,
     this.readOnly = false,

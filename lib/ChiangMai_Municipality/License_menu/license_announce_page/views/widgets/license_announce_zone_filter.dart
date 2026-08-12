@@ -1,5 +1,5 @@
 // ============================================================================
-// license_verify_zone_filter.dart
+// license_announce_zone_filter.dart
 // ============================================================================
 // ตัวกรอง "หมวดโซนพื้นที่" + "โซนพื้นที่" — ดีไซน์ใหม่
 // - ใช้ card + label chip + dropdown ที่ขอบโค้ง
@@ -11,18 +11,18 @@ import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../theme/license_verify_theme.dart';
-import '../../viewmodels/license_verify_view_model.dart';
+import '../theme/license_announce_theme.dart';
+import '../../viewmodels/license_announce_view_model.dart';
 
-class LicenseverifyZoneFilter extends StatefulWidget {
-  const LicenseverifyZoneFilter({super.key});
+class LicenseAnnounceZoneFilter extends StatefulWidget {
+  const LicenseAnnounceZoneFilter({super.key});
 
   @override
-  State<LicenseverifyZoneFilter> createState() =>
-      _LicenseRequestZoneFilterState();
+  State<LicenseAnnounceZoneFilter> createState() =>
+      _LicenseAnnounceZoneFilterState();
 }
 
-class _LicenseRequestZoneFilterState extends State<LicenseverifyZoneFilter> {
+class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
 
@@ -35,10 +35,10 @@ class _LicenseRequestZoneFilterState extends State<LicenseverifyZoneFilter> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseverifyViewModel>();
+    final vm = context.watch<LicenseAnnounceViewModel>();
     return Container(
-      padding: const EdgeInsets.all(LaSpace.md),
-      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(LrSpace.md),
+      decoration: LrDecor.card(),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -53,11 +53,11 @@ class _LicenseRequestZoneFilterState extends State<LicenseverifyZoneFilter> {
   Widget _divider() => Container(
         width: 1,
         height: 32,
-        margin: const EdgeInsets.symmetric(horizontal: LaSpace.md),
-        color: LaColors.border,
+        margin: const EdgeInsets.symmetric(horizontal: LrSpace.md),
+        color: LrColors.border,
       );
 
-  Widget _subZoneSection(LicenseverifyViewModel vm) {
+  Widget _subZoneSection(LicenseAnnounceViewModel vm) {
     return _FilterField(
       icon: Icons.layers_outlined,
       label: 'หมวดโซนพื้นที่',
@@ -65,7 +65,7 @@ class _LicenseRequestZoneFilterState extends State<LicenseverifyZoneFilter> {
     );
   }
 
-  Widget _zoneSection(LicenseverifyViewModel vm) {
+  Widget _zoneSection(LicenseAnnounceViewModel vm) {
     final enabled = vm.selectedZoneSub != null && !vm.readOnly;
     return _FilterField(
       enabled: enabled,
@@ -90,34 +90,34 @@ class _FilterField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final lblColor = enabled ? LaColors.textSecondary : LaColors.textMuted;
+    final lblColor = enabled ? LrColors.textSecondary : LrColors.textMuted;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           width: 32,
           height: 32,
-          margin: const EdgeInsets.only(right: LaSpace.sm),
+          margin: const EdgeInsets.only(right: LrSpace.sm),
           decoration: BoxDecoration(
-            color: enabled ? LaColors.primaryLight : LaColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(LaRadius.sm),
+            color: enabled ? LrColors.primaryLight : LrColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(LrRadius.sm),
           ),
-          child: Icon(icon, size: 16, color: LaColors.primaryDark),
+          child: Icon(icon, size: 16, color: LrColors.primaryDark),
         ),
         // Label
         SizedBox(
           width: 96,
           child: Text(
             label,
-            style: LaText.bodyMuted.copyWith(
+            style: LrText.bodyMuted.copyWith(
               color: lblColor,
-              fontFamily: LaText.fontBold,
+              fontFamily: LrText.fontBold,
               fontSize: 12,
               letterSpacing: .3,
             ),
           ),
         ),
-        const SizedBox(width: LaSpace.sm),
+        const SizedBox(width: LrSpace.sm),
         Expanded(child: child),
       ],
     );
@@ -138,9 +138,9 @@ class _DropdownShell extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: 42),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: LaColors.surface,
-          borderRadius: BorderRadius.circular(LaRadius.sm),
-          border: Border.all(color: LaColors.border, width: 1),
+          color: LrColors.surface,
+          borderRadius: BorderRadius.circular(LrRadius.sm),
+          border: Border.all(color: LrColors.border, width: 1),
         ),
         child: DropdownButtonHideUnderline(child: child),
       ),
@@ -160,31 +160,31 @@ class _SearchInner extends StatelessWidget {
       child: TextFormField(
         controller: ctrl,
         autofocus: true,
-        style: LaText.body.copyWith(fontSize: 14),
-        cursorColor: LaColors.primary,
+        style: LrText.body.copyWith(fontSize: 14),
+        cursorColor: LrColors.primary,
         decoration: const InputDecoration(
           isDense: true,
           filled: true,
-          fillColor: LaColors.surfaceMuted,
+          fillColor: LrColors.surfaceMuted,
           hintText: 'พิมพ์เพื่อค้นหา...',
-          hintStyle: LaText.caption,
+          hintStyle: LrText.caption,
           prefixIcon: Icon(
             Icons.search_rounded,
             size: 18,
-            color: LaColors.textMuted,
+            color: LrColors.textMuted,
           ),
           contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(LaRadius.sm)),
-            borderSide: BorderSide(color: LaColors.border, width: 1),
+            borderRadius: BorderRadius.all(Radius.circular(LrRadius.sm)),
+            borderSide: BorderSide(color: LrColors.border, width: 1),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(LaRadius.sm)),
-            borderSide: BorderSide(color: LaColors.border, width: 1),
+            borderRadius: BorderRadius.all(Radius.circular(LrRadius.sm)),
+            borderSide: BorderSide(color: LrColors.border, width: 1),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.all(Radius.circular(LaRadius.sm)),
-            borderSide: BorderSide(color: LaColors.primary, width: 1.5),
+            borderRadius: BorderRadius.all(Radius.circular(LrRadius.sm)),
+            borderSide: BorderSide(color: LrColors.primary, width: 1.5),
           ),
         ),
       ),
@@ -195,17 +195,17 @@ class _SearchInner extends StatelessWidget {
 /// ─────────────────────────────────────────────────────────────────────────
 /// _subZoneDropdown + _zoneDropdown
 /// ─────────────────────────────────────────────────────────────────────────
-extension on _LicenseRequestZoneFilterState {
-  Widget _subZoneDropdown(LicenseverifyViewModel vm) {
+extension on _LicenseAnnounceZoneFilterState {
+  Widget _subZoneDropdown(LicenseAnnounceViewModel vm) {
     return _DropdownShell(
       enabled: true,
       child: DropdownButton2<String>(
         isExpanded: true,
         iconSize: 18,
-        iconEnabledColor: LaColors.textSecondary,
+        iconEnabledColor: LrColors.textSecondary,
         buttonHeight: 40,
         dropdownDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(LaRadius.md),
+          borderRadius: BorderRadius.circular(LrRadius.md),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
@@ -219,10 +219,10 @@ extension on _LicenseRequestZoneFilterState {
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
         hint: AutoSizeText(
           vm.selectedZoneSub ?? 'ทั้งหมด',
-          style: LaText.body.copyWith(
+          style: LrText.body.copyWith(
             color: vm.selectedZoneSub == null
-                ? LaColors.textMuted
-                : LaColors.textPrimary,
+                ? LrColors.textMuted
+                : LrColors.textPrimary,
           ),
           maxFontSize: 14,
           minFontSize: 11,
@@ -239,15 +239,15 @@ extension on _LicenseRequestZoneFilterState {
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: sub.zn == 'ทั้งหมด'
-                              ? LaColors.textMuted
-                              : LaColors.primary,
+                              ? LrColors.textMuted
+                              : LrColors.primary,
                           shape: BoxShape.circle,
                         ),
                       ),
                       Expanded(
                         child: AutoSizeText(
                           sub.zn ?? '-',
-                          style: LaText.body,
+                          style: LrText.body,
                           maxFontSize: 14,
                           minFontSize: 11,
                           maxLines: 1,
@@ -272,17 +272,17 @@ extension on _LicenseRequestZoneFilterState {
     );
   }
 
-  Widget _zoneDropdown(LicenseverifyViewModel vm) {
+  Widget _zoneDropdown(LicenseAnnounceViewModel vm) {
     final enabled = vm.selectedZoneSub != null && !vm.readOnly;
     return _DropdownShell(
       enabled: enabled,
       child: DropdownButton2<String>(
         isExpanded: true,
         iconSize: 18,
-        iconEnabledColor: LaColors.textSecondary,
+        iconEnabledColor: LrColors.textSecondary,
         buttonHeight: 40,
         dropdownDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(LaRadius.md),
+          borderRadius: BorderRadius.circular(LrRadius.md),
           color: Colors.white,
           boxShadow: [
             BoxShadow(
@@ -296,10 +296,10 @@ extension on _LicenseRequestZoneFilterState {
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
         hint: AutoSizeText(
           vm.selectedZone ?? 'เลือกโซน',
-          style: LaText.body.copyWith(
+          style: LrText.body.copyWith(
             color: vm.selectedZone == null
-                ? LaColors.textMuted
-                : LaColors.textPrimary,
+                ? LrColors.textMuted
+                : LrColors.textPrimary,
           ),
           maxFontSize: 14,
           minFontSize: 11,
@@ -316,15 +316,15 @@ extension on _LicenseRequestZoneFilterState {
                         margin: const EdgeInsets.only(right: 8),
                         decoration: BoxDecoration(
                           color: zn.zn == 'ทั้งหมด'
-                              ? LaColors.textMuted
-                              : LaColors.primary,
+                              ? LrColors.textMuted
+                              : LrColors.primary,
                           shape: BoxShape.circle,
                         ),
                       ),
                       Expanded(
                         child: AutoSizeText(
                           zn.zn ?? '-',
-                          style: LaText.body,
+                          style: LrText.body,
                           maxFontSize: 14,
                           minFontSize: 11,
                           maxLines: 1,

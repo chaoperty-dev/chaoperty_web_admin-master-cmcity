@@ -53,9 +53,19 @@ class AnnounceMentActiveModel {
     computedStatus = json['computed_status'];
     canEditZone = json['can_edit_zone'];
     canEditSchedule = json['can_edit_schedule'];
-    announcement = json['announcement'] != null
-        ? new Announcement.fromJson(json['announcement'])
-        : null;
+
+    // 2 shape ที่รองรับ:
+    // (a) /active → { "announcement": { "content": {...}, "properties": [...] } }
+    // (b) /{uuid} → { "content": {...}, "properties": [...], "schedule": {...} } (top-level)
+    if (json['announcement'] != null) {
+      announcement = Announcement.fromJson(
+          Map<String, dynamic>.from(json['announcement']));
+    } else if (json['content'] != null || json['properties'] != null) {
+      // Flatten ให้ Announcement.fromJson อ่านได้
+      announcement = Announcement.fromJson(Map<String, dynamic>.from(json));
+    } else {
+      announcement = null;
+    }
   }
 
   Map<String, dynamic> toJson() {

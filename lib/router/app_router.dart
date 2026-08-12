@@ -3,8 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../ChaoArea/ChaoArea_Screen.dart';
-import '../ChiangMai_Municipality/License_menu/license_announce_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_announce_page/views/license_announce_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license_attach_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
@@ -151,7 +150,7 @@ GoRouter buildAppRouter({
             pageBuilder: (context, state) => _fadePage(
               key: state.pageKey,
               locationKey: state.matchedLocation,
-              child: LicenseverifyPage.create(),
+              child: LicenseVerifyPage.create(),
             ),
           ),
           GoRoute(
@@ -175,7 +174,7 @@ GoRouter buildAppRouter({
             pageBuilder: (context, state) => _fadePage(
               key: state.pageKey,
               locationKey: state.matchedLocation,
-              child: const LicenseAnnouncePage(),
+              child: LicenseAnnouncePage.create(),
             ),
           ),
 

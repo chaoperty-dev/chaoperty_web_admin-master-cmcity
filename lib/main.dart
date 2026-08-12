@@ -14,7 +14,7 @@ import 'router/app_router.dart';
 import 'router/auth_state_notifier.dart';
 
 const bool enableAppLogs = true;
-
+/// flutter run -d chrome --web-browser-flag "--disable-web-security" 
 /// SidebarController — เก็บไว้เพราะไฟล์อื่นๆ เช่น AdminScaffold ใช้
 class SidebarController extends ChangeNotifier {
   static const _key = 'isSidebarOpen';

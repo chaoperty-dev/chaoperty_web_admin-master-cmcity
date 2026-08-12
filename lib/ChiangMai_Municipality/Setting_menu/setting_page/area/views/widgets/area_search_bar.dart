@@ -1,9 +1,8 @@
 // ============================================================================
-// license_verify_search_bar.dart
+// area_search_bar.dart
 // ============================================================================
-// Search bar แบบ modern — focus ring + clear button + loading
-// - debounce 500ms ก่อนยิง API
-// - hint chip แสดงฟิลด์ที่ auto-detect (UUID / เบอร์โทร / ชื่อ)
+// Search bar แบบ modern (focus ring + clear button + loading)
+// - debounce 500ms ก่อน trigger filter
 // ============================================================================
 
 import 'dart:async';
@@ -11,18 +10,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../theme/license_verify_theme.dart';
-import '../../viewmodels/license_verify_view_model.dart';
+import '../theme/area_theme.dart';
+import '../../viewmodels/area_view_model.dart';
 
-class LicenseverifySearchBar extends StatefulWidget {
-  const LicenseverifySearchBar({super.key});
+class AreaSearchBar extends StatefulWidget {
+  const AreaSearchBar({super.key});
 
   @override
-  State<LicenseverifySearchBar> createState() =>
-      _LicenseRequestSearchBarState();
+  State<AreaSearchBar> createState() => _AreaSearchBarState();
 }
 
-class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
+class _AreaSearchBarState extends State<AreaSearchBar> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
   Timer? _debounce;
@@ -31,8 +29,7 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
   @override
   void initState() {
     super.initState();
-    // Sync ค่าเริ่มต้นจาก VM (ถ้ามี routeData)
-    final vm = context.read<LicenseverifyViewModel>();
+    final vm = context.read<AreaViewModel>();
     if (vm.searchQuery.isNotEmpty) {
       _controller.text = vm.searchQuery;
     }
@@ -50,11 +47,10 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
   }
 
   void _onSearchChanged(String value) {
-    final vm = context.read<LicenseverifyViewModel>();
+    final vm = context.read<AreaViewModel>();
     vm.setSearch(value);
-    setState(() {}); // rebuild เพื่อ update hint chip + clear button
+    setState(() {});
 
-    // Debounce 500ms
     _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       vm.executeSearch();
@@ -64,7 +60,7 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
   void _onClear() {
     _controller.clear();
     _debounce?.cancel();
-    final vm = context.read<LicenseverifyViewModel>();
+    final vm = context.read<AreaViewModel>();
     vm.setSearch('');
     vm.executeSearch();
     setState(() {});
@@ -72,26 +68,25 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseverifyViewModel>();
+    final vm = context.watch<AreaViewModel>();
     final hasText = _controller.text.isNotEmpty;
-    final fieldLabel = _fieldLabelFor(vm.searchQuery);
 
     return AnimatedContainer(
-      duration: LrAnimations.medium,
+      duration: AeaAnimations.medium,
       curve: Curves.easeOut,
       height: 48,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(LaRadius.md),
+        borderRadius: BorderRadius.circular(AeaRadius.md),
         border: Border.all(
-          color: _focused ? LaColors.primary : LaColors.border,
+          color: _focused ? AeaColors.primary : AeaColors.border,
           width: _focused ? 1.6 : 1,
         ),
         boxShadow: [
           if (_focused)
             BoxShadow(
-              color: LaColors.primary.withOpacity(.12),
+              color: AeaColors.primary.withOpacity(.12),
               blurRadius: 12,
               offset: const Offset(0, 3),
             )
@@ -106,11 +101,11 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
       child: Row(
         children: [
           AnimatedSwitcher(
-            duration: LrAnimations.fast,
+            duration: AeaAnimations.fast,
             child: Icon(
               _focused ? Icons.search_rounded : Icons.search,
               key: ValueKey(_focused),
-              color: _focused ? LaColors.primary : LaColors.textMuted,
+              color: _focused ? AeaColors.primary : AeaColors.textMuted,
               size: 20,
             ),
           ),
@@ -122,53 +117,31 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
               onChanged: _onSearchChanged,
               onSubmitted: (v) {
                 _debounce?.cancel();
-                final vm = context.read<LicenseverifyViewModel>();
-                vm.setSearch(v);
-                vm.executeSearch();
+                final vm2 = context.read<AreaViewModel>();
+                vm2.setSearch(v);
+                vm2.executeSearch();
               },
-              style: LaText.body,
-              cursorColor: LaColors.primary,
+              style: AeaText.body,
+              cursorColor: AeaColors.primary,
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
                 hintText: hasText
                     ? 'ค้นหา "${_controller.text}"'
-                    : 'ค้นหา... (ชื่อผู้ติดต่อ, รหัสรายการ, เบอร์โทร)',
-                hintStyle: LaText.bodyMuted.copyWith(
-                  color: LaColors.textMuted,
+                    : 'ค้นหา... (รหัสพื้นที่, ชื่อ Area, ลำดับ)',
+                hintStyle: AeaText.bodyMuted.copyWith(
+                  color: AeaColors.textMuted,
                 ),
               ),
             ),
           ),
-          // Hint chip — แสดง field ที่ auto-detect
-          if (hasText && fieldLabel != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 6, right: 6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: LaColors.primaryLight,
-                  borderRadius: BorderRadius.circular(LaRadius.pill),
-                ),
-                child: Text(
-                  fieldLabel,
-                  style: const TextStyle(
-                    fontFamily: LaText.fontBold,
-                    fontSize: 10,
-                    color: LaColors.primaryDark,
-                    letterSpacing: .4,
-                  ),
-                ),
-              ),
-            ),
-          // Loading / Clear button
           if (vm.isLoading)
             const SizedBox(
               width: 18,
               height: 18,
               child: CircularProgressIndicator(
                 strokeWidth: 2.2,
-                valueColor: AlwaysStoppedAnimation(LaColors.primary),
+                valueColor: AlwaysStoppedAnimation(AeaColors.primary),
               ),
             )
           else if (hasText)
@@ -180,22 +153,6 @@ class _LicenseRequestSearchBarState extends State<LicenseverifySearchBar> {
         ],
       ),
     );
-  }
-
-  /// Auto-detect field label สำหรับแสดง chip
-  String? _fieldLabelFor(String value) {
-    final v = value.trim();
-    if (v.isEmpty) return null;
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    if (uuidRegex.hasMatch(v)) return 'UUID';
-    final phoneRegex = RegExp(r'^[0-9]{8,12}$');
-    if (phoneRegex.hasMatch(v.replaceAll(RegExp(r'[\s\-]'), ''))) {
-      return 'เบอร์โทร';
-    }
-    return 'ชื่อ';
   }
 }
 
@@ -215,16 +172,16 @@ class _IconChip extends StatelessWidget {
       message: tooltip,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(LaRadius.pill),
+        borderRadius: BorderRadius.circular(AeaRadius.pill),
         child: Container(
           width: 26,
           height: 26,
           alignment: Alignment.center,
           decoration: const BoxDecoration(
-            color: LaColors.surfaceMuted,
+            color: AeaColors.surfaceMuted,
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 14, color: LaColors.textSecondary),
+          child: Icon(icon, size: 14, color: AeaColors.textSecondary),
         ),
       ),
     );

@@ -2,7 +2,6 @@
 // verify_detail_footer.dart
 // ============================================================================
 // Footer bar — ปุ่ม "ย้อนกลับ" + "ถัดไป" / "บันทึก"
-// (คล้าย contract_page แต่ใช้สี + token ของ verify)
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -16,8 +15,6 @@ class VerifyDetailFooter extends StatelessWidget {
   final VoidCallback? onNext;
   final VoidCallback? onSave;
   final VoidCallback? onCancel;
-
-  /// Label ของปุ่มหลัก (เช่น "ถัดไป", "บันทึก")
   final String? nextLabel;
   final String? saveLabel;
 
@@ -41,13 +38,10 @@ class VerifyDetailFooter extends StatelessWidget {
           horizontal: LaSpace.lg, vertical: LaSpace.md),
       decoration: const BoxDecoration(
         color: LaColors.surfaceMuted,
-        border: Border(
-          top: BorderSide(color: LaColors.border, width: 1),
-        ),
+        border: Border(top: BorderSide(color: LaColors.border, width: 1)),
       ),
       child: Row(
         children: [
-          // Hint icon + text
           Icon(
             isLast ? Icons.task_alt_rounded : Icons.edit_note_rounded,
             size: 14,
@@ -63,7 +57,6 @@ class VerifyDetailFooter extends StatelessWidget {
             style: LaText.caption,
           ),
           const Spacer(),
-          // Cancel (step > 1 → ย้อนกลับ, step 1 → ยกเลิก)
           _CancelButton(
             label: currentStep > 1 ? 'ย้อนกลับ' : 'ยกเลิก',
             icon: currentStep > 1
@@ -72,17 +65,10 @@ class VerifyDetailFooter extends StatelessWidget {
             onTap: onCancel,
           ),
           const SizedBox(width: LaSpace.sm),
-          // ปุ่มหลัก: ถัดไป (Step 1) หรือ บันทึก (Step 2)
           if (!readOnly)
             isLast
-                ? _SaveButton(
-                    label: saveLabel ?? 'บันทึก',
-                    onTap: onSave,
-                  )
-                : _NextButton(
-                    label: nextLabel ?? 'ถัดไป',
-                    onTap: onNext,
-                  ),
+                ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
         ],
       ),
     );
@@ -154,14 +140,10 @@ class _CancelButtonState extends State<_CancelButton> {
   }
 }
 
-/// ปุ่ม "ถัดไป" — outlined style (รองจากบันทึก)
 class _NextButton extends StatefulWidget {
   final VoidCallback? onTap;
   final String label;
-  const _NextButton({
-    required this.onTap,
-    this.label = 'ถัดไป',
-  });
+  const _NextButton({required this.onTap, this.label = 'ถัดไป'});
 
   @override
   State<_NextButton> createState() => _NextButtonState();
@@ -204,11 +186,8 @@ class _NextButtonState extends State<_NextButton> {
                 ),
               ),
               const SizedBox(width: 6),
-              Icon(
-                Icons.arrow_forward_rounded,
-                size: 16,
-                color: LaColors.primaryDark,
-              ),
+              Icon(Icons.arrow_forward_rounded,
+                  size: 16, color: LaColors.primaryDark),
             ],
           ),
         ),
@@ -217,14 +196,10 @@ class _NextButtonState extends State<_NextButton> {
   }
 }
 
-/// ปุ่ม "บันทึก" — gradient green style (ปุ่มหลัก)
 class _SaveButton extends StatefulWidget {
   final VoidCallback? onTap;
   final String label;
-  const _SaveButton({
-    required this.onTap,
-    this.label = 'บันทึก',
-  });
+  const _SaveButton({required this.onTap, this.label = 'บันทึก'});
 
   @override
   State<_SaveButton> createState() => _SaveButtonState();
@@ -262,11 +237,8 @@ class _SaveButtonState extends State<_SaveButton> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
+              const Icon(Icons.check_circle_rounded,
+                  size: 16, color: Colors.white),
               const SizedBox(width: 6),
               Text(
                 widget.label,
@@ -284,3 +256,5 @@ class _SaveButtonState extends State<_SaveButton> {
     );
   }
 }
+
+

@@ -3,7 +3,7 @@
 // ============================================================================
 // ViewModel — จัดการ state + business logic ของหน้า "คำขอต่อสัญญา"
 // - เรียก Service โหลดรายการ tab แรก
-// - แจ้ง View ผ่าน Stream<LicenseverifyEvent>
+// - แจ้ง View ผ่าน Stream<LicenseVerifyEvent>
 // - ไม่ผูกกับ Flutter UI
 // ============================================================================
 
@@ -19,22 +19,22 @@ import '../models/license_verify_config.dart';
 import '../models/license_verify_event.dart';
 import '../services/license_verify_service.dart';
 
-class LicenseverifyViewModel extends ChangeNotifier {
-  LicenseverifyViewModel({
-    required LicenseverifyConfig config,
-    LicenseverifyService? service,
+class LicenseVerifyViewModel extends ChangeNotifier {
+  LicenseVerifyViewModel({
+    required LicenseVerifyConfig config,
+    LicenseVerifyService? service,
   })  : _config = config,
-        _service = service ?? LicenseverifyService() {
+        _service = service ?? LicenseVerifyService() {
     _loadInitial();
   }
 
-  final LicenseverifyConfig _config;
-  final LicenseverifyService _service;
+  final LicenseVerifyConfig _config;
+  final LicenseVerifyService _service;
 
   // ---------- Event channel ----------
-  final StreamController<LicenseverifyEvent> _eventController =
-      StreamController<LicenseverifyEvent>.broadcast();
-  Stream<LicenseverifyEvent> get events => _eventController.stream;
+  final StreamController<LicenseVerifyEvent> _eventController =
+      StreamController<LicenseVerifyEvent>.broadcast();
+  Stream<LicenseVerifyEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
   List<ReviewModel> _requests = [];
@@ -246,14 +246,15 @@ class LicenseverifyViewModel extends ChangeNotifier {
   // ===============================================================
   // User actions
   // ===============================================================
+  /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
+
   /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
-  /// (View จะ push MaterialPageRoute fullscreenDialog ไปยัง LicenseverifyDetailPage)
   void onViewRequest(ReviewModel model) {
     final uuid = model.newRequest?.requestUuid?.toString() ??
         model.uuid?.toString() ??
         '';
     _eventController.add(
-      LicenseverifyNavigateEvent('ตรวจสอบหลักฐาน', routeData: uuid),
+      LicenseVerifyNavigateEvent('ตรวจสอบหลักฐาน', routeData: uuid),
     );
   }
 
@@ -266,7 +267,7 @@ class LicenseverifyViewModel extends ChangeNotifier {
   }
 
   void _emitError(String msg) {
-    _eventController.add(LicenseverifyErrorEvent(msg));
+    _eventController.add(LicenseVerifyErrorEvent(msg));
   }
 
   @override
