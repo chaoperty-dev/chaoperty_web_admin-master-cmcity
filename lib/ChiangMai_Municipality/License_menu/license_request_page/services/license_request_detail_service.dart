@@ -27,14 +27,15 @@ class LicenseRequestDetailService {
       throw Exception('ไม่สามารถเชื่อมต่อ API ได้');
     }
     if (response.statusCode != 200) {
-      throw Exception(
-          'โหลดข้อมูลไม่สำเร็จ (status: ${response.statusCode})');
+      throw Exception('โหลดข้อมูลไม่สำเร็จ (status: ${response.statusCode})');
     }
 
     final result = json.decode(response.body);
     if (result is! Map || result['data'] is! Map) {
       throw Exception('รูปแบบข้อมูลไม่ถูกต้อง');
     }
+
+    print('fetchReviewDetail: result = $result');
 
     return ReviewDetail.fromJson(result['data'] as Map<String, dynamic>);
   }

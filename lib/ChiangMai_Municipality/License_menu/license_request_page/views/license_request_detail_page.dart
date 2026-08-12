@@ -7,6 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../viewmodels/license_request_detail_step2_view_model.dart';
 import '../viewmodels/license_request_detail_view_model.dart';
 import 'theme/license_request_theme.dart';
 import 'widgets/request_detail_footer.dart';
@@ -99,7 +100,11 @@ class _LicenseRequestDetailPageBodyState
             Expanded(
               child: step == 1
                   ? RequestDetailStep1(requestUuid: widget.routeData)
-                  : const RequestDetailStep2(),
+                  : ChangeNotifierProvider<LicenseRequestDetailStep2ViewModel>(
+                      create: (_) => LicenseRequestDetailStep2ViewModel(),
+                      child: RequestDetailStep2(
+                          requestUuid: widget.routeData),
+                    ),
             ),
             RequestDetailFooter(
               readOnly: false,
