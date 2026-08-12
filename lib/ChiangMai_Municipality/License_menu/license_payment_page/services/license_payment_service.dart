@@ -22,16 +22,11 @@ class LicensePaymentService {
 
   // ---------- 1. สร้าง Payment Draft (Internal / External) ----------
   /// POST /v2/payments
-  /// Body (internal): { request_uuid, payment_system: "internal",
-  ///                   pay_type, payment_method_id, amount }
-  /// Body (external): { request_uuid, payment_system: "external",
-  ///                   pay_type, amount }
-  /// Return: PaymentDetail
   Future<PaymentDetail> createPaymentDraft({
     required String requestUuid,
-    required String paymentSystem, // 'internal' | 'external'
-    required String payType, // 'fee' | 'fine'
-    int? paymentMethodId, // required for internal, forbidden for external
+    required String paymentSystem,
+    required String payType,
+    int? paymentMethodId,
     double? amount,
   }) async {
     if (requestUuid.trim().isEmpty) {
@@ -91,7 +86,7 @@ class LicensePaymentService {
     String? bookNo,
     String? receiptNo,
     int? perPage,
-    String? sortBy, // 'created_at' | 'payment_no'
+    String? sortBy,
     String sortDir = 'desc',
   }) async {
     final queryParams = <String, String>{};
@@ -122,7 +117,6 @@ class LicensePaymentService {
     final uri = _uri('v2/payments').replace(
       queryParameters: {
         ...queryParams,
-        // รองรับ q filter (search by uuid or payment_no)
         if (queryParams['q'] == null) 'q': '',
       },
     );
