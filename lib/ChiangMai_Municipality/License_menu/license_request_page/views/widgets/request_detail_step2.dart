@@ -14,6 +14,7 @@
 //   - Responsive width (เต็มจอ / ไม่จำกัด 1400)
 // ============================================================================
 
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -68,7 +69,9 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(LrSpace.lg),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        // ✅ stretch: บังคับให้ children ทุกตัวขยายเต็มความกว้างแนวนอน
+        // ทำให้ตาราง + Grand Total Card เต็มจอ edge-to-edge
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ─── Toolbar (gradient add + counter) ───
           Row(
@@ -111,8 +114,9 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     // - Desktop (≥ 1200px):        minWidth = mediaWidth - 320 (ลบ sidebar)
     final mediaWidth = MediaQuery.of(context).size.width;
     final tableWidth = (mediaWidth < 600
-        ? 1100.0
-        : (mediaWidth < 1200 ? mediaWidth : mediaWidth - 320).clamp(1100, 5000))
+            ? 1100.0
+            : (mediaWidth < 1200 ? mediaWidth : mediaWidth - 320)
+                .clamp(1100, 5000))
         .toDouble();
 
     return Container(
@@ -121,37 +125,43 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
       // ✅ ใช้ SizedBox(width: double.infinity) บังคับให้ Container ขยายเต็มจอ
       // แล้ว SingleChildScrollView ข้างในจะ scroll แนวนอนเมื่อ content ยาวเกิน
       width: double.infinity,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minWidth: tableWidth),
-          child: DataTable(
-            columnSpacing: 22,
-            headingRowHeight: 46,
-            dataRowMinHeight: 56,
-            dataRowMaxHeight: 68,
-            headingRowColor:
-                MaterialStateColor.resolveWith((_) => LrColors.surfaceMuted),
-            headingTextStyle: LrText.tableHeader,
-            dataTextStyle: LrText.tableCell,
-            dividerThickness: 0.6,
-            showBottomBorder: true,
-            columns: const [
-              DataColumn(label: Text('ประเภทค่าบริการ')),
-              DataColumn(label: Text('ความถี่')),
-              DataColumn(label: Text('จำนวนงวด'), numeric: true),
-              DataColumn(label: Text('วันเริ่มต้น')),
-              DataColumn(label: Text('ยอด (บาท)'), numeric: true),
-              DataColumn(label: Text('ประเภท VAT')),
-              DataColumn(label: Text('VAT'), numeric: true),
-              DataColumn(label: Text('ประเภท WHT')),
-              DataColumn(label: Text('WHT'), numeric: true),
-              DataColumn(label: Text('ยอดสุทธิ'), numeric: true),
-              DataColumn(label: Text('')),
-            ],
-            rows: List<DataRow>.generate(
-              items.length,
-              (i) => _buildRow(i, items[i]),
+      child: ScrollConfiguration(
+        behavior: ScrollConfiguration.of(context).copyWith(dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+        }),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minWidth: tableWidth),
+            child: DataTable(
+              columnSpacing: 22,
+              headingRowHeight: 46,
+              dataRowMinHeight: 56,
+              dataRowMaxHeight: 68,
+              headingRowColor:
+                  MaterialStateColor.resolveWith((_) => LrColors.surfaceMuted),
+              headingTextStyle: LrText.tableHeader,
+              dataTextStyle: LrText.tableCell,
+              dividerThickness: 0.6,
+              showBottomBorder: true,
+              columns: const [
+                DataColumn(label: Text('ประเภทค่าบริการ')),
+                DataColumn(label: Text('ความถี่')),
+                DataColumn(label: Text('จำนวนงวด'), numeric: true),
+                DataColumn(label: Text('วันเริ่มต้น')),
+                DataColumn(label: Text('ยอด (บาท)'), numeric: true),
+                DataColumn(label: Text('ประเภท VAT')),
+                DataColumn(label: Text('VAT'), numeric: true),
+                DataColumn(label: Text('ประเภท WHT')),
+                DataColumn(label: Text('WHT'), numeric: true),
+                DataColumn(label: Text('ยอดสุทธิ'), numeric: true),
+                DataColumn(label: Text('')),
+              ],
+              rows: List<DataRow>.generate(
+                items.length,
+                (i) => _buildRow(i, items[i]),
+              ),
             ),
           ),
         ),
