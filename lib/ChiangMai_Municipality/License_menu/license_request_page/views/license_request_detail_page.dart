@@ -16,8 +16,6 @@ import 'widgets/request_detail_step1.dart';
 import 'widgets/request_detail_step2.dart';
 
 class LicenseRequestDetailPage extends StatefulWidget {
-  /// UUID ของ Request (มาจาก ReviewModel.newRequest.requestUuid)
-  /// จะถูก forward ไปให้ RequestDetailStep1 เพื่อโหลดข้อมูล
   final String? routeData;
   final String title;
 
@@ -32,8 +30,16 @@ class LicenseRequestDetailPage extends StatefulWidget {
     String? routeData,
     String title = 'คำขอต่อสัญญา',
   }) {
-    return ChangeNotifierProvider<LicenseRequestDetailViewModel>(
-      create: (_) => LicenseRequestDetailViewModel(),
+    // ✅ MultiProvider ที่ root — Providers เป็น ancestor ของทุก widget
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<LicenseRequestDetailViewModel>(
+          create: (_) => LicenseRequestDetailViewModel(),
+        ),
+        ChangeNotifierProvider<LicenseRequestDetailStep2ViewModel>(
+          create: (_) => LicenseRequestDetailStep2ViewModel(),
+        ),
+      ],
       child: _LicenseRequestDetailPageBody(
         title: title,
         routeData: routeData,
@@ -83,75 +89,71 @@ class _LicenseRequestDetailPageBodyState
     return Scaffold(
       backgroundColor: LrColors.surface,
       body: SafeArea(
-        // ✅ Wrap Provider ครอบทั้ง body — ให้ footer เข้าถึง ViewModel ได้
-        child: ChangeNotifierProvider<LicenseRequestDetailStep2ViewModel>(
-          create: (_) => LicenseRequestDetailStep2ViewModel(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              RequestDetailHeader(
-                title: widget.title,
-                subtitle: subtitle,
-                currentStep: step,
-                totalSteps: total,
-                onBack: () {
+        // ✅ Providers มาจาก root (MultiProvider) — ไม่ต้อง wrap ซ้ำ
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RequestDetailHeader(
+              title: widget.title,
+              subtitle: subtitle,
+              currentStep: step,
+              totalSteps: total,
+              onBack: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
+            ),
+            Expanded(
+              child: step == 1
+                  ? RequestDetailStep1(requestUuid: widget.routeData)
+                  : RequestDetailStep2(requestUuid: widget.routeData),
+            ),
+            RequestDetailFooter(
+              readOnly: false,
+              currentStep: step,
+              totalSteps: total,
+              onNext: step < total ? vm.nextDetailStep : null,
+              onSave: step == total
+                  ? () async {
+                      // ✅ Step 2: เรียก submit() บน ViewModel
+                      final vm2 = context
+                          .read<LicenseRequestDetailStep2ViewModel>();
+                      final err = await vm2.submit();
+                      if (!mounted) return;
+                      if (err == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text('บันทึกสำเร็จ'),
+                            backgroundColor: LrColors.primary,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        if (Navigator.of(context).canPop()) {
+                          Navigator.of(context).pop();
+                        }
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(err),
+                            backgroundColor: LrColors.statusRejectedFg,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                      }
+                    }
+                  : null,
+              onCancel: () {
+                if (step > 1) {
+                  vm.previousDetailStep();
+                } else {
                   if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
                   }
-                },
-              ),
-              Expanded(
-                child: step == 1
-                    ? RequestDetailStep1(requestUuid: widget.routeData)
-                    : RequestDetailStep2(requestUuid: widget.routeData),
-              ),
-              RequestDetailFooter(
-                readOnly: false,
-                currentStep: step,
-                totalSteps: total,
-                onNext: step < total ? vm.nextDetailStep : null,
-                onSave: step == total
-                    ? () async {
-                        // ✅ Step 2: เรียก submit() บน ViewModel
-                        //      POST /admin/requests/{uuid}/prepayment
-                        final vm2 = context
-                            .read<LicenseRequestDetailStep2ViewModel>();
-                        final err = await vm2.submit();
-                        if (!mounted) return;
-                        if (err == null) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: const Text('บันทึกสำเร็จ'),
-                              backgroundColor: LrColors.primary,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                          if (Navigator.of(context).canPop()) {
-                            Navigator.of(context).pop();
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(err),
-                              backgroundColor: LrColors.statusRejectedFg,
-                              behavior: SnackBarBehavior.floating,
-                            ),
-                          );
-                        }
-                      }
-                    : null,
-                onCancel: () {
-                  if (step > 1) {
-                    vm.previousDetailStep();
-                  } else {
-                    if (Navigator.of(context).canPop()) {
-                      Navigator.of(context).pop();
-                    }
-                  }
-                },
-              ),
-            ],
-          ),
+                }
+              },
+            ),
+          ],
         ),
       ),
     );
