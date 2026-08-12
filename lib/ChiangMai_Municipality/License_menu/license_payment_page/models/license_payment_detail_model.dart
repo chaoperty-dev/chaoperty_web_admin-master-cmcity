@@ -92,6 +92,57 @@ class PaymentDetail {
   }
 
   bool get isPaid => status.toLowerCase() == 'paid';
+
+  /// UI compatibility: แสดง status เป็น label (TH/EN)
+  String get statusLabel {
+    switch (status.toLowerCase()) {
+      case 'paid':
+        return 'ชำระแล้ว';
+      case 'draft':
+        return 'รอชำระ';
+      case 'cancelled':
+      case 'canceled':
+        return 'ยกเลิก';
+      default:
+        return status.isEmpty ? '-' : status;
+    }
+  }
+
+  /// UI compatibility: ข้อมูล contract ที่ UI คาดหวัง
+  NewRequest? get newRequest => NewRequest(
+    leaseNumber: paymentNo,
+    subzone: paymentSystem,
+    zn: payType,
+    ln: methodName,
+    ldate: paidAt,
+  );
+
+  /// UI compatibility: ข้อมูลลูกค้า/ผู้ชำระ
+  Client? get client => Client(cname: payerName, tel: '');
+}
+
+/// Wrapper for UI compatibility — fields ที่ table เก่าเรียกใช้
+class NewRequest {
+  final String leaseNumber;
+  final String subzone;
+  final String zn;
+  final String ln;
+  final String? ldate;
+
+  const NewRequest({
+    this.leaseNumber = '-',
+    this.subzone = '-',
+    this.zn = '-',
+    this.ln = '-',
+    this.ldate,
+  });
+}
+
+/// Wrapper for UI compatibility — client info
+class Client {
+  final String cname;
+  final String tel;
+  const Client({this.cname = '-', this.tel = ''});
 }
 
 /// ใบเสร็จ / สรุปการรับชำระ (Step 2)

@@ -2,7 +2,8 @@
 // license_payment_view_model.dart
 // ============================================================================
 // ViewModel — จัดการ state + business logic ของหน้า "การรับชำระ" (Payment v2)
-// - เรียก Service โหลด PaymentDetail (list) + createPaymentDraft
+// - โหลด PaymentDetail list + สร้าง draft + บันทึกการรับชำระ
+// - โหลด Zones/SubZones (ใช้ LicenseRequestService เดียวกัน)
 // - แจ้ง View ผ่าน Stream<LicensePaymentEvent>
 // - ไม่ผูกกับ Flutter UI
 // ============================================================================
@@ -11,26 +12,32 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../../../Model/GetSubZone_Model.dart';
+import '../../../../Model/GetZone_Model.dart';
 import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_config.dart';
 import '../models/license_payment_event.dart';
 import '../services/license_payment_detail_service.dart';
 import '../services/license_payment_service.dart';
+import '../../license_request_page/services/license_request_service.dart';
 
 class LicensePaymentViewModel extends ChangeNotifier {
   LicensePaymentViewModel({
     required LicensePaymentConfig config,
     LicensePaymentService? paymentService,
     LicensePaymentDetailService? detailService,
+    LicenseRequestService? requestService,
   })  : _config = config,
         _paymentService = paymentService ?? LicensePaymentService(),
-        _detailService = detailService ?? LicensePaymentDetailService() {
+        _detailService = detailService ?? LicensePaymentDetailService(),
+        _requestService = requestService ?? LicenseRequestService() {
     _loadInitial();
   }
 
   final LicensePaymentConfig _config;
   final LicensePaymentService _paymentService;
   final LicensePaymentDetailService _detailService;
+  final LicenseRequestService _requestService;
 
   // ---------- Event channel ----------
   final StreamController<LicensePaymentEvent> _eventController =
@@ -40,6 +47,10 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // ---------- Data ----------
   List<PaymentDetail> _payments = [];
   List<PaymentDetail> get payments => _payments;
+
+  // ---------- Zones ----------
+  List<ZoneModel> _zoneModels = [];
+  List<SubZoneModel> _subzoneModels = [];
 
   // ---------- Pagination ----------
   int _currentPage = 0;
@@ -65,6 +76,12 @@ class LicensePaymentViewModel extends ChangeNotifier {
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
 
+  // ---------- Zone filter state ----------
+  String? _selectedZoneSub;
+  String? _selectedZone;
+  String? _selectedZoneSer;
+  String? _selectedZoneSubSer;
+
   // ---------- Config getters ----------
   String get title => _config.title;
   String? get routeData => _config.routeData;
@@ -77,7 +94,12 @@ class LicensePaymentViewModel extends ChangeNotifier {
     if (_config.routeData != null && _config.routeData!.isNotEmpty) {
       _searchQuery = _config.routeData!;
     }
-    await refresh();
+    // โหลด zones/subzones + payments พร้อมกัน
+    await Future.wait([
+      _loadZones(),
+      _loadSubZones(),
+      refresh(),
+    ]);
   }
 
   // ===============================================================
@@ -92,7 +114,6 @@ class LicensePaymentViewModel extends ChangeNotifier {
         paymentUuid: _searchQuery.isNotEmpty ? _searchQuery : null,
       );
       _payments = results;
-      // ไม่มี pagination จาก listPayments (ยังไม่ได้ implement)
       _currentPage = 1;
       _lastPage = 1;
       _total = results.length;
@@ -103,12 +124,32 @@ class LicensePaymentViewModel extends ChangeNotifier {
     }
   }
 
-  /// สร้าง Payment Draft (Internal)
+  /// โหลด Zones (สำหรับ dropdown filter)
+  Future<void> _loadZones() async {
+    try {
+      _zoneModels = await _requestService.fetchZones();
+    } catch (e) {
+      // silent — ไม่ block UI
+    }
+    notifyListeners();
+  }
+
+  /// โหลด SubZones (สำหรับ dropdown filter)
+  Future<void> _loadSubZones() async {
+    try {
+      _subzoneModels = await _requestService.fetchSubZones();
+    } catch (e) {
+      // silent — ไม่ block UI
+    }
+    notifyListeners();
+  }
+
+  /// สร้าง Payment Draft (Internal/External)
   /// Returns the new PaymentDetail on success, or null on failure
   Future<PaymentDetail?> createDraft({
     required String requestUuid,
-    required String paymentSystem, // 'internal' | 'external'
-    required String payType, // 'fee' | 'fine'
+    required String paymentSystem,
+    required String payType,
     int? paymentMethodId,
     double? amount,
   }) async {
@@ -123,7 +164,6 @@ class LicensePaymentViewModel extends ChangeNotifier {
         amount: amount,
       );
       _emitCreated(created);
-      // Reload list after create
       await refresh();
       return created;
     } catch (e) {
@@ -173,7 +213,6 @@ class LicensePaymentViewModel extends ChangeNotifier {
         bookDate: bookDate,
       );
       _emitPaid(paid);
-      // Reload list after pay
       await refresh();
       return paid;
     } catch (e) {
@@ -197,46 +236,46 @@ class LicensePaymentViewModel extends ChangeNotifier {
   }
 
   // ===============================================================
-  // Backward-compat: methods used by old UI widgets
-  // (UI files reference 'requests', 'onViewRequest',
-  //  'selectedZoneSub', 'zoneModels', 'subzoneModels',
-  //  'onSubZoneChanged', 'onZoneChanged', 'loadPage')
+  // Zone filter (UI compat)
   // ===============================================================
-
-  /// Backward-compat: list รายการ (empty) — UI จะไม่แสดง row
-  /// เพราะ viewmodel ใช้ PaymentDetail แทน ReviewModel
-  /// แต่ต้องมี field นี้เพื่อให้ UI เก่า compile ได้
-  List<dynamic> get requests => <dynamic>[];
-
-  /// Backward-compat: empty list
-  List<dynamic> get zoneModels => <dynamic>[];
-
-  /// Backward-compat: empty list
-  List<dynamic> get subzoneModels => <dynamic>[];
-
-  /// Backward-compat: zone filter state (UI ใช้)
-  String? get selectedZoneSub => null;
-  String? get selectedZone => null;
-  String? get selectedZoneSer => null;
-
-  /// Backward-compat: no-op
-  void onSubZoneChanged(String? value) {}
-
-  /// Backward-compat: no-op
-  void onZoneChanged(String? value) {}
-
-  /// Backward-compat: เปลี่ยนจาก PaymentDetail เป็น dynamic
-  /// UI เก่าใช้ model.newRequest.leaseNumber, model.client.cname
-  /// แต่ PaymentDetail มี field ไม่ตรงกัน — return dynamic
-  /// เพื่อให้ compile ได้
-  void onViewRequest(dynamic model) {
-    // ไม่ทำ action — UI เก่าใช้ ReviewModel ที่มี field ต่างจาก PaymentDetail
+  void onSubZoneChanged(String? value) {
+    _selectedZoneSub = value;
+    _selectedZone = null; // reset zone เมื่อ subzone เปลี่ยน
+    _selectedZoneSer = null;
+    notifyListeners();
   }
 
-  /// Backward-compat: ไม่มี pagination จาก listPayments
-  Future<void> loadPage(String? url) async {
-    // ไม่ทำ action — listPayments API ไม่ return pagination links
+  void onZoneChanged(String? value) {
+    _selectedZone = value;
+    // หา ser ของ zone ที่เลือก
+    if (value != null) {
+      final match = _zoneModels.firstWhere(
+        (z) => z.zn == value,
+        orElse: () => ZoneModel(),
+      );
+      _selectedZoneSer = match.ser;
+    } else {
+      _selectedZoneSer = null;
+    }
+    notifyListeners();
   }
+
+  /// ดรอปดาวน์ Zones: filter by sub_zone
+  List<ZoneModel> get zoneModels {
+    if (_selectedZoneSub == null || _selectedZoneSub == 'ทั้งหมด') {
+      return _zoneModels;
+    }
+    return _zoneModels
+        .where((z) => z.sub_zone == _selectedZoneSub || z.sub_zone == null)
+        .toList();
+  }
+
+  /// ดรอปดาวน์ SubZones
+  List<SubZoneModel> get subzoneModels => _subzoneModels;
+
+  String? get selectedZoneSub => _selectedZoneSub;
+  String? get selectedZone => _selectedZone;
+  String? get selectedZoneSer => _selectedZoneSer;
 
   // ===============================================================
   // User actions
@@ -249,6 +288,27 @@ class LicensePaymentViewModel extends ChangeNotifier {
         title: 'รายละเอียดการรับชำระ',
       ),
     );
+  }
+
+  // ===============================================================
+  // Backward-compat: methods used by old UI widgets
+  // ===============================================================
+
+  /// Backward-compat: list รายการ (alias for payments)
+  /// UI เก่าเรียก vm.requests — เลย map เป็น List<dynamic> ให้
+  List<dynamic> get requests => _payments;
+
+  /// Backward-compat: alias for onViewPayment (UI เก่า)
+  /// ใช้ dynamic เพราะ UI ส่ง PaymentDetail หรือ ReviewModel-like
+  void onViewRequest(dynamic model) {
+    if (model is PaymentDetail) {
+      onViewPayment(model);
+    }
+  }
+
+  /// Backward-compat: loadPage (no-op — listPayments ไม่มี pagination links)
+  Future<void> loadPage(String? url) async {
+    // ไม่ทำ action — listPayments API ไม่ return pagination links
   }
 
   // ===============================================================
