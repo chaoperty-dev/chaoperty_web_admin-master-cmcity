@@ -1,168 +1,151 @@
 // ============================================================================
 // license_payment_service.dart
 // ============================================================================
-// Service — โหลดข้อมูล "คำขอต่อสัญญา" (status แรก) จาก API
-// ใช้ read_GC_Reviews() + HTTP ตรงสำหรับ zones/subzones
+// Service — CRUD operations สำหรับ "การรับชำระ" (Payment v2)
+// ใช้ endpoint ตาม Postman "Chao RAPI - Payment v2 Receipts":
+//   - POST  {domain_v1}/v2/payments              → สร้าง draft (internal / external)
+//   - GET   {domain_v1}/v2/payments?...         → list / search
+// ใช้ MyHeaders.build() + http package เหมือน service อื่นๆ ในระบบ
 // ============================================================================
 
 import 'dart:convert';
 
 import 'package:chaoperty/Constant/Myconstant.dart';
-import 'package:chaoperty/Constant/api_cache.dart';
-import 'package:chaoperty/Model/GetSubZone_Model.dart';
-import 'package:chaoperty/Model/GetZone_Model.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../unity/API_requests_reviews.dart';
-import '../../../unity/API_approvals_lastaction.dart';
+import '../models/license_payment_detail_model.dart';
 
 class LicensePaymentService {
-  LicensePaymentService({ApiCache? cache})
-      : _cache = cache ?? ApiCache(ttl: const Duration(seconds: 60));
+  LicensePaymentService();
 
-  final ApiCache _cache;
+  Uri _uri(String path) => Uri.parse('${MyConstant().domain_v1}/$path');
 
-  // ---------- Requests ----------
-  /// โหลดรายการ "คำขอต่อสัญญา" (ser=0 / level=1)
-  /// [zn] = filter โซน (null = ทั้งหมด)
-  /// [searchField] = field ที่จะใช้ filter (เช่น 'scname', 'uuid', 'tel')
-  Future<ReviewResponse> fetchRequests({
-    String? urlCustom,
-    String query = '',
-    int perPage = 50,
-    String? orderBy,
-    String sortDir = 'asc',
-    String? zn,
-    String searchField = 'scname',
+  // ---------- 1. สร้าง Payment Draft (Internal / External) ----------
+  /// POST /v2/payments
+  /// Body (internal): { request_uuid, payment_system: "internal",
+  ///                   pay_type, payment_method_id, amount }
+  /// Body (external): { request_uuid, payment_system: "external",
+  ///                   pay_type, amount }
+  /// Return: PaymentDetail
+  Future<PaymentDetail> createPaymentDraft({
+    required String requestUuid,
+    required String paymentSystem, // 'internal' | 'external'
+    required String payType, // 'fee' | 'fine'
+    int? paymentMethodId, // required for internal, forbidden for external
+    double? amount,
   }) async {
-    return await read_GC_Reviews(
-      urlCustom: urlCustom,
-      query: query,
-      perPage: 50,
-      orderBy: orderBy,
-      sortDir: sortDir,
-      zn: zn,
-      fild: [
-        {
-          'ser': '0',
-          'st': '1',
-          'title': _fieldTitle(searchField),
-          'value': searchField
-        },
-      ],
-    );
-  }
-
-  /// Title ตาม search field ที่เลือก (สำหรับ fild)
-  String _fieldTitle(String field) {
-    switch (field) {
-      case 'uuid':
-        return 'รหัสรายการ';
-      case 'tel':
-        return 'เบอร์โทร';
-      case 'cid':
-        return 'เลขที่สัญญา';
-      case 'scname':
-      default:
-        return 'ชื่อผู้ติดต่อ';
+    if (requestUuid.trim().isEmpty) {
+      throw Exception('Request UUID is required');
     }
-  }
-
-  // ---------- Zones ----------
-  /// โหลดรายการ "โซน" (zones) — default คือทั้งหมด
-  Future<List<ZoneModel>> fetchZones({String? zoneSubSer}) async {
-    final ren = await _getRenTalSer();
-    final cacheKey = 'license_payment_zone_${ren}_$zoneSubSer';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) {
-        return _applyZoneFilter(cached, zoneSubSer);
-      }
+    if (paymentSystem != 'internal' && paymentSystem != 'external') {
+      throw Exception('payment_system ต้องเป็น internal หรือ external');
     }
 
-    final url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
-    try {
-      final response = await http.get(Uri.parse(url));
-      final result = jsonDecode(response.body);
-      if (result == null || result is! List) return <ZoneModel>[];
-      _cache.set(cacheKey, result);
-      return _applyZoneFilter(result, zoneSubSer);
-    } catch (e) {
-      print('LicensePaymentService.fetchZones error: $e');
-      return <ZoneModel>[];
-    }
-  }
-
-  List<ZoneModel> _applyZoneFilter(List<dynamic> rawList, String? zoneSubSer) {
-    final defaultZone = ZoneModel.fromJson({
-      'ser': '0',
-      'rser': '0',
-      'zn': 'ทั้งหมด',
-      'qty': '0',
-      'img': '0',
-      'data_update': '0',
-    });
-    final zones = <ZoneModel>[defaultZone];
-    for (final map in rawList) {
-      final zone = ZoneModel.fromJson(map);
-      if (zoneSubSer == null ||
-          zoneSubSer == '0' ||
-          zone.sub_zone == zoneSubSer) {
-        zones.add(zone);
-      }
-    }
-    zones.sort((a, b) {
-      if (a.zn == 'ทั้งหมด') return -1;
-      if (b.zn == 'ทั้งหมด') return 1;
-      return (a.zn ?? '').compareTo(b.zn ?? '');
-    });
-    return zones;
-  }
-
-  // ---------- SubZones ----------
-  /// โหลดรายการ "โซนพื้นที่เช่า" (subzones) — default คือทั้งหมด
-  Future<List<SubZoneModel>> fetchSubZones() async {
-    final ren = await _getRenTalSer();
-    final cacheKey = 'license_payment_subzone_$ren';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) return _buildSubZoneList(cached);
-    }
-
-    final url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
-    try {
-      final response = await http.get(Uri.parse(url));
-      final result = json.decode(response.body);
-      _cache.set(cacheKey, result);
-      return _buildSubZoneList(result);
-    } catch (e) {
-      print('LicensePaymentService.fetchSubZones error: $e');
-      return _buildSubZoneList(<dynamic>[]);
-    }
-  }
-
-  List<SubZoneModel> _buildSubZoneList(List<dynamic> rawList) {
-    final defaultMap = <String, dynamic>{
-      'ser': '0',
-      'rser': '0',
-      'zn': 'ทั้งหมด',
-      'qty': '0',
-      'img': '0',
-      'data_update': '0',
+    final payload = <String, dynamic>{
+      'request_uuid': requestUuid,
+      'payment_system': paymentSystem,
+      'pay_type': payType,
     };
-    final subs = <SubZoneModel>[SubZoneModel.fromJson(defaultMap)];
-    for (final map in rawList) {
-      subs.add(SubZoneModel.fromJson(map));
+    if (paymentSystem == 'internal' && paymentMethodId != null) {
+      payload['payment_method_id'] = paymentMethodId;
     }
-    return subs;
+    if (amount != null) {
+      payload['amount'] = amount;
+    }
+
+    final headers = await MyHeaders.build();
+    final res = await http
+        .post(
+          _uri('v2/payments'),
+          headers: {
+            ...headers,
+            'Content-Type': 'application/json',
+          },
+          body: json.encode(payload),
+        )
+        .timeout(const Duration(seconds: 15));
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      String msg = 'สร้าง Payment draft ไม่สำเร็จ (status: ${res.statusCode})';
+      try {
+        final b = json.decode(res.body);
+        if (b is Map && b['message'] is String) msg = b['message'] as String;
+      } catch (_) {}
+      throw Exception(msg);
+    }
+
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    final data = body['data'] is Map
+        ? Map<String, dynamic>.from(body['data'] as Map)
+        : body;
+    return PaymentDetail.fromJson(data);
   }
 
-  // ---------- Helpers ----------
-  Future<String?> _getRenTalSer() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('renTalSer');
+  // ---------- 2. List Payments (Search / Filter) ----------
+  /// GET /v2/payments?q&sort_by=created_at&sort_dir=desc
+  /// Returns list of PaymentDetail (data array)
+  Future<List<PaymentDetail>> listPayments({
+    String? paymentUuid,
+    String? paymentNo,
+    String? dateTo,
+    String? bookNo,
+    String? receiptNo,
+    int? perPage,
+    String? sortBy, // 'created_at' | 'payment_no'
+    String sortDir = 'desc',
+  }) async {
+    final queryParams = <String, String>{};
+    if (paymentUuid != null && paymentUuid.trim().isNotEmpty) {
+      queryParams['q'] = paymentUuid;
+    }
+    if (paymentNo != null && paymentNo.trim().isNotEmpty) {
+      queryParams['q'] = paymentNo;
+    }
+    if (dateTo != null && dateTo.trim().isNotEmpty) {
+      queryParams['date_to'] = dateTo;
+    }
+    if (bookNo != null && bookNo.trim().isNotEmpty) {
+      queryParams['book_no'] = bookNo;
+    }
+    if (receiptNo != null && receiptNo.trim().isNotEmpty) {
+      queryParams['receipt_no'] = receiptNo;
+    }
+    if (perPage != null) {
+      queryParams['per_page'] = perPage.toString();
+    }
+    if (sortBy != null && sortBy.trim().isNotEmpty) {
+      queryParams['sort_by'] = sortBy;
+    }
+    queryParams['sort_dir'] = sortDir;
+
+    final headers = await MyHeaders.build();
+    final uri = _uri('v2/payments').replace(
+      queryParameters: {
+        ...queryParams,
+        // รองรับ q filter (search by uuid or payment_no)
+        if (queryParams['q'] == null) 'q': '',
+      },
+    );
+    final res = await http
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 15));
+
+    if (res.statusCode != 200) {
+      String msg = 'โหลดรายการ Payment ไม่สำเร็จ (status: ${res.statusCode})';
+      try {
+        final b = json.decode(res.body);
+        if (b is Map && b['message'] is String) msg = b['message'] as String;
+      } catch (_) {}
+      throw Exception(msg);
+    }
+
+    final body = json.decode(res.body) as Map<String, dynamic>;
+    final rawList = body['data'];
+    if (rawList is! List) return <PaymentDetail>[];
+
+    return rawList
+        .whereType<Map>()
+        .map((m) => PaymentDetail.fromJson(Map<String, dynamic>.from(m)))
+        .toList();
   }
 }
