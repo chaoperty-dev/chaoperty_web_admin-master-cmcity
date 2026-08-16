@@ -154,9 +154,27 @@ class LicenseContractService {
     List<PropertiesModel> properties;
     if (_cache.isValid(propsKey)) {
       final cached = _cache.get(propsKey);
-      properties = (cached as List)
-          .map((e) => PropertiesModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      // กัน cache เก่า schema เพี้ยน → parse ทีละตัว ข้าม entry ที่พัง
+      final tmp = <PropertiesModel>[];
+      for (final e in (cached as List)) {
+        try {
+          tmp.add(PropertiesModel.fromJson(e as Map<String, dynamic>));
+        } catch (_) {}
+      }
+      properties = tmp;
+      if (properties.isEmpty) {
+        // cache เพี้ยนทั้งชุด → fetch ใหม่
+        properties =
+            await read_GC_properties(zone.isEmpty ? null : zone, null, null);
+        _cache.set(
+            propsKey,
+            properties.map((p) {
+              return {
+                'new_request': p.newRequest?.toJson(),
+                'client': p.client?.toJson(),
+              };
+            }).toList());
+      }
     } else {
       properties =
           await read_GC_properties(zone.isEmpty ? null : zone, null, null);
@@ -177,10 +195,6 @@ class LicenseContractService {
       if (key == null) continue;
       (propMap[key] ??= []).add(p);
     }
-    // 🔍 DEBUG: log keys ของ propMap
-    print('� [fetchAreas] propMap keys=${propMap.keys.toList()} '
-        '(total ${propMap.length} entries, ${properties.length} props)');
-
     // 4) Join แล้ว set area.properties (cast dynamic เพื่อข้าม analyzer cache casing issue)
     for (final area in areas) {
       final key = area.ser?.toString();
@@ -189,17 +203,8 @@ class LicenseContractService {
           : const <PropertiesModel>[];
       // ignore: invalid_assignment
       area.properties = matched;
-      // 🔍 DEBUG: log TEST30 join result
-      if ((area.lncode ?? '').startsWith('TEST')) {
-        print('🔍 [fetchAreas] lncode=${area.lncode} ser=${area.ser} '
-            'matched=${matched.length}');
-      }
     }
 
-    // ignore: avoid_print
-    print(
-        '🔸 fetchAreas zone="$zone" count=${areas.length} properties=${properties.length} '
-        'occupied=${areas.where((a) => a.properties.isNotEmpty).length}');
     return areas;
   }
 

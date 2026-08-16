@@ -24,11 +24,12 @@ Future<List<PropertiesModel>> read_GC_properties(
 
     if (jsonRes != null && jsonRes['data'] is List) {
       final List list = jsonRes['data'];
-      // ✅ กรองรายการที่ parse ไม่ผ่านออก — บาง entry มี field ผิด type (เช่น payment_json เป็น object ไม่ใช่ string)
+      // ✅ กรองรายการที่ parse ไม่ผ่านออก — sanitize payment_json (Map → String) ก่อน
       final out = <PropertiesModel>[];
       for (final e in list) {
         try {
-          out.add(PropertiesModel.fromJson(e));
+          final cleaned = _sanitizeProperty(e);
+          out.add(PropertiesModel.fromJson(cleaned));
         } catch (parseErr) {
           print('⚠️ skip malformed property entry: $parseErr');
         }
@@ -42,6 +43,23 @@ Future<List<PropertiesModel>> read_GC_properties(
   }
 
   return [];
+}
+
+/// payment_json บาง entry API ส่งมาเป็น _JsonMap (object) บาง entry เป็น String/null
+/// PropertiesModel ประกาศเป็น String? → map เป็น String ด้วย jsonEncode ก่อน parse
+Map<String, dynamic> _sanitizeProperty(dynamic raw) {
+  if (raw is! Map) return <String, dynamic>{};
+  final out = Map<String, dynamic>.from(raw);
+  final nr = out['new_request'];
+  if (nr is Map) {
+    final nrMap = Map<String, dynamic>.from(nr);
+    final pj = nrMap['payment_json'];
+    if (pj is Map || pj is List) {
+      nrMap['payment_json'] = jsonEncode(pj);
+    }
+    out['new_request'] = nrMap;
+  }
+  return out;
 }
 
 // Future<List<PropertiesModel>> read_GC_properties(

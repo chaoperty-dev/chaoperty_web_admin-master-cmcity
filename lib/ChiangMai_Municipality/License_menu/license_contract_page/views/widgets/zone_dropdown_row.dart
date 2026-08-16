@@ -234,21 +234,6 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
           //   2) area.ser อยู่ใน occupiedAsers (จาก admin/requests/properties)
           final isOccupied = vm.isOccupied(area);
           final lncode = area.lncode ?? '-';
-          // 🔍 DEBUG: log ข้อมูลจริงของแต่ละ area
-          if (lncode.startsWith('TEST')) {
-            print('🔍 [dropdown] lncode=$lncode '
-                'ser=${area.ser} zser=${area.zser} '
-                'quantity=${area.quantity} ldate=${area.ldate} '
-                'cname=${area.cname} st=${area.st} '
-                'properties=${area.properties.length}');
-            if (area.properties.isNotEmpty) {
-              final fp = area.properties.first;
-              print('   └─ firstProp.newRequest?.aser=${fp.newRequest?.aser} '
-                  'reqStatus=${fp.newRequest?.requestStatus} '
-                  'reqStep=${fp.newRequest?.requestStep} '
-                  'ldate=${fp.newRequest?.ldate}');
-            }
-          }
           // ชื่อร้าน: API GC_areaAll ไม่ส่ง sname ของผู้เช่า
           // ต้องดึงจาก PropertiesModel.client.scname หรือ area.cname
           final hasRequest = area.properties.isNotEmpty;
