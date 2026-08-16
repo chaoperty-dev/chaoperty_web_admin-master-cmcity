@@ -145,12 +145,10 @@ class LicenseAttachTable extends StatelessWidget {
               palette: palette,
             ),
           ),
-          Expanded(
+          _CopyUuidCell(
+            fullValue: task.uuid,
+            display: _shortUuid(task.uuid),
             flex: 2,
-            child: _CopyUuidCell(
-              shortUuid: _shortUuid(task.uuid),
-              fullUuid: task.uuid,
-            ),
           ),
         ],
       ),
@@ -266,26 +264,37 @@ class _Cell extends StatelessWidget {
 }
 
 /// Copyable UUID cell — short uuid + persistent copy icon
-class _CopyUuidCell extends StatefulWidget {
-  final String shortUuid;
-  final String fullUuid;
-  const _CopyUuidCell({required this.shortUuid, required this.fullUuid});
+class _CopyUuidCell extends StatelessWidget {
+  final String fullValue;
+  final String display;
+  final int flex;
+  const _CopyUuidCell({
+    required this.fullValue,
+    required this.display,
+    this.flex = 2,
+  });
 
-  @override
-  State<_CopyUuidCell> createState() => _CopyUuidCellState();
-}
-
-class _CopyUuidCellState extends State<_CopyUuidCell> {
-  bool _hover = false;
-
-  Future<void> _copy() async {
-    if (widget.fullUuid.isEmpty) return;
-    await Clipboard.setData(ClipboardData(text: widget.fullUuid));
-    if (!mounted) return;
+  Future<void> _copy(BuildContext context) async {
+    if (fullValue.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: fullValue));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('คัดลอกรหัสรา�การแล้ว'),
-        duration: Duration(milliseconds: 1200),
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded,
+                size: 18, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'คัดลอกรหัสรายการแล้ว',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -293,36 +302,50 @@ class _CopyUuidCellState extends State<_CopyUuidCell> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 6),
-      child: MouseRegion(
-        onEnter: (_) => setState(() => _hover = true),
-        onExit: (_) => setState(() => _hover = false),
-        child: GestureDetector(
-          onTap: _copy,
-          child: Row(
-            children: [
-              Expanded(
-                child: AutoSizeText(
-                  widget.shortUuid,
-                  minFontSize: 11,
-                  maxFontSize: 14,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: LaText.tableCell.copyWith(
-                    color: LaColors.textSecondary,
-                    fontFamily: 'monospace',
-                    fontFamilyFallback: const [LaText.fontRegular],
-                  ),
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Tooltip(
+          message:
+              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: fullValue.isEmpty ? null : () => _copy(context),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: AutoSizeText(
+                        display.isEmpty ? '-' : display,
+                        minFontSize: 11,
+                        maxFontSize: 14,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LaText.tableCell.copyWith(
+                          color: LaColors.textSecondary,
+                          fontFamily: 'monospace',
+                          fontFamilyFallback: const [LaText.fontRegular],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.content_copy_rounded,
+                      size: 12,
+                      color: LaColors.textMuted,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 4),
-              Icon(
-                Icons.content_copy_rounded,
-                size: 12,
-                color: _hover ? LaColors.primary : LaColors.textMuted,
-              ),
-            ],
+            ),
           ),
         ),
       ),
