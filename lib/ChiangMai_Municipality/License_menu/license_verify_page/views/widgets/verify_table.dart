@@ -62,8 +62,7 @@ class VerifyTable extends StatelessWidget {
               task: vm.requests[i],
               onTap: () => vm.onViewRequest(vm.requests[i]),
             ),
-            if (i < vm.requests.length - 1)
-              const SizedBox(height: LaSpace.sm),
+            if (i < vm.requests.length - 1) const SizedBox(height: LaSpace.sm),
           ],
         ],
       );
@@ -107,7 +106,7 @@ class VerifyTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เลขที่สัญญา', flex: 2),
+          _HeaderCell(label: 'รายการ', flex: 2),
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
@@ -130,9 +129,8 @@ class VerifyTable extends StatelessWidget {
     VerifyTask task,
     int index,
   ) {
-    final moduleLabel = task.module.nameTh.isNotEmpty
-        ? task.module.nameTh
-        : task.module.code;
+    final moduleLabel =
+        task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
     final palette = StatusPalette.of(task.statusLabel);
     final customer = task.customer;
     return _HoverableRow(
@@ -143,8 +141,8 @@ class VerifyTable extends StatelessWidget {
           // Action
           SizedBox(
             width: 110,
-            child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(task))),
+            child:
+                Center(child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
           // เลขที่สัญญา (swap → module label)
           _Cell(value: moduleLabel, flex: 2),
@@ -345,8 +343,7 @@ class _CopyUuidCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -355,8 +352,7 @@ class _CopyUuidCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -670,9 +666,8 @@ class _VerifyListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final customer = task.customer;
     final palette = StatusPalette.of(task.statusLabel);
-    final leaseNo = task.module.nameTh.isNotEmpty
-        ? task.module.nameTh
-        : task.module.code;
+    final leaseNo =
+        task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
     final leaseLn = task.details.ln.isEmpty ? '-' : task.details.ln;
     final name = _maskName(customer?.cname ?? '');
     final phone = _maskPhone(formatPhoneNumber(customer?.tel ?? ''));
@@ -743,6 +738,7 @@ class _VerifyListCard extends StatelessWidget {
                 value: _shortUuid(task.uuid),
                 isMono: true,
                 muted: true,
+                uuidCopy: task.uuid,
               ),
               const SizedBox(height: LaSpace.sm),
               // ─── Row 3: ปุ่ม ───
@@ -805,16 +801,93 @@ class _CardRow extends StatelessWidget {
   final bool isMono;
   final bool muted;
   final int flexValue;
+  final String? uuidCopy;
   const _CardRow({
     required this.label,
     required this.value,
     this.isMono = false,
     this.muted = false,
     this.flexValue = 3,
+    this.uuidCopy,
   });
 
   @override
   Widget build(BuildContext context) {
+    Widget valueText = Text(
+      value.isEmpty ? '-' : value,
+      style: LaText.tableCell.copyWith(
+        color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+        fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+        fontFamilyFallback: const [LaText.fontRegular],
+        fontSize: 12,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final canCopy = uuidCopy != null && uuidCopy!.isNotEmpty;
+    if (canCopy) {
+      valueText = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: valueText),
+          const SizedBox(width: 4),
+          const Icon(Icons.content_copy_rounded,
+              size: 11, color: LaColors.textMuted),
+        ],
+      );
+    }
+
+    Widget valueChild = Expanded(
+      flex: flexValue,
+      child: valueText,
+    );
+
+    if (canCopy) {
+      valueChild = Expanded(
+        flex: flexValue,
+        child: Tooltip(
+          message: 'คลิกเพื่อคัดลอก: $uuidCopy',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: () async {
+                await Clipboard.setData(ClipboardData(text: uuidCopy!));
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline_rounded,
+                            size: 18, color: Colors.white),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'คัดลอกรหัสรายการแล้ว',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: valueText,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -830,20 +903,7 @@ class _CardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            flex: flexValue,
-            child: Text(
-              value.isEmpty ? '-' : value,
-              style: LaText.tableCell.copyWith(
-                color: muted ? LaColors.textSecondary : LaColors.textPrimary,
-                fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-                fontFamilyFallback: const [LaText.fontRegular],
-                fontSize: 12,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          valueChild,
         ],
       ),
     );

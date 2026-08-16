@@ -357,6 +357,7 @@ class _RequestCard extends StatelessWidget {
                 value: _shortUuid(model.uuid ?? ''),
                 isMono: true,
                 muted: true,
+                uuidCopy: model.uuid ?? '',
               ),
               const SizedBox(height: LrSpace.sm),
               // ─── Row 3: ปุ่ม ───
@@ -377,15 +378,88 @@ class _CardRow extends StatelessWidget {
   final String value;
   final bool isMono;
   final bool muted;
+  final String? uuidCopy;
   const _CardRow({
     required this.label,
     required this.value,
     this.isMono = false,
     this.muted = false,
+    this.uuidCopy,
   });
 
   @override
   Widget build(BuildContext context) {
+    Widget valueText = Text(
+      value.isEmpty ? '-' : value,
+      style: LrText.tableCell.copyWith(
+        color: muted ? LrColors.textSecondary : LrColors.textPrimary,
+        fontFamily: isMono ? 'monospace' : LrText.fontRegular,
+        fontFamilyFallback: const [LrText.fontRegular],
+        fontSize: 12,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final canCopy = uuidCopy != null && uuidCopy!.isNotEmpty;
+    if (canCopy) {
+      valueText = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: valueText),
+          const SizedBox(width: 4),
+          const Icon(Icons.content_copy_rounded,
+              size: 11, color: LrColors.textMuted),
+        ],
+      );
+    }
+
+    Widget valueChild = Expanded(child: valueText);
+
+    if (canCopy) {
+      valueChild = Expanded(
+        child: Tooltip(
+          message: 'คลิกเพื่อคัดลอก: $uuidCopy',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: () async {
+                await Clipboard.setData(ClipboardData(text: uuidCopy!));
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline_rounded,
+                            size: 18, color: Colors.white),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'คัดลอกรหัสรายการแล้ว',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: valueText,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
       child: Row(
@@ -401,19 +475,7 @@ class _CardRow extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              value.isEmpty ? '-' : value,
-              style: LrText.tableCell.copyWith(
-                color: muted ? LrColors.textSecondary : LrColors.textPrimary,
-                fontFamily: isMono ? 'monospace' : LrText.fontRegular,
-                fontFamilyFallback: const [LrText.fontRegular],
-                fontSize: 12,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
+          valueChild,
         ],
       ),
     );
