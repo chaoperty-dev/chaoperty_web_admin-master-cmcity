@@ -620,8 +620,8 @@ class _CopyUuidCell extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.content_copy_rounded,
-                      size: 12,
-                      color: LrColors.textMuted,
+                      size: 14,
+                      color: LrColors.primary,
                     ),
                   ],
                 ),
