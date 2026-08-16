@@ -209,13 +209,25 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
     final screenHeight = MediaQuery.of(context).size.height;
     final isDesktop = Responsive.isDesktop(context);
 
+    // หัก sidebar width (~240px) + margin ออก
+    // เพื่อให้ dialog อยู่ในกรอบ content area ไม่เลยไปทับแท็บเมนู
+    final sidebarWidth = isDesktop ? 240.0 : 0.0;
+    final dialogMaxWidth = isDesktop
+        ? (screenWidth - sidebarWidth - 32).clamp(640.0, 1100.0)
+        : 1100.0;
+
     return Dialog(
       backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: EdgeInsets.fromLTRB(
+        isDesktop ? sidebarWidth + 16 : 16,
+        16,
+        16,
+        16,
+      ),
       child: ConstrainedBox(
         constraints: BoxConstraints(
-          maxWidth: isDesktop ? screenWidth * 0.85 : 1100,
+          maxWidth: dialogMaxWidth,
           maxHeight: screenHeight * 0.85,
         ),
         child: Column(
@@ -226,8 +238,8 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
             const Divider(height: 1),
             Flexible(
               child: _currentPageTab == 1
-                  ? _buildSearchTab(isDesktop, screenWidth, screenHeight)
-                  : _buildAddNewTab(isDesktop, screenWidth, screenHeight),
+                  ? _buildSearchTab(isDesktop, dialogMaxWidth, screenHeight)
+                  : _buildAddNewTab(isDesktop, dialogMaxWidth, screenHeight),
             ),
           ],
         ),
@@ -343,7 +355,7 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
   }
 
   // ─── Tab 1: Search ───
-  Widget _buildSearchTab(bool isDesktop, double screenW, double screenH) {
+  Widget _buildSearchTab(bool isDesktop, double dialogMaxWidth, double screenH) {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -368,7 +380,7 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: SizedBox(
-                width: isDesktop ? screenW * 0.83 : 1000,
+                width: isDesktop ? dialogMaxWidth - 32 : 1000,
                 child: _buildTable(isDesktop),
               ),
             ),
@@ -403,7 +415,7 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
               decoration: InputDecoration(
                 isCollapsed: true,
                 border: InputBorder.none,
-                hintText: 'ค้นหา (ชื่อ, รหัส, เลขบัตร, เบอร์โทร...)',
+                hintText: 'ค้นหา (ชื่อ, รหัส, เลขบัตร...)',
                 hintStyle: LcText.caption.copyWith(
                   fontFamily: LcText.fontRegular,
                   color: LcColors.textMuted,
@@ -538,8 +550,6 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
           _TableCell(label: 'ชื่อร้าน', flex: 2, isHeader: true),
           _TableCell(
               label: 'เลขบัตร', width: 120, isHeader: true, isMono: true),
-          _TableCell(
-              label: 'เบอร์โทร', width: 110, isHeader: true, isMono: true),
           _TableCell(label: 'ที่อยู่', flex: 3, isHeader: true),
           _TableCell(
               label: 'เลือก',
@@ -579,7 +589,6 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
               _TableCell(label: m.cname ?? '-', flex: 2),
               _TableCell(label: m.scname ?? '-', flex: 2),
               _TableCell(label: m.tax ?? '-', width: 120, isMono: true),
-              _TableCell(label: m.tel ?? '-', width: 110, isMono: true),
               _TableCell(label: m.addr1 ?? '-', flex: 3, muted: true),
               SizedBox(
                 width: 80,
@@ -611,7 +620,7 @@ class _CustomerPickerDialogState extends State<CustomerPickerDialog> {
   }
 
   // ─── Tab 2: Add new ───
-  Widget _buildAddNewTab(bool isDesktop, double screenW, double screenH) {
+  Widget _buildAddNewTab(bool isDesktop, double dialogMaxWidth, double screenH) {
     return SizedBox(
       width: double.infinity,
       height: screenH * 0.65,
