@@ -150,7 +150,8 @@ class LicenseContractService {
     final areas = rawAreas.map((e) => AreaModel.fromJson(e)).toList();
 
     // 2) โหลด PropertiesModel (มี aser ที่ join กับ area.ser)
-    final propsKey = 'license_contract_properties_${ren}_$zone';
+    // key bump v3 — entry เก่า payment_json เป็น _JsonMap โดน skip → ทิ้ง cache เก่า
+    final propsKey = 'license_contract_properties_v3_${ren}_$zone';
     List<PropertiesModel> properties;
     if (_cache.isValid(propsKey)) {
       final cached = _cache.get(propsKey);
