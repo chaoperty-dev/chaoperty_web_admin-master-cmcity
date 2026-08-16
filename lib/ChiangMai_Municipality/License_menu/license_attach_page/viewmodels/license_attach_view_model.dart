@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
-import '../../../Model/Review_Model.dart';
+import '../models/attach_task_model.dart';
 import '../models/license_attach_config.dart';
 import '../models/license_attach_event.dart';
 import '../services/license_attach_service.dart';
@@ -37,8 +37,8 @@ class LicenseAttachViewModel extends ChangeNotifier {
   Stream<LicenseAttachEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
-  List<ReviewModel> _requests = [];
-  List<ReviewModel> get requests => _requests;
+  List<AttachTask> _requests = [];
+  List<AttachTask> get requests => _requests;
 
   // ---------- Pagination ----------
   int _currentPage = 0;
@@ -59,6 +59,33 @@ class LicenseAttachViewModel extends ChangeNotifier {
 
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
+
+  // ---------- v2 filter state ----------
+  String _searchCustomer = '';
+  List<String> _statuses = const [];
+  bool _includeDone = true;
+
+  bool get includeDone => _includeDone;
+  List<String> get statuses => List.unmodifiable(_statuses);
+
+  void setCustomerSearch(String value) {
+    _searchCustomer = value;
+    notifyListeners();
+  }
+
+  void toggleStatus(String s) {
+    _statuses = _statuses.contains(s)
+        ? _statuses.where((x) => x != s).toList()
+        : [..._statuses, s];
+    notifyListeners();
+    refresh();
+  }
+
+  void setIncludeDone(bool v) {
+    _includeDone = v;
+    notifyListeners();
+    refresh();
+  }
 
   // ---------- Zones ----------
   List<ZoneModel> _zoneModels = [];
@@ -184,15 +211,14 @@ class LicenseAttachViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
-        query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        // ถ้าเลือก "ทั้งหมด" (ser=0) ให้ส่ง null — ไม่ filter
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+      final res = await _service.listAttachTasks(
+        q: _searchQuery.isNotEmpty ? _searchQuery : null,
+        customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
+        statuses: _statuses.isEmpty ? null : _statuses,
+        includeDone: _includeDone,
+        perPage: 50,
+        // v2 endpoint ไม่มี zn param — เก็บ _selectedZone ไว้
+        // �ำหรับ UI เฉยๆ รอ backend เพิ่มทีหลัง
       );
       _requests = res.data;
       _currentPage = res.currentPage;
@@ -211,15 +237,13 @@ class LicenseAttachViewModel extends ChangeNotifier {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
+      final res = await _service.listAttachTasks(
         urlCustom: url,
-        query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+        q: _searchQuery.isNotEmpty ? _searchQuery : null,
+        customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
+        statuses: _statuses.isEmpty ? null : _statuses,
+        includeDone: _includeDone,
+        perPage: 50,
       );
       _requests = res.data;
       _currentPage = res.currentPage;
@@ -249,12 +273,9 @@ class LicenseAttachViewModel extends ChangeNotifier {
   /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
 
   /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
-  void onViewRequest(ReviewModel model) {
-    final uuid = model.newRequest?.requestUuid?.toString() ??
-        model.uuid?.toString() ??
-        '';
+  void onViewRequest(AttachTask task) {
     _eventController.add(
-      LicenseAttachNavigateEvent('แนบหลักฐาน', routeData: uuid),
+      LicenseAttachNavigateEvent('แนบหลักฐาน', routeData: task.uuid),
     );
   }
 
