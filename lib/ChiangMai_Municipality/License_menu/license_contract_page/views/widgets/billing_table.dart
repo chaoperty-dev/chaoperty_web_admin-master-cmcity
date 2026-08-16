@@ -743,11 +743,6 @@ class _AddRowDialogState extends State<_AddRowDialog> {
                   children: vm.groupedAutoExps.map((entry) {
                     final type = entry.key;
                     final items = entry.value;
-                    final matchedRows = vm.rows
-                        .asMap()
-                        .entries
-                        .where((e) => e.value.exptser == type.ser)
-                        .toList();
 
                     return Container(
                       margin: const EdgeInsets.only(bottom: LcSpace.md),
@@ -779,21 +774,6 @@ class _AddRowDialogState extends State<_AddRowDialog> {
                                   child: Text(
                                     'ประเภท : ${type.bills ?? 'ไม่ทราบประเภท'}',
                                     style: LcText.h2.copyWith(fontSize: 14),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: LcColors.primaryLight,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    '${matchedRows.length} รายการ',
-                                    style: LcText.caption.copyWith(
-                                      color: LcColors.primaryDark,
-                                      fontWeight: FontWeight.w700,
-                                    ),
                                   ),
                                 ),
                               ],
@@ -835,65 +815,6 @@ class _AddRowDialogState extends State<_AddRowDialog> {
                               },
                             ),
                           ),
-
-                          // ─── Mini table (hidden — comment out per request) ───
-                          // if (matchedRows.isNotEmpty)
-                          //   Container(
-                          //     decoration: const BoxDecoration(
-                          //       border: Border(
-                          //         top: BorderSide(color: LcColors.border),
-                          //       ),
-                          //     ),
-                          //     child: SingleChildScrollView(
-                          //       scrollDirection: Axis.horizontal,
-                          //       child: DataTable(
-                          //         columnSpacing: 18,
-                          //         headingRowHeight: 36,
-                          //         dataRowMinHeight: 40,
-                          //         dataRowMaxHeight: 52,
-                          //         headingRowColor:
-                          //             MaterialStateColor.resolveWith(
-                          //                 (states) => LcColors.surfaceMuted),
-                          //         headingTextStyle: LcText.tableHeader,
-                          //         dataTextStyle: LcText.tableCell,
-                          //         columns: const [
-                          //           DataColumn(label: Text('ประเภท')),
-                          //           DataColumn(label: Text('ความถี่')),
-                          //           DataColumn(label: Text('งวด')),
-                          //           DataColumn(label: Text('ราคา')),
-                          //           DataColumn(label: Text('ยอดสุทธิ')),
-                          //           DataColumn(label: Text('')),
-                          //         ],
-                          //         rows: matchedRows.map((entry) {
-                          //           final i = entry.key;
-                          //           final row = entry.value;
-                          //           return DataRow(cells: [
-                          //             DataCell(Text(row.expname ?? '-')),
-                          //             DataCell(Text(row.unit ?? '-')),
-                          //             DataCell(Text(row.term ?? '0')),
-                          //             DataCell(Text(row.amt ?? '0')),
-                          //             DataCell(Text(
-                          //               row.total ?? '0.00',
-                          //               style: LcText.tableCell.copyWith(
-                          //                 fontWeight: FontWeight.w700,
-                          //                 color: LcColors.primaryDark,
-                          //               ),
-                          //             )),
-                          //             DataCell(IconButton(
-                          //               icon: const Icon(Icons.delete_outline,
-                          //                   color: LcColors.danger, size: 18),
-                          //               onPressed: () {
-                          //                 setState(() {
-                          //                   vm.removeRow(i);
-                          //                 });
-                          //                 widget.onAdd();
-                          //               },
-                          //             )),
-                          //           ]);
-                          //         }).toList(),
-                          //       ),
-                          //     ),
-                          //   ),
                         ],
                       ),
                     );
