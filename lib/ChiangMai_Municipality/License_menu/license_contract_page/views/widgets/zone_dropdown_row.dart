@@ -45,29 +45,48 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
     return Container(
       padding: const EdgeInsets.all(LcSpace.md),
       decoration: LcDecor.card(),
-      child: Column(
-        children: [
-          // Row 1: sub-zone + zone
-          Row(
+      child: LayoutBuilder(
+        builder: (context, c) {
+          // จอแคบ (<700px) → stack ทุก field เป็นแนวตั้ง
+          if (c.maxWidth < 700) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _subZoneField(context, vm),
+                const SizedBox(height: LcSpace.md),
+                _zoneField(context, vm),
+                const SizedBox(height: LcSpace.md),
+                _propertyField(context, vm),
+                const SizedBox(height: LcSpace.md),
+                _searchFromRegistry(enabled: canSearchRegistry),
+              ],
+            );
+          }
+          return Column(
             children: [
-              Expanded(child: _subZoneField(context, vm)),
-              const SizedBox(width: LcSpace.md),
-              Expanded(child: _zoneField(context, vm)),
-            ],
-          ),
-          const SizedBox(height: LcSpace.md),
-          // Row 2: property + search from registry
-          Row(
-            children: [
-              Expanded(flex: 3, child: _propertyField(context, vm)),
-              const SizedBox(width: LcSpace.md),
-              Expanded(
-                flex: 2,
-                child: _searchFromRegistry(enabled: canSearchRegistry),
+              // Row 1: sub-zone + zone
+              Row(
+                children: [
+                  Expanded(child: _subZoneField(context, vm)),
+                  const SizedBox(width: LcSpace.md),
+                  Expanded(child: _zoneField(context, vm)),
+                ],
+              ),
+              const SizedBox(height: LcSpace.md),
+              // Row 2: property + search from registry
+              Row(
+                children: [
+                  Expanded(flex: 3, child: _propertyField(context, vm)),
+                  const SizedBox(width: LcSpace.md),
+                  Expanded(
+                    flex: 2,
+                    child: _searchFromRegistry(enabled: canSearchRegistry),
+                  ),
+                ],
               ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -204,6 +223,8 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedLn,
         items: vm.filteredAreas.map((area) {
@@ -252,6 +273,9 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
             }
           } else if (isOccupied) {
             subLabel = 'มีผู้เช่าแล้ว';
+          } else {
+            // ล็อกว่าง → บอกสถานะ "ว่าง" ให้ชัดเจน (เหมือน area_menu_box_card)
+            subLabel = 'ว่าง';
           }
 
           return DropdownMenuItem<String>(
@@ -330,6 +354,8 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
         style: LcText.input.copyWith(color: LcColors.textMuted),
         maxFontSize: 14,
         minFontSize: 11,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
       );
 }
 
