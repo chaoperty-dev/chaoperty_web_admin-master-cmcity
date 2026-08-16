@@ -501,7 +501,17 @@ class _PropertyDropRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final dotColor = occupied ? LcColors.textMuted : LcColors.primary;
     final mainColor = occupied ? LcColors.textMuted : LcColors.textPrimary;
-    final subColor = occupied ? LcColors.textMuted : LcColors.textSecondary;
+    // กำหนดสี pill ตาม status เพื่อให้เห็นชัดเจน (เหมือน area_menu_box_card)
+    final pillBg = subLabel == 'ว่าง'
+        ? const Color(0xFFE8F5E9) // เขียวอ่อน — ว่าง
+        : (subLabel == 'มีผู้เช่าแล้ว' || occupied)
+            ? const Color(0xFFFFEBEE) // แดงอ่อน — มีผู้เช่า
+            : LcColors.surfaceMuted; // เทา — กำลังดำเนินการ / อื่นๆ
+    final pillFg = subLabel == 'ว่าง'
+        ? const Color(0xFF2E7D32)
+        : (subLabel == 'มีผู้เช่าแล้ว' || occupied)
+            ? const Color(0xFFC62828)
+            : LcColors.textSecondary;
     return Row(
       children: [
         // dot indicator
@@ -533,18 +543,26 @@ class _PropertyDropRow extends StatelessWidget {
               ),
               if (subLabel != null && subLabel!.isNotEmpty)
                 Padding(
-                  padding: const EdgeInsets.only(top: 1),
-                  child: AutoSizeText(
-                    subLabel!,
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: subColor,
-                      fontWeight: FontWeight.w500,
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: pillBg,
+                      borderRadius: BorderRadius.circular(LcRadius.pill),
                     ),
-                    maxFontSize: 11,
-                    minFontSize: 9,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    child: AutoSizeText(
+                      subLabel!,
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: pillFg,
+                        fontWeight: FontWeight.w700,
+                      ),
+                      maxFontSize: 11,
+                      minFontSize: 9,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
             ],
