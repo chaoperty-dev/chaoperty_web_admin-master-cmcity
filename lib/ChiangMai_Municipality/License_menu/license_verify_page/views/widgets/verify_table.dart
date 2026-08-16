@@ -10,14 +10,22 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
 import '../../../../unity/FormatPhone.dart';
-import '../../../../Model/Review_Model.dart';
+import '../../models/verify_task_model.dart';
 import '../theme/license_verify_theme.dart';
 import '../../viewmodels/license_verify_view_model.dart';
+
+/// Breakpoint สำหรับหน้า list — ตาราง 10 คอลัมน์ต้องการ ≥900px ถึงจะอ่านได้
+/// (< 900px = โทรศัพท์/แท็บเล็ตแนวตั้ง → ใช้ card layout แทน)
+const double kVerifyListMobileBreakpoint = 900;
+
+bool _isListMobile(BuildContext context) =>
+    MediaQuery.of(context).size.width < kVerifyListMobileBreakpoint;
 
 class VerifyTable extends StatelessWidget {
   const VerifyTable({super.key});
@@ -38,6 +46,30 @@ class VerifyTable extends StatelessWidget {
       );
     }
 
+    // ─── Mobile (card layout) ───
+    if (_isListMobile(context)) {
+      return Column(
+        children: [
+          if (vm.isLoading)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: LaColors.surfaceMuted,
+              valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+            ),
+          for (int i = 0; i < vm.requests.length; i++) ...[
+            _VerifyListCard(
+              index: i,
+              task: vm.requests[i],
+              onTap: () => vm.onViewRequest(vm.requests[i]),
+            ),
+            if (i < vm.requests.length - 1)
+              const SizedBox(height: LaSpace.sm),
+          ],
+        ],
+      );
+    }
+
+    // ─── Desktop (table) ───
     return Container(
       decoration: LaDecor.card(),
       child: Column(
@@ -95,51 +127,61 @@ class VerifyTable extends StatelessWidget {
   Widget _dataRow(
     BuildContext context,
     LicenseVerifyViewModel vm,
-    ReviewModel model,
+    VerifyTask task,
     int index,
   ) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status);
+    final moduleLabel = task.module.nameTh.isNotEmpty
+        ? task.module.nameTh
+        : task.module.code;
+    final palette = StatusPalette.of(task.statusLabel);
+    final customer = task.customer;
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(model),
+      onTap: () => vm.onViewRequest(task),
       child: Row(
         children: [
           // Action
           SizedBox(
             width: 110,
             child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(model))),
+                child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
-          _Cell(value: nr?.leaseNumber ?? '-', flex: 2),
-          _Cell(value: nr?.subzone ?? '', flex: 2),
-          _Cell(value: nr?.zn ?? '', flex: 2),
-          _Cell(value: nr?.ln ?? '', flex: 2, isMono: true),
+          // เลขที่สัญญา (no swap → ln)
           _Cell(
-              value: _maskName(model.client?.cname ?? ''),
-              tooltip: model.client?.cname,
+              value: task.details.ln.isEmpty ? '-' : task.details.ln,
+              flex: 2,
+              isMono: true),
+          _Cell(value: task.details.subzone, flex: 2),
+          _Cell(value: task.details.zn, flex: 2),
+          // รหัสพื้นที่ (no swap → module label)
+          _Cell(value: moduleLabel, flex: 2),
+          _Cell(
+              value: _maskName(customer?.cname ?? ''),
+              tooltip: customer?.cname ?? '',
               flex: 3),
           _Cell(
-              value: _maskPhone(formatPhoneNumber(model.client?.tel ?? "")),
-              tooltip: formatPhoneNumber(model.client?.tel ?? ""),
+              value: _maskPhone(formatPhoneNumber(customer?.tel ?? '')),
+              tooltip: formatPhoneNumber(customer?.tel ?? ''),
               flex: 2,
               isMono: true),
           _Cell(
-              value: formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
+              value: formatDate(
+                  task.submittedAt.isEmpty ? task.createdAt : task.submittedAt,
+                  type: DateFormatType.dmy),
               flex: 2,
               isMono: true),
           Expanded(
             flex: 2,
             child: _StatusPill(
-              label: model.statusLabel ?? model.status ?? '-',
+              label: task.statusLabel,
               palette: palette,
             ),
           ),
-          _Cell(
-              value: _shortUuid(model.uuid ?? ''),
-              flex: 2,
-              isMono: true,
-              muted: true),
+          _CopyUuidCell(
+            fullValue: task.uuid,
+            display: _shortUuid(task.uuid),
+            flex: 2,
+          ),
         ],
       ),
     );
@@ -251,6 +293,96 @@ class _Cell extends StatelessWidget {
               color: muted ? LaColors.textSecondary : LaColors.textPrimary,
               fontFamily: isMono ? 'monospace' : LaText.fontRegular,
               fontFamilyFallback: const [LaText.fontRegular],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Copyable UUID cell — short uuid + persistent copy icon
+class _CopyUuidCell extends StatelessWidget {
+  final String fullValue;
+  final String display;
+  final int flex;
+  const _CopyUuidCell({
+    required this.fullValue,
+    required this.display,
+    this.flex = 2,
+  });
+
+  Future<void> _copy(BuildContext context) async {
+    if (fullValue.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: fullValue));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded,
+                size: 18, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'คัดลอกรหัสรายการแล้ว',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Tooltip(
+          message:
+              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: fullValue.isEmpty ? null : () => _copy(context),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: AutoSizeText(
+                        display.isEmpty ? '-' : display,
+                        minFontSize: 11,
+                        maxFontSize: 14,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LaText.tableCell.copyWith(
+                          color: LaColors.textSecondary,
+                          fontFamily: 'monospace',
+                          fontFamilyFallback: const [LaText.fontRegular],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.content_copy_rounded,
+                      size: 12,
+                      color: LaColors.textMuted,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -508,6 +640,212 @@ class _LoadingState extends StatelessWidget {
           ),
           SizedBox(height: 12),
           Text('กำลังโหลดข้อมูล...', style: LaText.bodyMuted),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Card layout — ใช้บน mobile/tablet แนวตั้ง (< 900px)
+// ============================================================================
+
+class _VerifyListCard extends StatelessWidget {
+  final int index;
+  final VerifyTask task;
+  final VoidCallback onTap;
+  const _VerifyListCard({
+    required this.index,
+    required this.task,
+    required this.onTap,
+  });
+
+  String _shortUuid(String uuid) {
+    if (uuid.isEmpty) return '-';
+    if (uuid.length <= 12) return uuid;
+    return '${uuid.substring(0, 8)}…';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final customer = task.customer;
+    final palette = StatusPalette.of(task.statusLabel);
+    final leaseNo = task.details.ln.isEmpty ? '-' : task.details.ln;
+    final name = _maskName(customer?.cname ?? '');
+    final phone = _maskPhone(formatPhoneNumber(customer?.tel ?? ''));
+    final endDate = formatDate(
+        task.submittedAt.isEmpty ? task.createdAt : task.submittedAt,
+        type: DateFormatType.dmy);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(LaRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(LaSpace.md),
+          decoration: LaDecor.card(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Row 1: เลขที่สัญญา + status pill ───
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: LaColors.primaryLight,
+                      borderRadius: BorderRadius.circular(LaRadius.pill),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: LaText.tableCell.copyWith(
+                        color: LaColors.primaryDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  Expanded(
+                    child: Text(
+                      leaseNo,
+                      style: LaText.tableCell.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  _StatusPill(
+                    label: task.statusLabel,
+                    palette: palette,
+                  ),
+                ],
+              ),
+              const Divider(height: LaSpace.lg, color: LaColors.border),
+              // ─── Row 2: รายละเอียด (label/value grid) ───
+              _CardRow(label: 'ชื่อผู้ติดต่อ', value: name, flexValue: 2),
+              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
+              if (task.details.subzone.isNotEmpty)
+                _CardRow(label: 'บริเวณ', value: task.details.subzone),
+              if (task.details.zn.isNotEmpty)
+                _CardRow(label: 'โซนพื้นที่', value: task.details.zn),
+              _CardRow(
+                label: 'รหัสพื้นที่',
+                value: task.module.nameTh.isNotEmpty
+                    ? task.module.nameTh
+                    : task.module.code,
+              ),
+              _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
+              _CardRow(
+                label: 'รหัสรายการ',
+                value: _shortUuid(task.uuid),
+                isMono: true,
+                muted: true,
+              ),
+              const SizedBox(height: LaSpace.sm),
+              // ─── Row 3: ปุ่ม ───
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ViewButton(onTap: onTap),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล (เหมือนตาราง)
+  String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty || name == '-') return '-';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '-';
+
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
+  }
+
+  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย
+  String _maskPhone(String raw) {
+    if (raw.isEmpty || raw == '-') return '-';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 3) return raw;
+
+    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+
+    if (digits.length == 10) {
+      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+    }
+    if (digits.length == 9) {
+      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+    }
+    return maskedDigits;
+  }
+}
+
+class _CardRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isMono;
+  final bool muted;
+  final int flexValue;
+  const _CardRow({
+    required this.label,
+    required this.value,
+    this.isMono = false,
+    this.muted = false,
+    this.flexValue = 3,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: LaText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            flex: flexValue,
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: LaText.tableCell.copyWith(
+                color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+                fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+                fontFamilyFallback: const [LaText.fontRegular],
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

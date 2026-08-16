@@ -16,6 +16,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../unity/API_requests_reviews.dart';
 import '../../../unity/API_approvals_lastaction.dart';
+import '../models/verify_task_model.dart';
 
 class LicenseVerifyService {
   LicenseVerifyService({ApiCache? cache})
@@ -23,10 +24,8 @@ class LicenseVerifyService {
 
   final ApiCache _cache;
 
-  // ---------- Requests ----------
-  /// โหลดรายการ "คำขอต่อสัญญา" (ser=0 / level=1)
-  /// [zn] = filter โซน (null = ทั้งหมด)
-  /// [searchField] = field ที่จะใช้ filter (เช่น 'scname', 'uuid', 'tel')
+  // ---------- Legacy v1 fallback ----------
+  /// โหลดรายการ "คำขอต่อสัญญา" (ser=0 / level=1) — v1 fallback
   Future<ReviewResponse> fetchRequests({
     String? urlCustom,
     String query = '',
@@ -54,7 +53,6 @@ class LicenseVerifyService {
     );
   }
 
-  /// Title ตาม search field ที่เลือก (สำหรับ fild)
   String _fieldTitle(String field) {
     switch (field) {
       case 'uuid':
@@ -66,6 +64,177 @@ class LicenseVerifyService {
       case 'scname':
       default:
         return 'ชื่อผู้ติดต่อ';
+    }
+  }
+
+  // ---------- v2 VerifyTasks list ----------
+  /// สร้าง URL สำหรับ v2 API (`/api/v2/...`) — strip `/v1` ออกจาก domain_v1
+  Uri _uriV2(String path) {
+    final base = MyConstant().domain_v1;
+    final apiRoot = base.replaceFirst(RegExp(r'/v1/?$'), '');
+    return Uri.parse('$apiRoot/$path');
+  }
+
+  /// truncate string เพื่อไม่ให้ print() ล้น buffer
+  static String _truncate(String s, int maxLen) {
+    if (s.length <= maxLen) return s;
+    return '${s.substring(0, maxLen)}...[truncated ${s.length - maxLen}b]';
+  }
+
+  /// รวม `status[]` query params ที่ต้องส่งซ้ำหลาย key
+  String _statusArrayQs(List<String>? statuses) {
+    if (statuses == null || statuses.isEmpty) return '';
+    return statuses.map(Uri.encodeQueryComponent).join('&status[]=');
+  }
+
+  /// โหลด "คำขอต่อสัญญา" (ตรวจสอบ) จาก v2 endpoint (Laravel paginated)
+  Future<VerifyTasksResponse> listVerifyTasks({
+    String? urlCustom,
+    String? q,
+    String? customer,
+    List<String>? statuses,
+    int? moduleId,
+    String? announcementUuid,
+    String? createdFrom,
+    String? createdTo,
+    String? submittedFrom,
+    String? submittedTo,
+    bool? reviewAttachmentsAllDone,
+    bool? inspectionPassed,
+    bool? paymentAllDone,
+    bool includeDone = true,
+    int perPage = 50,
+  }) async {
+    print('============================================================');
+    print('[listVerifyTasks] urlCustom=$urlCustom q=$q customer=$customer');
+    print('============================================================');
+
+    try {
+      final headers = await MyHeaders.build();
+
+      Uri uri;
+      if (urlCustom != null && urlCustom.isNotEmpty) {
+        final parsed = Uri.parse(urlCustom);
+        final merged = Map<String, String>.from(parsed.queryParameters);
+        if (q != null && q.isNotEmpty) merged['q'] = q;
+        if (customer != null && customer.isNotEmpty) merged['customer'] = customer;
+        if (moduleId != null) merged['module_id'] = '$moduleId';
+        if (announcementUuid != null && announcementUuid.isNotEmpty) {
+          merged['announcement_uuid'] = announcementUuid;
+        }
+        if (createdFrom != null && createdFrom.isNotEmpty) {
+          merged['created_from'] = createdFrom;
+        }
+        if (createdTo != null && createdTo.isNotEmpty) {
+          merged['created_to'] = createdTo;
+        }
+        if (submittedFrom != null && submittedFrom.isNotEmpty) {
+          merged['submitted_from'] = submittedFrom;
+        }
+        if (submittedTo != null && submittedTo.isNotEmpty) {
+          merged['submitted_to'] = submittedTo;
+        }
+        if (reviewAttachmentsAllDone != null) {
+          merged['review_attachments_all_done'] =
+              reviewAttachmentsAllDone ? 'true' : 'false';
+        }
+        if (inspectionPassed != null) {
+          merged['inspection_passed'] = inspectionPassed ? 'true' : 'false';
+        }
+        if (paymentAllDone != null) {
+          merged['payment_all_done'] = paymentAllDone ? 'true' : 'false';
+        }
+        merged['include_done'] = includeDone ? '1' : '0';
+        merged['per_page'] = '$perPage';
+
+        final baseStr = parsed.replace(queryParameters: merged).toString();
+        final sQs = _statusArrayQs(statuses);
+        uri = sQs.isEmpty
+            ? Uri.parse(baseStr)
+            : Uri.parse('$baseStr&status[]=$sQs');
+      } else {
+        final params = <String, String>{
+          if (q != null && q.isNotEmpty) 'q': q,
+          if (customer != null && customer.isNotEmpty) 'customer': customer,
+          if (moduleId != null) 'module_id': '$moduleId',
+          if (announcementUuid != null && announcementUuid.isNotEmpty)
+            'announcement_uuid': announcementUuid,
+          if (createdFrom != null && createdFrom.isNotEmpty)
+            'created_from': createdFrom,
+          if (createdTo != null && createdTo.isNotEmpty)
+            'created_to': createdTo,
+          if (submittedFrom != null && submittedFrom.isNotEmpty)
+            'submitted_from': submittedFrom,
+          if (submittedTo != null && submittedTo.isNotEmpty)
+            'submitted_to': submittedTo,
+          if (reviewAttachmentsAllDone != null)
+            'review_attachments_all_done':
+                reviewAttachmentsAllDone ? 'true' : 'false',
+          if (inspectionPassed != null)
+            'inspection_passed': inspectionPassed ? 'true' : 'false',
+          if (paymentAllDone != null)
+            'payment_all_done': paymentAllDone ? 'true' : 'false',
+          'include_done': includeDone ? '1' : '0',
+          'per_page': '$perPage',
+        };
+        final base = _uriV2('v2/admin/requests/tasks/inspections');
+        final baseStr = base.replace(queryParameters: params).toString();
+        final sQs = _statusArrayQs(statuses);
+        uri = sQs.isEmpty
+            ? Uri.parse(baseStr)
+            : Uri.parse('$baseStr&status[]=$sQs');
+      }
+
+      print('[listVerifyTasks] URL = $uri');
+
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+      print('[listVerifyTasks] status=${res.statusCode}');
+
+      if (res.statusCode != 200) {
+        print('[listVerifyTasks][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception('โหลดรายการไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      final body = json.decode(res.body) as Map<String, dynamic>;
+      final dataRaw = body['data'];
+      final data = dataRaw is List
+          ? dataRaw
+              .whereType<Map<String, dynamic>>()
+              .map(VerifyTask.fromJson)
+              .toList()
+          : <VerifyTask>[];
+
+      final meta = body['meta'] is Map
+          ? Map<String, dynamic>.from(body['meta'] as Map)
+          : <String, dynamic>{};
+      final links = body['links'] is Map
+          ? Map<String, dynamic>.from(body['links'] as Map)
+          : <String, dynamic>{};
+
+      return VerifyTasksResponse(
+        data: data,
+        currentPage: int.tryParse('${meta['current_page'] ?? 1}') ?? 1,
+        lastPage: int.tryParse('${meta['last_page'] ?? 1}') ?? 1,
+        perPage: int.tryParse('${meta['per_page'] ?? perPage}') ?? perPage,
+        total: int.tryParse('${meta['total'] ?? data.length}') ?? data.length,
+        linksFirst: (links['first'] ?? '').toString().isEmpty
+            ? null
+            : links['first'].toString(),
+        linksLast: (links['last'] ?? '').toString().isEmpty
+            ? null
+            : links['last'].toString(),
+        linksPrev: (links['prev'] ?? '').toString().isEmpty
+            ? null
+            : links['prev'].toString(),
+        linksNext: (links['next'] ?? '').toString().isEmpty
+            ? null
+            : links['next'].toString(),
+      );
+    } catch (e) {
+      print('[listVerifyTasks][ERROR] $e');
+      rethrow;
     }
   }
 

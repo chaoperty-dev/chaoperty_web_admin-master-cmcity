@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
-import '../../../Model/Review_Model.dart';
+import '../models/verify_task_model.dart';
 import '../models/license_verify_config.dart';
 import '../models/license_verify_event.dart';
 import '../services/license_verify_service.dart';
@@ -37,8 +37,8 @@ class LicenseVerifyViewModel extends ChangeNotifier {
   Stream<LicenseVerifyEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
-  List<ReviewModel> _requests = [];
-  List<ReviewModel> get requests => _requests;
+  List<VerifyTask> _requests = [];
+  List<VerifyTask> get requests => _requests;
 
   // ---------- Pagination ----------
   int _currentPage = 0;
@@ -159,40 +159,15 @@ class LicenseVerifyViewModel extends ChangeNotifier {
   // ===============================================================
   // Service calls
   // ===============================================================
-  /// Auto-detect search field ตามค่าที่ผู้ใช้พิมพ์
-  /// - UUID  → 'uuid'
-  /// - ตัวเลข → 'tel' (เบอร์โทร)
-  /// - อื่นๆ → 'scname' (ชื่อผู้ติดต่อ)
-  String _autoSearchField(String value) {
-    final v = value.trim();
-    if (v.isEmpty) return 'scname';
-
-    // UUID pattern (8-4-4-4-12 hex)
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    if (uuidRegex.hasMatch(v)) return 'uuid';
-
-    // ตัวเลข 9-10 หลัก → น่าจะเป็นเบอร์โทร
-    final phoneRegex = RegExp(r'^[0-9]{8,12}$');
-    if (phoneRegex.hasMatch(v.replaceAll(RegExp(r'[\s\-]'), ''))) return 'tel';
-
-    return 'scname';
-  }
-
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
-        query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        // ถ้าเลือก "ทั้งหมด" (ser=0) ให้ส่ง null — ไม่ filter
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+      final res = await _service.listVerifyTasks(
+        q: _searchQuery.isNotEmpty ? _searchQuery : null,
+        includeDone: true,
+        perPage: 50,
+        // v2 endpoint ไม่มี zn param — เก็บ _selectedZone ไว้
+        // สำหรับ UI เฉยๆ รอ backend เพิ่มทีหลัง
       );
       _requests = res.data;
       _currentPage = res.currentPage;
@@ -211,15 +186,11 @@ class LicenseVerifyViewModel extends ChangeNotifier {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
+      final res = await _service.listVerifyTasks(
         urlCustom: url,
-        query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+        q: _searchQuery.isNotEmpty ? _searchQuery : null,
+        includeDone: true,
+        perPage: 50,
       );
       _requests = res.data;
       _currentPage = res.currentPage;
@@ -249,12 +220,9 @@ class LicenseVerifyViewModel extends ChangeNotifier {
   /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
 
   /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
-  void onViewRequest(ReviewModel model) {
-    final uuid = model.newRequest?.requestUuid?.toString() ??
-        model.uuid?.toString() ??
-        '';
+  void onViewRequest(VerifyTask task) {
     _eventController.add(
-      LicenseVerifyNavigateEvent('ตรวจสอบหลักฐาน', routeData: uuid),
+      LicenseVerifyNavigateEvent('ตรวจสอบหลักฐาน', routeData: task.uuid),
     );
   }
 
