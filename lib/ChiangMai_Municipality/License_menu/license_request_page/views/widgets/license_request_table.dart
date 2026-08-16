@@ -19,6 +19,12 @@ import '../../../../Model/Review_Model.dart';
 import '../theme/license_request_theme.dart';
 import '../../viewmodels/license_request_view_model.dart';
 
+/// Breakpoint: < 900px = โทรศัพท์/แท็บเล็ต → ใช้ card layout
+const double kLicenseMenuMobileBreakpoint = 900;
+
+bool _isLicenseListMobile(BuildContext context) =>
+    MediaQuery.of(context).size.width < kLicenseMenuMobileBreakpoint;
+
 class LicenseRequestTable extends StatelessWidget {
   const LicenseRequestTable({super.key});
 
@@ -35,6 +41,28 @@ class LicenseRequestTable extends StatelessWidget {
             (vm.selectedZoneSub != null && vm.selectedZoneSub != 'ทั้งหมด') ||
             (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด'),
         onClear: vm.refresh,
+      );
+    }
+
+    // ─── Mobile (card layout) ───
+    if (_isLicenseListMobile(context)) {
+      return Column(
+        children: [
+          if (vm.isLoading)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: LrColors.surfaceMuted,
+              valueColor: AlwaysStoppedAnimation<Color>(LrColors.primary),
+            ),
+          for (int i = 0; i < vm.requests.length; i++) ...[
+            _RequestCard(
+              index: i,
+              model: vm.requests[i],
+              onTap: () => vm.onViewRequest(vm.requests[i]),
+            ),
+            if (i < vm.requests.length - 1) const SizedBox(height: LrSpace.sm),
+          ],
+        ],
       );
     }
 
@@ -75,7 +103,7 @@ class LicenseRequestTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เลขที่สัญญา', flex: 2),
+          _HeaderCell(label: 'รายการ', flex: 2),
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
@@ -196,6 +224,200 @@ class LicenseRequestTable extends StatelessWidget {
 // ============================================================================
 // Internal widgets
 // ============================================================================
+
+/// Card layout — ใช้บน mobile/tablet (< 900px)
+class _RequestCard extends StatelessWidget {
+  final int index;
+  final ReviewModel model;
+  final VoidCallback onTap;
+  const _RequestCard({
+    required this.index,
+    required this.model,
+    required this.onTap,
+  });
+
+  String _shortUuid(String uuid) {
+    if (uuid.isEmpty) return '-';
+    if (uuid.length <= 12) return uuid;
+    return '${uuid.substring(0, 8)}…';
+  }
+
+  /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
+  String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty || name == '-') return '-';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '-';
+
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
+  }
+
+  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย
+  String _maskPhone(String raw) {
+    if (raw.isEmpty || raw == '-') return '-';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 3) return raw;
+
+    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+
+    if (digits.length == 10) {
+      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+    }
+    if (digits.length == 9) {
+      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+    }
+    return maskedDigits;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final nr = model.newRequest;
+    final palette = StatusPalette.of(model.statusLabel ?? model.status ?? '');
+    final leaseNo = nr?.leaseNumber ?? '-';
+    final name = _maskName(model.client?.cname ?? '');
+    final phone = _maskPhone(formatPhoneNumber(model.client?.tel ?? ""));
+    final endDate = formatDate(nr?.ldate ?? '', type: DateFormatType.dmy);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(LrRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(LrSpace.md),
+          decoration: LrDecor.card(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Row 1: เลขที่สัญญา + status pill ───
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: LrColors.primaryLight,
+                      borderRadius: BorderRadius.circular(LrRadius.pill),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: LrText.tableCell.copyWith(
+                        color: LrColors.primaryDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: LrSpace.sm),
+                  Expanded(
+                    child: Text(
+                      leaseNo,
+                      style: LrText.tableCell.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: LrSpace.sm),
+                  _StatusPill(
+                    label: model.statusLabel ?? model.status ?? '-',
+                    palette: palette,
+                  ),
+                ],
+              ),
+              const Divider(height: LrSpace.lg, color: LrColors.border),
+              // ─── Row 2: รายละเอียด (label/value grid) ───
+              _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
+              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
+              if ((nr?.subzone ?? '').isNotEmpty)
+                _CardRow(label: 'บริเวณ', value: nr!.subzone ?? '-'),
+              if ((nr?.zn ?? '').isNotEmpty)
+                _CardRow(label: 'โซนพื้นที่', value: nr!.zn ?? '-'),
+              _CardRow(
+                  label: 'รหัสพื้นที่', value: nr?.ln ?? '-', isMono: true),
+              _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
+              _CardRow(
+                label: 'รหัสรายการ',
+                value: _shortUuid(model.uuid ?? ''),
+                isMono: true,
+                muted: true,
+              ),
+              const SizedBox(height: LrSpace.sm),
+              // ─── Row 3: ปุ่ม ───
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ViewButton(onTap: onTap),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isMono;
+  final bool muted;
+  const _CardRow({
+    required this.label,
+    required this.value,
+    this.isMono = false,
+    this.muted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: LrText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: LrText.tableCell.copyWith(
+                color: muted ? LrColors.textSecondary : LrColors.textPrimary,
+                fontFamily: isMono ? 'monospace' : LrText.fontRegular,
+                fontFamilyFallback: const [LrText.fontRegular],
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _HeaderCell extends StatelessWidget {
   final String label;
