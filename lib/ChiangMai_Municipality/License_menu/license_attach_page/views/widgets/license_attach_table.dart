@@ -144,13 +144,13 @@ class LicenseAttachTable extends StatelessWidget {
                 child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
           // ─── เลขที่สัญญา (swap) ───
-          _Cell(value: task.details.ln.isEmpty ? '-' : task.details.ln, flex: 2, isMono: true),
+          _Cell(value: moduleLabel, flex: 2, isMono: true),
           // ─── บริเวณ ───
           _Cell(value: task.details.subzone, flex: 2),
-          // ─── โ�นพื้นที่ ───
+          // ─── โซนพื้นที่ ───
           _Cell(value: task.details.zn, flex: 2),
-          // ─── รหัสพื้นที่ (swap) ───
-          _Cell(value: moduleLabel, flex: 2, isMono: true),
+          // ─── รหัสพื้นที่ (swap: ln) ───
+          _Cell(value: task.details.ln.isEmpty ? '-' : task.details.ln, flex: 2, isMono: true),
           // ─── ชื่อผู้ติดต่อ ───
           _Cell(
               value: _maskName(task.customer.cname),
@@ -300,10 +300,10 @@ class _AttachCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StatusPalette.of(task.statusLabel);
-    final leaseNo = task.details.ln.isEmpty ? '-' : task.details.ln;
-    final moduleLabel = task.module.nameTh.isNotEmpty
+    final leaseNo = task.module.nameTh.isNotEmpty
         ? task.module.nameTh
         : task.module.code;
+    final leaseLn = task.details.ln.isEmpty ? '-' : task.details.ln;
     final name = _maskName(task.customer.cname);
     final phone = _maskPhone(formatPhoneNumber(task.customer.tel));
     final endDate =
@@ -365,7 +365,7 @@ class _AttachCard extends StatelessWidget {
                 _CardRow(label: 'บริเวณ', value: task.details.subzone),
               if (task.details.zn.isNotEmpty)
                 _CardRow(label: 'โซนพื้นที่', value: task.details.zn),
-              _CardRow(label: 'รหัสพื้นที่', value: moduleLabel, isMono: true),
+              _CardRow(label: 'รหัสพื้นที่', value: leaseLn, isMono: true),
               _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
               _CardRow(
                 label: 'รหัสรายการ',
