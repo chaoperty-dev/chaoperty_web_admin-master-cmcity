@@ -14,6 +14,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../../Style/colors.dart';
+import '../../../../unity/Enum.dart';
+import '../../../../unity/FormatDate.dart';
 import '../theme/license_contract_theme.dart';
 import '../../viewmodels/license_contract_view_model.dart';
 import 'customer_picker_dialog.dart';
@@ -29,6 +31,29 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
   final TextEditingController _propertySearchCtrl = TextEditingController();
+
+  /// Mask นามสกุล 3 ตัวอักษรท้าย (เหมือน Area_menu's _maskName)
+  /// เช่น "นางกชกร วิชชุชัยมงคล" → "นางก�กร วิชชุชัยม***"
+  static String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty) return '';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '';
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
+  }
 
   @override
   void dispose() {
@@ -234,57 +259,89 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
           //   2) area.ser อยู่ใน occupiedAsers (จาก admin/requests/properties)
           final isOccupied = vm.isOccupied(area);
           final lncode = area.lncode ?? '-';
-          // ชื่อร้าน: API GC_areaAll ไม่ส่ง sname ของผู้เช่า
-          // ต้องดึงจาก PropertiesModel.client.scname หรือ area.cname
+          final cid = area.cid ?? '';
+
+          // ===== Title: cid · lncode (เหมือน Area_menu's lease_number · ln) =====
+          String title;
+          if (cid.isNotEmpty && cid != lncode) {
+            title = '$cid · $lncode';
+          } else {
+            title = lncode;
+          }
+
           final hasRequest = area.properties.isNotEmpty;
           final firstProp = hasRequest ? area.properties.first : null;
           final firstReq = firstProp?.newRequest;
-          final reqStep = firstReq?.requestStep;
-          final reqStatus = firstReq?.requestStatus;
-          // หาชื่อร้านจากหลายแหล่ง (เรียงตาม priority)
-          final sname = (area.cname?.isNotEmpty == true)
-              ? area.cname!
-              : (firstProp?.client?.scname?.isNotEmpty == true)
-                  ? firstProp!.client!.scname!
-                  : (area.sname_q?.isNotEmpty == true)
-                      ? area.sname_q!
-                      : '';
-
-          // ===== 2 บรรทัด =====
-          // บรรทัด 1 (หลัก): ล็อก + ชื่อร้าน (ถ้ามี)
-          // บรรทัด 2 (รอง): step/status ของ request หรือ "ว่าง"
-          String mainLabel;
-          String? subLabel;
-
-          if (sname.isNotEmpty) {
-            mainLabel = '$lncode • $sname';
-          } else {
-            mainLabel = lncode;
-          }
-
-          if (hasRequest) {
-            // มี request → แสดง status (priority 1) หรือ step (priority 2)
-            if (reqStatus != null && reqStatus.isNotEmpty) {
-              subLabel = reqStatus;
-            } else if (reqStep != null && reqStep.isNotEmpty) {
-              subLabel = reqStep;
-            } else {
-              subLabel = 'กำลังดำเนินการ';
+          final firstClient = firstProp?.client;
+          // ===== Status text (เหมือน Area_menu's _statusText) =====
+          // ถ้า ldate น้อยกว่าวันนี้ → "หมดสัญญา"
+          final ldateRaw = area.ldate?.toString() ?? '';
+          String statusText;
+          if (ldateRaw.isNotEmpty) {
+            try {
+              final ldate = DateTime.parse(ldateRaw);
+              final today = DateTime.now();
+              final end = DateTime(ldate.year, ldate.month, ldate.day);
+              final now = DateTime(today.year, today.month, today.day);
+              if (end.isBefore(now)) {
+                statusText = 'หมดสัญญา';
+              } else if (hasRequest) {
+                statusText = (firstReq?.requestStatus?.isNotEmpty == true)
+                    ? firstReq!.requestStatus!
+                    : (firstReq?.requestStep?.isNotEmpty == true)
+                        ? firstReq!.requestStep!
+                        : 'กำลังดำเนินการ';
+              } else {
+                statusText = area.st?.toString() ?? '';
+              }
+            } catch (_) {
+              statusText = hasRequest
+                  ? ((firstReq?.requestStatus?.isNotEmpty == true)
+                      ? firstReq!.requestStatus!
+                      : (firstReq?.requestStep?.isNotEmpty == true)
+                          ? firstReq!.requestStep!
+                          : 'กำลังดำเนินการ')
+                  : (area.st?.toString() ?? '');
             }
-          } else if (isOccupied) {
-            subLabel = 'มีผู้เช่าแล้ว';
+          } else if (hasRequest) {
+            statusText = (firstReq?.requestStatus?.isNotEmpty == true)
+                ? firstReq!.requestStatus!
+                : (firstReq?.requestStep?.isNotEmpty == true)
+                    ? firstReq!.requestStep!
+                    : 'กำลังดำเนินการ';
           } else {
-            // ล็อกว่าง → บอกสถานะ "ว่าง" ให้ชัดเจน (เหมือน area_menu_box_card)
-            subLabel = 'ว่าง';
+            statusText = area.st?.toString() ?? '';
           }
+          // Default = "ว่าง" (เหมือน Area_menu box_card)
+          if (statusText.isEmpty) statusText = 'ว่าง';
+
+          // ===== End date (เหมือน Area_menu's _endDateText) =====
+          String? endDateText;
+          if (ldateRaw.isNotEmpty) {
+            try {
+              endDateText = formatDate(ldateRaw, type: DateFormatType.dmy);
+            } catch (_) {
+              endDateText = ldateRaw;
+            }
+          }
+
+          // ===== Client name (mask นามสกุล 3 �ัว — เหมือน Area_menu's _clientText) =====
+          final rawCname = (area.cname?.isNotEmpty == true)
+              ? area.cname!
+              : (firstClient?.scname?.isNotEmpty == true)
+                  ? firstClient!.scname!
+                  : '';
+          final clientText = _maskName(rawCname);
 
           return DropdownMenuItem<String>(
             value:
                 '$lncode|${area.ser ?? ''}|${area.zser ?? ''}|${area.cname ?? ''}',
             enabled: !isOccupied, // ← ปิดล็อกที่มีคนเช่า
             child: _PropertyDropRow(
-              mainLabel: mainLabel,
-              subLabel: subLabel,
+              title: title,
+              statusText: statusText,
+              endDate: endDateText,
+              clientName: clientText,
               occupied: isOccupied,
             ),
           );
@@ -486,106 +543,176 @@ class _DropRow extends StatelessWidget {
   }
 }
 
-/// Dropdown item row สำหรับ "รหัสพื้นที่" — 2 บรรทัด + รองรับสถานะ "มีผู้เช่าแล้ว"
+/// Dropdown item row — แสดงเหมือน Area_menu box_card
+/// title (cid · lncode) + status pill (สีจาก StatusPalette) + end date + client name
 class _PropertyDropRow extends StatelessWidget {
-  final String mainLabel;
-  final String? subLabel;
+  final String title;
+  final String statusText;
+  final String? endDate;
+  final String clientName;
   final bool occupied;
   const _PropertyDropRow({
-    required this.mainLabel,
-    this.subLabel,
+    required this.title,
+    required this.statusText,
+    this.endDate,
+    this.clientName = '',
     this.occupied = false,
   });
 
+  /// Status → (bg, fg) palette (เหมือน Area_menu's StatusPalette)
+  ({Color bg, Color fg}) _statusPalette() {
+    final s = statusText.toLowerCase().trim();
+    if (s == 'ว่าง' || s == 'vacant' || s == 'empty') {
+      return (bg: const Color(0xFFE0F2FE), fg: const Color(0xFF0369A1)); // sky
+    }
+    if (s == 'หมดสัญญา' || s == 'expired' || s == 'expiry') {
+      return (bg: const Color(0xFFFEE2E2), fg: const Color(0xFFB91C1C)); // red
+    }
+    if (s == 'สัญญาปัจจุบัน' || s == 'current' || s == 'active') {
+      return (bg: const Color(0xFFDCFCE7), fg: const Color(0xFF15803D)); // green
+    }
+    if (s == 'ใก้หมดสัญญา' || s.contains('near expiry') || s.contains('near_expiry')) {
+      return (bg: const Color(0xFFFEF9C3), fg: const Color(0xFFA16207)); // yellow
+    }
+    if (s.contains('ปฏเสธ') || s.contains('reject') || s.contains('cancel') || s.contains('ยกเลิก')) {
+      return (bg: const Color(0xFFFEE2E2), fg: const Color(0xFFB91C1C)); // red
+    }
+    if (s.contains('รอ') || s.contains('pending') || s.contains('progress') || s.contains('กำลัง') || s.contains('ดำเนินการ')) {
+      return (bg: const Color(0xFFFEF3C7), fg: const Color(0xFFB45309)); // amber
+    }
+    if (s.contains('อนุมัติ') || s.contains('approved') || s.contains('ผ่าน') || s.contains('เสร็จ') || s.contains('complete')) {
+      return (bg: const Color(0xFFDCFCE7), fg: const Color(0xFF15803D)); // green
+    }
+    if (occupied) {
+      return (bg: const Color(0xFFFFEBEE), fg: const Color(0xFFC62828)); // red soft
+    }
+    return (bg: const Color(0xFFF1F5F9), fg: const Color(0xFF475569)); // slate
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dotColor = occupied ? LcColors.textMuted : LcColors.primary;
-    final mainColor = occupied ? LcColors.textMuted : LcColors.textPrimary;
-    // กำหนดสี pill ตาม status เพื่อให้เห็นชัดเจน (เหมือน area_menu_box_card)
-    final pillBg = subLabel == 'ว่าง'
-        ? const Color(0xFFE8F5E9) // เขียวอ่อน — ว่าง
-        : (subLabel == 'มีผู้เช่าแล้ว' || occupied)
-            ? const Color(0xFFFFEBEE) // แดงอ่อน — มีผู้เช่า
-            : LcColors.surfaceMuted; // เทา — กำลังดำเนินการ / อื่นๆ
-    final pillFg = subLabel == 'ว่าง'
-        ? const Color(0xFF2E7D32)
-        : (subLabel == 'มีผู้เช่าแล้ว' || occupied)
-            ? const Color(0xFFC62828)
-            : LcColors.textSecondary;
+    final palette = _statusPalette();
+    final titleColor = occupied ? LcColors.textMuted : LcColors.textPrimary;
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // dot indicator
         Container(
           width: 6,
           height: 6,
           margin: const EdgeInsets.only(right: 8, top: 6),
           decoration: BoxDecoration(
-            color: dotColor,
+            color: occupied ? LcColors.textMuted : palette.fg,
             shape: BoxShape.circle,
           ),
         ),
-        // 2-line text (main + sub)
         Expanded(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               AutoSizeText(
-                mainLabel,
+                title,
                 style: LcText.input.copyWith(
-                  color: mainColor,
-                  fontWeight: FontWeight.w600,
+                  color: titleColor,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
                 ),
-                maxFontSize: 14,
+                maxFontSize: 13,
                 minFontSize: 11,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
-              if (subLabel != null && subLabel!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 3),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 6, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: pillBg,
-                      borderRadius: BorderRadius.circular(LcRadius.pill),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: palette.bg,
+                  borderRadius: BorderRadius.circular(LcRadius.pill),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 5,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: palette.fg,
+                        shape: BoxShape.circle,
+                      ),
                     ),
-                    child: AutoSizeText(
-                      subLabel!,
+                    const SizedBox(width: 5),
+                    AutoSizeText(
+                      statusText,
                       style: TextStyle(
+                        fontFamily: LcText.fontBold,
                         fontSize: 10,
-                        color: pillFg,
+                        color: palette.fg,
                         fontWeight: FontWeight.w700,
+                        letterSpacing: .2,
                       ),
                       maxFontSize: 11,
                       minFontSize: 9,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ],
+                ),
+              ),
+              if (endDate != null && endDate!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.event_outlined, size: 11, color: LcColors.textSecondary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: AutoSizeText(
+                          'สิ้นสุด $endDate',
+                          style: const TextStyle(
+                            fontFamily: LcText.fontRegular,
+                            fontSize: 10,
+                            color: LcColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          maxFontSize: 11,
+                          minFontSize: 9,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              if (clientName.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.person_outline, size: 11, color: LcColors.textPrimary),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: AutoSizeText(
+                          clientName,
+                          style: const TextStyle(
+                            fontFamily: LcText.fontRegular,
+                            fontSize: 10,
+                            color: LcColors.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          maxFontSize: 11,
+                          minFontSize: 9,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
             ],
           ),
         ),
-        const SizedBox(width: 6),
-        if (occupied)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-            decoration: BoxDecoration(
-              color: LcColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(LcRadius.pill),
-              border: Border.all(color: LcColors.border, width: 1),
-            ),
-            child: const Text(
-              'ไม่ว่าง',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w600,
-                color: LcColors.textMuted,
-              ),
-            ),
-          ),
       ],
     );
   }
