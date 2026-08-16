@@ -13,13 +13,22 @@ import '../models/billing_models.dart';
 
 class BillingService {
   /// โหลดประเภทค่าบริการ
+  // Future<List<LcExpTypeModel>> loadExpTypes() async {
+  //   final prefs = await SharedPreferences.getInstance();
+  //   final ren = prefs.getString('renTalSer') ?? '';
+  //   final url = '${MyConstant().domain}/GC_exptype.php?isAdd=true&ren=$ren';
+  //   return _fetchList(url, (map) => LcExpTypeModel.fromJson(map));
+  // }
+  /// โหลดประเภทค่าบริการ — เฉพาะ dtype "KR" (ค่าเช่า/บริการหลัก) และ "KO" (อื่นๆ, ค่าปรับ)
   Future<List<LcExpTypeModel>> loadExpTypes() async {
     final prefs = await SharedPreferences.getInstance();
     final ren = prefs.getString('renTalSer') ?? '';
     final url = '${MyConstant().domain}/GC_exptype.php?isAdd=true&ren=$ren';
-    return _fetchList(url, (map) => LcExpTypeModel.fromJson(map));
+    final list = await _fetchList(url, (map) => LcExpTypeModel.fromJson(map));
+    return list
+        .where((t) => t.dtype == 'KR' || t.dtype == 'KO')
+        .toList(growable: false);
   }
-
   /// โหลดหน่วยนับ
   Future<List<LcUnitModel>> loadUnits() async {
     final url = '${MyConstant().domain}/GC_unit.php?isAdd=true';

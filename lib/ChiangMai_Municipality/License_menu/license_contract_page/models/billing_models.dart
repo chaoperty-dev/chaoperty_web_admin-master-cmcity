@@ -131,14 +131,16 @@ class LcExpTypeModel {
   String? ser;
   String? bills;
   String? etype;
+  String? dtype;
 
-  LcExpTypeModel({this.ser, this.bills, this.etype});
+  LcExpTypeModel({this.ser, this.bills, this.etype, this.dtype});
 
   factory LcExpTypeModel.fromJson(Map<String, dynamic> json) {
     return LcExpTypeModel(
       ser: json['ser']?.toString(),
       bills: json['bills']?.toString(),
       etype: json['etype']?.toString(),
+      dtype: json['dtype']?.toString(),
     );
   }
 }
