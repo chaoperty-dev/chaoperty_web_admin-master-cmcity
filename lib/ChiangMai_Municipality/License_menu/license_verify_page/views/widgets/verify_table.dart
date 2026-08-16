@@ -146,15 +146,15 @@ class VerifyTable extends StatelessWidget {
             child: Center(
                 child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
-          // เลขที่สัญญา (no swap → ln)
+          // เลขที่สัญญา (swap → module label)
+          _Cell(value: moduleLabel, flex: 2),
+          _Cell(value: task.details.subzone, flex: 2),
+          _Cell(value: task.details.zn, flex: 2),
+          // รหัสพื้นที่ (swap → ln)
           _Cell(
               value: task.details.ln.isEmpty ? '-' : task.details.ln,
               flex: 2,
               isMono: true),
-          _Cell(value: task.details.subzone, flex: 2),
-          _Cell(value: task.details.zn, flex: 2),
-          // รหัสพื้นที่ (no swap → module label)
-          _Cell(value: moduleLabel, flex: 2),
           _Cell(
               value: _maskName(customer?.cname ?? ''),
               tooltip: customer?.cname ?? '',
@@ -670,7 +670,10 @@ class _VerifyListCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final customer = task.customer;
     final palette = StatusPalette.of(task.statusLabel);
-    final leaseNo = task.details.ln.isEmpty ? '-' : task.details.ln;
+    final leaseNo = task.module.nameTh.isNotEmpty
+        ? task.module.nameTh
+        : task.module.code;
+    final leaseLn = task.details.ln.isEmpty ? '-' : task.details.ln;
     final name = _maskName(customer?.cname ?? '');
     final phone = _maskPhone(formatPhoneNumber(customer?.tel ?? ''));
     final endDate = formatDate(
@@ -733,12 +736,7 @@ class _VerifyListCard extends StatelessWidget {
                 _CardRow(label: 'บริเวณ', value: task.details.subzone),
               if (task.details.zn.isNotEmpty)
                 _CardRow(label: 'โซนพื้นที่', value: task.details.zn),
-              _CardRow(
-                label: 'รหัสพื้นที่',
-                value: task.module.nameTh.isNotEmpty
-                    ? task.module.nameTh
-                    : task.module.code,
-              ),
+              _CardRow(label: 'รหัสพื้นที่', value: leaseLn, isMono: true),
               _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
               _CardRow(
                 label: 'รหัสรายการ',
