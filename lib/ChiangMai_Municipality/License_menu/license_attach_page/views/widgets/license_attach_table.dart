@@ -61,8 +61,7 @@ class LicenseAttachTable extends StatelessWidget {
               task: vm.requests[i],
               onTap: () => vm.onViewRequest(vm.requests[i]),
             ),
-            if (i < vm.requests.length - 1)
-              const SizedBox(height: LaSpace.sm),
+            if (i < vm.requests.length - 1) const SizedBox(height: LaSpace.sm),
           ],
         ],
       );
@@ -105,7 +104,7 @@ class LicenseAttachTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เลขที่สัญญา', flex: 2),
+          _HeaderCell(label: 'รายการ', flex: 2),
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
@@ -129,9 +128,8 @@ class LicenseAttachTable extends StatelessWidget {
     int index,
   ) {
     final palette = StatusPalette.of(task.statusLabel);
-    final moduleLabel = task.module.nameTh.isNotEmpty
-        ? task.module.nameTh
-        : task.module.code;
+    final moduleLabel =
+        task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
     return _HoverableRow(
       index: index,
       onTap: () => vm.onViewRequest(task),
@@ -140,8 +138,8 @@ class LicenseAttachTable extends StatelessWidget {
           // Action
           SizedBox(
             width: 110,
-            child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(task))),
+            child:
+                Center(child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
           // ─── เลขที่สัญญา (swap) ───
           _Cell(value: moduleLabel, flex: 2, isMono: true),
@@ -150,7 +148,10 @@ class LicenseAttachTable extends StatelessWidget {
           // ─── โซนพื้นที่ ───
           _Cell(value: task.details.zn, flex: 2),
           // ─── รหัสพื้นที่ (swap: ln) ───
-          _Cell(value: task.details.ln.isEmpty ? '-' : task.details.ln, flex: 2, isMono: true),
+          _Cell(
+              value: task.details.ln.isEmpty ? '-' : task.details.ln,
+              flex: 2,
+              isMono: true),
           // ─── ชื่อผู้ติดต่อ ───
           _Cell(
               value: _maskName(task.customer.cname),
@@ -300,14 +301,12 @@ class _AttachCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StatusPalette.of(task.statusLabel);
-    final leaseNo = task.module.nameTh.isNotEmpty
-        ? task.module.nameTh
-        : task.module.code;
+    final leaseNo =
+        task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
     final leaseLn = task.details.ln.isEmpty ? '-' : task.details.ln;
     final name = _maskName(task.customer.cname);
     final phone = _maskPhone(formatPhoneNumber(task.customer.tel));
-    final endDate =
-        formatDate(task.submittedAt, type: DateFormatType.dmy);
+    final endDate = formatDate(task.submittedAt, type: DateFormatType.dmy);
 
     return Material(
       type: MaterialType.transparency,
@@ -494,8 +493,7 @@ class _InlineCopyState extends State<_InlineCopy> {
                   color: widget.muted
                       ? LaColors.textSecondary
                       : LaColors.textPrimary,
-                  fontFamily:
-                      widget.isMono ? 'monospace' : LaText.fontRegular,
+                  fontFamily: widget.isMono ? 'monospace' : LaText.fontRegular,
                   fontFamilyFallback: const [LaText.fontRegular],
                   fontSize: 12,
                 ),
@@ -503,14 +501,12 @@ class _InlineCopyState extends State<_InlineCopy> {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            if (_hover) ...[
-              const SizedBox(width: 4),
-              Icon(
-                Icons.copy_rounded,
-                size: 12,
-                color: LaColors.primary,
-              ),
-            ],
+            const SizedBox(width: 4),
+            Icon(
+              Icons.content_copy_rounded,
+              size: 12,
+              color: _hover ? LaColors.primary : LaColors.textMuted,
+            ),
           ],
         ),
       ),
@@ -640,14 +636,12 @@ class _CopyCellState extends State<_CopyCell> {
                       ),
                     ),
                   ),
-                  if (_hover) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.copy_rounded,
-                      size: 12,
-                      color: LaColors.primary,
-                    ),
-                  ],
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.content_copy_rounded,
+                    size: 12,
+                    color: _hover ? LaColors.primary : LaColors.textMuted,
+                  ),
                 ],
               ),
             ),
