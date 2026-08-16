@@ -2,14 +2,15 @@
 // license_payment_view_model.dart
 // ============================================================================
 // ViewModel — จัดการ state + business logic ของหน้า "การรับชำระ" (Payment v2)
-// - โหลด PaymentDetail list + สร้าง draft + บันทึกการรับชำระ
-// - โหลด Zones/SubZones (ใช้ LicenseRequestService เดียวกัน)
+// - โหลด PaymentTask list (v2 endpoint) + สร้าง draft + บันทึกการรับชำระ
+// - โหลด Zones/SubZones (legacy PHP API)
 // - แจ้ง View ผ่าน Stream<LicensePaymentEvent>
 // - ไม่ผูกกับ Flutter UI
 // ============================================================================
 
 import 'dart:async';
 
+import 'package:chaoperty/Constant/api_cache.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../Model/GetSubZone_Model.dart';
@@ -17,27 +18,25 @@ import '../../../../Model/GetZone_Model.dart';
 import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_config.dart';
 import '../models/license_payment_event.dart';
+import '../models/payment_task_model.dart';
 import '../services/license_payment_detail_service.dart';
 import '../services/license_payment_service.dart';
-import '../../license_request_page/services/license_request_service.dart';
 
 class LicensePaymentViewModel extends ChangeNotifier {
   LicensePaymentViewModel({
     required LicensePaymentConfig config,
     LicensePaymentService? paymentService,
     LicensePaymentDetailService? detailService,
-    LicenseRequestService? requestService,
+    ApiCache? cache,
   })  : _config = config,
-        _paymentService = paymentService ?? LicensePaymentService(),
-        _detailService = detailService ?? LicensePaymentDetailService(),
-        _requestService = requestService ?? LicenseRequestService() {
+        _paymentService = paymentService ?? LicensePaymentService(cache: cache),
+        _detailService = detailService ?? LicensePaymentDetailService() {
     _loadInitial();
   }
 
   final LicensePaymentConfig _config;
   final LicensePaymentService _paymentService;
   final LicensePaymentDetailService _detailService;
-  final LicenseRequestService _requestService;
 
   // ---------- Event channel ----------
   final StreamController<LicensePaymentEvent> _eventController =
@@ -45,8 +44,8 @@ class LicensePaymentViewModel extends ChangeNotifier {
   Stream<LicensePaymentEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
-  List<PaymentDetail> _payments = [];
-  List<PaymentDetail> get payments => _payments;
+  List<PaymentTask> _payments = [];
+  List<PaymentTask> get payments => _payments;
 
   // ---------- Zones ----------
   List<ZoneModel> _zoneModels = [];
@@ -75,6 +74,35 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // ---------- Search ----------
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
+
+  // ---------- v2 filter state ----------
+  String _searchCustomer = '';
+  String get searchCustomer => _searchCustomer;
+
+  List<String> _statuses = const [];
+  List<String> get statuses => List.unmodifiable(_statuses);
+
+  bool _includeDone = true;
+  bool get includeDone => _includeDone;
+
+  void setCustomerSearch(String value) {
+    _searchCustomer = value;
+    notifyListeners();
+  }
+
+  void toggleStatus(String s) {
+    _statuses = _statuses.contains(s)
+        ? _statuses.where((x) => x != s).toList()
+        : [..._statuses, s];
+    notifyListeners();
+    refresh();
+  }
+
+  void setIncludeDone(bool v) {
+    _includeDone = v;
+    notifyListeners();
+    refresh();
+  }
 
   // ---------- Zone filter state ----------
   String? _selectedZoneSub;
@@ -105,18 +133,25 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // ===============================================================
   // Service calls
   // ===============================================================
-  /// โหลดรายการ "Payment" ทั้งหมด
+  /// โหลดรายการ "Payment Tasks" ทั้งหมด — v2 endpoint
+  /// v2 ยังไม่มี `zn` param — เก็บ _selectedZone state ไว้สำหรับ UI แต่ไม่ส่งให้ backend
   Future<void> refresh() async {
     _setLoading(true);
     _clearError();
     try {
-      final results = await _paymentService.listPayments(
-        paymentUuid: _searchQuery.isNotEmpty ? _searchQuery : null,
+      final res = await _paymentService.listPaymentTasks(
+        q: _searchQuery.isNotEmpty ? _searchQuery : null,
+        customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
+        statuses: _statuses.isEmpty ? null : _statuses,
+        includeDone: _includeDone,
+        perPage: 50,
       );
-      _payments = results;
-      _currentPage = 1;
-      _lastPage = 1;
-      _total = results.length;
+      _payments = res.data;
+      _currentPage = res.currentPage;
+      _lastPage = res.lastPage;
+      _total = res.total;
+      _linksNext = res.linksNext;
+      _linksPrev = res.linksPrev;
     } catch (e) {
       _setError('โหลดข้อมูลไม่สำเร็จ: $e');
     } finally {
@@ -127,9 +162,9 @@ class LicensePaymentViewModel extends ChangeNotifier {
   /// โหลด Zones (สำหรับ dropdown filter)
   Future<void> _loadZones() async {
     try {
-      _zoneModels = await _requestService.fetchZones();
+      _zoneModels = await _paymentService.fetchZones();
     } catch (e) {
-      // silent — ไม่ block UI
+      print('LicensePaymentViewModel._loadZones error: $e');
     }
     notifyListeners();
   }
@@ -137,9 +172,9 @@ class LicensePaymentViewModel extends ChangeNotifier {
   /// โหลด SubZones (สำหรับ dropdown filter)
   Future<void> _loadSubZones() async {
     try {
-      _subzoneModels = await _requestService.fetchSubZones();
+      _subzoneModels = await _paymentService.fetchSubZones();
     } catch (e) {
-      // silent — ไม่ block UI
+      print('LicensePaymentViewModel._loadSubZones error: $e');
     }
     notifyListeners();
   }
@@ -238,36 +273,57 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // ===============================================================
   // Zone filter (UI compat)
   // ===============================================================
-  void onSubZoneChanged(String? value) {
+  Future<void> onSubZoneChanged(String? value) async {
+    if (value == null) return;
     _selectedZoneSub = value;
-    _selectedZone = null; // reset zone เมื่อ subzone เปลี่ยน
-    _selectedZoneSer = null;
+    _selectedZone = 'ทั้งหมด'; // reset zone เมื่อ subzone เปลี่ยน
+    _selectedZoneSer = '0';
+
+    // หา ser ของ sub_zone ที่เลือก (ใช้ filter zones)
+    final sub = _subzoneModels.firstWhere(
+      (s) => s.zn == value,
+      orElse: () => SubZoneModel(),
+    );
+    _selectedZoneSubSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+
     notifyListeners();
+
+    // ยิง API payments ใหม่ (zn = null → ทั้งหมด หลัง reset zone)
+    await refresh();
   }
 
-  void onZoneChanged(String? value) {
+  Future<void> onZoneChanged(String? value) async {
+    if (value == null) return;
     _selectedZone = value;
     // หา ser ของ zone ที่เลือก
-    if (value != null) {
-      final match = _zoneModels.firstWhere(
-        (z) => z.zn == value,
-        orElse: () => ZoneModel(),
-      );
-      _selectedZoneSer = match.ser;
-    } else {
-      _selectedZoneSer = null;
-    }
+    final match = _zoneModels.firstWhere(
+      (z) => z.zn == value,
+      orElse: () => ZoneModel(),
+    );
+    _selectedZoneSer = match.ser;
     notifyListeners();
+    // Reload payments filter ด้วย zn
+    await refresh();
   }
 
-  /// ดรอปดาวน์ Zones: filter by sub_zone
+  /// ดรอปดาวน์ Zones: filter by sub_zone (sub_zone.ser == zone.sub_zone)
+  /// หมายเหตุ: ต้องคง default "ทั้งหมด" ไว้เสมอ เพราะ onSubZoneChanged จะ reset
+  /// _selectedZone = 'ทั้งหมด' หลังเปลี่ยน subzone — ถ้า filter ทิ้ง dropdown
+  /// จะ assertion fail (value ไม่ match item)
   List<ZoneModel> get zoneModels {
     if (_selectedZoneSub == null || _selectedZoneSub == 'ทั้งหมด') {
       return _zoneModels;
     }
-    return _zoneModels
-        .where((z) => z.sub_zone == _selectedZoneSub || z.sub_zone == null)
-        .toList();
+    final subSer = _selectedZoneSubSer;
+    if (subSer == null || subSer.isEmpty || subSer == '0') {
+      return _zoneModels;
+    }
+    final filtered = _zoneModels.where((z) => z.sub_zone == subSer).toList();
+    // คง default "ทั้งหมด" ไว้เป็น option แรกเสมอ
+    if (_zoneModels.isNotEmpty && _zoneModels.first.zn == 'ทั้งหมด') {
+      return [_zoneModels.first, ...filtered];
+    }
+    return filtered;
   }
 
   /// ดรอปดาวน์ SubZones
@@ -281,10 +337,10 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // User actions
   // ===============================================================
   /// ผู้ใช้กดปุ่ม "ดู" ในแถว → เปิด detail page
-  void onViewPayment(PaymentDetail payment) {
+  void onViewPayment(PaymentTask task) {
     _eventController.add(
       LicensePaymentNavigateDetailEvent(
-        paymentUuid: payment.uuid,
+        paymentUuid: task.uuid,
         title: 'รายละเอียดการรับชำระ',
       ),
     );
@@ -299,16 +355,38 @@ class LicensePaymentViewModel extends ChangeNotifier {
   List<dynamic> get requests => _payments;
 
   /// Backward-compat: alias for onViewPayment (UI เก่า)
-  /// ใช้ dynamic เพราะ UI ส่ง PaymentDetail หรือ ReviewModel-like
+  /// ใช้ dynamic เพราะ UI ส่ง PaymentTask หรือ type อื่น
   void onViewRequest(dynamic model) {
-    if (model is PaymentDetail) {
+    if (model is PaymentTask) {
       onViewPayment(model);
     }
   }
 
-  /// Backward-compat: loadPage (no-op — listPayments ไม่มี pagination links)
+  /// โหลดหน้าถัดไป/ก่อนหน้า จาก Laravel links.next / links.prev
   Future<void> loadPage(String? url) async {
-    // ไม่ทำ action — listPayments API ไม่ return pagination links
+    if (url == null || url.isEmpty) return;
+    _setLoading(true);
+    _clearError();
+    try {
+      final res = await _paymentService.listPaymentTasks(
+        urlCustom: url,
+        q: _searchQuery.isNotEmpty ? _searchQuery : null,
+        customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
+        statuses: _statuses.isEmpty ? null : _statuses,
+        includeDone: _includeDone,
+        perPage: 50,
+      );
+      _payments = res.data;
+      _currentPage = res.currentPage;
+      _lastPage = res.lastPage;
+      _total = res.total;
+      _linksNext = res.linksNext;
+      _linksPrev = res.linksPrev;
+    } catch (e) {
+      _setError('โหลดหน้าถัดไปไม่สำเร็จ: $e');
+    } finally {
+      _setLoading(false);
+    }
   }
 
   // ===============================================================

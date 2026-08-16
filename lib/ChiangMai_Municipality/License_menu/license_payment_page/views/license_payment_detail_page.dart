@@ -6,9 +6,12 @@
 // - ปิดได้ด้วย Navigator.pop (back button ใน header)
 // ============================================================================
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/license_payment_event.dart';
 import '../viewmodels/license_payment_detail_view_model.dart';
 import 'theme/license_payment_theme.dart';
 import 'widgets/payment_detail_footer.dart';
@@ -41,7 +44,7 @@ class LicensePaymentDetailPage extends StatefulWidget {
     String title = 'การรับชำระ',
   }) {
     return ChangeNotifierProvider<LicensePaymentDetailViewModel>(
-      create: (_) => LicensePaymentDetailViewModel(),
+      create: (_) => LicensePaymentDetailViewModel(uuid: routeData),
       child: _LicensePaymentDetailPageBody(
         title: title,
         routeData: routeData,
@@ -82,6 +85,44 @@ class _LicensePaymentDetailPageBody extends StatefulWidget {
 
 class _LicensePaymentDetailPageBodyState
     extends State<_LicensePaymentDetailPageBody> {
+  StreamSubscription<LicensePaymentEvent>? _sub;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final vm = context.read<LicensePaymentDetailViewModel>();
+    _sub ??= vm.events.listen(_onEvent);
+  }
+
+  void _onEvent(LicensePaymentEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case LicensePaymentErrorEvent(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: LaColors.statusRejectedFg,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(LaRadius.md),
+            ),
+          ),
+        );
+        break;
+      case LicensePaymentNavigateEvent():
+      case LicensePaymentNavigateDetailEvent():
+      case LicensePaymentCreatedEvent():
+      case LicensePaymentPaidEvent():
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LicensePaymentDetailViewModel>();

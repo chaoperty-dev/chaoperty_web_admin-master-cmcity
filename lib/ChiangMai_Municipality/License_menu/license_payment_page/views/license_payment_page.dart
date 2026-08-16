@@ -190,6 +190,7 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
             const Expanded(
               child: SingleChildScrollView(
                 child: LicensePaymentTable(),

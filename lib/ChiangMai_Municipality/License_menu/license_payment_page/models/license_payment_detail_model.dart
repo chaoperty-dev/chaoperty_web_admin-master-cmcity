@@ -38,6 +38,9 @@ class PaymentDetail {
   final String status; // draft / paid
   final String methodName;
   final String payerName;
+  final String clientTel;
+  final String clientTax;
+  final String clientAddr;
   final double amount;
   final double? amountReceived;
   final String? paidAt;
@@ -52,6 +55,9 @@ class PaymentDetail {
     this.status = '',
     this.methodName = '',
     this.payerName = '',
+    this.clientTel = '',
+    this.clientTax = '',
+    this.clientAddr = '',
     this.amount = 0,
     this.amountReceived,
     this.paidAt,
@@ -82,6 +88,10 @@ class PaymentDetail {
           .toString(),
       payerName: (json['payer_name'] ?? json['customer_name'] ?? json['name'] ?? '')
           .toString(),
+      clientTel: (json['client_tel'] ?? json['tel'] ?? '').toString(),
+      clientTax: (json['client_tax'] ?? json['tax'] ?? '').toString(),
+      clientAddr: (json['client_addr'] ?? json['addr'] ?? json['addr1'] ?? '')
+          .toString(),
       amount: double.tryParse((json['amount'] ?? '0').toString()) ?? 0,
       amountReceived:
           double.tryParse((json['amount_received'] ?? '').toString()),
@@ -100,9 +110,25 @@ class PaymentDetail {
         return 'ชำระแล้ว';
       case 'draft':
         return 'รอชำระ';
+      case 'documents_submitted':
+        return 'ยื่นเอกสารแล้ว';
+      case 'under_review':
+        return 'กำลังตรวจสอบ';
+      case 'in_progress':
+        return 'กำลังดำเนินการ';
+      case 'completed':
+        return 'เสร็จสิ้น';
+      case 'pending':
+        return 'รอดำเนินการ';
+      case 'waiting_payment_info':
+        return 'รอข้อมูลการชำระ';
+      case 'payment_submitted':
+        return 'ส่งหลักฐานชำระแล้ว';
       case 'cancelled':
       case 'canceled':
         return 'ยกเลิก';
+      case 'rejected':
+        return 'ปฏิเสธ';
       default:
         return status.isEmpty ? '-' : status;
     }
@@ -118,7 +144,7 @@ class PaymentDetail {
   );
 
   /// UI compatibility: ข้อมูลลูกค้า/ผู้ชำระ
-  Client? get client => Client(cname: payerName, tel: '');
+  Client? get client => Client(cname: payerName, tel: clientTel, tax: clientTax);
 }
 
 /// Wrapper for UI compatibility — fields ที่ table เก่าเรียกใช้
@@ -142,7 +168,8 @@ class NewRequest {
 class Client {
   final String cname;
   final String tel;
-  const Client({this.cname = '-', this.tel = ''});
+  final String tax;
+  const Client({this.cname = '-', this.tel = '', this.tax = ''});
 }
 
 /// ใบเสร็จ / สรุปการรับชำระ (Step 2)

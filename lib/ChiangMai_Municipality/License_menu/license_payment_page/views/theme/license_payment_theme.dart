@@ -181,7 +181,7 @@ class StatusPalette {
       return const StatusPalette(
           LaColors.statusPendingBg, LaColors.statusPendingFg);
     }
-    // Approved / อนุมัติ / ตกลง / ผ่าน / เสร็จ
+    // Approved / อนุมัติ / ตกลง / ผ่าน / เสร็จ / ชำระแล้ว
     if (s.contains('อนุมัติ') ||
         s.contains('approved') ||
         s.contains('ตกลง') ||
@@ -189,7 +189,8 @@ class StatusPalette {
         s.contains('success') ||
         s == 'ok' ||
         s.contains('complete') ||
-        s.contains('เสร็จ')) {
+        s.contains('เสร็จ') ||
+        s.contains('ชำระแล้ว')) {
       return const StatusPalette(
           LaColors.statusApprovedBg, LaColors.statusApprovedFg);
     }
@@ -211,6 +212,10 @@ class StatusPalette {
         s.contains('verify') ||
         s.contains('check') ||
         s.contains('info')) {
+      return const StatusPalette(LaColors.statusInfoBg, LaColors.statusInfoFg);
+    }
+    // Info (ยื่นเอกสาร / ส่งหลักฐาน) — v2 statuses
+    if (s.contains('ส่งหลักฐาน') || s.contains('ยื่นเอกสาร')) {
       return const StatusPalette(LaColors.statusInfoBg, LaColors.statusInfoFg);
     }
     return const StatusPalette(

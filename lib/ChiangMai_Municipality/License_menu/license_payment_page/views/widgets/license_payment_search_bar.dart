@@ -133,7 +133,7 @@ class _LicenseRequestSearchBarState extends State<LicensePaymentSearchBar> {
                 border: InputBorder.none,
                 hintText: hasText
                     ? 'ค้นหา "${_controller.text}"'
-                    : 'ค้นหา... (ชื่อผู้ติดต่อ, รหัสรายการ, เบอร์โทร)',
+                    : 'ค้นหา... (uuid, ล็อค, โซน, ชื่อ, เบอร์โทร)',
                 hintStyle: LaText.bodyMuted.copyWith(
                   color: LaColors.textMuted,
                 ),
