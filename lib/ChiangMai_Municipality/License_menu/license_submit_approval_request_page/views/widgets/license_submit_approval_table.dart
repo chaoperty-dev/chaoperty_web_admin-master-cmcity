@@ -1,5 +1,5 @@
 // ============================================================================
-// license_fact_check_table.dart
+// license_submit_approval_table.dart
 // ============================================================================
 // ตารางแสดงรายการ "คำขอต่อสัญญา" — ดีไซน์ใหม่
 // - Card-based header + alternating rows + hover state
@@ -14,11 +14,11 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
+import '../../../../unity/FormatDate.dart' as fd;
 import '../../../../unity/FormatPhone.dart';
-import '../../../../Model/Review_Model.dart';
-import '../theme/license_fact_check_theme.dart';
-import '../../viewmodels/license_fact_check_view_model.dart';
+import '../../models/license_submit_approval_detail_model.dart';
+import '../theme/license_submit_approval_theme.dart';
+import '../../viewmodels/license_submit_approval_view_model.dart';
 
 /// Breakpoint: < 900px = โทรศัพท์/แท็บเล็ต → ใช้ card layout
 const double kLicenseMenuMobileBreakpoint = 900;
@@ -26,12 +26,62 @@ const double kLicenseMenuMobileBreakpoint = 900;
 bool _isLicenseListMobile(BuildContext context) =>
     MediaQuery.of(context).size.width < kLicenseMenuMobileBreakpoint;
 
-class LicensefactcheckTable extends StatelessWidget {
-  const LicensefactcheckTable({super.key});
+// ============================================================================
+// Top-level helpers (ใช้ร่วมระหว่าง row + card)
+// ============================================================================
+
+String _shortUuid(String uuid) {
+  if (uuid.isEmpty) return '-';
+  if (uuid.length <= 12) return uuid;
+  return '${uuid.substring(0, 8)}…';
+}
+
+/// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
+String _maskName(String raw) {
+  final name = raw.trim();
+  if (name.isEmpty || name == '-') return '-';
+  final words = name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  if (words.isEmpty) return '-';
+
+  if (words.length == 1) {
+    final w = words.first;
+    if (w.length <= 3) return '***';
+    return '${w.substring(0, w.length - 3)}***';
+  }
+
+  final lastIndex = words.length - 1;
+  final last = words[lastIndex];
+  if (last.length <= 3) {
+    words[lastIndex] = '***';
+  } else {
+    words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+  }
+  return words.join(' ');
+}
+
+/// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
+String _maskPhone(String raw) {
+  if (raw.isEmpty || raw == '-') return '-';
+  final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.length <= 3) return raw;
+
+  final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+
+  if (digits.length == 10) {
+    return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+  }
+  if (digits.length == 9) {
+    return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+  }
+  return maskedDigits;
+}
+
+class LicenseSubmitApprovalTable extends StatelessWidget {
+  const LicenseSubmitApprovalTable({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicensefactcheckViewModel>();
+    final vm = context.watch<LicenseSubmitApprovalViewModel>();
 
     if (vm.isLoading && vm.requests.isEmpty) {
       return const _LoadingState();
@@ -56,9 +106,9 @@ class LicensefactcheckTable extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
             ),
           for (int i = 0; i < vm.requests.length; i++) ...[
-            _FactCheckCard(
+            _SubmitApprovalCard(
               index: i,
-              model: vm.requests[i],
+              detail: vm.requests[i],
               onTap: () => vm.onViewRequest(vm.requests[i]),
             ),
             if (i < vm.requests.length - 1) const SizedBox(height: LaSpace.sm),
@@ -123,353 +173,52 @@ class LicensefactcheckTable extends StatelessWidget {
   // ========================================================================
   Widget _dataRow(
     BuildContext context,
-    LicensefactcheckViewModel vm,
-    ReviewModel model,
+    LicenseSubmitApprovalViewModel vm,
+    SubmitApprovalDetail payment,
     int index,
   ) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status);
+    final nr = payment.newRequest;
+    final palette = StatusPalette.of(payment.statusLabel);
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(model),
+      onTap: () => vm.onViewRequest(payment),
       child: Row(
         children: [
           // Action
           SizedBox(
             width: 110,
             child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(model))),
+                child: _ViewButton(onTap: () => vm.onViewRequest(payment))),
           ),
-          _Cell(value: nr?.leaseNumber ?? '-', flex: 2),
+          _Cell(value: payment.paymentNo, flex: 2),
           _Cell(value: nr?.subzone ?? '', flex: 2),
           _Cell(value: nr?.zn ?? '', flex: 2),
           _Cell(value: nr?.ln ?? '', flex: 2, isMono: true),
           _Cell(
-              value: _maskName(model.client?.cname ?? ''),
-              tooltip: model.client?.cname,
+              value: _maskName(payment.client?.cname ?? ''),
+              tooltip: payment.client?.cname,
               flex: 3),
           _Cell(
-              value: _maskPhone(formatPhoneNumber(model.client?.tel ?? "")),
-              tooltip: formatPhoneNumber(model.client?.tel ?? ""),
+              value: _maskPhone(formatPhoneNumber(payment.client?.tel ?? "")),
+              tooltip: formatPhoneNumber(payment.client?.tel ?? ""),
               flex: 2,
               isMono: true),
           _Cell(
-              value: formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
+              value: fd.formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
               flex: 2,
               isMono: true),
           Expanded(
             flex: 2,
             child: _StatusPill(
-              label: model.statusLabel ?? model.status ?? '-',
+              label: payment.statusLabel,
               palette: palette,
             ),
           ),
           _CopyUuidCell(
-            fullValue: model.uuid ?? '',
-            display: _shortUuid(model.uuid ?? ''),
+            fullValue: payment.uuid,
+            display: _shortUuid(payment.uuid),
             flex: 2,
           ),
-        ],
-      ),
-    );
-  }
-
-  String _shortUuid(String uuid) {
-    if (uuid.isEmpty) return '-';
-    if (uuid.length <= 12) return uuid;
-    return '${uuid.substring(0, 8)}…';
-  }
-
-  /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
-  String _maskName(String raw) {
-    final name = raw.trim();
-    if (name.isEmpty || name == '-') return '-';
-    final words =
-        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '-';
-
-    if (words.length == 1) {
-      final w = words.first;
-      if (w.length <= 3) return '***';
-      return '${w.substring(0, w.length - 3)}***';
-    }
-
-    final lastIndex = words.length - 1;
-    final last = words[lastIndex];
-    if (last.length <= 3) {
-      words[lastIndex] = '***';
-    } else {
-      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
-    }
-    return words.join(' ');
-  }
-
-  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
-  }
-}
-
-// ============================================================================
-// Internal widgets
-// ============================================================================
-
-/// Card layout — ใช้บน mobile/tablet (< 900px)
-class _FactCheckCard extends StatelessWidget {
-  final int index;
-  final ReviewModel model;
-  final VoidCallback onTap;
-  const _FactCheckCard({
-    required this.index,
-    required this.model,
-    required this.onTap,
-  });
-
-  String _shortUuid(String uuid) {
-    if (uuid.isEmpty) return '-';
-    if (uuid.length <= 12) return uuid;
-    return '${uuid.substring(0, 8)}…';
-  }
-
-  String _maskName(String raw) {
-    final name = raw.trim();
-    if (name.isEmpty || name == '-') return '-';
-    final words =
-        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '-';
-
-    if (words.length == 1) {
-      final w = words.first;
-      if (w.length <= 3) return '***';
-      return '${w.substring(0, w.length - 3)}***';
-    }
-
-    final lastIndex = words.length - 1;
-    final last = words[lastIndex];
-    if (last.length <= 3) {
-      words[lastIndex] = '***';
-    } else {
-      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
-    }
-    return words.join(' ');
-  }
-
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status ?? '');
-    final leaseNo = nr?.leaseNumber ?? '-';
-    final name = _maskName(model.client?.cname ?? '');
-    final phone = _maskPhone(formatPhoneNumber(model.client?.tel ?? ""));
-    final endDate = formatDate(nr?.ldate ?? '', type: DateFormatType.dmy);
-
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(LaRadius.lg),
-        child: Container(
-          padding: const EdgeInsets.all(LaSpace.md),
-          decoration: LaDecor.card(),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 32,
-                    height: 32,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: LaColors.primaryLight,
-                      borderRadius: BorderRadius.circular(LaRadius.pill),
-                    ),
-                    child: Text(
-                      '${index + 1}',
-                      style: LaText.tableCell.copyWith(
-                        color: LaColors.primaryDark,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: LaSpace.sm),
-                  Expanded(
-                    child: Text(
-                      leaseNo,
-                      style: LaText.tableCell.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: LaSpace.sm),
-                  _StatusPill(
-                    label: model.statusLabel ?? model.status ?? '-',
-                    palette: palette,
-                  ),
-                ],
-              ),
-              const Divider(height: LaSpace.lg, color: LaColors.border),
-              _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
-              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
-              if ((nr?.subzone ?? '').isNotEmpty)
-                _CardRow(label: 'บริเวณ', value: nr!.subzone ?? '-'),
-              if ((nr?.zn ?? '').isNotEmpty)
-                _CardRow(label: 'โซนพื้นที่', value: nr!.zn ?? '-'),
-              _CardRow(
-                  label: 'รหัสพื้นที่', value: nr?.ln ?? '-', isMono: true),
-              _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
-              _CardRow(
-                label: 'รหัสรายการ',
-                value: _shortUuid(model.uuid ?? ''),
-                isMono: true,
-                muted: true,
-              ),
-              const SizedBox(height: LaSpace.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: _ViewButton(onTap: onTap),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CardRow extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool isMono;
-  final bool muted;
-  final String? uuidCopy;
-  const _CardRow({
-    required this.label,
-    required this.value,
-    this.isMono = false,
-    this.muted = false,
-    this.uuidCopy,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    Widget valueText = Text(
-      value.isEmpty ? '-' : value,
-      style: LaText.tableCell.copyWith(
-        color: muted ? LaColors.textSecondary : LaColors.textPrimary,
-        fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-        fontFamilyFallback: const [LaText.fontRegular],
-        fontSize: 12,
-      ),
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
-    );
-
-    final canCopy = uuidCopy != null && uuidCopy!.isNotEmpty;
-    if (canCopy) {
-      valueText = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Flexible(child: valueText),
-          const SizedBox(width: 4),
-          const Icon(Icons.content_copy_rounded,
-              size: 11, color: LaColors.textMuted),
-        ],
-      );
-    }
-
-    Widget valueChild = Expanded(child: valueText);
-
-    if (canCopy) {
-      valueChild = Expanded(
-        child: Tooltip(
-          message: 'คลิกเพื่อคัดลอก: $uuidCopy',
-          waitDuration: const Duration(milliseconds: 300),
-          child: Material(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(4),
-            child: InkWell(
-              onTap: () async {
-                await Clipboard.setData(ClipboardData(text: uuidCopy!));
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: const Row(
-                      children: [
-                        Icon(Icons.check_circle_outline_rounded,
-                            size: 18, color: Colors.white),
-                        SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'คัดลอกรหัสรายการแล้ว',
-                            style: TextStyle(fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ],
-                    ),
-                    duration: const Duration(seconds: 2),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-              },
-              borderRadius: BorderRadius.circular(4),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: valueText,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              label,
-              style: LaText.bodyMuted.copyWith(fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          valueChild,
         ],
       ),
     );
@@ -877,6 +626,285 @@ class _LoadingState extends StatelessWidget {
           ),
           SizedBox(height: 12),
           Text('กำลังโหลดข้อมูล...', style: LaText.bodyMuted),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Mobile card layout
+// ============================================================================
+
+class _SubmitApprovalCard extends StatefulWidget {
+  final int index;
+  final SubmitApprovalDetail detail;
+  final VoidCallback onTap;
+
+  const _SubmitApprovalCard({
+    required this.index,
+    required this.detail,
+    required this.onTap,
+  });
+
+  @override
+  State<_SubmitApprovalCard> createState() => _SubmitApprovalCardState();
+}
+
+class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = widget.detail;
+    final nr = d.newRequest;
+    final palette = StatusPalette.of(d.statusLabel);
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: widget.onTap,
+        onHover: (h) {
+          if (h != _hover) setState(() => _hover = h);
+        },
+        borderRadius: BorderRadius.circular(LaRadius.lg),
+        child: AnimatedContainer(
+          duration: LrAnimations.fast,
+          curve: Curves.easeOut,
+          decoration: LaDecor.card().copyWith(
+            border: Border.all(
+              color: _hover ? LaColors.primary : LaColors.border,
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _hover
+                    ? LaColors.primary.withOpacity(.08)
+                    : Colors.black.withOpacity(.04),
+                blurRadius: _hover ? 8 : 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.all(LaSpace.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Header row: index circle + title + status pill ───
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: LaColors.primaryLight,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '${widget.index + 1}',
+                      style: LaText.tableHeader.copyWith(
+                        color: LaColors.primaryDark,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          d.paymentNo.isEmpty ? '-' : d.paymentNo,
+                          style: LaText.h2.copyWith(fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _maskName(d.client?.cname ?? ''),
+                          style: LaText.bodyMuted,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  _StatusPill(label: d.statusLabel, palette: palette),
+                ],
+              ),
+              const SizedBox(height: LaSpace.md),
+              const Divider(height: 1, color: LaColors.border),
+              const SizedBox(height: LaSpace.md),
+              // ─── Detail rows ───
+              _CardRow(
+                icon: Icons.place_outlined,
+                label: 'บริเวณ',
+                value: nr?.subzone ?? '-',
+              ),
+              _CardRow(
+                icon: Icons.layers_outlined,
+                label: 'โซนพื้นที่',
+                value: nr?.zn ?? '-',
+              ),
+              _CardRow(
+                icon: Icons.tag,
+                label: 'รหัสพื้นที่',
+                value: nr?.ln ?? '-',
+                isMono: true,
+              ),
+              _CardRow(
+                icon: Icons.phone_outlined,
+                label: 'เบอร์โทร',
+                value: _maskPhone(formatPhoneNumber(d.client?.tel ?? '')),
+                isMono: true,
+              ),
+              _CardRow(
+                icon: Icons.event_outlined,
+                label: 'วันที่สิ้นสุด',
+                value: fd.formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
+                isMono: true,
+              ),
+              _CardRow(
+                icon: Icons.fingerprint,
+                label: 'รหัสรายการ',
+                value: _shortUuid(d.uuid),
+                isMono: true,
+                muted: true,
+                uuidCopy: d.uuid,
+              ),
+              const SizedBox(height: LaSpace.md),
+              // ─── Action button ───
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: widget.onTap,
+                  icon: const Icon(Icons.visibility_outlined, size: 16),
+                  label: const Text('เรียกดู'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: LaColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(LaRadius.pill),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool isMono;
+  final bool muted;
+  final String? uuidCopy;
+
+  const _CardRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.isMono = false,
+    this.muted = false,
+    this.uuidCopy,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget valueText = Text(
+      value.isEmpty ? '-' : value,
+      style: LaText.tableCell.copyWith(
+        color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+        fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+        fontFamilyFallback: const [LaText.fontRegular],
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final canCopy = uuidCopy != null && uuidCopy!.isNotEmpty;
+    if (canCopy) {
+      valueText = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: valueText),
+          const SizedBox(width: 4),
+          const Icon(Icons.content_copy_rounded,
+              size: 11, color: LaColors.textMuted),
+        ],
+      );
+    }
+
+    Widget valueChild = Expanded(child: valueText);
+
+    if (canCopy) {
+      valueChild = Expanded(
+        child: Tooltip(
+          message: 'คลิกเพื่อคัดลอก: $uuidCopy',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: () async {
+                await Clipboard.setData(ClipboardData(text: uuidCopy!));
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Row(
+                      children: [
+                        Icon(Icons.check_circle_outline_rounded,
+                            size: 18, color: Colors.white),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'คัดลอกรหัสรายการแล้ว',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                    duration: const Duration(seconds: 2),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: valueText,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 14, color: LaColors.textSecondary),
+          const SizedBox(width: 6),
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: LaText.bodyMuted.copyWith(fontSize: 12),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          valueChild,
         ],
       ),
     );
