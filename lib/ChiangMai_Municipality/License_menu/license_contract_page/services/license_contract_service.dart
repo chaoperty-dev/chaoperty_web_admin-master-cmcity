@@ -177,6 +177,9 @@ class LicenseContractService {
       if (key == null) continue;
       (propMap[key] ??= []).add(p);
     }
+    // 🔍 DEBUG: log keys ของ propMap
+    print('� [fetchAreas] propMap keys=${propMap.keys.toList()} '
+        '(total ${propMap.length} entries, ${properties.length} props)');
 
     // 4) Join แล้ว set area.properties (cast dynamic เพื่อข้าม analyzer cache casing issue)
     for (final area in areas) {
@@ -186,6 +189,11 @@ class LicenseContractService {
           : const <PropertiesModel>[];
       // ignore: invalid_assignment
       area.properties = matched;
+      // 🔍 DEBUG: log TEST30 join result
+      if ((area.lncode ?? '').startsWith('TEST')) {
+        print('🔍 [fetchAreas] lncode=${area.lncode} ser=${area.ser} '
+            'matched=${matched.length}');
+      }
     }
 
     // ignore: avoid_print
