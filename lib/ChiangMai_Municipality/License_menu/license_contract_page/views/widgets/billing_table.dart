@@ -41,21 +41,33 @@ class BillingTable extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ─── Toolbar ───
-            Row(
-              children: [
-                _GradientAddButton(
-                  onPressed: () => _showAddDialog(context, vm),
-                ),
-                const SizedBox(width: 12),
-                _RowCounter(count: vm.rows.length),
-                const Spacer(),
-                if (vm.rows.isNotEmpty)
-                  Text(
-                    'รวม ${vm.rows.length} รายการ',
-                    style: LcText.caption,
+            // ─── Toolbar (responsive) ───
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isMobile = constraints.maxWidth < 600;
+                final toolbar = [
+                  _GradientAddButton(
+                    onPressed: () => _showAddDialog(context, vm),
                   ),
-              ],
+                  const SizedBox(width: 12),
+                  _RowCounter(count: vm.rows.length),
+                  if (!isMobile) const Spacer(),
+                  if (!isMobile && vm.rows.isNotEmpty)
+                    Text(
+                      'รวม ${vm.rows.length} รายการ',
+                      style: LcText.caption,
+                    ),
+                ];
+                if (isMobile) {
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 8,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: toolbar,
+                  );
+                }
+                return Row(children: toolbar);
+              },
             ),
             const SizedBox(height: LcSpace.md),
 
@@ -298,7 +310,7 @@ class BillingTable extends StatelessWidget {
               ),
             const SizedBox(height: LcSpace.md),
 
-            // ─── Grand Total Card ───
+            // ─── Grand Total Card (responsive) ───
             Container(
               padding: const EdgeInsets.symmetric(
                   horizontal: LcSpace.lg, vertical: LcSpace.md),
@@ -312,45 +324,94 @@ class BillingTable extends StatelessWidget {
                 borderRadius: BorderRadius.circular(LcRadius.lg),
                 border: Border.all(color: LcColors.primary.withOpacity(.2)),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: LcColors.primary,
-                          borderRadius: BorderRadius.circular(8),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isMobile = constraints.maxWidth < 520;
+                  if (isMobile) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: LcColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(Icons.summarize_rounded,
+                                  size: 18, color: Colors.white),
+                            ),
+                            const SizedBox(width: 12),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Text('ยอดรวมทั้งหมด',
+                                    style: LcText.label),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'รวม ${vm.rows.length} รายการ',
+                                  style: LcText.caption,
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        child: const Icon(Icons.summarize_rounded,
-                            size: 18, color: Colors.white),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
+                        const SizedBox(height: 8),
+                        Text(
+                          '${vm.grandTotal.toStringAsFixed(2)} บาท',
+                          style: const TextStyle(
+                            fontFamily: LcText.fontBold,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: LcColors.primaryDark,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
                         children: [
-                          const Text('ยอดรวมทั้งหมด', style: LcText.label),
-                          const SizedBox(height: 2),
-                          Text(
-                            'รวม ${vm.rows.length} รายการ',
-                            style: LcText.caption,
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: LcColors.primary,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(Icons.summarize_rounded,
+                                size: 18, color: Colors.white),
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Text('ยอดรวมทั้งหมด', style: LcText.label),
+                              const SizedBox(height: 2),
+                              Text(
+                                'รวม ${vm.rows.length} รายการ',
+                                style: LcText.caption,
+                              ),
+                            ],
                           ),
                         ],
                       ),
+                      Text(
+                        '${vm.grandTotal.toStringAsFixed(2)} บาท',
+                        style: const TextStyle(
+                          fontFamily: LcText.fontBold,
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: LcColors.primaryDark,
+                        ),
+                      ),
                     ],
-                  ),
-                  Text(
-                    '${vm.grandTotal.toStringAsFixed(2)} บาท',
-                    style: const TextStyle(
-                      fontFamily: LcText.fontBold,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w700,
-                      color: LcColors.primaryDark,
-                    ),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -769,75 +830,70 @@ class _AddRowDialogState extends State<_AddRowDialog> {
                                 if (selected.expname == null) return;
                                 vm.addRow(selected);
                                 widget.onAdd();
-                                Future.microtask(() {
-                                  if (mounted) {
-                                    setState(() {
-                                      _selectedExpName = null;
-                                    });
-                                  }
-                                });
+                                // ปิด popup ทันทีหลังเลือก — ไม่ต้องเห็น mini-table
+                                Navigator.of(context).pop();
                               },
                             ),
                           ),
 
-                          // ─── Mini table ───
-                          if (matchedRows.isNotEmpty)
-                            Container(
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: LcColors.border),
-                                ),
-                              ),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: DataTable(
-                                  columnSpacing: 18,
-                                  headingRowHeight: 36,
-                                  dataRowMinHeight: 40,
-                                  dataRowMaxHeight: 52,
-                                  headingRowColor:
-                                      MaterialStateColor.resolveWith(
-                                          (states) => LcColors.surfaceMuted),
-                                  headingTextStyle: LcText.tableHeader,
-                                  dataTextStyle: LcText.tableCell,
-                                  columns: const [
-                                    DataColumn(label: Text('ประเภท')),
-                                    DataColumn(label: Text('ความถี่')),
-                                    DataColumn(label: Text('งวด')),
-                                    DataColumn(label: Text('ราคา')),
-                                    DataColumn(label: Text('ยอดสุทธิ')),
-                                    DataColumn(label: Text('')),
-                                  ],
-                                  rows: matchedRows.map((entry) {
-                                    final i = entry.key;
-                                    final row = entry.value;
-                                    return DataRow(cells: [
-                                      DataCell(Text(row.expname ?? '-')),
-                                      DataCell(Text(row.unit ?? '-')),
-                                      DataCell(Text(row.term ?? '0')),
-                                      DataCell(Text(row.amt ?? '0')),
-                                      DataCell(Text(
-                                        row.total ?? '0.00',
-                                        style: LcText.tableCell.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: LcColors.primaryDark,
-                                        ),
-                                      )),
-                                      DataCell(IconButton(
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: LcColors.danger, size: 18),
-                                        onPressed: () {
-                                          setState(() {
-                                            vm.removeRow(i);
-                                          });
-                                          widget.onAdd();
-                                        },
-                                      )),
-                                    ]);
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
+                          // ─── Mini table (hidden — comment out per request) ───
+                          // if (matchedRows.isNotEmpty)
+                          //   Container(
+                          //     decoration: const BoxDecoration(
+                          //       border: Border(
+                          //         top: BorderSide(color: LcColors.border),
+                          //       ),
+                          //     ),
+                          //     child: SingleChildScrollView(
+                          //       scrollDirection: Axis.horizontal,
+                          //       child: DataTable(
+                          //         columnSpacing: 18,
+                          //         headingRowHeight: 36,
+                          //         dataRowMinHeight: 40,
+                          //         dataRowMaxHeight: 52,
+                          //         headingRowColor:
+                          //             MaterialStateColor.resolveWith(
+                          //                 (states) => LcColors.surfaceMuted),
+                          //         headingTextStyle: LcText.tableHeader,
+                          //         dataTextStyle: LcText.tableCell,
+                          //         columns: const [
+                          //           DataColumn(label: Text('ประเภท')),
+                          //           DataColumn(label: Text('ความถี่')),
+                          //           DataColumn(label: Text('งวด')),
+                          //           DataColumn(label: Text('ราคา')),
+                          //           DataColumn(label: Text('ยอดสุทธิ')),
+                          //           DataColumn(label: Text('')),
+                          //         ],
+                          //         rows: matchedRows.map((entry) {
+                          //           final i = entry.key;
+                          //           final row = entry.value;
+                          //           return DataRow(cells: [
+                          //             DataCell(Text(row.expname ?? '-')),
+                          //             DataCell(Text(row.unit ?? '-')),
+                          //             DataCell(Text(row.term ?? '0')),
+                          //             DataCell(Text(row.amt ?? '0')),
+                          //             DataCell(Text(
+                          //               row.total ?? '0.00',
+                          //               style: LcText.tableCell.copyWith(
+                          //                 fontWeight: FontWeight.w700,
+                          //                 color: LcColors.primaryDark,
+                          //               ),
+                          //             )),
+                          //             DataCell(IconButton(
+                          //               icon: const Icon(Icons.delete_outline,
+                          //                   color: LcColors.danger, size: 18),
+                          //               onPressed: () {
+                          //                 setState(() {
+                          //                   vm.removeRow(i);
+                          //                 });
+                          //                 widget.onAdd();
+                          //               },
+                          //             )),
+                          //           ]);
+                          //         }).toList(),
+                          //       ),
+                          //     ),
+                          //   ),
                         ],
                       ),
                     );
