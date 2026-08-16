@@ -293,39 +293,36 @@ class _CopyUuidCellState extends State<_CopyUuidCell> {
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: MouseRegion(
-          onEnter: (_) => setState(() => _hover = true),
-          onExit: (_) => setState(() => _hover = false),
-          child: GestureDetector(
-            onTap: _copy,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(
-                  child: AutoSizeText(
-                    widget.shortUuid,
-                    minFontSize: 11,
-                    maxFontSize: 14,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: LaText.tableCell.copyWith(
-                      color: LaColors.textSecondary,
-                      fontFamily: 'monospace',
-                      fontFamilyFallback: const [LaText.fontRegular],
-                    ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6),
+      child: MouseRegion(
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: _copy,
+          child: Row(
+            children: [
+              Expanded(
+                child: AutoSizeText(
+                  widget.shortUuid,
+                  minFontSize: 11,
+                  maxFontSize: 14,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: LaText.tableCell.copyWith(
+                    color: LaColors.textSecondary,
+                    fontFamily: 'monospace',
+                    fontFamilyFallback: const [LaText.fontRegular],
                   ),
                 ),
-                const SizedBox(width: 4),
-                Icon(
-                  Icons.content_copy_rounded,
-                  size: 12,
-                  color: _hover ? LaColors.primary : LaColors.textMuted,
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                Icons.content_copy_rounded,
+                size: 12,
+                color: _hover ? LaColors.primary : LaColors.textMuted,
+              ),
+            ],
           ),
         ),
       ),
