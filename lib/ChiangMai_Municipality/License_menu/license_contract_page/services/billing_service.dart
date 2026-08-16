@@ -29,6 +29,7 @@ class BillingService {
         .where((t) => t.dtype == 'KR' || t.dtype == 'KO')
         .toList(growable: false);
   }
+
   /// โหลดหน่วยนับ
   Future<List<LcUnitModel>> loadUnits() async {
     final url = '${MyConstant().domain}/GC_unit.php?isAdd=true';
@@ -70,7 +71,7 @@ class BillingService {
     return 0;
   }
 
-  /// โหลดค่าบริการอัตโนมัติ
+  /// โหลดค่าบริการอัตโนมัติ — ไม่บล็อก etype F (เหมือน AutoExpService)
   Future<List<LcAutoExpModel>> loadAutoExps(int payStatusFine) async {
     final prefs = await SharedPreferences.getInstance();
     final ren = prefs.getString('renTalSer') ?? '';
@@ -79,10 +80,7 @@ class BillingService {
       final response = await http.get(Uri.parse(url));
       final result = json.decode(response.body);
       if (result is List) {
-        return result
-            .map((map) => LcAutoExpModel.fromJson(map))
-            .where((m) => !(payStatusFine == 0 && m.etype == 'F'))
-            .toList();
+        return result.map((map) => LcAutoExpModel.fromJson(map)).toList();
       }
     } catch (e) {
       // ignore
