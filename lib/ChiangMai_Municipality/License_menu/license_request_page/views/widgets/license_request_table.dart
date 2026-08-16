@@ -10,6 +10,7 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
@@ -163,11 +164,11 @@ class LicenseRequestTable extends StatelessWidget {
               palette: palette,
             ),
           ),
-          _Cell(
-              value: _shortUuid(model.uuid ?? ''),
-              flex: 2,
-              isMono: true,
-              muted: true),
+          _CopyUuidCell(
+            fullValue: model.uuid ?? '',
+            display: _shortUuid(model.uuid ?? ''),
+            flex: 2,
+          ),
         ],
       ),
     );
@@ -473,6 +474,96 @@ class _Cell extends StatelessWidget {
               color: muted ? LrColors.textSecondary : LrColors.textPrimary,
               fontFamily: isMono ? 'monospace' : LrText.fontRegular,
               fontFamilyFallback: const [LrText.fontRegular],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Copyable UUID cell — short uuid + persistent copy icon
+class _CopyUuidCell extends StatelessWidget {
+  final String fullValue;
+  final String display;
+  final int flex;
+  const _CopyUuidCell({
+    required this.fullValue,
+    required this.display,
+    this.flex = 2,
+  });
+
+  Future<void> _copy(BuildContext context) async {
+    if (fullValue.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: fullValue));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded,
+                size: 18, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'คัดลอกรหัสรายการแล้ว',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Tooltip(
+          message:
+              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: fullValue.isEmpty ? null : () => _copy(context),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                    vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: AutoSizeText(
+                        display.isEmpty ? '-' : display,
+                        minFontSize: 11,
+                        maxFontSize: 14,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LrText.tableCell.copyWith(
+                          color: LrColors.textSecondary,
+                          fontFamily: 'monospace',
+                          fontFamilyFallback: const [LrText.fontRegular],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.content_copy_rounded,
+                      size: 12,
+                      color: LrColors.textMuted,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
