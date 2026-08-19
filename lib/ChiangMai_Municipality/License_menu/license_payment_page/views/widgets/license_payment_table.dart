@@ -161,9 +161,12 @@ class LicensePaymentTable extends StatelessWidget {
               isMono: true),
           Expanded(
             flex: 2,
-            child: _StatusPill(
-              label: task.statusLabel,
-              palette: palette,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _StatusPill(
+                label: task.statusLabel,
+                palette: palette,
+              ),
             ),
           ),
           _CopyCell(

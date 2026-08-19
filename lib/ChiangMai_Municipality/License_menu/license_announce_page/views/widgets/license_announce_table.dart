@@ -187,11 +187,14 @@ class LicenseAnnounceTable extends StatelessWidget {
             ),
             Expanded(
               flex: 2,
-              child: _StatusPill(
-                label: p.computedStatus.isEmpty
-                    ? (p.isActive ? 'ใช้งาน' : 'ปิด')
-                    : p.computedStatus,
-                palette: palette,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _StatusPill(
+                  label: p.computedStatus.isEmpty
+                      ? (p.isActive ? 'ใช้งาน' : 'ปิด')
+                      : p.computedStatus,
+                  palette: palette,
+                ),
               ),
             ),
           ],

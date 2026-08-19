@@ -164,9 +164,12 @@ class LicenseRequestTable extends StatelessWidget {
               isMono: true),
           Expanded(
             flex: 2,
-            child: _StatusPill(
-              label: model.statusLabel,
-              palette: palette,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _StatusPill(
+                label: model.statusLabel,
+                palette: palette,
+              ),
             ),
           ),
           _CopyUuidCell(

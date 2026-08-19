@@ -32,7 +32,11 @@ class _LicensefactcheckPaginationState
       builder: (context, c) {
         final isMobile = c.maxWidth < 520;
         if (!isMobile) {
-          return _buildFull(label: '${vm.currentPage} / ${vm.lastPage}');
+          return _buildFull(
+            label: '${vm.currentPage} / ${vm.lastPage}',
+            canPrev: canPrev,
+            canNext: canNext,
+          );
         }
         return _buildCollapsible(
           label: '${vm.currentPage} / ${vm.lastPage}',
@@ -43,7 +47,12 @@ class _LicensefactcheckPaginationState
     );
   }
 
-  Widget _buildFull({required String label}) {
+  Widget _buildFull({
+    required String label,
+    required bool canPrev,
+    required bool canNext,
+  }) {
+    final vm = context.read<LicensefactcheckViewModel>();
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
@@ -53,10 +62,10 @@ class _LicensefactcheckPaginationState
       ),
       child: _RowContent(
         label: label,
-        onPrev: null,
-        onNext: null,
-        canPrev: true,
-        canNext: true,
+        onPrev: () => vm.loadPage(vm.linksPrev),
+        onNext: () => vm.loadPage(vm.linksNext),
+        canPrev: canPrev,
+        canNext: canNext,
       ),
     );
   }

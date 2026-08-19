@@ -190,9 +190,12 @@ class TenantLicenseTable extends StatelessWidget {
               isMono: true),
           Expanded(
             flex: 2,
-            child: _StatusPill(
-              label: status,
-              palette: palette,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _StatusPill(
+                label: status,
+                palette: palette,
+              ),
             ),
           ),
         ],

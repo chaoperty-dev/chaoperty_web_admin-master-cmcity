@@ -179,9 +179,12 @@ class AreaMenuTable extends StatelessWidget {
               isMono: true),
           Expanded(
             flex: 2,
-            child: _StatusPill(
-              label: status,
-              palette: palette,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _StatusPill(
+                label: status,
+                palette: palette,
+              ),
             ),
           ),
         ],
@@ -266,7 +269,7 @@ class _StatusPill extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
         decoration: LaDecor.pill(palette.bg, palette.fg),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -279,7 +282,7 @@ class _StatusPill extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 5),
             Flexible(
               child: AutoSizeText(
                 label.isEmpty ? '-' : label,

@@ -236,9 +236,12 @@ class LicenseApproveTable extends StatelessWidget {
           _Cell(value: stepLabel, tooltip: stepLabel, flex: 2),
           Expanded(
             flex: 2,
-            child: _StatusPill(
-              label: model.statusLabel ?? model.status ?? '-',
-              palette: palette,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _StatusPill(
+                label: model.statusLabel ?? model.status ?? '-',
+                palette: palette,
+              ),
             ),
           ),
           _CopyUuidCell(

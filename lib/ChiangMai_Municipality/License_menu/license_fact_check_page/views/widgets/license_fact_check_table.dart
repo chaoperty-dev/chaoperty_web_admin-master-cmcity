@@ -182,9 +182,12 @@ class LicensefactcheckTable extends StatelessWidget {
           ),
           Expanded(
             flex: 2,
-            child: _StatusPill(
-              label: item.statusLabel,
-              palette: palette,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: _StatusPill(
+                label: item.statusLabel,
+                palette: palette,
+              ),
             ),
           ),
           _CopyUuidCell(
