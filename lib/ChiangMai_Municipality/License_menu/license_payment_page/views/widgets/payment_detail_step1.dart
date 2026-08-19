@@ -13,7 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../unity/FormatPhone.dart';
 import '../../models/license_payment_detail_model.dart';
-import '../../models/license_prepayment_model.dart';
+import '../../models/license_prepayment_model.dart' hide formatMoney;
 import '../theme/license_payment_theme.dart';
 import '../../viewmodels/license_payment_detail_view_model.dart';
 
@@ -37,15 +37,31 @@ class PaymentDetailStep1 extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: LaSpace.md, vertical: LaSpace.sm),
                 decoration: BoxDecoration(
-                  color: LaColors.primaryLight.withOpacity(.25),
+                  gradient: LinearGradient(
+                    colors: [
+                      LaColors.primaryLight.withOpacity(.35),
+                      LaColors.primaryLight.withOpacity(.1),
+                    ],
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                  ),
                   borderRadius: BorderRadius.circular(LaRadius.md),
+                  border: Border.all(color: LaColors.primary.withOpacity(.15)),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.receipt_long_rounded,
-                        size: 18, color: LaColors.primaryDark),
-                    SizedBox(width: 8),
-                    Text(
+                    Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: LaColors.primaryDark,
+                        borderRadius: BorderRadius.circular(LaRadius.sm),
+                      ),
+                      child: const Icon(Icons.receipt_long_rounded,
+                          size: 18, color: Colors.white),
+                    ),
+                    const SizedBox(width: LaSpace.sm),
+                    const Text(
                       'ตรวจสอบรายการรับชำระ',
                       style: LaText.h2,
                     ),
@@ -68,7 +84,20 @@ class PaymentDetailStep1 extends StatelessWidget {
 
               // ─── Prepayment (การจ่ายล่วงหน้า) ───
               if (vm.prepayment != null) ...[
-                _PrepaymentCard(prepayment: vm.prepayment!),
+                _PrepaymentCard(
+                  prepayment: vm.prepayment!,
+                  payments: vm.payments?.data ?? const [],
+                  onProceed: vm.proceedToPayment,
+                ),
+                const SizedBox(height: LaSpace.lg),
+              ],
+
+              // ─── สถานะการชำระ (จาก GET .../payments) ───
+              if (vm.payments != null) ...[
+                _PaymentStatusCard(
+                  payments: vm.payments!,
+                  details: vm.prepayment?.details ?? const [],
+                ),
                 const SizedBox(height: LaSpace.lg),
               ],
 
@@ -227,7 +256,29 @@ class _PaymentSummaryCard extends StatelessWidget {
 
 class _PrepaymentCard extends StatelessWidget {
   final PrepaymentData prepayment;
-  const _PrepaymentCard({required this.prepayment});
+  final List<PaymentDetail> payments;
+  final void Function(PrepaymentItem item) onProceed;
+  const _PrepaymentCard({
+    required this.prepayment,
+    this.payments = const [],
+    required this.onProceed,
+  });
+
+  /// สถานะของแต่ละรายการจ่ายล่วงหน้า (join กับรายการชำระ)
+  /// - มี payment ที่ status=paid   → ชำระแล้ว
+  /// - มี payment (draft/อื่นๆ)      → รอชำระ
+  /// - ไม่มี payment เลย             → ยังไม่ทำรายการ
+  String statusOf(PrepaymentItem item) {
+    PaymentDetail? matched;
+    for (final p in payments) {
+      if (p.debtLineUuid == item.uuid) {
+        matched = p;
+        break;
+      }
+    }
+    if (matched == null) return 'ยังไม่ทำรายการ';
+    return matched.statusLabel;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -253,6 +304,24 @@ class _PrepaymentCard extends StatelessWidget {
               ),
               const SizedBox(width: LaSpace.sm),
               Text('รายการจ่ายล่วงหน้า', style: LaText.h2),
+              if (items.isNotEmpty) ...[
+                const SizedBox(width: LaSpace.sm),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: LaColors.primaryLight,
+                    borderRadius: BorderRadius.circular(LaRadius.pill),
+                  ),
+                  child: Text(
+                    '${items.length} รายการ',
+                    style: LaText.caption.copyWith(
+                      color: LaColors.primaryDark,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
               const Spacer(),
               _PillIcon(
                 icon: Icons.tag_rounded,
@@ -285,19 +354,42 @@ class _PrepaymentCard extends StatelessWidget {
               ),
             )
           else
-            _PrepaymentList(items: items),
+            _PrepaymentList(
+              items: items,
+              statusOf: statusOf,
+              onProceed: onProceed,
+            ),
 
           const SizedBox(height: LaSpace.md),
 
           // ─── Grand total ───
           Container(
             padding: const EdgeInsets.symmetric(
-                horizontal: LaSpace.md, vertical: LaSpace.sm),
-            decoration: LaDecor.softCard(color: LaColors.primaryLight),
+                horizontal: LaSpace.md, vertical: LaSpace.md),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  LaColors.primaryLight,
+                  LaColors.primaryLight.withOpacity(.5),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(LaRadius.md),
+              border: Border.all(color: LaColors.primary.withOpacity(.18)),
+            ),
             child: Row(
               children: [
-                const Icon(Icons.summarize_rounded,
-                    size: 16, color: LaColors.primaryDark),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: LaColors.primaryDark,
+                    borderRadius: BorderRadius.circular(LaRadius.sm),
+                  ),
+                  child: const Icon(Icons.summarize_rounded,
+                      size: 18, color: Colors.white),
+                ),
                 const SizedBox(width: LaSpace.sm),
                 Text('รวมทั้งสิ้น', style: LaText.body),
                 const Spacer(),
@@ -328,7 +420,13 @@ const double _prepayBreakpoint = 700;
 
 class _PrepaymentList extends StatelessWidget {
   final List<PrepaymentItem> items;
-  const _PrepaymentList({required this.items});
+  final String Function(PrepaymentItem) statusOf;
+  final void Function(PrepaymentItem) onProceed;
+  const _PrepaymentList({
+    required this.items,
+    required this.statusOf,
+    required this.onProceed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -341,13 +439,21 @@ class _PrepaymentList extends StatelessWidget {
             children: [
               for (var i = 0; i < items.length; i++) ...[
                 if (i > 0) const SizedBox(height: LaSpace.sm),
-                _PrepaymentItemCard(item: items[i]),
+                _PrepaymentItemCard(
+                  item: items[i],
+                  status: statusOf(items[i]),
+                  onProceed: onProceed,
+                ),
               ],
             ],
           );
         }
         // ─── จอกว้าง: แสดงเป็นตาราง ───
-        return _PrepaymentTable(items: items);
+        return _PrepaymentTable(
+          items: items,
+          statusOf: statusOf,
+          onProceed: onProceed,
+        );
       },
     );
   }
@@ -355,7 +461,13 @@ class _PrepaymentList extends StatelessWidget {
 
 class _PrepaymentTable extends StatelessWidget {
   final List<PrepaymentItem> items;
-  const _PrepaymentTable({required this.items});
+  final String Function(PrepaymentItem) statusOf;
+  final void Function(PrepaymentItem) onProceed;
+  const _PrepaymentTable({
+    required this.items,
+    required this.statusOf,
+    required this.onProceed,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -375,24 +487,32 @@ class _PrepaymentTable extends StatelessWidget {
                 Expanded(
                     flex: 3, child: Text('รายการ', style: LaText.tableHeader)),
                 Expanded(
-                    flex: 2, child: Text('หน่วย', style: LaText.tableHeader)),
+                    flex: 2, child: Text('สถานะ', style: LaText.tableHeader)),
                 Expanded(
-                    flex: 2, child: Text('งวด', style: LaText.tableHeader)),
+                    flex: 1, child: Text('หน่วย', style: LaText.tableHeader)),
                 Expanded(
-                    flex: 2, child: Text('จำนวน', style: LaText.tableHeader)),
+                    flex: 1, child: Text('งวด', style: LaText.tableHeader)),
+                Expanded(
+                    flex: 1, child: Text('จำนวน', style: LaText.tableHeader)),
                 Expanded(
                     flex: 2, child: Text('วันที่', style: LaText.tableHeader)),
                 Expanded(
                     flex: 2,
                     child: Text('รวม',
                         style: LaText.tableHeader, textAlign: TextAlign.right)),
+                const SizedBox(width: 20),
+                const SizedBox(width: 150),
               ],
             ),
           ),
           for (var i = 0; i < items.length; i++) ...[
             if (i > 0)
               const Divider(height: 1, thickness: 1, color: LaColors.border),
-            _PrepaymentRow(item: items[i]),
+            _PrepaymentRow(
+              item: items[i],
+              status: statusOf(items[i]),
+              onProceed: onProceed,
+            ),
           ],
         ],
       ),
@@ -402,51 +522,107 @@ class _PrepaymentTable extends StatelessWidget {
 
 class _PrepaymentRow extends StatelessWidget {
   final PrepaymentItem item;
-  const _PrepaymentRow({required this.item});
+  final String status;
+  final void Function(PrepaymentItem) onProceed;
+  const _PrepaymentRow({
+    required this.item,
+    required this.status,
+    required this.onProceed,
+  });
 
   @override
   Widget build(BuildContext context) {
     final date = (item.sdate ?? '').isNotEmpty || (item.ldate ?? '').isNotEmpty
         ? '${formatPrepayDate(item.sdate)} - ${formatPrepayDate(item.ldate)}'
         : '-';
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-          horizontal: LaSpace.md, vertical: LaSpace.sm),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.expname, style: LaText.tableCell),
-                if (item.uuid.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 2),
-                    child:
-                        Text('รหัสรายการ: ${item.uuid}', style: LaText.caption),
+    final shortUuid =
+        item.uuid.length > 8 ? '${item.uuid.substring(0, 8)}…' : item.uuid;
+    return InkWell(
+      onTap: () => onProceed(item),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: LaSpace.md, vertical: LaSpace.sm),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 3,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 30,
+                    height: 30,
+                    decoration: BoxDecoration(
+                      color: LaColors.primaryLight,
+                      borderRadius: BorderRadius.circular(LaRadius.sm),
+                    ),
+                    child: const Icon(
+                      Icons.receipt_long_rounded,
+                      size: 16,
+                      color: LaColors.primaryDark,
+                    ),
                   ),
-              ],
-            ),
-          ),
-          Expanded(flex: 2, child: Text(item.unit, style: LaText.tableCell)),
-          Expanded(
-              flex: 2, child: Text(item.term ?? '-', style: LaText.tableCell)),
-          Expanded(
-              flex: 2, child: Text(item.qty ?? '-', style: LaText.tableCell)),
-          Expanded(flex: 2, child: Text(date, style: LaText.tableCell)),
-          Expanded(
-            flex: 2,
-            child: Text(
-              item.totalDisplay,
-              style: LaText.tableCell.copyWith(
-                fontFamily: 'monospace',
-                fontWeight: FontWeight.w600,
+                  const SizedBox(width: LaSpace.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(item.expname, style: LaText.tableCell),
+                        if (item.uuid.isNotEmpty)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Row(
+                              children: [
+                                const Text('รหัส ', style: LaText.caption),
+                                Text(shortUuid,
+                                    style: LaText.caption.copyWith(
+                                      fontFamily: 'monospace',
+                                      color: LaColors.textMuted,
+                                      fontWeight: FontWeight.w600,
+                                    )),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              textAlign: TextAlign.right,
             ),
-          ),
-        ],
+            Expanded(flex: 2, child: Text(status, style: LaText.tableCell)),
+            Expanded(flex: 1, child: Text(item.unit, style: LaText.tableCell)),
+            Expanded(
+                flex: 1,
+                child: Text(item.term ?? '-', style: LaText.tableCell)),
+            Expanded(
+                flex: 1, child: Text(item.qty ?? '-', style: LaText.tableCell)),
+            Expanded(flex: 2, child: Text(date, style: LaText.tableCell)),
+            Expanded(
+              flex: 2,
+              child: Text(
+                item.totalDisplay,
+                style: LaText.tableCell.copyWith(
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w700,
+                  color: LaColors.primaryDark,
+                ),
+                textAlign: TextAlign.right,
+              ),
+            ),
+            const SizedBox(width: 20),
+            SizedBox(
+              width: 150,
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: _ActionButton(
+                  status: status,
+                  onPressed: () => onProceed(item),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -454,58 +630,108 @@ class _PrepaymentRow extends StatelessWidget {
 
 class _PrepaymentItemCard extends StatelessWidget {
   final PrepaymentItem item;
-  const _PrepaymentItemCard({required this.item});
+  final String status;
+  final void Function(PrepaymentItem) onProceed;
+  const _PrepaymentItemCard({
+    required this.item,
+    required this.status,
+    required this.onProceed,
+  });
 
   @override
   Widget build(BuildContext context) {
     final date = (item.sdate ?? '').isNotEmpty || (item.ldate ?? '').isNotEmpty
         ? '${formatPrepayDate(item.sdate)} - ${formatPrepayDate(item.ldate)}'
         : '-';
-    return Container(
-      decoration: LaDecor.softCard(),
-      padding: const EdgeInsets.all(LaSpace.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(item.expname, style: LaText.body),
-              ),
-              const SizedBox(width: LaSpace.sm),
-              Text(
-                item.totalDisplay,
-                style: LaText.body.copyWith(
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w700,
-                  color: LaColors.primaryDark,
+    final shortUuid =
+        item.uuid.length > 8 ? '${item.uuid.substring(0, 8)}…' : item.uuid;
+    return InkWell(
+      onTap: () => onProceed(item),
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      child: Container(
+        decoration: LaDecor.softCard(),
+        padding: const EdgeInsets.all(LaSpace.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: LaColors.primaryLight,
+                    borderRadius: BorderRadius.circular(LaRadius.sm),
+                  ),
+                  child: const Icon(
+                    Icons.receipt_long_rounded,
+                    size: 16,
+                    color: LaColors.primaryDark,
+                  ),
                 ),
-              ),
-            ],
-          ),
-          if (item.uuid.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: Text('รหัสรายการ: ${item.uuid}', style: LaText.caption),
+                const SizedBox(width: LaSpace.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(item.expname, style: LaText.body),
+                      if (item.uuid.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Row(
+                            children: [
+                              const Text('รหัส ', style: LaText.caption),
+                              Text(shortUuid,
+                                  style: LaText.caption.copyWith(
+                                    fontFamily: 'monospace',
+                                    color: LaColors.textMuted,
+                                    fontWeight: FontWeight.w600,
+                                  )),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: LaSpace.sm),
+                Text(
+                  item.totalDisplay,
+                  style: LaText.body.copyWith(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w700,
+                    color: LaColors.primaryDark,
+                  ),
+                ),
+              ],
             ),
-          const SizedBox(height: LaSpace.sm),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniField(label: 'หน่วย', value: item.unit),
-              ),
-              Expanded(
-                child: _MiniField(label: 'งวด', value: item.term ?? '-'),
-              ),
-              Expanded(
-                child: _MiniField(label: 'จำนวน', value: item.qty ?? '-'),
-              ),
-            ],
-          ),
-          const SizedBox(height: LaSpace.sm),
-          _MiniField(label: 'วันที่', value: date),
-        ],
+            const SizedBox(height: LaSpace.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: _MiniField(label: 'หน่วย', value: item.unit),
+                ),
+                Expanded(
+                  child: _MiniField(label: 'งวด', value: item.term ?? '-'),
+                ),
+                Expanded(
+                  child: _MiniField(label: 'จำนวน', value: item.qty ?? '-'),
+                ),
+              ],
+            ),
+            const SizedBox(height: LaSpace.sm),
+            Row(
+              children: [
+                Expanded(child: _MiniField(label: 'วันที่', value: date)),
+                const SizedBox(width: LaSpace.sm),
+                _ActionButton(
+                  status: status,
+                  onPressed: () => onProceed(item),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -534,6 +760,156 @@ class _MiniField extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ============================================================================
+// Payment status card — สถานะรายการชำระ (จาก GET .../payments)
+// ============================================================================
+
+class _PaymentStatusCard extends StatelessWidget {
+  final RequestPaymentsResponse payments;
+  final List<PrepaymentItem> details;
+  const _PaymentStatusCard({
+    required this.payments,
+    this.details = const [],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = payments.data;
+    final paidCount =
+        items.where((e) => e.status.toLowerCase() == 'paid').length;
+
+    // ─── join ชื่อรายการ (expname) จาก prepayment detail ───
+    // payment.debtLineUuid → prepayment detail.uuid → expname
+    final nameByLine = <String, String>{};
+    for (final d in details) {
+      if (d.uuid.isNotEmpty) nameByLine[d.uuid] = d.expname;
+    }
+
+    return Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(LaSpace.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── Header ───
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: LaColors.statusInfoBg,
+                  borderRadius: BorderRadius.circular(LaRadius.sm),
+                ),
+                child: const Icon(Icons.receipt_long_rounded,
+                    size: 18, color: LaColors.statusInfoFg),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Text('สถานะการชำระ', style: LaText.h2),
+              const Spacer(),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration:
+                    LaDecor.pill(LaColors.surfaceMuted, LaColors.textSecondary),
+                child: Text(
+                  'ชำระแล้ว $paidCount / ${items.length}',
+                  style: LaText.caption.copyWith(
+                    color: LaColors.textSecondary,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: LaSpace.md),
+
+          if (items.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(LaSpace.lg),
+              decoration: LaDecor.softCard(),
+              child: const Center(
+                child: Text('ไม่พบรายการชำระ', style: LaText.bodyMuted),
+              ),
+            )
+          else
+            ...items.map((p) => Padding(
+                  padding: const EdgeInsets.only(bottom: LaSpace.sm),
+                  child: _PaymentStatusRow(
+                    payment: p,
+                    itemName: nameByLine[p.debtLineUuid] ?? '',
+                  ),
+                )),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentStatusRow extends StatelessWidget {
+  final PaymentDetail payment;
+  final String itemName;
+  const _PaymentStatusRow({
+    required this.payment,
+    this.itemName = '',
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final p = payment;
+    return Container(
+      decoration: LaDecor.softCard(),
+      padding: const EdgeInsets.all(LaSpace.md),
+      child: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: LaColors.statusInfoBg,
+              borderRadius: BorderRadius.circular(LaRadius.sm),
+            ),
+            child: const Icon(Icons.payments_outlined,
+                size: 18, color: LaColors.statusInfoFg),
+          ),
+          const SizedBox(width: LaSpace.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  p.paymentNo.isNotEmpty ? p.paymentNo : '-',
+                  style: LaText.h2.copyWith(
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${itemName.isNotEmpty ? itemName : '-'}  •  '
+                  '${_formatSystem(p.paymentSystem)}  •  ${formatMoney(p.amount)}',
+                  style: LaText.caption,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: LaSpace.sm),
+          _StatusBadge(label: p.statusLabel),
+        ],
+      ),
+    );
+  }
+
+  String _formatSystem(String s) {
+    final v = (s).toLowerCase();
+    if (v == 'internal') return 'ในระบบ';
+    if (v == 'external') return 'ภายนอก';
+    return s.isEmpty ? '-' : s;
   }
 }
 
@@ -624,6 +1000,78 @@ class _InfoItem extends StatelessWidget {
   }
 }
 
+class _ActionButton extends StatelessWidget {
+  final String status;
+  final VoidCallback onPressed;
+  const _ActionButton({required this.status, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    final s = status.toLowerCase();
+    final notStarted = s.contains('ยังไม่') || s.isEmpty;
+
+    if (notStarted) {
+      // ─── filled primary (ต้องจ่าย) ───
+      return InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: LaColors.primaryDark,
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.payments_rounded, size: 14, color: Colors.white),
+              SizedBox(width: 4),
+              Text(
+                'ชำระเงิน',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // ─── outlined (ทำรายการต่อ) ───
+    return InkWell(
+      onTap: onPressed,
+      borderRadius: BorderRadius.circular(LaRadius.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(LaRadius.sm),
+          border: Border.all(color: LaColors.primaryDark, width: 1.4),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Text(
+              'ทำรายการต่อ',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: LaColors.primaryDark,
+              ),
+            ),
+            SizedBox(width: 4),
+            Icon(Icons.arrow_forward_rounded,
+                size: 14, color: LaColors.primaryDark),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _StatusBadge extends StatelessWidget {
   final String label;
   const _StatusBadge({required this.label});
@@ -631,36 +1079,31 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = label.toLowerCase();
-    Color bg, fg;
+    Color fg;
     if (s.contains('อนุมัติ') ||
         s.contains('approved') ||
         s.contains('pass') ||
         s.contains('ชำระแล้ว') ||
         s.contains('เสร็จ')) {
-      bg = LaColors.statusApprovedBg;
       fg = LaColors.statusApprovedFg;
     } else if (s.contains('ปฏิเสธ') ||
         s.contains('reject') ||
         s.contains('cancel') ||
         s.contains('ยกเลิก')) {
-      bg = LaColors.statusRejectedBg;
       fg = LaColors.statusRejectedFg;
     } else if (s.contains('รอ') ||
         s.contains('pending') ||
         s.contains('progress') ||
         s.contains('กำลัง')) {
-      bg = LaColors.statusPendingBg;
       fg = LaColors.statusPendingFg;
     } else {
-      bg = LaColors.statusNeutralBg;
       fg = LaColors.statusNeutralFg;
     }
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: bg,
+        color: fg.withOpacity(.1),
         borderRadius: BorderRadius.circular(LaRadius.pill),
-        border: Border.all(color: fg.withOpacity(.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

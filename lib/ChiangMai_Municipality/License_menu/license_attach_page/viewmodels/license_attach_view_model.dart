@@ -118,6 +118,50 @@ class LicenseAttachViewModel extends ChangeNotifier {
     return <String>[s];
   }
 
+  // ---------- Sort ----------
+  /// รายการ key ที่ backend รองรับ (ตรงกับ API `sort_by` allowed values)
+  static const List<String> sortOptions = <String>[
+    'created_at',
+    'submitted_at',
+    'completed_at',
+    'status',
+    'fee_amount',
+    'id',
+    'zn',
+    'ln',
+  ];
+
+  /// ป้ายภาษาไทย (key → label)
+  static const Map<String, String> sortLabels = <String, String>{
+    'created_at': 'วันที่สร้าง',
+    'submitted_at': 'วันที่ส่งคำขอ',
+    'completed_at': 'วันที่เสร็จ',
+    'status': 'สถานะ',
+    'fee_amount': 'ค่าธรรมเนียม',
+    'id': 'รหัส',
+    'zn': 'โซน',
+    'ln': 'lease number',
+  };
+
+  String _selectedSort = 'created_at';
+  String _selectedSortDir = 'desc';
+  String get selectedSort => _selectedSort;
+  String get selectedSortDir => _selectedSortDir;
+
+  /// ผู้ใช้เลือก key sort → ส่งให้ backend
+  Future<void> onSortChanged(String? value) async {
+    _selectedSort = (value == null || value.isEmpty) ? 'created_at' : value;
+    notifyListeners();
+    await refresh();
+  }
+
+  /// สลับ asc/desc
+  Future<void> onSortDirChanged() async {
+    _selectedSortDir = _selectedSortDir == 'asc' ? 'desc' : 'asc';
+    notifyListeners();
+    await refresh();
+  }
+
   void setCustomerSearch(String value) {
     _searchCustomer = value;
     notifyListeners();
@@ -265,8 +309,8 @@ class LicenseAttachViewModel extends ChangeNotifier {
         customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
         statuses: _statusesFilter,
         perPage: 50,
-        sortBy: 'created_at',
-        sortDir: 'desc',
+        sortBy: _selectedSort,
+        sortDir: _selectedSortDir,
         zser: zserFilter,
       );
       _requests = res.items;
@@ -299,8 +343,8 @@ class LicenseAttachViewModel extends ChangeNotifier {
         customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
         statuses: _statusesFilter,
         perPage: 50,
-        sortBy: 'created_at',
-        sortDir: 'desc',
+        sortBy: _selectedSort,
+        sortDir: _selectedSortDir,
         zser: zserFilter,
       );
       _requests = res.items;

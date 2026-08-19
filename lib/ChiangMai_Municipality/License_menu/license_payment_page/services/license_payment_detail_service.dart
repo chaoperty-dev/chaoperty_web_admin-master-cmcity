@@ -137,6 +137,46 @@ class LicensePaymentDetailService {
     }
   }
 
+  // ---------- 1.5b รายการชำระทั้งหมดของคำขอ (สถานะ) ----------
+  /// GET {api_root}/api/v2/requests/{uuid}/payments
+  /// คืนค่า RequestPaymentsResponse (data = รายการชำระ + สถานะ)
+  Future<RequestPaymentsResponse> fetchRequestPayments(
+      {required String uuid}) async {
+    if (uuid.trim().isEmpty) {
+      return const RequestPaymentsResponse();
+    }
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/requests/$uuid/payments');
+
+    print('============================================================');
+    print('[fetchRequestPayments] uuid = $uuid');
+    print('[fetchRequestPayments] URL  = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      print('[fetchRequestPayments] status=${res.statusCode}');
+
+      if (res.statusCode != 200) {
+        print('[fetchRequestPayments][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception(
+            'โหลดรายการชำระไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      print('[fetchRequestPayments][OK body] ${_truncate(res.body, 400)}');
+
+      final body = json.decode(res.body) as Map<String, dynamic>;
+      return RequestPaymentsResponse.fromJson(body);
+    } catch (e) {
+      print('[fetchRequestPayments][ERROR] $e');
+      rethrow;
+    }
+  }
+
   // ---------- 1.6 สร้างรายการรับชำระ (Draft) ----------
   /// POST {api_root}/v2/payments
   /// body: request_uuid, debt_line_uuid, payment_system, pay_type, amount

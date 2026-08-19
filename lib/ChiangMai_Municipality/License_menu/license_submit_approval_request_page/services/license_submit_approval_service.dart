@@ -129,6 +129,8 @@ class LicenseSubmitApprovalService {
     int page = 1,
     String? zn,
     List<String>? statuses,
+    String? sortBy,
+    String? sortDir,
   }) async {
     try {
       Uri uri;
@@ -148,6 +150,12 @@ class LicenseSubmitApprovalService {
           for (final s in statuses) {
             qp['status[]'] = s;
           }
+        }
+        if (sortBy != null && sortBy.isNotEmpty) {
+          qp['sort_by'] = sortBy;
+        }
+        if (sortDir != null && sortDir.isNotEmpty) {
+          qp['sort_dir'] = sortDir;
         }
         uri = _uriV2('v2/admin/requests/tasks/approvals', qp);
       }

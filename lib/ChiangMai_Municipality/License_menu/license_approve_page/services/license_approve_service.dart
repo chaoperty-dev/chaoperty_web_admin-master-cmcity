@@ -101,6 +101,8 @@ class LicenseApproveService {
     int page = 1,
     String? zn,
     List<String>? statuses,
+    String? sortBy,
+    String? sortDir,
   }) async {
     try {
       Uri uri;
@@ -121,6 +123,12 @@ class LicenseApproveService {
           for (final s in statuses) {
             qp['status[]'] = s;
           }
+        }
+        if (sortBy != null && sortBy.isNotEmpty) {
+          qp['sort_by'] = sortBy;
+        }
+        if (sortDir != null && sortDir.isNotEmpty) {
+          qp['sort_dir'] = sortDir;
         }
         uri = _uriV2Me(qp);
       }

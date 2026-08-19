@@ -47,6 +47,55 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
     _loadZones();
   }
 
+  // ---------- Sort ----------
+  /// รายการ key ที่ UI ใช้ (announce ไม่มี API sort → sort ฝั่ง client)
+  static const List<String> sortOptions = <String>[
+    'created_at',
+    'submitted_at',
+    'completed_at',
+    'status',
+  ];
+
+  /// ป้ายภาษาไทย (key → label)
+  static const Map<String, String> sortLabels = <String, String>{
+    'created_at': 'วันที่สร้าง',
+    'submitted_at': 'วันที่ส่งคำขอ',
+    'completed_at': 'วันที่เสร็จ',
+    'status': 'สถานะ',
+  };
+
+  /// key ฝั่ง client → accessor บน LicenseAnnounceItem
+  /// created_at  → announceDate (published_at)
+  /// submitted_at → sdate (effective_at)
+  /// completed_at → edate (expired_at)
+  /// status      → computedStatus
+  static final Map<String, String Function(LicenseAnnounceItem)>
+      _sortAccessors = <String, String Function(LicenseAnnounceItem)>{
+    'created_at': (a) => a.announceDate,
+    'submitted_at': (a) => a.sdate,
+    'completed_at': (a) => a.edate,
+    'status': (a) => a.computedStatus,
+  };
+
+  String _selectedSort = 'created_at';
+  String _selectedSortDir = 'desc';
+  String get selectedSort => _selectedSort;
+  String get selectedSortDir => _selectedSortDir;
+
+  /// ผู้ใช้เลือก key sort → sort ฝั่ง client
+  void onSortChanged(String? value) {
+    _selectedSort = (value == null || value.isEmpty) ? 'created_at' : value;
+    notifyListeners();
+    _applyFilter();
+  }
+
+  /// สลับ asc/desc
+  void onSortDirChanged() {
+    _selectedSortDir = _selectedSortDir == 'asc' ? 'desc' : 'asc';
+    notifyListeners();
+    _applyFilter();
+  }
+
   // alias readOnly (placeholder — license_announce ไม่มีโหมด read-only)
   bool get readOnly => false;
 
@@ -229,8 +278,23 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
     }
 
     final arr = list.toList();
-    arr.sort((a, b) => b.announceDate.compareTo(a.announceDate));
+    _sortItems(arr);
     _filtered = arr;
+  }
+
+  void _sortItems(List<LicenseAnnounceItem> arr) {
+    final accessor = _sortAccessors[_selectedSort];
+    if (accessor == null) {
+      arr.sort((a, b) => b.announceDate.compareTo(a.announceDate));
+      return;
+    }
+    final desc = _selectedSortDir == 'desc';
+    arr.sort((a, b) {
+      final av = accessor(a);
+      final bv = accessor(b);
+      final cmp = av.compareTo(bv);
+      return desc ? cmp : -cmp;
+    });
   }
 
   void _emit(LicenseAnnounceEvent e) {

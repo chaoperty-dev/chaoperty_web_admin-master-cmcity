@@ -45,6 +45,9 @@ class PaymentDetail {
   final double? amountReceived;
   final String? paidAt;
   final String? createdAt;
+  final String debtLineUuid; // จาก debt_line_uuid (รายการชำระ)
+  final String debtUuid; // จาก debt_uuid
+  final String? paymentMethodId; // จาก payment_method_id
   final List<PaymentAddon> addons;
 
   const PaymentDetail({
@@ -62,6 +65,9 @@ class PaymentDetail {
     this.amountReceived,
     this.paidAt,
     this.createdAt,
+    this.debtLineUuid = '',
+    this.debtUuid = '',
+    this.paymentMethodId,
     this.addons = const [],
   });
 
@@ -97,6 +103,9 @@ class PaymentDetail {
           double.tryParse((json['amount_received'] ?? '').toString()),
       paidAt: (json['paid_at'] ?? json['paidAt'] ?? '').toString(),
       createdAt: (json['created_at'] ?? json['createdAt'] ?? '').toString(),
+      debtLineUuid: (json['debt_line_uuid'] ?? '').toString(),
+      debtUuid: (json['debt_uuid'] ?? '').toString(),
+      paymentMethodId: (json['payment_method_id'] ?? '').toString(),
       addons: addons,
     );
   }
@@ -218,6 +227,49 @@ class PaymentReceipt {
   }
 
   factory PaymentReceipt.empty() => const PaymentReceipt();
+}
+
+/// รายการชำระทั้งหมดของคำขอ (GET /api/v2/requests/{uuid}/payments)
+/// ตอบกลับเป็น paginated list: { "data": [...], "links": {...}, "meta": {...} }
+class RequestPaymentsResponse {
+  final List<PaymentDetail> data;
+  final int total;
+  final int currentPage;
+  final int lastPage;
+
+  const RequestPaymentsResponse({
+    this.data = const [],
+    this.total = 0,
+    this.currentPage = 1,
+    this.lastPage = 1,
+  });
+
+  factory RequestPaymentsResponse.fromJson(Map<String, dynamic> json) {
+    final list = json['data'];
+    final data = list is List
+        ? list
+            .whereType<Map<String, dynamic>>()
+            .map(PaymentDetail.fromJson)
+            .toList()
+        : <PaymentDetail>[];
+
+    int toInt(dynamic v, [int d = 0]) =>
+        v is int ? v : int.tryParse('$v') ?? d;
+
+    final meta = json['meta'];
+    final total = meta is Map ? toInt(meta['total']) : data.length;
+    final currentPage = meta is Map ? toInt(meta['current_page'], 1) : 1;
+    final lastPage = meta is Map ? toInt(meta['last_page'], 1) : 1;
+
+    return RequestPaymentsResponse(
+      data: data,
+      total: total,
+      currentPage: currentPage,
+      lastPage: lastPage,
+    );
+  }
+
+  bool get isEmpty => data.isEmpty;
 }
 
 /// Helper format

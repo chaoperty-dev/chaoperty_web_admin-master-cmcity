@@ -44,6 +44,10 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
   bool get isPrepaymentLoading => _isPrepaymentLoading;
   bool _isPrepaymentLoading = false;
 
+  // ---------- รายการชำระ / สถานะ (GET .../payments) ----------
+  RequestPaymentsResponse? _payments;
+  RequestPaymentsResponse? get payments => _payments;
+
   // ---------- Step state ----------
   int _currentDetailStep = 1;
   int get currentDetailStep => _currentDetailStep;
@@ -89,10 +93,12 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
       final results = await Future.wait<dynamic>([
         _service.fetchPaymentDetail(uuid: uuid),
         _service.fetchPrepayment(uuid: uuid),
+        _service.fetchRequestPayments(uuid: uuid),
       ]);
       _detail = results[0] as PaymentDetail?;
       _prepayment = results[1] as PrepaymentData?;
-      print('[LicensePaymentDetailViewModel] loaded detail=${_detail?.uuid} status=${_detail?.status} prepaymentItems=${_prepayment?.details.length}');
+      _payments = results[2] as RequestPaymentsResponse?;
+      print('[LicensePaymentDetailViewModel] loaded detail=${_detail?.uuid} status=${_detail?.status} prepaymentItems=${_prepayment?.details.length} payments=${_payments?.data.length}');
     } catch (e) {
       print('[LicensePaymentDetailViewModel][ERROR] $e');
       _setError('โหลดรายการรับชำระไม่สำเร็จ: $e');
@@ -134,6 +140,44 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
       _isPrepaymentLoading = false;
       notifyListeners();
     }
+  }
+
+  /// หารายการชำระที่ผูกกับ debt_line_uuid นี้ (ถ้ามี)
+  PaymentDetail? findPaymentByLine(String debtLineUuid) {
+    if (debtLineUuid.isEmpty) return null;
+    final list = _payments?.data ?? [];
+    for (final p in list) {
+      if (p.debtLineUuid == debtLineUuid) return p;
+    }
+    return null;
+  }
+
+  /// กดปุ่มรายการจ่ายล่วงหน้า → สร้าง draft (ถ้ายังไม่มี) แล้วไป Step 2
+  Future<void> proceedToPayment(PrepaymentItem item) async {
+    if (_uuid == null || _uuid!.isEmpty) {
+      _setError('ไม่พบ request_uuid สำหรับสร้างรายการรับชำระ');
+      return;
+    }
+    // ถ้ายังไม่มีรายการชำระสำหรับบรรทัดนี้ → สร้าง draft ก่อน
+    if (findPaymentByLine(item.uuid) == null) {
+      final created = await createPayment(
+        debtLineUuid: item.uuid,
+        payType: _payTypeOf(item),
+        amount: item.totalAmount,
+        paymentSystem: 'external',
+      );
+      if (created == null) return; // error ถูก set ภายใน createPayment แล้ว
+    }
+    nextDetailStep();
+  }
+
+  /// อนุมาน pay_type จากชื่อรายการ (default = fee)
+  String _payTypeOf(PrepaymentItem item) {
+    final name = item.expname.toLowerCase();
+    if (name.contains('ค่าปรับ') || name.contains('fine')) return 'fine';
+    if (name.contains('ไฟ') || name.contains('น้ำ') || name.contains('ค่าเช่า'))
+      return 'rent';
+    return 'fee';
   }
 
   /// เรียกใช้จาก UI เมื่อต้องการ reload (pull-to-refresh)

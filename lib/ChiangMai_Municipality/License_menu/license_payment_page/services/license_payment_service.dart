@@ -117,6 +117,8 @@ class LicensePaymentService {
     int perPage = 50,
     String? zser,
     String? subzoneser,
+    String? sortBy,
+    String? sortDir,
   }) async {
     final headers = await MyHeaders.build();
 
@@ -167,6 +169,8 @@ class LicensePaymentService {
       // ถ้าส่ง ser จริง = filter โซนนั้น
       put(qp, 'zser', zser);
       put(qp, 'subzoneser', subzoneser);
+      put(qp, 'sort_by', sortBy);
+      put(qp, 'sort_dir', sortDir);
 
       final baseUri = base.replace(
         queryParameters: {...base.queryParameters, ...qp},
