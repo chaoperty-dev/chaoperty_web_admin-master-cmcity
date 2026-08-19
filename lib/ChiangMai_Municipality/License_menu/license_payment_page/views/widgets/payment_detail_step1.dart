@@ -13,6 +13,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../unity/FormatPhone.dart';
 import '../../models/license_payment_detail_model.dart';
+import '../../models/license_prepayment_model.dart';
 import '../theme/license_payment_theme.dart';
 import '../../viewmodels/license_payment_detail_view_model.dart';
 
@@ -64,6 +65,12 @@ class PaymentDetailStep1 extends StatelessWidget {
                 _PaymentSummaryCard(detail: vm.detail!),
 
               const SizedBox(height: LaSpace.lg),
+
+              // ─── Prepayment (การจ่ายล่วงหน้า) ───
+              if (vm.prepayment != null) ...[
+                _PrepaymentCard(prepayment: vm.prepayment!),
+                const SizedBox(height: LaSpace.lg),
+              ],
 
               // ─── Footer note ───
               Container(
@@ -192,7 +199,6 @@ class _PaymentSummaryCard extends StatelessWidget {
               ),
             ],
           ),
-
         ],
       ),
     );
@@ -212,6 +218,322 @@ class _PaymentSummaryCard extends StatelessWidget {
     if (uuid.isEmpty) return '-';
     if (uuid.length <= 12) return uuid;
     return '${uuid.substring(0, 8)}…';
+  }
+}
+
+// ============================================================================
+// Prepayment card — รายการจ่ายล่วงหน้า (from GET .../prepayment)
+// ============================================================================
+
+class _PrepaymentCard extends StatelessWidget {
+  final PrepaymentData prepayment;
+  const _PrepaymentCard({required this.prepayment});
+
+  @override
+  Widget build(BuildContext context) {
+    final items = prepayment.details;
+    return Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(LaSpace.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ─── Header ───
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: LaColors.primaryLight,
+                  borderRadius: BorderRadius.circular(LaRadius.sm),
+                ),
+                child: const Icon(Icons.account_balance_wallet_rounded,
+                    size: 18, color: LaColors.primaryDark),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Text('รายการจ่ายล่วงหน้า', style: LaText.h2),
+              const Spacer(),
+              _PillIcon(
+                icon: Icons.tag_rounded,
+                text: 'Prepay: ${_short(prepayment.uuid ?? '')}',
+                muted: true,
+              ),
+            ],
+          ),
+          const SizedBox(height: LaSpace.md),
+
+          if (prepayment.requestUuid != null &&
+              prepayment.requestUuid!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: LaSpace.md),
+              child: _InfoItem(
+                icon: Icons.link_rounded,
+                label: 'Request UUID',
+                value: prepayment.requestUuid,
+                mono: true,
+              ),
+            ),
+
+          // ─── รายการ (ตารางบนจอกว้าง / การ์ดบนจอแคบ) ───
+          if (items.isEmpty)
+            Container(
+              padding: const EdgeInsets.all(LaSpace.lg),
+              decoration: LaDecor.softCard(),
+              child: const Center(
+                child: Text('ไม่พบรายการจ่ายล่วงหน้า', style: LaText.bodyMuted),
+              ),
+            )
+          else
+            _PrepaymentList(items: items),
+
+          const SizedBox(height: LaSpace.md),
+
+          // ─── Grand total ───
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: LaSpace.md, vertical: LaSpace.sm),
+            decoration: LaDecor.softCard(color: LaColors.primaryLight),
+            child: Row(
+              children: [
+                const Icon(Icons.summarize_rounded,
+                    size: 16, color: LaColors.primaryDark),
+                const SizedBox(width: LaSpace.sm),
+                Text('รวมทั้งสิ้น', style: LaText.body),
+                const Spacer(),
+                Text(
+                  prepayment.grandTotalDisplay,
+                  style: LaText.h2.copyWith(
+                    color: LaColors.primaryDark,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _short(String uuid) {
+    if (uuid.isEmpty) return '-';
+    if (uuid.length <= 12) return uuid;
+    return '${uuid.substring(0, 8)}…';
+  }
+}
+
+/// จุดตัดเปลี่ยนจากตารางเป็นการ์ด (px) — จอแคบกว่านี้ใช้การ์ดแทน
+const double _prepayBreakpoint = 700;
+
+class _PrepaymentList extends StatelessWidget {
+  final List<PrepaymentItem> items;
+  const _PrepaymentList({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < _prepayBreakpoint) {
+          // ─── จอแคบ: แสดงเป็นการ์ดแถวละ 1 รายการ ───
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (var i = 0; i < items.length; i++) ...[
+                if (i > 0) const SizedBox(height: LaSpace.sm),
+                _PrepaymentItemCard(item: items[i]),
+              ],
+            ],
+          );
+        }
+        // ─── จอกว้าง: แสดงเป็นตาราง ───
+        return _PrepaymentTable(items: items);
+      },
+    );
+  }
+}
+
+class _PrepaymentTable extends StatelessWidget {
+  final List<PrepaymentItem> items;
+  const _PrepaymentTable({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: LaDecor.softCard(),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Header row
+          Container(
+            color: LaColors.surfaceMuted,
+            padding: const EdgeInsets.symmetric(
+                horizontal: LaSpace.md, vertical: LaSpace.sm),
+            child: Row(
+              children: [
+                Expanded(
+                    flex: 3, child: Text('รายการ', style: LaText.tableHeader)),
+                Expanded(
+                    flex: 2, child: Text('หน่วย', style: LaText.tableHeader)),
+                Expanded(
+                    flex: 2, child: Text('งวด', style: LaText.tableHeader)),
+                Expanded(
+                    flex: 2, child: Text('จำนวน', style: LaText.tableHeader)),
+                Expanded(
+                    flex: 2, child: Text('วันที่', style: LaText.tableHeader)),
+                Expanded(
+                    flex: 2,
+                    child: Text('รวม',
+                        style: LaText.tableHeader, textAlign: TextAlign.right)),
+              ],
+            ),
+          ),
+          for (var i = 0; i < items.length; i++) ...[
+            if (i > 0)
+              const Divider(height: 1, thickness: 1, color: LaColors.border),
+            _PrepaymentRow(item: items[i]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PrepaymentRow extends StatelessWidget {
+  final PrepaymentItem item;
+  const _PrepaymentRow({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final date = (item.sdate ?? '').isNotEmpty || (item.ldate ?? '').isNotEmpty
+        ? '${formatPrepayDate(item.sdate)} - ${formatPrepayDate(item.ldate)}'
+        : '-';
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: LaSpace.md, vertical: LaSpace.sm),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.expname, style: LaText.tableCell),
+                if (item.uuid.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child:
+                        Text('รหัสรายการ: ${item.uuid}', style: LaText.caption),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(flex: 2, child: Text(item.unit, style: LaText.tableCell)),
+          Expanded(
+              flex: 2, child: Text(item.term ?? '-', style: LaText.tableCell)),
+          Expanded(
+              flex: 2, child: Text(item.qty ?? '-', style: LaText.tableCell)),
+          Expanded(flex: 2, child: Text(date, style: LaText.tableCell)),
+          Expanded(
+            flex: 2,
+            child: Text(
+              item.totalDisplay,
+              style: LaText.tableCell.copyWith(
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PrepaymentItemCard extends StatelessWidget {
+  final PrepaymentItem item;
+  const _PrepaymentItemCard({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final date = (item.sdate ?? '').isNotEmpty || (item.ldate ?? '').isNotEmpty
+        ? '${formatPrepayDate(item.sdate)} - ${formatPrepayDate(item.ldate)}'
+        : '-';
+    return Container(
+      decoration: LaDecor.softCard(),
+      padding: const EdgeInsets.all(LaSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(item.expname, style: LaText.body),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Text(
+                item.totalDisplay,
+                style: LaText.body.copyWith(
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w700,
+                  color: LaColors.primaryDark,
+                ),
+              ),
+            ],
+          ),
+          if (item.uuid.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text('รหัสรายการ: ${item.uuid}', style: LaText.caption),
+            ),
+          const SizedBox(height: LaSpace.sm),
+          Row(
+            children: [
+              Expanded(
+                child: _MiniField(label: 'หน่วย', value: item.unit),
+              ),
+              Expanded(
+                child: _MiniField(label: 'งวด', value: item.term ?? '-'),
+              ),
+              Expanded(
+                child: _MiniField(label: 'จำนวน', value: item.qty ?? '-'),
+              ),
+            ],
+          ),
+          const SizedBox(height: LaSpace.sm),
+          _MiniField(label: 'วันที่', value: date),
+        ],
+      ),
+    );
+  }
+}
+
+class _MiniField extends StatelessWidget {
+  final String label;
+  final String value;
+  const _MiniField({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(right: LaSpace.sm),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: LaText.label),
+          const SizedBox(height: 2),
+          Text(
+            value,
+            style: LaText.tableCell,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -371,8 +693,7 @@ class _PillIcon extends StatelessWidget {
   final IconData icon;
   final String text;
   final bool muted;
-  const _PillIcon(
-      {required this.icon, required this.text, this.muted = false});
+  const _PillIcon({required this.icon, required this.text, this.muted = false});
 
   @override
   Widget build(BuildContext context) {
@@ -448,9 +769,8 @@ class _ErrorBlock extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () => context
-                .read<LicensePaymentDetailViewModel>()
-                .reload(),
+            onPressed: () =>
+                context.read<LicensePaymentDetailViewModel>().reload(),
             child: const Text('ลองใหม่'),
           ),
         ],

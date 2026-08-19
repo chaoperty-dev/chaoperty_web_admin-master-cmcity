@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 
 import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_event.dart';
+import '../models/license_prepayment_model.dart';
 import '../services/license_payment_detail_service.dart';
 
 class LicensePaymentDetailViewModel extends ChangeNotifier {
@@ -36,6 +37,12 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
   // ---------- Detail data ----------
   PaymentDetail? _detail;
   PaymentDetail? get detail => _detail;
+
+  // ---------- Prepayment (การจ่ายล่วงหน้า) ----------
+  PrepaymentData? _prepayment;
+  PrepaymentData? get prepayment => _prepayment;
+  bool get isPrepaymentLoading => _isPrepaymentLoading;
+  bool _isPrepaymentLoading = false;
 
   // ---------- Step state ----------
   int _currentDetailStep = 1;
@@ -79,13 +86,53 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      _detail = await _service.fetchPaymentDetail(uuid: uuid);
-      print('[LicensePaymentDetailViewModel] loaded detail=${_detail?.uuid} status=${_detail?.status}');
+      final results = await Future.wait<dynamic>([
+        _service.fetchPaymentDetail(uuid: uuid),
+        _service.fetchPrepayment(uuid: uuid),
+      ]);
+      _detail = results[0] as PaymentDetail?;
+      _prepayment = results[1] as PrepaymentData?;
+      print('[LicensePaymentDetailViewModel] loaded detail=${_detail?.uuid} status=${_detail?.status} prepaymentItems=${_prepayment?.details.length}');
     } catch (e) {
       print('[LicensePaymentDetailViewModel][ERROR] $e');
       _setError('โหลดรายการรับชำระไม่สำเร็จ: $e');
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // ---------- สร้างรายการรับชำระ (Draft) ----------
+  Future<PaymentDetail?> createPayment({
+    required String debtLineUuid,
+    required String payType,
+    required double amount,
+    String paymentSystem = 'external',
+    int? paymentMethodId,
+  }) async {
+    if (_uuid == null || _uuid!.isEmpty) {
+      _setError('ไม่พบ request_uuid สำหรับสร้างรายการรับชำระ');
+      return null;
+    }
+    _isPrepaymentLoading = true;
+    notifyListeners();
+    try {
+      final created = await _service.createPayment(
+        requestUuid: _uuid!,
+        debtLineUuid: debtLineUuid,
+        payType: payType,
+        amount: amount,
+        paymentSystem: paymentSystem,
+        paymentMethodId: paymentMethodId,
+      );
+      _eventController.add(LicensePaymentCreatedEvent(created));
+      return created;
+    } catch (e) {
+      print('[LicensePaymentDetailViewModel][createPayment ERROR] $e');
+      _setError('สร้างรายการรับชำระไม่สำเร็จ: $e');
+      return null;
+    } finally {
+      _isPrepaymentLoading = false;
+      notifyListeners();
     }
   }
 
