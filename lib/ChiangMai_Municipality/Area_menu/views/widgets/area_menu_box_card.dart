@@ -189,10 +189,10 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
                 // ── Main content ───────────────────────────────
                 Padding(
                   padding: const EdgeInsets.fromLTRB(
-                    LaSpace.md,
                     LaSpace.sm,
-                    LaSpace.md,
+                    LaSpace.xs,
                     LaSpace.sm,
+                    LaSpace.xs,
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.center,
@@ -218,12 +218,12 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       // ▸ Status pill
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 10,
-                          vertical: 4,
+                          vertical: 2,
                         ),
                         decoration: BoxDecoration(
                           color: _accent().withOpacity(.16),
@@ -251,7 +251,7 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
                       ),
                       // ▸ Divider subtle
                       Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        margin: const EdgeInsets.symmetric(vertical: 4),
                         height: 1,
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
@@ -403,12 +403,12 @@ class _FieldRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = accent ?? LaColors.textSecondary;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 3),
+      padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 12, color: color.withOpacity(.85)),
-          const SizedBox(width: 5),
+          Icon(icon, size: 11, color: color.withOpacity(.85)),
+          const SizedBox(width: 4),
           Flexible(
             child: AutoSizeText(
               prefix != null ? '$prefix$text' : text,

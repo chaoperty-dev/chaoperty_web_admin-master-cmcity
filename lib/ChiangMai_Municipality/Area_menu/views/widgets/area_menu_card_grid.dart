@@ -48,6 +48,8 @@ class AreaMenuCardGrid extends StatelessWidget {
                       : width >= 560
                           ? 3
                           : 2;
+          // จอแคบ → ratio สูงขึ้น (การ์ดสูงกว่า) เพื่อรองรับ content
+          final ratio = width >= 1100 ? 1.8 : 1.4;
 
           return GridView.builder(
             padding: const EdgeInsets.all(LaSpace.xs),
@@ -56,7 +58,7 @@ class AreaMenuCardGrid extends StatelessWidget {
               crossAxisCount: cols,
               crossAxisSpacing: LaSpace.sm,
               mainAxisSpacing: LaSpace.sm,
-              childAspectRatio: 1.8,
+              childAspectRatio: ratio,
             ),
             itemBuilder: (context, i) {
               return AreaMenuBoxCard(model: vm.requests[i]);

@@ -49,16 +49,20 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
                     _zoneSection(vm),
                     const SizedBox(height: LaSpace.md),
                     _statusSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    _requestStatusSection(vm),
                   ],
                 )
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(flex: 4, child: _subZoneSection(vm)),
+                    Expanded(flex: 3, child: _subZoneSection(vm)),
                     _divider(),
-                    Expanded(flex: 4, child: _zoneSection(vm)),
+                    Expanded(flex: 3, child: _zoneSection(vm)),
                     _divider(),
-                    Expanded(flex: 4, child: _statusSection(vm)),
+                    Expanded(flex: 3, child: _statusSection(vm)),
+                    _divider(),
+                    Expanded(flex: 3, child: _requestStatusSection(vm)),
                   ],
                 );
           // จอกว้าง (≥1100) → โชว์ Row ตรงๆ ไม่มี toggle
@@ -91,7 +95,8 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
     final hasFilter = (vm.selectedZoneSub != null &&
             vm.selectedZoneSub != 'ทั้งหมด') ||
         (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
-        vm.selectedStatus != 'ทั้งหมด';
+        vm.selectedStatus != 'ทั้งหมด' ||
+        vm.selectedRequestStatus != 'ทั้งหมด';
     return InkWell(
       onTap: () => setState(() => _collapsed = !_collapsed),
       borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -172,6 +177,14 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
       icon: Icons.flag_outlined,
       label: 'สถานะ',
       child: _statusDropdown(vm),
+    );
+  }
+
+  Widget _requestStatusSection(AreaMenuViewModel vm) {
+    return _FilterField(
+      icon: Icons.assignment_outlined,
+      label: 'สถานะคำขอ',
+      child: _requestStatusDropdown(vm),
     );
   }
 }
@@ -526,6 +539,72 @@ extension on _AreaMenuZoneFilterState {
           );
         }).toList(),
         onChanged: (v) => vm.onStatusChanged(v),
+      ),
+    );
+  }
+
+  Widget _requestStatusDropdown(AreaMenuViewModel vm) {
+    return _DropdownShell(
+      child: DropdownButton2<String>(
+        isExpanded: true,
+        iconSize: 18,
+        iconEnabledColor: LaColors.textSecondary,
+        buttonHeight: 40,
+        dropdownDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        hint: AutoSizeText(
+          vm.selectedRequestStatus,
+          style: LaText.body.copyWith(
+            color: LaColors.textPrimary,
+          ),
+          maxFontSize: 14,
+          minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        value: vm.selectedRequestStatus,
+        items: vm.requestStatusOptions.map((status) {
+          final isAll = status == 'ทั้งหมด';
+          final palette = isAll
+              ? const StatusPalette(LaColors.textMuted, LaColors.textMuted)
+              : StatusPalette.of(status);
+          return DropdownMenuItem<String>(
+            value: status,
+            child: Row(
+              children: [
+                Container(
+                  width: 6,
+                  height: 6,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: palette.fg,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Expanded(
+                  child: AutoSizeText(
+                    status.isEmpty ? '-' : status,
+                    style: LaText.body,
+                    maxFontSize: 14,
+                    minFontSize: 11,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+        onChanged: (v) => vm.onRequestStatusChanged(v),
       ),
     );
   }

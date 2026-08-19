@@ -90,6 +90,7 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
   StreamSubscription<AreaMenuEvent>? _sub;
 
   /// โหมดการแสดงผล: false = ตาราง (Table), true = การ์ด (Card grid)
+  /// Default = การ์ด (ตามกฎ "ถ้าจอเริ่มไม่พอ ให้ดีฟอลเป็นแบบ การ์ด")
   bool _useGrid = true;
 
   @override
@@ -154,31 +155,41 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
             const SizedBox(height: LaSpace.lg),
             const AreaMenuZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination + View toggle row
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: AreaMenuSearchBar()),
-                const SizedBox(width: LaSpace.md),
-                const AreaMenuPagination(),
-                const SizedBox(width: LaSpace.sm),
-                _ViewModeToggle(
-                  useGrid: _useGrid,
-                  onChanged: (v) => setState(() => _useGrid = v),
-                ),
-              ],
+            // Search + Pagination (+ View toggle เฉพาะจอ ≥1100)
+            LayoutBuilder(
+              builder: (context, c) {
+                final canToggle = c.maxWidth >= 1100;
+                return Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: AreaMenuSearchBar()),
+                    const SizedBox(width: LaSpace.md),
+                    const AreaMenuPagination(),
+                    if (canToggle) ...[
+                      const SizedBox(width: LaSpace.sm),
+                      _ViewModeToggle(
+                        useGrid: _useGrid,
+                        onChanged: (v) => setState(() => _useGrid = v),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
             const SizedBox(height: LaSpace.lg),
-            // แสดงสูงสุด 7 แถว (~460px) — เกินแล้ page จะ scroll
+            // Layout: จอ < 1100 บังคับการ์ด, จอ ≥ 1100 เลือกได้
             Expanded(
-              child: _useGrid
-                  ? const AreaMenuCardGrid()
-                  : ConstrainedBox(
-                      constraints: const BoxConstraints(maxHeight: 460),
-                      child: SingleChildScrollView(
-                        child: const AreaMenuTable(),
-                      ),
-                    ),
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  final canTable = c.maxWidth >= 1100;
+                  final useGrid = canTable ? _useGrid : true;
+                  return useGrid
+                      ? const AreaMenuCardGrid()
+                      : SingleChildScrollView(
+                          child: const AreaMenuTable(),
+                        );
+                },
+              ),
             ),
           ],
         ),
@@ -215,6 +226,7 @@ class AreaMenuHost extends StatelessWidget {
 
 // ============================================================================
 // Internal — Segmented toggle สำหรับสลับโหมด Table / Card
+// (ใช้เฉพาะจอ ≥1100px — จอแคบ default การ์ดเลย ซ่อน UI การเลือก)
 // ============================================================================
 class _ViewModeToggle extends StatelessWidget {
   final bool useGrid;

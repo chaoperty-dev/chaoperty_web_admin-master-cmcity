@@ -37,7 +37,18 @@ class AreaMenuViewModel extends ChangeNotifier {
 
   // ---------- Data ----------
   List<Map<String, dynamic>> _requests = [];
-  List<Map<String, dynamic>> get requests => _requests;
+  List<Map<String, dynamic>> get requests {
+    if (_selectedRequestStatus == 'ทั้งหมด') return _requests;
+    final key = _requestStatusKeyMap[_selectedRequestStatus];
+    return _requests.where((r) {
+      final st = r['st']?.toString() ?? '';
+      final status = r['status']?.toString() ?? '';
+      // ✅ match ทั้ง TH label (เช่น "ร่างคำขอ") และ EN key (เช่น "draft")
+      return st == _selectedRequestStatus ||
+          status == _selectedRequestStatus ||
+          (key != null && (st == key || status == key));
+    }).toList();
+  }
 
   // ---------- Status filter (เหมือน ChaoArea: typecid) ----------
   static const List<String> _statusLabels = [
@@ -60,6 +71,39 @@ class AreaMenuViewModel extends ChangeNotifier {
     return idx <= 0 ? '1' : (idx + 1).toString();
   }
 
+  // ---------- Request status filter (in-memory) ----------
+  // TH label → EN key ที่ backend ส่งมาใน properties API request_status
+  static const Map<String, String> _requestStatusKeyMap = {
+    'ร่างคำขอ': 'draft',
+    'ส่งคำขอแล้ว': 'submitted',
+    'กำลังดำเนินการ': 'in_progress',
+    'เสร็จสิ้น': 'completed',
+    'ถูกปฏิเสธ': 'rejected',
+    'ต้องแก้ไข': 'needs_update',
+    'ส่งเอกสารแล้ว': 'documents_submitted',
+    'รอข้อมูลชำระเงิน': 'waiting_payment_info',
+    'ชำระเงินแล้ว': 'payment_submitted',
+    'คำขอเสร็จสิ้น': 'request_completed',
+  };
+
+  static const List<String> _requestStatusLabels = [
+    'ทั้งหมด',
+    'ร่างคำขอ',
+    'ส่งคำขอแล้ว',
+    'กำลังดำเนินการ',
+    'เสร็จสิ้น',
+    'ถูกปฏิเสธ',
+    'ต้องแก้ไข',
+    'ส่งเอกสารแล้ว',
+    'รอข้อมูลชำระเงิน',
+    'ชำระเงินแล้ว',
+    'คำขอเสร็จสิ้น',
+  ];
+
+  String _selectedRequestStatus = 'ทั้งหมด';
+  String get selectedRequestStatus => _selectedRequestStatus;
+  List<String> get requestStatusOptions => _requestStatusLabels;
+
   // ---------- Config ----------
   final String _title;
   final String? _routeData;
@@ -76,7 +120,7 @@ class AreaMenuViewModel extends ChangeNotifier {
   String? _linksPrev;
   int get currentPage => _currentPage;
   int get lastPage => _lastPage;
-  int get total => _total;
+  int get total => requests.length;
   String? get linksNext => _linksNext;
   String? get linksPrev => _linksPrev;
 
@@ -228,6 +272,12 @@ class AreaMenuViewModel extends ChangeNotifier {
     _selectedStatus = value ?? 'ทั้งหมด';
     notifyListeners();
     await loadFromProperties();
+  }
+
+  /// ผู้ใช้เลือกสถานะคำขอ (request_status) → filter in-memory ไม่ยิง API
+  void onRequestStatusChanged(String? value) {
+    _selectedRequestStatus = value ?? 'ทั้งหมด';
+    notifyListeners();
   }
 
   /// ผู้ใช้กด "เรียกดู" → ส่ง event ให้ View เปิด full-page route

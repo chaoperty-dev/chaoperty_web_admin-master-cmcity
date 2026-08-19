@@ -192,6 +192,10 @@ class StatusPalette {
       return const StatusPalette(
           LaColors.statusCurrentBg, LaColors.statusCurrentFg);
     }
+    if (s == 'เช่าอยู่' || s == 'rented' || s == 'leasing') {
+      return const StatusPalette(
+          LaColors.statusCurrentBg, LaColors.statusCurrentFg);
+    }
     if (s == 'ใกล้หมดสัญญา' || s == 'near expiry' || s == 'near_expiry') {
       return const StatusPalette(
           LaColors.statusNearExpiryBg, LaColors.statusNearExpiryFg);
@@ -210,6 +214,47 @@ class StatusPalette {
         s == 'review') {
       return const StatusPalette(
           LaColors.statusReviewBg, LaColors.statusReviewFg);
+    }
+    // ── Area menu — status จาก requests/properties API ───────────────────
+    if (s == 'เสนอราคา' || s == 'quote' || s == 'bidding') {
+      return const StatusPalette(
+          LaColors.statusPendingBg, LaColors.statusPendingFg);
+    }
+    if (s == 'เสนอราคา(มัดจำ)' ||
+        s == 'เสนอราคา(มัดจำ)' ||
+        s == 'quote(deposit)' ||
+        s == 'deposit') {
+      return const StatusPalette(
+          LaColors.statusReviewBg, LaColors.statusReviewFg);
+    }
+    if (s == 'ร่างดำเนิน' || s == 'ว่างดำเนิน') {
+      return const StatusPalette(
+          LaColors.statusReviewBg, LaColors.statusReviewFg);
+    }
+    // ── Properties API request_status (EN keys) ──────────────────────────
+    if (s == 'submitted' || s == 'request_submitted') {
+      return const StatusPalette(
+          LaColors.statusInfoBg, LaColors.statusInfoFg);
+    }
+    if (s == 'needs_update' || s == 'need_update') {
+      return const StatusPalette(
+          LaColors.statusPendingBg, LaColors.statusPendingFg);
+    }
+    if (s == 'waiting_payment_info' || s == 'waiting_payment') {
+      return const StatusPalette(
+          LaColors.statusPendingBg, LaColors.statusPendingFg);
+    }
+    if (s == 'payment_submitted') {
+      return const StatusPalette(
+          LaColors.statusInfoBg, LaColors.statusInfoFg);
+    }
+    if (s == 'documents_submitted') {
+      return const StatusPalette(
+          LaColors.statusInfoBg, LaColors.statusInfoFg);
+    }
+    if (s == 'request_completed') {
+      return const StatusPalette(
+          LaColors.statusApprovedBg, LaColors.statusApprovedFg);
     }
 
     // ── Generic fallback mapping ──────────────────────────────────────────

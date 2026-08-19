@@ -157,6 +157,25 @@ class AreaMenuService {
   ));
   final CancelToken _cancelToken = CancelToken();
 
+  // ---------- Cache ----------
+  /// Properties cache (TTL 1 min) — ลด refetch 1000+ rows
+  static const Duration _propertiesCacheTtl = Duration(minutes: 1);
+  List<_PropertyModel>? _propertiesCache;
+  DateTime? _propertiesCacheTime;
+
+  /// Sub-zones cache (session) — โหลดครั้งเดียวต่อ session
+  List<Map<String, dynamic>>? _subZonesCache;
+
+  /// Zones cache (session) — keyed by zoneSubSer
+  final Map<String?, List<Map<String, dynamic>>> _zonesCache = {};
+
+  /// บังคับ refresh ทั้งหมด (เรียกจาก pull-to-refresh)
+  void clearZonesCache() {
+    _subZonesCache = null;
+    _zonesCache.clear();
+    print('🗑️ zones cache cleared');
+  }
+
   // ===============================================================
   // ✅ Main: โหลด "คำขอต่อสัญญา" — ใช้ API เดียวกับ ChaoArea
   // ===============================================================
@@ -212,6 +231,14 @@ class AreaMenuService {
   // HTTP #1 — โหลด properties เอง (ไม่ผ่าน read_GC_properties)
   // ===============================================================
   Future<List<_PropertyModel>> _loadProperties({String? zone}) async {
+    // ✅ Cache hit (TTL 1 min) — properties เปลี่ยนไม่บ่อย
+    if (_propertiesCache != null && _propertiesCacheTime != null) {
+      final age = DateTime.now().difference(_propertiesCacheTime!);
+      if (age < _propertiesCacheTtl) {
+        print('✅ _loadProperties cache hit (${age.inSeconds}s old, ${_propertiesCache!.length} items)');
+        return _propertiesCache!;
+      }
+    }
     try {
       final headers = await _buildHeaders();
       final url = (zone == null ||
@@ -255,6 +282,9 @@ class AreaMenuService {
         }
       }
       print('✅ _loadProperties parsed: ${out.length} items');
+      // ✅ เก็บ cache (TTL 1 min)
+      _propertiesCache = out;
+      _propertiesCacheTime = DateTime.now();
       return out;
     } catch (e, st) {
       print('❌ _loadProperties error: $e\n$st');
@@ -289,7 +319,12 @@ class AreaMenuService {
   // ===============================================================
   // HTTP #3 — โหลด sub-zones (หมวดโซน)
   // ===============================================================
-  Future<List<Map<String, dynamic>>> fetchSubZones() async {
+  Future<List<Map<String, dynamic>>> fetchSubZones({bool forceRefresh = false}) async {
+    // ✅ Cache hit (session) — โหลดครั้งเดียว
+    if (!forceRefresh && _subZonesCache != null) {
+      print('✅ fetchSubZones cache hit (${_subZonesCache!.length} items)');
+      return _subZonesCache!;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final ren = prefs.getString('renTalSer') ?? prefs.getString('rser') ?? '';
@@ -321,6 +356,8 @@ class AreaMenuService {
         }
       }
       print('✅ fetchSubZones: ${out.length} items');
+      // ✅ Cache session
+      _subZonesCache = out;
       return out;
     } catch (e) {
       print('❌ fetchSubZones error: $e');
@@ -331,7 +368,15 @@ class AreaMenuService {
   // ===============================================================
   // HTTP #4 — โหลด zones (โซนพื้นที่)
   // ===============================================================
-  Future<List<Map<String, dynamic>>> fetchZones({String? zoneSubSer}) async {
+  Future<List<Map<String, dynamic>>> fetchZones({
+    String? zoneSubSer,
+    bool forceRefresh = false,
+  }) async {
+    // ✅ Cache hit (session, keyed by zoneSubSer)
+    if (!forceRefresh && _zonesCache.containsKey(zoneSubSer)) {
+      print('✅ fetchZones cache hit (sub=$zoneSubSer, ${_zonesCache[zoneSubSer]!.length} items)');
+      return _zonesCache[zoneSubSer]!;
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       final ren = prefs.getString('renTalSer') ?? prefs.getString('rser') ?? '';
@@ -369,6 +414,8 @@ class AreaMenuService {
         }
       }
       print('✅ fetchZones: ${out.length} items');
+      // ✅ Cache session (keyed by zoneSubSer)
+      _zonesCache[zoneSubSer] = out;
       return out;
     } catch (e) {
       print('❌ fetchZones error: $e');
@@ -414,8 +461,8 @@ class AreaMenuService {
       'scname': area.sname ?? p?.clientName,
       'tel': null,
 
-      // status — ใช้ 'st' จาก area API เป็นหลัก
-      'st': area.st ?? p?.requestStatus, // ✅ สถานะ (เช่น "สัญญาปัจจุบัน")
+      // status — ใช้ request_status จาก properties API เป็นหลัก
+      'st': p?.requestStatus, // ✅ สถานะ (เช่น "draft"/"in_progress")
       'status': p?.requestStatus,
       'status_label': p?.requestStep?.toString() ?? area.quantity,
 
