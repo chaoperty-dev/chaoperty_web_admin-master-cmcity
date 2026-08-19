@@ -312,6 +312,7 @@ extension on _AreaMenuZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -400,6 +401,7 @@ extension on _AreaMenuZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -484,6 +486,7 @@ extension on _AreaMenuZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -550,6 +553,7 @@ extension on _AreaMenuZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,

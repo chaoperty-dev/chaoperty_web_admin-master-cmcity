@@ -310,6 +310,7 @@ extension on _LicensePaymentZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LrColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LrRadius.md),
           color: Colors.white,
@@ -393,6 +394,7 @@ extension on _LicensePaymentZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LrColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LrRadius.md),
           color: Colors.white,
@@ -473,6 +475,7 @@ extension on _LicensePaymentZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LrColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LrRadius.md),
           color: Colors.white,
@@ -514,7 +517,7 @@ extension on _LicensePaymentZoneFilterState {
                         decoration: BoxDecoration(
                           color: s == 'ทั้งหมด'
                               ? LrColors.textMuted
-                              : LrColors.primary,
+                              : StatusPalette.of(s).fg,
                           shape: BoxShape.circle,
                         ),
                       ),

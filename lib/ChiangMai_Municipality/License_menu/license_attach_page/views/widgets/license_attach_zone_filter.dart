@@ -307,6 +307,7 @@ extension on _LicenseRequestZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -386,6 +387,7 @@ extension on _LicenseRequestZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -466,6 +468,7 @@ extension on _LicenseRequestZoneFilterState {
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
         buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -507,7 +510,7 @@ extension on _LicenseRequestZoneFilterState {
                         decoration: BoxDecoration(
                           color: s == 'ทั้งหมด'
                               ? LaColors.textMuted
-                              : LaColors.primary,
+                              : StatusPalette.of(s).fg,
                           shape: BoxShape.circle,
                         ),
                       ),
