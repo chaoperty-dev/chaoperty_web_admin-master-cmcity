@@ -1141,6 +1141,7 @@ class _ReportScreenState extends State<ReportScreen> {
                                     AutoSizeText(
                                       ' > > ',
                                       overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
                                       minFontSize: 8,
                                       maxFontSize: 20,
                                       style: TextStyle(

@@ -14,6 +14,8 @@ import '../../models/access_rights_user.dart';
 import '../theme/access_rights_theme.dart';
 import '../../viewmodels/access_rights_view_model.dart';
 
+const double kAccessRightsMobileBreakpoint = 700;
+
 class AccessRightsTable extends StatelessWidget {
   const AccessRightsTable({super.key});
 
@@ -29,22 +31,48 @@ class AccessRightsTable extends StatelessWidget {
       return _EmptyState(hasFilter: vm.searchQuery.isNotEmpty, onRefresh: vm.refresh);
     }
 
-    return Container(
-      decoration: ArDecor.card(),
-      child: Column(
-        children: [
-          _headerRow(vm),
-          const Divider(height: 1, color: ArColors.border),
-          if (vm.isLoading)
-            const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: ArColors.surfaceMuted,
-              valueColor: AlwaysStoppedAnimation<Color>(ArColors.primary),
-            ),
-          for (int i = 0; i < rows.length; i++)
-            _dataRow(context, vm, rows[i], i),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, c) {
+        final isMobile = c.maxWidth < kAccessRightsMobileBreakpoint;
+        if (isMobile) {
+          return Column(
+            children: [
+              if (vm.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: ArColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(ArColors.primary),
+                ),
+              for (int i = 0; i < rows.length; i++) ...[
+                _UserCard(
+                  index: i,
+                  model: rows[i],
+                  onEdit: () => vm.onEdit(rows[i].uuid),
+                  onSignature: () => vm.onSignature(rows[i].uuid),
+                ),
+                if (i < rows.length - 1) const SizedBox(height: ArSpace.sm),
+              ],
+            ],
+          );
+        }
+        return Container(
+          decoration: ArDecor.card(),
+          child: Column(
+            children: [
+              _headerRow(vm),
+              const Divider(height: 1, color: ArColors.border),
+              if (vm.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: ArColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(ArColors.primary),
+                ),
+              for (int i = 0; i < rows.length; i++)
+                _dataRow(context, vm, rows[i], i),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -80,6 +108,7 @@ class AccessRightsTable extends StatelessWidget {
                     style: ArText.tableHeader,
                     textAlign: center ? TextAlign.center : TextAlign.start,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
@@ -310,12 +339,16 @@ class _MiniButtonState extends State<_MiniButton> {
             children: [
               Icon(widget.icon, size: 12, color: _hover ? Colors.white : c),
               const SizedBox(width: 4),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontFamily: ArText.fontBold,
-                  fontSize: 11,
-                  color: _hover ? Colors.white : c,
+              Flexible(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: ArText.fontBold,
+                    fontSize: 11,
+                    color: _hover ? Colors.white : c,
+                  ),
                 ),
               ),
             ],
@@ -374,6 +407,156 @@ class _EmptyState extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: ArColors.primary,
               side: const BorderSide(color: ArColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Card layout (mobile / narrow screen)
+// ============================================================================
+class _UserCard extends StatelessWidget {
+  final int index;
+  final AccessRightsUser model;
+  final VoidCallback onEdit;
+  final VoidCallback onSignature;
+  const _UserCard({
+    required this.index,
+    required this.model,
+    required this.onEdit,
+    required this.onSignature,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rolesText = model.roles.isEmpty
+        ? '-'
+        : model.roles.map((r) => r.nameTh).join(', ');
+    final levelText =
+        model.roles.isEmpty ? '-' : model.roles.first.level.toString();
+
+    return Container(
+      decoration: ArDecor.card(),
+      padding: const EdgeInsets.all(ArSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: ArColors.primaryLight,
+                  borderRadius: BorderRadius.circular(ArRadius.pill),
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: ArText.tableCell.copyWith(
+                    color: ArColors.primaryDark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: ArSpace.sm),
+              Expanded(
+                child: Text(
+                  model.username.isEmpty ? '-' : model.username,
+                  style: ArText.tableCell.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (levelText != '-')
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: ArColors.primaryLight.withOpacity(.4),
+                    borderRadius: BorderRadius.circular(ArRadius.pill),
+                  ),
+                  child: Text(
+                    'ลำดับ $levelText',
+                    style: ArText.bodyMuted.copyWith(
+                      color: ArColors.primaryDark,
+                      fontSize: 11,
+                      fontFamily: ArText.fontBold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: ArSpace.lg, color: ArColors.border),
+          _AccessCardRow(label: 'อีเมล', value: model.email, muted: true),
+          _AccessCardRow(
+            label: 'ตำแหน่ง',
+            value: model.positionName.isEmpty ? '-' : model.positionName,
+          ),
+          _AccessCardRow(label: 'สิทธิ์การเข้าถึง', value: rolesText),
+          const SizedBox(height: ArSpace.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _MiniButton(
+                icon: Icons.edit_rounded,
+                label: 'แก้ไข',
+                onTap: onEdit,
+              ),
+              const SizedBox(width: 6),
+              _MiniButton(
+                icon: Icons.draw_rounded,
+                label: 'ลายเซ็น',
+                onTap: onSignature,
+                color: ArColors.statusInfoFg,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AccessCardRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool muted;
+  const _AccessCardRow({
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: ArText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: ArText.tableCell.copyWith(
+                color: muted ? ArColors.textSecondary : ArColors.textPrimary,
+                fontSize: 12,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

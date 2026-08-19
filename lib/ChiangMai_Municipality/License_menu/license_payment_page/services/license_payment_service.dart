@@ -115,6 +115,8 @@ class LicensePaymentService {
     bool? paymentAllDone,
     bool? includeDone,
     int perPage = 50,
+    String? zser,
+    String? subzoneser,
   }) async {
     final headers = await MyHeaders.build();
 
@@ -135,12 +137,18 @@ class LicensePaymentService {
       }
 
       Map<String, String> qp;
+      Uri urlCustomUri;
       if (urlCustom != null && urlCustom.isNotEmpty) {
         // กรณี paginate: ใช้ query params เดิมจาก URL ของ Laravel + เติม filter
-        final u = Uri.parse(urlCustom);
-        qp = Map<String, String>.from(u.queryParameters);
+        urlCustomUri = Uri.parse(urlCustom);
+        // backend ส่ง next URL เป็น http:// → redirect ไป https ทำให้หลุด Authorization (401)
+        if (urlCustomUri.scheme == 'http') {
+          urlCustomUri = urlCustomUri.replace(scheme: 'https');
+        }
+        qp = Map<String, String>.from(urlCustomUri.queryParameters);
         qp['per_page'] = '$perPage';
       } else {
+        urlCustomUri = Uri.parse('');
         qp = <String, String>{'per_page': '$perPage'};
       }
       put(qp, 'q', q);
@@ -155,6 +163,10 @@ class LicensePaymentService {
       putBool(qp, 'inspection_passed', inspectionPassed);
       putBool(qp, 'payment_all_done', paymentAllDone);
       putBool(qp, 'include_done', includeDone);
+      // zser/subzoneser — ถ้าไม่ส่งเลย = ทั้งหมด, ถ้าส่ง '0' = ทั้งหมดเช่นกัน,
+      // ถ้าส่ง ser จริง = filter โซนนั้น
+      put(qp, 'zser', zser);
+      put(qp, 'subzoneser', subzoneser);
 
       final baseUri = base.replace(
         queryParameters: {...base.queryParameters, ...qp},

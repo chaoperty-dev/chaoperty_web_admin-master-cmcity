@@ -18,12 +18,15 @@ import '../models/license_verify_document.dart';
 import '../services/verify_documents_service.dart';
 
 /// คอลัมน์ที่ใช้แสดงในตาราง — อ้างอิง data_title_doc
+///
+/// - `title`   : key สำหรับจับคู่ logic ใน `_buildCell` (ห้ามเปลี่ยน)
+/// - `header`  : label สั้นที่โชว์บน column header (ปรับให้เหมาะกับหน้าจอแคบ)
 const List<Map<String, String>> kVerifyDocDisplayFields = [
-  {'ser': '1', 'title': 'ชื่อเอกสาร', 'data': 'title'},
-  {'ser': '2', 'title': 'วันที่ทำรายการ', 'data': 'datex'},
-  {'ser': '3', 'title': 'ไฟล์เอกสาร', 'data': 'file'},
-  {'ser': '4', 'title': 'สถานะ', 'data': 'status'},
-  {'ser': '5', 'title': 'วันที่ตรวจสอบ', 'data': 'verify'},
+  {'ser': '1', 'title': 'ชื่อเอกสาร', 'header': 'ชื่อเอกสาร', 'data': 'title'},
+  {'ser': '2', 'title': 'วันที่ทำรายการ', 'header': 'วันทำรายการ', 'data': 'datex'},
+  {'ser': '3', 'title': 'ไฟล์เอกสาร', 'header': 'ไฟล์', 'data': 'file'},
+  {'ser': '4', 'title': 'สถานะ', 'header': 'สถานะ', 'data': 'status'},
+  {'ser': '5', 'title': 'วันที่ตรวจสอบ', 'header': 'วันตรวจ', 'data': 'verify'},
 ];
 
 class VerifyDocumentsViewModel extends ChangeNotifier {
@@ -207,28 +210,55 @@ class VerifyDocumentsViewModel extends ChangeNotifier {
     return ok;
   }
 
-  /// ปฏิเสธเอกสาร (อัปเดตสถานะ attachment เป็น rejected)
+  /// ปฏิเสธเอกสาร (อัปเดตสถานะ attachment เป็น rejected) — ต้องมี description
   Future<bool> rejectDocument({
     required int documentId,
-    String? comment,
+    required String description,
   }) async {
     if (!hasRequest) return false;
+    if (description.trim().isEmpty) return false;
     final att = _findAttachment(documentId);
     if (att == null) return false;
     // ignore: avoid_print
     print(
-        '🔴 [VerifyDocumentsViewModel] rejectDocument docId=$documentId attachmentUuid=${att.uuid}');
+        '🔴 [VerifyDocumentsViewModel] rejectDocument docId=$documentId attachmentUuid=${att.uuid} description="$description"');
     final ok = await _service.updateAttachmentReviewStatus(
       requestUuid: requestUuid!,
       attachmentUuid: att.uuid?.toString() ?? '',
       status: 'rejected',
-      description: comment ?? 'ปฏิเสธ',
+      description: description.trim(),
     );
     if (ok) {
       _updateAttachmentStatus(documentId, 'rejected');
     }
     // ignore: avoid_print
     print('🔴 [VerifyDocumentsViewModel] rejectDocument result=$ok');
+    return ok;
+  }
+
+  /// ขอให้ผู้ใช้ปรับปรุงเอกสาร (status = needs_update) — ต้องมี description
+  Future<bool> requestUpdateDocument({
+    required int documentId,
+    required String description,
+  }) async {
+    if (!hasRequest) return false;
+    if (description.trim().isEmpty) return false;
+    final att = _findAttachment(documentId);
+    if (att == null) return false;
+    // ignore: avoid_print
+    print(
+        '🟡 [VerifyDocumentsViewModel] requestUpdateDocument docId=$documentId attachmentUuid=${att.uuid} description="$description"');
+    final ok = await _service.updateAttachmentReviewStatus(
+      requestUuid: requestUuid!,
+      attachmentUuid: att.uuid?.toString() ?? '',
+      status: 'needs_update',
+      description: description.trim(),
+    );
+    if (ok) {
+      _updateAttachmentStatus(documentId, 'needs_update');
+    }
+    // ignore: avoid_print
+    print('🟡 [VerifyDocumentsViewModel] requestUpdateDocument result=$ok');
     return ok;
   }
 
@@ -244,6 +274,20 @@ class VerifyDocumentsViewModel extends ChangeNotifier {
     final idx = _documents.indexWhere((d) => d.id == documentId);
     if (idx == -1) return;
     if (_documents[idx].attachments.isNotEmpty) {
+      String label;
+      switch (status) {
+        case 'approved':
+          label = 'อนุมัติ';
+          break;
+        case 'rejected':
+          label = 'ปฏิเสธ';
+          break;
+        case 'needs_update':
+          label = 'ขอปรับปรุง';
+          break;
+        default:
+          label = status;
+      }
       final updated = LicenseverifyAttachment(
         uuid: _documents[idx].attachments.first.uuid,
         fileType: _documents[idx].attachments.first.fileType,
@@ -252,7 +296,7 @@ class VerifyDocumentsViewModel extends ChangeNotifier {
         reviewAt: _documents[idx].attachments.first.reviewAt,
         uploadedAt: _documents[idx].attachments.first.uploadedAt,
         status: status,
-        status_label: status == 'approved' ? 'อนุมัติ' : 'ปฏิเสธ',
+        status_label: label,
       );
       _documents[idx].attachments = [updated];
     }

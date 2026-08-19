@@ -5,11 +5,49 @@
 // ============================================================================
 
 import 'dart:async';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../models/billing_models.dart';
 import '../services/billing_service.dart';
+
+/// UUID v7 (time-ordered, random) — RFC 9562 §5.7
+/// 48-bit unix_ms | 4-bit ver(7) | 12-bit rand_a | 2-bit var(10) | 62-bit rand_b
+/// ใช้ hex-string แทน bit ops เพื่อ compatibility กับ platform �ี่ int ops จำกัด
+String _uuidV7() {
+  final rand = Random.secure();
+  // 48-bit timestamp as big-endian hex (12 chars)
+  var tsHex = DateTime.now().millisecondsSinceEpoch.toRadixString(16);
+  if (tsHex.length > 12) {
+    tsHex = tsHex.substring(tsHex.length - 12);
+  } else {
+    tsHex = tsHex.padLeft(12, '0');
+  }
+  // byte 6: version '7' + high nibble of rand_a
+  final verHex = '7${rand.nextInt(0x10).toRadixString(16)}';
+  // byte 7: rand_a low byte
+  final raLo = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  // byte 8: variant '10' + 6 bits of rand_b
+  final varByte = (0x80 | rand.nextInt(0x40)).toRadixString(16).padLeft(2, '0');
+  // byte 9: rand_b next byte
+  final rb1 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  // bytes 10-15: 6 random bytes
+  final r1 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  final r2 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  final r3 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  final r4 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  final r5 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+  final r6 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
+
+  final body =
+      tsHex + verHex + raLo + varByte + rb1 + r1 + r2 + r3 + r4 + r5 + r6;
+  return '${body.substring(0, 8)}-'
+      '${body.substring(8, 12)}-'
+      '${body.substring(12, 16)}-'
+      '${body.substring(16, 20)}-'
+      '${body.substring(20, 32)}';
+}
 
 class BillingViewModel extends ChangeNotifier {
   BillingViewModel({
@@ -97,6 +135,7 @@ class BillingViewModel extends ChangeNotifier {
       );
 
       rows.add(LcExpTransModel(
+        uuid: _uuidV7(),
         ser: exp.ser,
         expname: exp.expname,
         exptser: exp.exptser,
@@ -241,6 +280,7 @@ class BillingViewModel extends ChangeNotifier {
     );
 
     final newRow = LcExpTransModel(
+      uuid: _uuidV7(),
       ser: selected.ser,
       expname: selected.expname,
       exptser: selected.exptser,

@@ -14,8 +14,14 @@ import 'router/app_router.dart';
 import 'router/auth_state_notifier.dart';
 
 const bool enableAppLogs = true;
-/// flutter run -d chrome --web-browser-flag "--disable-web-security" 
+
+/// flutter run -d chrome --web-browser-flag "--disable-web-security"
 /// SidebarController — เก็บไว้เพราะไฟล์อื่นๆ เช่น AdminScaffold ใช้
+// /flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false   (แก้ปัญหา Security Capture Screen )
+// /flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-browser-flag=--disable-web-security
+// /flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-define=web-browser-flag=--disable-web-security --no-tree-shake-icons
+// ** */ flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-browser-flag=--disable-web-security --no-tree-shake-icons --base-href /user_intents/
+// flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-browser-flag=--disable-web-security --no-tree-shake-icons --base-href /cmcity_test/
 class SidebarController extends ChangeNotifier {
   static const _key = 'isSidebarOpen';
   bool _isOpen = true;
@@ -107,6 +113,106 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       routerConfig: _router,
+      // ─── กันหน้าจอที่สูงเกินไป ───
+      // ถ้า height < 500 → UI หลักแสดงผลไม่พอ (โทรศัพท์แนวนอน, split-screen, foldable ปิด)
+      // → แสดงจอ "กรุณาหมุนเป็นแนวตั้ง" แทน
+      builder: (context, child) {
+        final mq = MediaQuery.of(context);
+        if (mq.size.height < 500) {
+          return const _RotateDeviceScreen();
+        }
+        return child ?? const SizedBox.shrink();
+      },
+    );
+  }
+}
+
+/// จอเตือนเมื่อโทรศัพท์อยู่แนวนอน — UI หลักออกแบบมาสำหรับแนวตั้งเท่านั้น
+class _RotateDeviceScreen extends StatelessWidget {
+  const _RotateDeviceScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: ColoredBox(
+        color: const Color(0xFFF6F8F5),
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Phone icon + rotation arrow
+                  Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(.15),
+                              blurRadius: 18,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.phone_iphone_rounded,
+                          size: 48,
+                          color: Color(0xFF2E7D32),
+                        ),
+                      ),
+                      Positioned(
+                        right: 0,
+                        bottom: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF2E7D32),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.screen_rotation_rounded,
+                            size: 18,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'กรุณาหมุนอุปกรณ์เป็นแนวตั้ง',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B5E20),
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'แอปนี้รองรับการใช้งานบนโทรศัพท์ในแนวตั้งเท่านั้น\n'
+                    'โปรดหมุนหน้าจอกลับเพื่อใช้งานต่อ',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Color(0xFF555555),
+                      height: 1.5,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

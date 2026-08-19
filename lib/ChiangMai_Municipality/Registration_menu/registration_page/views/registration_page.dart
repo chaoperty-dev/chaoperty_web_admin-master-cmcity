@@ -153,7 +153,7 @@ class _RegistrationPageBodyState extends State<_RegistrationPageBody> {
               onAdd: _openAddCustomer,
             ),
             const SizedBox(height: LaSpace.lg),
-            // Search + Pagination row (เหมือน license_verify)
+            // Search + Pagination row (pagination inline, ยืด/หุบอัตโนมัติ)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [

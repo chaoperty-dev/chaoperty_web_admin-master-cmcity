@@ -190,7 +190,7 @@ class _BS extends State<_Body> {
             const LicenseAnnounceZoneFilter(),
             const SizedBox(height: LrSpace.md),
 
-            // Search + Pagination row (ไม่มี Card ครอบ เหมือน license_request_page)
+            // Search + Pagination row (pagination inline)
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -205,7 +205,12 @@ class _BS extends State<_Body> {
               ],
             ),
             const SizedBox(height: LrSpace.lg),
-            const Expanded(child: LicenseAnnounceTable()),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
+            const Expanded(
+              child: SingleChildScrollView(
+                child: LicenseAnnounceTable(),
+              ),
+            ),
           ],
         ),
       ),

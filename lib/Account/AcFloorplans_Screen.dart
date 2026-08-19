@@ -937,6 +937,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                       AutoSizeText(
                         'บัญชี ',
                         overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         minFontSize: 8,
                         maxFontSize: 20,
                         style: TextStyle(
@@ -949,6 +950,7 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                       AutoSizeText(
                         ' > >',
                         overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
                         minFontSize: 8,
                         maxFontSize: 20,
                         style: TextStyle(
@@ -3677,6 +3679,8 @@ class _AcFloorplans_ScreenState extends State<AcFloorplans_Screen> {
                                           child: AutoSizeText(
                                             minFontSize: 8,
                                             maxFontSize: 14,
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
                                             'รายละเอียดบิล', //numinvoice
                                             textAlign: TextAlign.center,
                                             style: TextStyle(

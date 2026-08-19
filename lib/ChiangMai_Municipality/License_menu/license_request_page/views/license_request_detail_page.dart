@@ -105,44 +105,18 @@ class _LicenseRequestDetailPageBodyState
               },
             ),
             Expanded(
-              child: step == 1
-                  ? RequestDetailStep1(requestUuid: widget.routeData)
-                  : RequestDetailStep2(requestUuid: widget.routeData),
+              child: _StepBody(
+                step: step,
+                uuid: widget.routeData,
+              ),
             ),
             RequestDetailFooter(
               readOnly: false,
               currentStep: step,
               totalSteps: total,
               onNext: step < total ? vm.nextDetailStep : null,
-              onSave: step == total
-                  ? () async {
-                      // ✅ Step 2: เรียก submit() บน ViewModel
-                      final vm2 = context
-                          .read<LicenseRequestDetailStep2ViewModel>();
-                      final err = await vm2.submit();
-                      if (!mounted) return;
-                      if (err == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: const Text('บันทึกสำเร็จ'),
-                            backgroundColor: LrColors.primary,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                        if (Navigator.of(context).canPop()) {
-                          Navigator.of(context).pop();
-                        }
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(err),
-                            backgroundColor: LrColors.statusRejectedFg,
-                            behavior: SnackBarBehavior.floating,
-                          ),
-                        );
-                      }
-                    }
-                  : null,
+              // ✅ Step 2: ไม่มีปุ่ม "บันทึก" — เพิ่ม/ลบ ยิง API ทันที
+              onSave: null,
               onCancel: () {
                 if (step > 1) {
                   vm.previousDetailStep();
@@ -157,5 +131,20 @@ class _LicenseRequestDetailPageBodyState
         ),
       ),
     );
+  }
+}
+
+/// Body ของแต่ละ step — ใช้ ValueKey(step) เพื่อให้ Flutter clear state
+/// เดิมเมื่อเปลี่ยน step (ป้องกัน state ค้างจาก step เก่า)
+class _StepBody extends StatelessWidget {
+  final int step;
+  final String? uuid;
+  const _StepBody({required this.step, required this.uuid});
+
+  @override
+  Widget build(BuildContext context) {
+    return step == 1
+        ? RequestDetailStep1(key: ValueKey('step1-$uuid'), requestUuid: uuid)
+        : RequestDetailStep2(key: ValueKey('step2-$uuid'), requestUuid: uuid);
   }
 }

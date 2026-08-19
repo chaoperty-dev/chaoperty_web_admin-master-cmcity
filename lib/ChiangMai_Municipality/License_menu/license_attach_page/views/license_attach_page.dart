@@ -153,7 +153,7 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
             const SizedBox(height: LaSpace.lg),
             const LicenseAttachZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -163,6 +163,7 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
             const Expanded(
               child: SingleChildScrollView(
                 child: LicenseAttachTable(),
@@ -200,4 +201,3 @@ class LicenseAttachHost extends StatelessWidget {
     );
   }
 }
-

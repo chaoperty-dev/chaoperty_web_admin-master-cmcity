@@ -11,8 +11,11 @@ import 'models/navigation_menu_model.dart';
 import 'services/navigation_menu_service.dart';
 
 /// Layout หลักของแอปหลังล็อกอิน — responsive
-/// - Desktop (≥ 600px): Row(NavigationRail 240px, Content)
-/// - Mobile (< 600px): Scaffold(drawer: MobileDrawer, body: Content wrapped in Material)
+/// - Desktop (≥ 1100px): Row(NavigationRail 240px, Content) — โชว์ sidebar ถาวร
+/// - Tablet/Mobile (< 1100px): Scaffold(drawer: MobileDrawer, body: Content) — ใช้ hamburger เปิด drawer
+///
+/// เพิ่ม breakpoint จาก 600 → 1100 เพราะ iPad/iPad mini จะใช้ drawer แทน sidebar ถาวร
+/// (sidebar 240px กินพื้นที่เยอะเกินไปบน tablet portrait)
 ///
 /// ✅ ใช้ ShellRoute ธรรมดา (ไม่ใช่ StatefulShellRoute) แล้ว render child ตรง ๆ
 /// ทุกครั้งที่สลับเมนู child จะถูกสร้างใหม่ → state ของหน้าก่อนหน้าหายไปทั้งหมด
@@ -21,7 +24,7 @@ class AppShell extends StatelessWidget {
 
   const AppShell({super.key, required this.child});
 
-  static const double _kMobileBreakpoint = 600;
+  static const double _kMobileBreakpoint = 1100;
 
   @override
   Widget build(BuildContext context) {

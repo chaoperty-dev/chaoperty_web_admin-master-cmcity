@@ -6,6 +6,11 @@
 // - Status pill ใช้สีตามคำสถานะ
 // - ปุ่ม "เรียกดู" เป็น pill button
 // - Empty / loading state สวยงาม
+//
+// v2 (2026-05): ใช้ data จาก /api/v2/admin/requests/tasks/approvals
+//   - "รายการ" → module.name_th (d.moduleName)
+//   - เพิ่มคอลัม "ขั้นตอนรอ" (d.pendingStepCount) ก่อน "สถานะ"
+//   - คอมเมนต์ "เบอร์โทร" ออก (เก็บไว้ใน detail page)
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -15,7 +20,7 @@ import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart' as fd;
-import '../../../../unity/FormatPhone.dart';
+// import '../../../../unity/FormatPhone.dart'; // คอมเมนต์ปิดเบอร์โทรออก
 import '../../models/license_submit_approval_detail_model.dart';
 import '../theme/license_submit_approval_theme.dart';
 import '../../viewmodels/license_submit_approval_view_model.dart';
@@ -60,21 +65,22 @@ String _maskName(String raw) {
 }
 
 /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
-String _maskPhone(String raw) {
-  if (raw.isEmpty || raw == '-') return '-';
-  final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digits.length <= 3) return raw;
-
-  final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-  if (digits.length == 10) {
-    return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-  }
-  if (digits.length == 9) {
-    return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-  }
-  return maskedDigits;
-}
+// (คอมเมนต์ปิดเบอร์โทรในตารางนี้ — เก็บไว้ใช้ในอนาคต)
+// String _maskPhone(String raw) {
+//   if (raw.isEmpty || raw == '-') return '-';
+//   final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+//   if (digits.length <= 3) return raw;
+//
+//   final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+//
+//   if (digits.length == 10) {
+//     return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+//   }
+//   if (digits.length == 9) {
+//     return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+//   }
+//   return maskedDigits;
+// }
 
 class LicenseSubmitApprovalTable extends StatelessWidget {
   const LicenseSubmitApprovalTable({super.key});
@@ -138,7 +144,8 @@ class LicenseSubmitApprovalTable extends StatelessWidget {
   }
 
   // ========================================================================
-  // Header
+  // Header (v2 order: เรียกดู, รายการ, บริเวณ, โซนพื้นที่, รหัสพื้นที่, ชื่อผู้ติดต่อ,
+  //                   วันที่สิ้นสุด, ขั้นตอนรอ, สถานะ, รหัสรายการ)
   // ========================================================================
   Widget _headerRow() {
     return Container(
@@ -159,8 +166,9 @@ class LicenseSubmitApprovalTable extends StatelessWidget {
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
-          _HeaderCell(label: 'เบอร์โทร', flex: 2),
+          // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
           _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
+          _HeaderCell(label: 'ขั้นตอนรอ', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -190,23 +198,37 @@ class LicenseSubmitApprovalTable extends StatelessWidget {
             child: Center(
                 child: _ViewButton(onTap: () => vm.onViewRequest(payment))),
           ),
-          _Cell(value: payment.paymentNo, flex: 2),
+          // รายการ — ใช้ module.name_th (v2)
+          _Cell(
+              value: payment.moduleName.isEmpty ? '-' : payment.moduleName,
+              flex: 2),
+          // บริเวณ — จาก details.subzone (v2) → fallback paymentSystem
           _Cell(value: nr?.subzone ?? '', flex: 2),
+          // โซนพื้นที่ — จาก details.zn (v2) → fallback payType
           _Cell(value: nr?.zn ?? '', flex: 2),
+          // รหัสพื้นที่ — จาก details.ln (v2) → fallback methodName
           _Cell(value: nr?.ln ?? '', flex: 2, isMono: true),
           _Cell(
               value: _maskName(payment.client?.cname ?? ''),
               tooltip: payment.client?.cname,
               flex: 3),
-          _Cell(
-              value: _maskPhone(formatPhoneNumber(payment.client?.tel ?? "")),
-              tooltip: formatPhoneNumber(payment.client?.tel ?? ""),
-              flex: 2,
-              isMono: true),
+          // _Cell(
+          //     value: _maskPhone(formatPhoneNumber(payment.client?.tel ?? "")),
+          //     tooltip: formatPhoneNumber(payment.client?.tel ?? ""),
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดเบอร์โทร
           _Cell(
               value: fd.formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
               flex: 2,
               isMono: true),
+          // ขั้นตอนรอ (v2 ใหม่) — ก่อนหน้าสถานะ
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: _PendingStepBadge(count: payment.pendingStepCount),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _StatusPill(
@@ -331,8 +353,7 @@ class _CopyUuidCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -341,8 +362,7 @@ class _CopyUuidCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -363,8 +383,8 @@ class _CopyUuidCell extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.content_copy_rounded,
-                      size: 14,
-                      color: LaColors.primary,
+                      size: 12,
+                      color: LaColors.textMuted,
                     ),
                   ],
                 ),
@@ -385,9 +405,9 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
         decoration: LaDecor.pill(palette.bg, palette.fg),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -414,6 +434,51 @@ class _StatusPill extends StatelessWidget {
                   color: palette.fg,
                   fontWeight: FontWeight.w700,
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// แสดงจำนวน "ขั้นตอนรอ" (pending_step_count) — ใช้ก่อน status pill
+/// count == 0 → ซ่อน (ไม่มีขั้นตอนค้าง = ผ่านครบ)
+/// count > 0 → icon + ตัวเลข สีฟ้า (ไม่มีกรอบ / ไม่มี background)
+class _PendingStepBadge extends StatelessWidget {
+  final int count;
+  const _PendingStepBadge({required this.count});
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) {
+      return Center(
+        child: Text(
+          '-',
+          style: LaText.tableCell.copyWith(color: LaColors.textMuted),
+        ),
+      );
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Tooltip(
+        message: 'ขั้นตอนที่รอดำเนินการ $count รายการ',
+        waitDuration: const Duration(milliseconds: 250),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.hourglass_top_rounded,
+              size: 14,
+              color: LaColors.primary, // สีฟ้า
+            ),
+            const SizedBox(width: 4),
+            Text(
+              '$count',
+              style: LaText.tableCell.copyWith(
+                color: LaColors.primary, // สีฟ้า
+                fontWeight: FontWeight.w700,
               ),
             ),
           ],
@@ -713,8 +778,11 @@ class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        // v2: title = module.name_th (d.moduleName)
                         Text(
-                          d.paymentNo.isEmpty ? '-' : d.paymentNo,
+                          d.moduleName.isEmpty
+                              ? (d.paymentNo.isEmpty ? '-' : d.paymentNo)
+                              : d.moduleName,
                           style: LaText.h2.copyWith(fontSize: 15),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -733,9 +801,9 @@ class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
                   _StatusPill(label: d.statusLabel, palette: palette),
                 ],
               ),
-              const SizedBox(height: LaSpace.md),
+              const SizedBox(height: LaSpace.sm),
               const Divider(height: 1, color: LaColors.border),
-              const SizedBox(height: LaSpace.md),
+              const SizedBox(height: LaSpace.sm),
               // ─── Detail rows ───
               _CardRow(
                 icon: Icons.place_outlined,
@@ -753,12 +821,12 @@ class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
                 value: nr?.ln ?? '-',
                 isMono: true,
               ),
-              _CardRow(
-                icon: Icons.phone_outlined,
-                label: 'เบอร์โทร',
-                value: _maskPhone(formatPhoneNumber(d.client?.tel ?? '')),
-                isMono: true,
-              ),
+              // _CardRow(
+              //   icon: Icons.phone_outlined,
+              //   label: 'เบอร์โทร',
+              //   value: _maskPhone(formatPhoneNumber(d.client?.tel ?? '')),
+              //   isMono: true,
+              // ), // คอมเมนต์ปิดเบอร์โทร
               _CardRow(
                 icon: Icons.event_outlined,
                 label: 'วันที่สิ้นสุด',
@@ -766,14 +834,22 @@ class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
                 isMono: true,
               ),
               _CardRow(
+                icon: null, // ไม่มี icon (เคยมี hourglass_top_rounded)
+                label: 'ขั้นตอนรอ',
+                value: d.pendingStepCount > 0
+                    ? '${d.pendingStepCount} รายการ'
+                    : '-',
+                muted: d.pendingStepCount == 0,
+              ),
+              _CardRow(
                 icon: Icons.fingerprint,
-                label: 'รหัสรายการ',
+                label: 'รหัสรา�การ',
                 value: _shortUuid(d.uuid),
                 isMono: true,
                 muted: true,
                 uuidCopy: d.uuid,
               ),
-              const SizedBox(height: LaSpace.md),
+              const SizedBox(height: LaSpace.sm),
               // ─── Action button ───
               SizedBox(
                 width: double.infinity,
@@ -800,7 +876,7 @@ class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
 }
 
 class _CardRow extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String label;
   final String value;
   final bool isMono;
@@ -808,7 +884,7 @@ class _CardRow extends StatelessWidget {
   final String? uuidCopy;
 
   const _CardRow({
-    required this.icon,
+    this.icon,
     required this.label,
     required this.value,
     this.isMono = false,
@@ -889,14 +965,16 @@ class _CardRow extends StatelessWidget {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 14, color: LaColors.textSecondary),
-          const SizedBox(width: 6),
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: LaColors.textSecondary),
+            const SizedBox(width: 6),
+          ],
           SizedBox(
-            width: 90,
+            width: 80,
             child: Text(
               label,
               style: LaText.bodyMuted.copyWith(fontSize: 12),

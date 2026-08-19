@@ -180,7 +180,7 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
             const SizedBox(height: LaSpace.lg),
             const LicensePaymentZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -191,9 +191,9 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
             ),
             const SizedBox(height: LaSpace.lg),
             // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
-            const Expanded(
+            Expanded(
               child: SingleChildScrollView(
-                child: LicensePaymentTable(),
+                child: const LicensePaymentTable(),
               ),
             ),
           ],

@@ -44,31 +44,74 @@ class _AreaZoneFilterState extends State<AreaZoneFilter> {
     return Container(
       padding: const EdgeInsets.all(AeaSpace.md),
       decoration: AeaDecor.card(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(flex: 5, child: _subZoneSection(vm)),
-          _divider(),
-          Expanded(flex: 5, child: _zoneSection(vm)),
-          if (widget.onAddZone != null) ...[
-            const SizedBox(width: AeaSpace.md),
-            _ActionButton(
-              icon: Icons.add_circle_outline_rounded,
-              label: 'เพิ่มโซน',
-              color: AeaColors.primary,
-              onTap: widget.onAddZone!,
-            ),
-          ],
-          if (widget.onDeleteZone != null) ...[
-            const SizedBox(width: AeaSpace.sm),
-            _ActionButton(
-              icon: Icons.delete_outline_rounded,
-              label: 'ลบโซน',
-              color: AeaColors.statusRejectedFg,
-              onTap: () => widget.onDeleteZone!(vm.selectedZoneSer),
-            ),
-          ],
-        ],
+      child: LayoutBuilder(
+        builder: (context, c) {
+          // จอแคบ (<700px) → stack dropdown + ปุ่มเป็นแนวตั้ง
+          if (c.maxWidth < 700) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _subZoneSection(vm),
+                const SizedBox(height: AeaSpace.md),
+                _zoneSection(vm),
+                if (widget.onAddZone != null || widget.onDeleteZone != null)
+                  const SizedBox(height: AeaSpace.md),
+                Row(
+                  children: [
+                    if (widget.onAddZone != null)
+                      Expanded(
+                        child: _ActionButton(
+                          icon: Icons.add_circle_outline_rounded,
+                          label: 'เพิ่มโซน',
+                          color: AeaColors.primary,
+                          onTap: widget.onAddZone!,
+                        ),
+                      ),
+                    if (widget.onAddZone != null &&
+                        widget.onDeleteZone != null)
+                      const SizedBox(width: AeaSpace.sm),
+                    if (widget.onDeleteZone != null)
+                      Expanded(
+                        child: _ActionButton(
+                          icon: Icons.delete_outline_rounded,
+                          label: 'ลบโซน',
+                          color: AeaColors.statusRejectedFg,
+                          onTap: () =>
+                              widget.onDeleteZone!(vm.selectedZoneSer),
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            );
+          }
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(flex: 5, child: _subZoneSection(vm)),
+              _divider(),
+              Expanded(flex: 5, child: _zoneSection(vm)),
+              if (widget.onAddZone != null) ...[
+                const SizedBox(width: AeaSpace.md),
+                _ActionButton(
+                  icon: Icons.add_circle_outline_rounded,
+                  label: 'เพิ่มโซน',
+                  color: AeaColors.primary,
+                  onTap: widget.onAddZone!,
+                ),
+              ],
+              if (widget.onDeleteZone != null) ...[
+                const SizedBox(width: AeaSpace.sm),
+                _ActionButton(
+                  icon: Icons.delete_outline_rounded,
+                  label: 'ลบโซน',
+                  color: AeaColors.statusRejectedFg,
+                  onTap: () => widget.onDeleteZone!(vm.selectedZoneSer),
+                ),
+              ],
+            ],
+          );
+        },
       ),
     );
   }
@@ -250,6 +293,8 @@ extension on _AreaZoneFilterState {
           style: AeaText.body.copyWith(color: AeaColors.textPrimary),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: null,
         items: const [],
@@ -290,6 +335,8 @@ extension on _AreaZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: _resolveZoneValue(vm),
         items: vm.zones

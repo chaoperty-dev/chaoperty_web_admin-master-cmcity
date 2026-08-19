@@ -13,11 +13,12 @@
 //   - Gradient grand total card
 //   - Responsive width (เต็มจอ / ไม่จำกัด 1400)
 //   - ใช้ Table widget (FlexColumnWidth) เพื่อให้คอลัมน์ขยายเต็มจอ
-//   - Add dialog: ใช้ BillingTable-style _AddRowDialog (Grouped by expType)
+//   - Add dialog: ใช้ AddBillingTable (license_request_addbilling_table.dart)
+//     → เพิ่มอย่างเดียว, ส่ง JSON กลับมารวมกับรายการเดิม
+//   - ไม่มีการแก้ไขรายการ (edit) — มีแค่ เพิ่ม / ลบ
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +26,7 @@ import 'package:provider/provider.dart';
 import '../../services/license_request_billing_service.dart';
 import '../../viewmodels/license_request_detail_step2_view_model.dart';
 import '../theme/license_request_theme.dart';
+import 'license_request_addbilling_table.dart';
 
 // ============================================================================
 // Main widget
@@ -100,59 +102,56 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
   }
 
   // ─── Handlers ───
-  /// เปิด dialog เพิ่มรายการ (BillingTable-style: grouped by expType)
-  void _onAddRow(BuildContext context) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withOpacity(.45),
-      builder: (_) => _AddRowDialog(
-        onAdd: (name) {
-          context
-              .read<LicenseRequestDetailStep2ViewModel>()
-              .addItemFromAutoExp(name);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('เพิ่มรายการสำเร็จ (ยังไม่ได้บันทึก)'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-      ),
-    );
-  }
+  /// เปิด full-page เพิ่มรายการ — กดบันทึกในหน้านั้น = ยิง API รวมรายการใหม่+เดิมทันที
+  Future<void> _onAddRow(BuildContext context) async {
+    final vm = context.read<LicenseRequestDetailStep2ViewModel>();
+    final uuid = widget.requestUuid?.trim() ?? '';
+    if (uuid.isEmpty) return;
 
-  void _onEditRow(BuildContext context, BillingItem item) {
-    showDialog<void>(
-      context: context,
-      builder: (_) => _ItemFormDialog(
-        initial: item,
-        onSave: (updated) {
-          context.read<LicenseRequestDetailStep2ViewModel>().updateItem(updated);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text('แก้ไขรายการสำเร็จ (ยังไม่ได้บันทึก)'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        },
-      ),
+    final saved = await AddBillingTable.show(
+      context,
+      requestUuid: uuid,
+      existingItems: vm.items,
     );
+    if (!context.mounted) return;
+    if (saved == true) {
+      // รีเฟรชรายการจาก API หลัง save สำเร็จ
+      await vm.refresh();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('เพิ่มรายการสำเร็จ'),
+          backgroundColor: LrColors.statusApprovedFg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else if (saved == false) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('บันทึกไม่สำเร็จ'),
+          backgroundColor: LrColors.statusRejectedFg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Future<void> _onDeleteRow(BuildContext context, BillingItem item) async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      // ใช้ context ของ dialog เอง — ถ้าใช้ context ของหน้า
+      // Navigator.pop จะไปปิด route ของหน้าแทนที่จะปิด dialog (เด้งออกจากหน้า)
+      builder: (dialogContext) => AlertDialog(
         title: const Text('ยืนยันการลบ'),
         content: Text('ต้องการลบ "${item.expname}" หรือไม่?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogContext).pop(false),
             child: const Text('ยกเลิก'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
             child: const Text('ลบ'),
           ),
         ],
@@ -160,14 +159,30 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     );
     if (confirm != true) return;
     if (!context.mounted) return;
-    await context.read<LicenseRequestDetailStep2ViewModel>().deleteItem(item.ser);
+
+    final vm = context.read<LicenseRequestDetailStep2ViewModel>();
+    // ลบใน local state ก่อน
+    vm.deleteItem(item.ser);
+    // ยิง API ทันที (overwrite debt_details ทั้งหมด)
+    final err = await vm.submit();
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Text('ลบรายการสำเร็จ (ยังไม่ได้บันทึก)'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    if (err == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ลบรายการสำเร็จ'),
+          backgroundColor: LrColors.statusApprovedFg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(err),
+          backgroundColor: LrColors.statusRejectedFg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   Widget _buildTable(List<BillingItem> items) {
@@ -379,22 +394,11 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
           alignment: Alignment.center,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              IconButton(
-                tooltip: 'แก้ไข',
-                icon: const Icon(Icons.edit_outlined,
-                    color: LrColors.primaryDark, size: 18),
-                onPressed: () => _onEditRow(context, row),
-              ),
-              IconButton(
-                tooltip: 'ลบ',
-                icon: const Icon(Icons.delete_outline,
-                    color: LrColors.statusRejectedFg, size: 18),
-                onPressed: () => _onDeleteRow(context, row),
-              ),
-            ],
+          child: IconButton(
+            tooltip: 'ลบ',
+            icon: const Icon(Icons.delete_outline,
+                color: LrColors.statusRejectedFg, size: 18),
+            onPressed: () => _onDeleteRow(context, row),
           ),
         ),
       ],
@@ -466,8 +470,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
 // ============================================================================
 // Top-level helper functions (shared between State and Dialogs)
 // ============================================================================
-String _formatMoney(double v) =>
-    NumberFormat("#,##0.00", "en_US").format(v);
+String _formatMoney(double v) => NumberFormat("#,##0.00", "en_US").format(v);
 
 /// ใช้ format DD-MM-YYYY (มี dash) ให้ตรงกับ BillingTable
 String _formatDate(String raw) {
@@ -593,596 +596,6 @@ class _EmptyState extends StatelessWidget {
           const Text('กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น',
               style: LrText.bodyMuted),
         ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// Item form dialog (for EDIT only — simple form with all fields)
-// ============================================================================
-
-class _ItemFormDialog extends StatefulWidget {
-  final BillingItem? initial;
-  final void Function(BillingItem) onSave;
-
-  const _ItemFormDialog({
-    required this.onSave,
-    this.initial,
-  });
-
-  @override
-  State<_ItemFormDialog> createState() => _ItemFormDialogState();
-}
-
-class _ItemFormDialogState extends State<_ItemFormDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _amount = TextEditingController();
-  final _periods = TextEditingController(text: '1');
-  final _sdate = TextEditingController(
-    text: DateFormat('yyyy-MM-dd').format(DateTime.now()),
-  );
-  final _ldate = TextEditingController(
-    text: DateFormat('yyyy-MM-dd')
-        .format(DateTime.now().add(const Duration(days: 365))),
-  );
-  final _unit = TextEditingController(text: 'รายปี');
-  final _vatRate = TextEditingController(text: '0');
-  final _whtRate = TextEditingController(text: '0');
-  bool _submitting = false;
-
-  @override
-  void initState() {
-    super.initState();
-    final i = widget.initial;
-    if (i != null) {
-      _name.text = i.expname;
-      _amount.text = i.amount.toStringAsFixed(2);
-      _periods.text = i.term;
-      _sdate.text = i.sdate;
-      _ldate.text = i.ldate;
-      _unit.text = i.unit;
-      _vatRate.text = i.vatRate.toStringAsFixed(0);
-      _whtRate.text = i.whtRate.toStringAsFixed(0);
-    }
-  }
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _amount.dispose();
-    _periods.dispose();
-    _sdate.dispose();
-    _ldate.dispose();
-    _unit.dispose();
-    _vatRate.dispose();
-    _whtRate.dispose();
-    super.dispose();
-  }
-
-  void _submit() {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _submitting = true);
-    final amount = double.tryParse(_amount.text.trim()) ?? 0;
-    final periods = int.tryParse(_periods.text.trim()) ?? 1;
-    final vatRate = double.tryParse(_vatRate.text.trim()) ?? 0;
-    final whtRate = double.tryParse(_whtRate.text.trim()) ?? 0;
-    final ser =
-        widget.initial?.ser ?? DateTime.now().millisecondsSinceEpoch.toString();
-    final item = BillingItem(
-      ser: ser,
-      expname: _name.text.trim(),
-      sdate: _sdate.text.trim(),
-      ldate: _ldate.text.trim(),
-      unit: _unit.text.trim(),
-      term: periods.toString(),
-      amount: amount,
-      vatRate: vatRate,
-      whtRate: whtRate,
-    );
-    widget.onSave(item);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isEdit = widget.initial != null;
-    return Dialog(
-      backgroundColor: LrColors.cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(LrRadius.lg),
-      ),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 520),
-        child: Padding(
-          padding: const EdgeInsets.all(LrSpace.lg),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                          child: Text(
-                              isEdit ? 'แก้ไขค่าใช้จ่าย' : 'เพิ่มค่าใช้จ่าย',
-                              style: LrText.h1)),
-                      IconButton(
-                        icon: const Icon(Icons.close_rounded),
-                        onPressed: () => Navigator.of(context).pop(),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: LrSpace.md),
-                  TextFormField(
-                    controller: _name,
-                    decoration: const InputDecoration(
-                      labelText: 'ชื่อรายการ',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                    validator: (v) => (v == null || v.trim().isEmpty)
-                        ? 'กรุณากรอกชื่อ'
-                        : null,
-                  ),
-                  const SizedBox(height: LrSpace.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _amount,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d*\.?\d{0,2}$')),
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'ยอด/งวด (บาท)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'กรอกยอด';
-                            if (double.tryParse(v) == null)
-                              return 'ตัวเลขเท่านั้น';
-                            return null;
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _unit,
-                          decoration: const InputDecoration(
-                            labelText: 'หน่วย',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: LrSpace.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _periods,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.digitsOnly,
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'จำนวนงวด',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _sdate,
-                          decoration: const InputDecoration(
-                            labelText: 'วันเริ่มต้น (YYYY-MM-DD)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: LrSpace.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _ldate,
-                          decoration: const InputDecoration(
-                            labelText: 'วันสิ้นสุด (YYYY-MM-DD)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _vatRate,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                                RegExp(r'^\d*\.?\d{0,2}$')),
-                          ],
-                          decoration: const InputDecoration(
-                            labelText: 'VAT (%)',
-                            border: OutlineInputBorder(),
-                            isDense: true,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: LrSpace.sm),
-                  TextFormField(
-                    controller: _whtRate,
-                    keyboardType:
-                        const TextInputType.numberWithOptions(decimal: true),
-                    inputFormatters: [
-                      FilteringTextInputFormatter.allow(
-                          RegExp(r'^\d*\.?\d{0,2}$')),
-                    ],
-                    decoration: const InputDecoration(
-                      labelText: 'WHT (%)',
-                      border: OutlineInputBorder(),
-                      isDense: true,
-                    ),
-                  ),
-                  const SizedBox(height: LrSpace.lg),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      TextButton(
-                        onPressed: _submitting
-                            ? null
-                            : () => Navigator.of(context).pop(),
-                        child: const Text('ยกเลิก'),
-                      ),
-                      const SizedBox(width: 8),
-                      ElevatedButton.icon(
-                        onPressed: _submitting ? null : _submit,
-                        icon: _submitting
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation(Colors.white),
-                                ),
-                              )
-                            : const Icon(Icons.save_rounded, size: 16),
-                        label: Text(isEdit ? 'บันทึก' : 'เพิ่ม'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: LrColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// Add Row Dialog (BillingTable-style — Grouped by expType)
-// ============================================================================
-
-class _AddRowDialog extends StatefulWidget {
-  final void Function(String expname) onAdd;
-
-  const _AddRowDialog({required this.onAdd});
-
-  @override
-  State<_AddRowDialog> createState() => _AddRowDialogState();
-}
-
-class _AddRowDialogState extends State<_AddRowDialog> {
-  String? _selectedTypeName;
-  String? _selectedExpName;
-
-  @override
-  Widget build(BuildContext context) {
-    final vm = context.watch<LicenseRequestDetailStep2ViewModel>();
-    final grouped = vm.groupedAutoExps;
-
-    return Dialog(
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(LrRadius.lg)),
-      ),
-      backgroundColor: LrColors.cardBg,
-      insetPadding: const EdgeInsets.all(LrSpace.lg),
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720, maxHeight: 640),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // ─── Header (gradient + title) ───
-            Container(
-              padding: const EdgeInsets.fromLTRB(
-                  LrSpace.lg, LrSpace.md, LrSpace.md, LrSpace.md),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [LrColors.primary, LrColors.primaryAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(LrRadius.lg),
-                  topRight: Radius.circular(LrRadius.lg),
-                ),
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.add_circle_outline_rounded,
-                      color: Colors.white, size: 22),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'เพิ่มรายการค่าบริการ',
-                      style: TextStyle(
-                        fontFamily: LrText.fontBold,
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    tooltip: 'ปิด',
-                    icon: const Icon(Icons.close_rounded,
-                        color: Colors.white, size: 22),
-                    onPressed: () => Navigator.of(context).pop(),
-                  ),
-                ],
-              ),
-            ),
-
-            // ─── Body (scrollable sections) ───
-            Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(LrSpace.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: grouped.entries.map((entry) {
-                    final typeName = entry.key;
-                    final items = entry.value;
-                    final matchedRows =
-                        vm.items.where((e) => e.expname.split(' ').first == typeName).toList();
-
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: LrSpace.md),
-                      decoration: BoxDecoration(
-                        color: LrColors.cardBg,
-                        borderRadius: BorderRadius.circular(LrRadius.md),
-                        border: Border.all(color: LrColors.border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // ─── Section Header (icon + name + count) ───
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: LrSpace.md, vertical: LrSpace.sm),
-                            decoration: const BoxDecoration(
-                              color: LrColors.surfaceMuted,
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(LrRadius.md - 1),
-                                topRight: Radius.circular(LrRadius.md - 1),
-                              ),
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.category_rounded,
-                                    size: 16, color: LrColors.primary),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'ประเภท : $typeName',
-                                    style: LrText.h2.copyWith(fontSize: 14),
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: LrColors.primaryLight,
-                                    borderRadius: BorderRadius.circular(999),
-                                  ),
-                                  child: Text(
-                                    '${matchedRows.length} รายการ',
-                                    style: LrText.caption.copyWith(
-                                      color: LrColors.primaryDark,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-
-                          // ─── Add row dropdown ───
-                          Padding(
-                            padding: const EdgeInsets.all(LrSpace.md),
-                            child: _StyledDropdown<String>(
-                              hint: 'เลือกรายการเพื่อเพิ่ม',
-                              value: items.contains(_selectedExpName) &&
-                                      _selectedTypeName == typeName
-                                  ? _selectedExpName
-                                  : null,
-                              items: items
-                                  .map((exp) => DropdownMenuItem<String>(
-                                        value: exp,
-                                        child: Text(exp),
-                                      ))
-                                  .toList(),
-                              onChanged: (val) {
-                                if (val == null) return;
-                                setState(() {
-                                  _selectedTypeName = typeName;
-                                  _selectedExpName = val;
-                                });
-                                widget.onAdd(val);
-                                // Clear selection after add
-                                Future.microtask(() {
-                                  if (mounted) {
-                                    setState(() {
-                                      _selectedExpName = null;
-                                    });
-                                  }
-                                });
-                              },
-                            ),
-                          ),
-
-                          // ─── Mini table (items in this section) ───
-                          if (matchedRows.isNotEmpty)
-                            Container(
-                              decoration: const BoxDecoration(
-                                border: Border(
-                                  top: BorderSide(color: LrColors.border),
-                                ),
-                              ),
-                              child: SingleChildScrollView(
-                                scrollDirection: Axis.horizontal,
-                                child: DataTable(
-                                  columnSpacing: 18,
-                                  headingRowHeight: 36,
-                                  dataRowMinHeight: 40,
-                                  dataRowMaxHeight: 52,
-                                  headingRowColor:
-                                      MaterialStateColor.resolveWith(
-                                          (states) => LrColors.surfaceMuted),
-                                  headingTextStyle: LrText.tableHeader,
-                                  dataTextStyle: LrText.tableCell,
-                                  columns: const [
-                                    DataColumn(label: Text('ประเภท')),
-                                    DataColumn(label: Text('ความถี่')),
-                                    DataColumn(label: Text('งวด')),
-                                    DataColumn(label: Text('ราคา')),
-                                    DataColumn(label: Text('ยอดสุทธิ')),
-                                    DataColumn(label: Text('')),
-                                  ],
-                                  rows: matchedRows.map((row) {
-                                    return DataRow(cells: [
-                                      DataCell(Text(row.expname)),
-                                      DataCell(Text(row.unit.isEmpty ? '-' : row.unit)),
-                                      DataCell(Text(row.term)),
-                                      DataCell(Text(_formatMoney(row.amount).toString())),
-                                      DataCell(Text(
-                                        _formatMoney(row.net).toString(),
-                                        style: LrText.tableCell.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          color: LrColors.primaryDark,
-                                        ),
-                                      )),
-                                      DataCell(IconButton(
-                                        icon: const Icon(Icons.delete_outline,
-                                            color: LrColors.statusRejectedFg, size: 18),
-                                        onPressed: () {
-                                          context
-                                              .read<LicenseRequestDetailStep2ViewModel>()
-                                              .deleteItem(row.ser);
-                                        },
-                                      )),
-                                    ]);
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-
-            // ─── Footer (close) ───
-            Container(
-              padding: const EdgeInsets.all(LrSpace.md),
-              decoration: const BoxDecoration(
-                border: Border(top: BorderSide(color: LrColors.border)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  TextButton.icon(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close, size: 16),
-                    label: const Text('ปิด'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: LrColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Styled dropdown (used in dialog sections)
-class _StyledDropdown<T> extends StatelessWidget {
-  final String hint;
-  final T? value;
-  final List<DropdownMenuItem<T>> items;
-  final ValueChanged<T?> onChanged;
-
-  const _StyledDropdown({
-    required this.hint,
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-      decoration: BoxDecoration(
-        color: LrColors.surfaceMuted.withOpacity(.6),
-        borderRadius: BorderRadius.circular(LrRadius.sm),
-        border: Border.all(color: LrColors.border),
-      ),
-      child: DropdownButton<T>(
-        value: value,
-        hint: Row(
-          children: [
-            const Icon(Icons.add, size: 16, color: LrColors.primary),
-            const SizedBox(width: 6),
-            Text(hint, style: LrText.body.copyWith(color: LrColors.textMuted)),
-          ],
-        ),
-        isExpanded: true,
-        underline: const SizedBox(),
-        icon: const Icon(Icons.arrow_drop_down, color: LrColors.textSecondary),
-        style: LrText.body,
-        items: items,
-        onChanged: onChanged,
       ),
     );
   }

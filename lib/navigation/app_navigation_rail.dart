@@ -10,8 +10,8 @@ import 'models/navigation_menu_model.dart';
 import 'services/navigation_menu_service.dart';
 
 /// Custom NavigationRail ด้านซ้าย — responsive + โหลดเมนูจาก JSON
-/// - Desktop (≥ 600px): แสดง sidebar 240px (persistent)
-/// - Mobile (< 600px): ไม่แสดง (ให้ AppShell จัดการ Drawer)
+/// - Desktop (≥ 1100px): แสดง sidebar 240px (persistent)
+/// - Tablet/Mobile (< 1100px): ไม่แสดง (ให้ AppShell จัดการ Drawer + hamburger)
 class AppNavigationRail extends StatefulWidget {
   const AppNavigationRail({super.key});
 
@@ -20,7 +20,7 @@ class AppNavigationRail extends StatefulWidget {
 }
 
 class _AppNavigationRailState extends State<AppNavigationRail> {
-  static const _kDesktopBreakpoint = 600;
+  static const _kDesktopBreakpoint = 1100;
   static const double _kWidth = 240;
 
   // สีตามภาพตัวอย่าง

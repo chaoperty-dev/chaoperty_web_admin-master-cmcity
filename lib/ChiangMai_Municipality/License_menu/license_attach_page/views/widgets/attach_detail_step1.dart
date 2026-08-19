@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../viewmodels/attach_documents_view_model.dart';
+import '../../viewmodels/license_attach_detail_view_model.dart';
 import '../theme/license_attach_theme.dart';
 import '../../services/attach_documents_service.dart';
 
@@ -68,6 +69,11 @@ class _Step1Scaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mobile = _isMobile(context);
+    // ดึงจาก detail VM (ที่ parent provide ไว้) เพื่อเช็คว่ามี checklist ที่บันทึกแล้วหรือไม่
+    final detailVm = context.watch<LicenseAttachDetailViewModel>();
+    final savedChecklist = detailVm.checklist;
+    final hasSaved = savedChecklist?.isSaved ?? false;
+
     return SingleChildScrollView(
       padding: EdgeInsets.all(mobile ? LaSpace.sm : LaSpace.lg),
       child: Center(
@@ -79,6 +85,11 @@ class _Step1Scaffold extends StatelessWidget {
               // ─── Section: เลือกเอกสาร (เดิม) ───
               const _SectionHeader(),
               const SizedBox(height: LaSpace.md),
+              // ─── Banner แจ้งเตือนว่าเคยมีการบันทึกแบบฟอร์มไปแล้ว ───
+              if (hasSaved) ...[
+                _SavedChecklistNotice(preview: savedChecklist!),
+                const SizedBox(height: LaSpace.md),
+              ],
               // ─── Section: ลายเซ็นผู้แนบ (ใหม่ — ก่อนตารางเอกสาร) ───
               AttachSignatureSection(requestUuid: requestUuid),
               const SizedBox(height: LaSpace.md),
@@ -89,6 +100,62 @@ class _Step1Scaffold extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Banner แจ้งเตือนใน step 1 ว่ามีประวัติการบันทึก checklist ไปแล้ว
+class _SavedChecklistNotice extends StatelessWidget {
+  final dynamic preview; // LicenseAttachChecklistPreview (หลีกเลี่ยง circular import)
+  const _SavedChecklistNotice({required this.preview});
+
+  @override
+  Widget build(BuildContext context) {
+    final mobile = _isMobile(context);
+    final checklistNo = preview.checklistNo?.toString() ?? '-';
+    final version = preview.version;
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: mobile ? LaSpace.sm : LaSpace.md,
+        vertical: LaSpace.sm,
+      ),
+      decoration: BoxDecoration(
+        color: LaColors.statusInfoFg.withOpacity(.08),
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(
+          color: LaColors.statusInfoFg.withOpacity(.35),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.history_rounded,
+              size: 18, color: LaColors.statusInfoFg),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'มีประวัติการบันทึกแบบฟอร์มตรวจสอบเอกสารแล้ว',
+                  style: LaText.body.copyWith(
+                      fontFamily: LaText.fontBold, fontSize: 13),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  version != null
+                      ? 'เลขที่ $checklistNo  ·  เวอร์ชัน $version  ·  '
+                          'การเปลี่ยนแปลงเอกสารจะมีผลกับเวอร์ชันถัดไป'
+                      : 'เลขที่ $checklistNo  ·  การเปลี่ยนแปลงเอกสารจะมีผลกับเวอร์ชันถัดไป',
+                  style: LaText.caption
+                      .copyWith(color: LaColors.textSecondary, fontSize: 11),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

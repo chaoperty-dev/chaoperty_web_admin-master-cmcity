@@ -8,6 +8,7 @@ class LicenseAttachChecklistSigner {
   final String uuid;
   final String name;
   final String position;
+  final String? signatureUuid;
   final String? signaturePath;
   final DateTime? signedAt;
 
@@ -15,6 +16,7 @@ class LicenseAttachChecklistSigner {
     required this.uuid,
     required this.name,
     required this.position,
+    this.signatureUuid,
     this.signaturePath,
     this.signedAt,
   });
@@ -24,6 +26,7 @@ class LicenseAttachChecklistSigner {
       uuid: json['uuid'] as String? ?? '',
       name: json['name'] as String? ?? '',
       position: json['position'] as String? ?? '',
+      signatureUuid: json['signature_uuid'] as String?,
       signaturePath: json['signature_path'] as String?,
       signedAt: _parseDateTime(json['signed_at']),
     );
@@ -138,16 +141,46 @@ class LicenseAttachChecklistPreview {
   final String requestUuid;
   final LicenseAttachChecklistPayload payload;
 
+  /// Metadata จาก saved checklist (มีเฉพาะตอนโหลดจาก GET /checklist)
+  final String? checklistUuid;
+  final String? checklistNo;
+  final int? version;
+  final DateTime? checkedAt;
+
   const LicenseAttachChecklistPreview({
     required this.requestUuid,
     required this.payload,
+    this.checklistUuid,
+    this.checklistNo,
+    this.version,
+    this.checkedAt,
   });
+
+  /// true ถ้ามาจาก saved checklist (มี version + checklist_no)
+  bool get isSaved => checklistNo != null;
 
   factory LicenseAttachChecklistPreview.fromJson(Map<String, dynamic> json) {
     final payloadJson = json['payload'] as Map<String, dynamic>? ?? {};
     return LicenseAttachChecklistPreview(
       requestUuid: json['request_uuid'] as String? ?? '',
       payload: LicenseAttachChecklistPayload.fromJson(payloadJson),
+    );
+  }
+
+  /// Parse response จาก GET /admin/requests/{uuid}/checklist
+  /// โครงสร้าง: { uuid, request_uuid, checklist_no, version, signed_at,
+  ///               payload: { attachments, signer, checked_at } }
+  factory LicenseAttachChecklistPreview.fromSavedJson(
+      Map<String, dynamic> json) {
+    final payloadJson = json['payload'] as Map<String, dynamic>? ?? {};
+    return LicenseAttachChecklistPreview(
+      requestUuid: json['request_uuid'] as String? ?? '',
+      payload: LicenseAttachChecklistPayload.fromJson(payloadJson),
+      checklistUuid: json['uuid'] as String?,
+      checklistNo: json['checklist_no'] as String?,
+      version: json['version'] as int?,
+      checkedAt: _parseDateTime(json['signed_at']) ??
+          _parseDateTime(payloadJson['checked_at']),
     );
   }
 }

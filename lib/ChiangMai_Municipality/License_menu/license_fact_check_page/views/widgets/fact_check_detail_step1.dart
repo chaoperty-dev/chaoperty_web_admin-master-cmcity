@@ -975,7 +975,8 @@ class _CurrentRoundCard extends StatelessWidget {
           onTap: () async {
             final confirm = await showDialog<bool>(
               context: context,
-              builder: (_) => AlertDialog(
+              useRootNavigator: false,
+              builder: (ctx) => AlertDialog(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(LaRadius.lg),
                 ),
@@ -984,11 +985,11 @@ class _CurrentRoundCard extends StatelessWidget {
                     'ปิดรอบปัจจุบันและเปิดรอบใหม่เพื่อตรวจซ้ำ — ดำเนินการต่อ?'),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
+                    onPressed: () => Navigator.of(ctx).pop(false),
                     child: const Text('ยกเลิก'),
                   ),
                   FilledButton(
-                    onPressed: () => Navigator.of(context).pop(true),
+                    onPressed: () => Navigator.of(ctx).pop(true),
                     child: const Text('ยืนยัน'),
                   ),
                 ],
@@ -1225,35 +1226,42 @@ class _CurrentRoundCard extends StatelessWidget {
     final result = await showDialog<String?>(
       context: context,
       barrierColor: Colors.black54,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(LaRadius.lg),
-        ),
-        title: Text(title),
-        content: TextField(
-          controller: ctrl,
-          maxLines: 3,
-          maxLength: 1000,
-          decoration: InputDecoration(
-            hintText: hint,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(LaRadius.md),
+      // barrierDismissible: false → ต้องกดปุ่มเท่านั้น
+      barrierDismissible: false,
+      // WillPopScope: ป้องกัน Android back / ESC ปิด dialog แล้วทะลุไป pop page
+      builder: (ctx) => WillPopScope(
+        onWillPop: () async => false,
+        child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(LaRadius.lg),
+          ),
+          title: Text(title),
+          content: TextField(
+            controller: ctrl,
+            maxLines: 3,
+            maxLength: 1000,
+            decoration: InputDecoration(
+              hintText: hint,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(LaRadius.md),
+              ),
             ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(backgroundColor: confirmFg),
+              onPressed: () => Navigator.of(ctx).pop(ctrl.text.trim()),
+              child: Text(confirmLabel),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(null),
-            child: const Text('ยกเลิก'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: confirmFg),
-            onPressed: () => Navigator.of(context).pop(ctrl.text.trim()),
-            child: Text(confirmLabel),
-          ),
-        ],
       ),
     );
+    if (!context.mounted) return;
     if (result != null) {
       await onConfirm(result);
     }

@@ -14,6 +14,9 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:provider/provider.dart';
 
+import 'package:http/http.dart' as http;
+
+import '../../../../../Constant/Myconstant.dart';
 import '../../models/license_attach_checklist_model.dart';
 import '../../viewmodels/license_attach_detail_view_model.dart';
 import '../theme/license_attach_theme.dart';
@@ -51,11 +54,15 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
   final double _availableHeight =
       LaPaper.height - LaPaper.marginTop - LaPaper.marginBottom;
 
+  bool _shouldAllowEdit(LicenseAttachDetailViewModel vm) {
+    return vm.shouldShowSaveButton; // save ได้ = edit ได้
+  }
+
   @override
   void initState() {
     super.initState();
+    // โหลด checklist จาก parent (เรียกใน LicenseAttachDetailPageBody.initState)
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<LicenseAttachDetailViewModel>().loadChecklist();
       _measureContentHeight();
     });
   }
@@ -105,11 +112,13 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
       return const Center(child: Text('ไม่มีข้อมูล'));
     }
 
-    return _buildContent(context, preview);
+    return _buildContent(context, vm);
   }
 
-  Widget _buildContent(
-      BuildContext context, LicenseAttachChecklistPreview preview) {
+  Widget _buildContent(BuildContext context, LicenseAttachDetailViewModel vm) {
+    final preview = vm.checklist!;
+    final docs = vm.mergedAttachments;
+    final editable = _shouldAllowEdit(vm);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(LaSpace.lg),
       child: Column(
@@ -118,73 +127,100 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
           // ─── Toolbar ───
           _StepHeader(
             onPrint: () => _handlePrint(context, preview),
+            showPrint: vm.shouldShowPrintButton,
           ),
           const SizedBox(height: LaSpace.md),
 
-          // ─── A4 Preview with Rulers ───
-          Center(
-            child: _A4RulerFrame(
-              measuredHeight: _measuredHeight,
-              availableHeight: _availableHeight,
-              onMeasured: _measureContentHeight,
-              child: _A4Sheet(
-                child: Column(
-                  key: _contentKey,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    // ส่วนของผู้รับคำร้อง
-                    _FormSection(
-                      title: 'ส่วนของผู้รับคำร้อง',
-                      subtitle: 'ใบรับคำขอรับใบอนุญาตฯ / ต่ออายุใบอนุญาต',
-                      accent: LaColors.primary,
-                      requestNews: preview.payload.requestNews,
-                      indexDate: '2 3 ส.ค. 2569',
-                      compact: true,
-                      showLogo: true,
-                      child: Column(
-                        children: [
-                          _DocumentTable(
-                            preview: preview,
-                            fillMode: _FillMode.receiver,
-                            compact: true,
-                          ),
-                          const SizedBox(height: LaSpace.sm),
-                          _OfficerFooter(preview: preview, compact: true),
-                          const SizedBox(height: LaSpace.sm),
-                          const _PaymentNoticeBox(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: LaSpace.md),
-                    const Divider(height: 1, color: LaColors.borderStrong),
-                    const SizedBox(height: LaSpace.md),
-                    // ส่วนของเจ้าหน้าที่
-                    _FormSection(
-                      title: 'ส่วนของเจ้าหน้าที่',
-                      subtitle: 'ใบรับคำขอรับใบอนุญาตฯ / ต่ออายุใบอนุญาต',
-                      accent: LaColors.statusInfoFg,
-                      requestNews: preview.payload.requestNews,
-                      indexDate: '2 5 ส.ค. 2569',
-                      compact: true,
-                      showLogo: true,
-                      child: Column(
-                        children: [
-                          _DocumentTable(
-                            preview: preview,
-                            fillMode: _FillMode.officer,
-                            compact: true,
-                          ),
-                          const SizedBox(height: LaSpace.sm),
-                          _OfficerFooter(preview: preview, compact: true),
-                          const SizedBox(height: LaSpace.sm),
-                          const _PaymentNoticeBox(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+          // ─── Saved Checklist Metadata + Edit button ───
+          if (preview.isSaved) ...[
+            _SavedChecklistBanner(
+              preview: preview,
+              isEditMode: vm.isEditMode,
+              onEdit: () => vm.enterEditMode(),
+              onCancelEdit: () => vm.exitEditMode(),
             ),
+            const SizedBox(height: LaSpace.md),
+          ],
+
+          // ─── A4 Preview with Rulers ───
+          // - จอกว้างพอ (>= A4 + ruler): แสดงแบบ center ตามเดิม
+          // - จอแคบ (< A4 + ruler): horizontal scroll เพื่อกัน RenderFlex overflow
+          LayoutBuilder(
+            builder: (context, constraints) {
+              const totalWidth = 24.0 + LaPaper.width; // rulerSize + A4
+              final a4Frame = _A4RulerFrame(
+                measuredHeight: _measuredHeight,
+                availableHeight: _availableHeight,
+                onMeasured: _measureContentHeight,
+                child: _A4Sheet(
+                  child: Column(
+                    key: _contentKey,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ส่วนของผู้รับคำร้อง
+                      _FormSection(
+                        title: 'ส่วนของผู้รับคำร้อง',
+                        subtitle: 'ใบรับคำขอรับใบอนุญาตฯ / ต่ออายุใบอนุญาต',
+                        accent: LaColors.primary,
+                        requestNews: preview.payload.requestNews,
+                        indexDate: '', //ex. '2 3 ส.ค. 2569',
+                        compact: true,
+                        showLogo: true,
+                        child: Column(
+                          children: [
+                            _DocumentTable(
+                              docs: docs,
+                              fillMode: _FillMode.receiver,
+                              compact: true,
+                              editable: editable,
+                            ),
+                            const SizedBox(height: LaSpace.sm),
+                            _OfficerFooter(preview: preview, compact: true),
+                            const SizedBox(height: LaSpace.sm),
+                            const _PaymentNoticeBox(),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: LaSpace.md),
+                      const Divider(height: 1, color: LaColors.borderStrong),
+                      const SizedBox(height: LaSpace.md),
+                      // ส่วนของเจ้าหน้าที่
+                      _FormSection(
+                        title: 'ส่วนของเจ้าหน้าที่',
+                        subtitle: 'ใบรับคำขอรับใบอนุญาตฯ / ต่ออายุใบอนุญาต',
+                        accent: LaColors.statusInfoFg,
+                        requestNews: preview.payload.requestNews,
+                        indexDate: '', //ex. '2 5 ส.ค. 2569',
+                        compact: true,
+                        showLogo: true,
+                        child: Column(
+                          children: [
+                            _DocumentTable(
+                              docs: docs,
+                              fillMode: _FillMode.officer,
+                              compact: true,
+                              editable: editable,
+                            ),
+                            const SizedBox(height: LaSpace.sm),
+                            _OfficerFooter(preview: preview, compact: true),
+                            const SizedBox(height: LaSpace.sm),
+                            const _PaymentNoticeBox(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+              if (constraints.maxWidth >= totalWidth) {
+                return Center(child: a4Frame);
+              }
+              return SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                physics: const AlwaysScrollableScrollPhysics(),
+                child: a4Frame,
+              );
+            },
           ),
           const SizedBox(height: LaSpace.lg),
         ],
@@ -228,6 +264,7 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
                 thaiFont: thaiFont,
                 thaiBoldFont: thaiBoldFont,
                 preview: preview,
+                docs: vm.mergedAttachments,
                 currentRemarks: currentRemarks,
                 logoImage: logoImage,
               ),
@@ -252,10 +289,10 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
     required pw.Font thaiFont,
     required pw.Font thaiBoldFont,
     required LicenseAttachChecklistPreview preview,
+    required List<LicenseAttachChecklistAttachment> docs,
     required Map<int, String> currentRemarks,
     required pw.MemoryImage logoImage,
   }) {
-    final docs = preview.payload.attachments;
     final requestNews = preview.payload.requestNews;
 
     // ฟอนต์ราชการ TH Sarabun PSK — ขนาดกะทัดรัดพอดี 1 หน้า
@@ -457,7 +494,7 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
       buildSectionHeader(
         'ส่วนของผู้รับคำร้อง',
         'ใบรับคำขอรับใบอนุญาตฯ / ต่ออายุใบอนุญาต',
-        '2 3 ส.ค. 2569',
+        '', // Ex. '2 3 ส.ค. 2569',
         accent: PdfColor.fromHex('16A34A'),
         showLogo: true,
       ),
@@ -481,7 +518,7 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
       buildSectionHeader(
         'ส่วนของเจ้าหน้าที่',
         'ใบรับคำขอรับใบอนุญาตฯ / ต่ออายุใบอนุญาต',
-        '2 5 ส.ค. 2569',
+        '', // Ex. '2 5 ส.ค. 2569',
         accent: PdfColor.fromHex('1D4ED8'),
         showLogo: true,
       ),
@@ -557,15 +594,11 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
           ),
           pw.SizedBox(
             width: 60,
-            child: fillMode == _FillMode.officer
-                ? _pdfCheckIcon(isComplete)
-                : _pdfEmptyCell(),
+            child: _pdfCheckIcon(isComplete),
           ),
           pw.SizedBox(
             width: 60,
-            child: fillMode == _FillMode.officer
-                ? _pdfCheckIcon(isIncomplete, cross: true)
-                : _pdfEmptyCell(),
+            child: _pdfCheckIcon(isIncomplete, cross: true),
           ),
           pw.Expanded(
             flex: 3,
@@ -578,37 +611,37 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
   }
 
   pw.Widget _pdfCheckIcon(bool active, {bool cross = false}) {
-    final color = active ? PdfColors.green700 : PdfColors.red700;
-    final bg = active ? PdfColors.green100 : PdfColors.red100;
+    // ถ้าไม่ active → กล่องว่าง (ไม่มีข้อมูล)
+    if (!active) {
+      return pw.Center(
+        child: pw.Container(
+          width: 22,
+          height: 22,
+          decoration: pw.BoxDecoration(
+            color: PdfColors.white,
+            borderRadius: pw.BorderRadius.circular(3),
+            border: pw.Border.all(color: PdfColors.black, width: 1),
+          ),
+        ),
+      );
+    }
     return pw.Center(
       child: pw.Container(
         width: 22,
         height: 22,
         decoration: pw.BoxDecoration(
-          color: bg,
+          color: PdfColors.white,
           borderRadius: pw.BorderRadius.circular(3),
-          border: pw.Border.all(color: color, width: 1),
+          border: pw.Border.all(color: PdfColors.black, width: 1),
         ),
         child: pw.Center(
           child: pw.Text(
             cross ? 'x' : '/',
             style: pw.TextStyle(
-                fontSize: 12, fontWeight: pw.FontWeight.bold, color: color),
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColors.black),
           ),
-        ),
-      ),
-    );
-  }
-
-  pw.Widget _pdfEmptyCell() {
-    return pw.Center(
-      child: pw.Container(
-        width: 22,
-        height: 22,
-        decoration: pw.BoxDecoration(
-          color: PdfColors.grey100,
-          borderRadius: pw.BorderRadius.circular(3),
-          border: pw.Border.all(color: PdfColors.grey300, width: 1),
         ),
       ),
     );
@@ -1084,8 +1117,9 @@ class _VerticalRulerPainter extends CustomPainter {
 // ============================================================================
 class _StepHeader extends StatelessWidget {
   final VoidCallback onPrint;
+  final bool showPrint;
 
-  const _StepHeader({required this.onPrint});
+  const _StepHeader({required this.onPrint, this.showPrint = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1104,9 +1138,241 @@ class _StepHeader extends StatelessWidget {
           const Expanded(
             child: Text('สรุปการแนบเอกสาร', style: LaText.h2),
           ),
-          _PrintButton(onTap: onPrint),
+          if (showPrint) _PrintButton(onTap: onPrint),
         ],
       ),
+    );
+  }
+}
+
+// ============================================================================
+// Saved Checklist Banner — แสดงเลขที่ใบตรวจ / เวอร์ชัน / วันที่ลงนาม
+// + ปุ่ม "แก้ไข" สำหรับสร้างเวอร์ชันใหม่
+// ============================================================================
+class _SavedChecklistBanner extends StatelessWidget {
+  final LicenseAttachChecklistPreview preview;
+  final bool isEditMode;
+  final VoidCallback onEdit;
+  final VoidCallback onCancelEdit;
+
+  const _SavedChecklistBanner({
+    required this.preview,
+    required this.isEditMode,
+    required this.onEdit,
+    required this.onCancelEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final nextVersion = (preview.version ?? 0) + 1;
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: LaSpace.md, vertical: LaSpace.sm),
+      decoration: BoxDecoration(
+        color: isEditMode
+            ? LaColors.primary.withOpacity(.08)
+            : LaColors.statusInfoFg.withOpacity(.08),
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(
+          color: isEditMode
+              ? LaColors.primary.withOpacity(.35)
+              : LaColors.statusInfoFg.withOpacity(.25),
+          width: 1,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isEditMode ? Icons.edit_note_rounded : Icons.verified_rounded,
+            size: 18,
+            color: isEditMode ? LaColors.primaryDark : LaColors.statusInfoFg,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    _MetaChip(
+                      label: 'เลขที่',
+                      value: preview.checklistNo ?? '-',
+                    ),
+                    if (preview.version != null)
+                      _MetaChip(
+                        label: 'เวอร์ชัน',
+                        value: '${preview.version}',
+                      ),
+                    if (preview.checkedAt != null)
+                      _MetaChip(
+                        label: 'ลงนามเมื่อ',
+                        value: _formatDateThai(preview.checkedAt),
+                      ),
+                  ],
+                ),
+                if (isEditMode)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      'โหมดแก้ไข — บันทึกจะสร้างเป็นเวอร์ชัน $nextVersion',
+                      style: LaText.caption.copyWith(
+                          color: LaColors.primaryDark, fontSize: 11),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          if (!isEditMode)
+            _EditButton(onTap: onEdit)
+          else
+            _CancelEditButton(onTap: onCancelEdit),
+        ],
+      ),
+    );
+  }
+}
+
+class _EditButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _EditButton({required this.onTap});
+
+  @override
+  State<_EditButton> createState() => _EditButtonState();
+}
+
+class _EditButtonState extends State<_EditButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hover ? LaColors.primary : LaColors.primaryLight,
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+            border: Border.all(
+              color: _hover ? LaColors.primaryDark : LaColors.primary,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.edit_rounded,
+                size: 14,
+                color: _hover ? Colors.white : LaColors.primaryDark,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'แก้ไขบันทึกเวอร์ชั่นใหม่',
+                style: TextStyle(
+                  color: _hover ? Colors.white : LaColors.primaryDark,
+                  fontFamily: LaText.fontBold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CancelEditButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _CancelEditButton({required this.onTap});
+
+  @override
+  State<_CancelEditButton> createState() => _CancelEditButtonState();
+}
+
+class _CancelEditButtonState extends State<_CancelEditButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hover ? LaColors.statusRejectedFg : Colors.white,
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+            border: Border.all(
+              color: _hover
+                  ? LaColors.statusRejectedFg
+                  : LaColors.borderStrong,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.close_rounded,
+                size: 14,
+                color: _hover ? Colors.white : LaColors.textSecondary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'ยกเลิกการแก้ไข',
+                style: TextStyle(
+                  color: _hover ? Colors.white : LaColors.textSecondary,
+                  fontFamily: LaText.fontBold,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  final String label;
+  final String value;
+
+  const _MetaChip({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '$label: ',
+          style: LaText.caption.copyWith(color: LaColors.textSecondary),
+        ),
+        Text(
+          value,
+          style: LaText.body.copyWith(
+              fontFamily: LaText.fontBold, fontSize: 13),
+        ),
+      ],
     );
   }
 }
@@ -1299,19 +1565,20 @@ class _FormSection extends StatelessWidget {
 enum _FillMode { receiver, officer }
 
 class _DocumentTable extends StatelessWidget {
-  final LicenseAttachChecklistPreview preview;
+  final List<LicenseAttachChecklistAttachment> docs;
   final _FillMode fillMode;
   final bool compact;
+  final bool editable;
 
   const _DocumentTable({
-    required this.preview,
+    required this.docs,
     required this.fillMode,
     this.compact = false,
+    this.editable = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final docs = preview.payload.attachments;
     return Container(
       decoration: BoxDecoration(
         color: LaColors.cardBg,
@@ -1365,6 +1632,7 @@ class _DocumentTable extends StatelessWidget {
               fillMode: fillMode,
               isLast: i == docs.length - 1,
               compact: compact,
+              editable: editable,
             ),
         ],
       ),
@@ -1378,6 +1646,7 @@ class _DocumentRow extends StatelessWidget {
   final _FillMode fillMode;
   final bool isLast;
   final bool compact;
+  final bool editable;
 
   const _DocumentRow({
     required this.index,
@@ -1385,13 +1654,12 @@ class _DocumentRow extends StatelessWidget {
     required this.fillMode,
     required this.isLast,
     this.compact = false,
+    this.editable = true,
   });
 
   @override
   Widget build(BuildContext context) {
     final hasFile = doc.hasFile;
-    final isComplete = hasFile;
-    final isIncomplete = !hasFile;
 
     return Container(
       padding: EdgeInsets.symmetric(
@@ -1442,24 +1710,24 @@ class _DocumentRow extends StatelessWidget {
           ),
           SizedBox(
             width: compact ? 60 : 70,
-            child: fillMode == _FillMode.officer
-                ? _CheckIcon(active: isComplete, compact: compact)
+            child: hasFile
+                ? _CheckIcon(
+                    active: true, compact: compact, kind: _CheckKind.tick)
                 : _EmptyCell(compact: compact),
           ),
           SizedBox(
             width: compact ? 60 : 70,
-            child: fillMode == _FillMode.officer
-                ? _CheckIcon(
-                    active: isIncomplete,
-                    kind: _CheckKind.cross,
-                    compact: compact)
-                : _EmptyCell(compact: compact),
+            child: hasFile
+                ? _EmptyCell(compact: compact)
+                : _CheckIcon(
+                    active: true, compact: compact, kind: _CheckKind.cross),
           ),
           Expanded(
             flex: 3,
             child: _RemarkField(
               clientDocumentId: doc.clientDocumentId,
               compact: compact,
+              enabled: editable,
             ),
           ),
         ],
@@ -1474,15 +1742,14 @@ class _CheckIcon extends StatelessWidget {
   final bool active;
   final _CheckKind kind;
   final bool compact;
-  const _CheckIcon(
-      {required this.active,
-      this.kind = _CheckKind.tick,
-      this.compact = false});
+  const _CheckIcon({
+    required this.active,
+    this.kind = _CheckKind.tick,
+    this.compact = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        active ? LaColors.statusApprovedFg : LaColors.statusRejectedFg;
     final icon =
         kind == _CheckKind.tick ? Icons.check_rounded : Icons.close_rounded;
     final size = compact ? 20.0 : 26.0;
@@ -1492,15 +1759,11 @@ class _CheckIcon extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: active ? LaColors.statusApprovedBg : LaColors.statusRejectedBg,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(LaRadius.sm),
-          border: Border.all(
-            color:
-                active ? LaColors.statusApprovedFg : LaColors.statusRejectedFg,
-            width: 1,
-          ),
+          border: Border.all(color: LaColors.textPrimary, width: 1),
         ),
-        child: Icon(icon, size: iconSize, color: color),
+        child: Icon(icon, size: iconSize, color: LaColors.textPrimary),
       ),
     );
   }
@@ -1517,9 +1780,9 @@ class _EmptyCell extends StatelessWidget {
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: LaColors.surface,
+          color: Colors.white,
           borderRadius: BorderRadius.circular(LaRadius.sm),
-          border: Border.all(color: LaColors.border, width: 1),
+          border: Border.all(color: LaColors.textPrimary, width: 1),
         ),
       ),
     );
@@ -1532,8 +1795,13 @@ class _EmptyCell extends StatelessWidget {
 class _RemarkField extends StatelessWidget {
   final int clientDocumentId;
   final bool compact;
+  final bool enabled;
 
-  const _RemarkField({required this.clientDocumentId, this.compact = false});
+  const _RemarkField({
+    required this.clientDocumentId,
+    this.compact = false,
+    this.enabled = true,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -1543,13 +1811,13 @@ class _RemarkField extends StatelessWidget {
     return TextField(
       controller: TextEditingController(text: value)
         ..selection = TextSelection.collapsed(offset: value.length),
-      onChanged: (text) => vm.updateRemark(clientDocumentId, text),
+      onChanged: enabled ? (text) => vm.updateRemark(clientDocumentId, text) : null,
+      enabled: enabled,
       style: LaText.body.copyWith(fontSize: compact ? 12 : 13),
       decoration: InputDecoration(
         isDense: true,
         contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        hintText: 'ระบุเหตุผล',
-        hintStyle: LaText.bodyMuted.copyWith(fontSize: compact ? 11 : 12),
+        // hintText ถูกเอาออก — ข้อมูลมาจาก API เท่านั้น ไม่มี placeholder
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(LaRadius.sm),
           borderSide: const BorderSide(color: LaColors.border),
@@ -1612,6 +1880,7 @@ class _OfficerFooter extends StatelessWidget {
                   label: '(ลงชื่อ)',
                   name: signer?.name ?? '',
                   showSignature: signer?.signaturePath != null,
+                  signatureUuid: signer?.signatureUuid,
                   dateText: signer != null
                       ? '(${_formatDateThai(signer.signedAt)})'
                       : '',
@@ -1659,11 +1928,13 @@ class _SignatureBox extends StatelessWidget {
   final bool showSignature;
   final String dateText;
   final bool compact;
+  final String? signatureUuid;
   const _SignatureBox({
     required this.label,
     required this.name,
     required this.showSignature,
     required this.dateText,
+    this.signatureUuid,
     this.compact = false,
   });
 
@@ -1674,21 +1945,26 @@ class _SignatureBox extends StatelessWidget {
       children: [
         SizedBox(
           height: compact ? 36 : 48,
-          child: showSignature
-              ? Container(
-                  alignment: Alignment.center,
-                  child: Icon(Icons.draw_rounded,
-                      size: compact ? 28 : 36,
-                      color: LaColors.statusApprovedFg),
+          child: showSignature && signatureUuid != null
+              ? _SignatureImage(
+                  signatureUuid: signatureUuid!,
+                  compact: compact,
                 )
-              : Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 32),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      top: BorderSide(color: LaColors.textPrimary, width: 1),
+              : showSignature
+                  ? Container(
+                      alignment: Alignment.center,
+                      child: Icon(Icons.draw_rounded,
+                          size: compact ? 28 : 36,
+                          color: LaColors.statusApprovedFg),
+                    )
+                  : Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          top: BorderSide(color: LaColors.textPrimary, width: 1),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
         ),
         const SizedBox(height: 4),
         Text(label, style: LaText.bodyMuted),
@@ -1716,13 +1992,19 @@ class _PositionBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Column(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(height: 48),
-        SizedBox(height: 4),
-        Text('ตำแหน่ง', style: LaText.bodyMuted),
-        SizedBox(height: 2),
+        const SizedBox(height: 48),
+        const SizedBox(height: 4),
+        const Text('ตำแหน่ง', style: LaText.bodyMuted),
+        const SizedBox(height: 2),
+        Text(
+          position,
+          style: LaText.body.copyWith(
+              fontFamily: LaText.fontBold, fontSize: 13),
+          textAlign: TextAlign.center,
+        ),
       ],
     );
   }
@@ -1761,6 +2043,82 @@ class _PaymentNoticeBox extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+// ============================================================================
+// Signature Image — โหลด PNG ลายเซ็นจาก API พร้อม auth header
+// ============================================================================
+class _SignatureImage extends StatefulWidget {
+  final String signatureUuid;
+  final bool compact;
+
+  const _SignatureImage({
+    required this.signatureUuid,
+    this.compact = false,
+  });
+
+  @override
+  State<_SignatureImage> createState() => _SignatureImageState();
+}
+
+class _SignatureImageState extends State<_SignatureImage> {
+  Future<Uint8List?>? _future;
+
+  @override
+  void initState() {
+    super.initState();
+    _future = _load();
+  }
+
+  Future<Uint8List?> _load() async {
+    try {
+      final url =
+          '${MyConstant().domain_v1}/admin/requests/attachments/${widget.signatureUuid}/preview';
+      final headers = await MyHeaders.build();
+      final response = await http.get(Uri.parse(url), headers: headers);
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return response.bodyBytes;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Uint8List?>(
+      future: _future,
+      builder: (context, snap) {
+        final size = widget.compact ? 28.0 : 36.0;
+        if (snap.connectionState == ConnectionState.waiting) {
+          return Center(
+            child: SizedBox(
+              width: size,
+              height: size,
+              child: const CircularProgressIndicator(strokeWidth: 1.5),
+            ),
+          );
+        }
+        final bytes = snap.data;
+        if (bytes == null) {
+          // fallback icon ถ้าโหลดไม่สำเร็จ
+          return Center(
+            child: Icon(Icons.draw_rounded,
+                size: size, color: LaColors.statusApprovedFg),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Image.memory(
+            bytes,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.medium,
+          ),
+        );
+      },
     );
   }
 }

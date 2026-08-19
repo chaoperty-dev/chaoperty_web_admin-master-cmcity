@@ -2,11 +2,16 @@
 // license_approve_detail_page.dart
 // ============================================================================
 // Full-page detail route (2-step) — เปิดแบบเต็มจอเหมือน "สร้างคำขอ" ของ request
+//
+// Step 1: ตรวจสอบคำขอ (read-only info card)
+// Step 2: Timeline ลำดับขั้นตอนการอนุมัติ (read-only, ไม่มี logic
+//         สำหรับ "บันทึก/ส่งคำร้องขออนุมัติ")
 // ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../viewmodels/license_approve_detail_step2_view_model.dart';
 import '../viewmodels/license_approve_detail_view_model.dart';
 import 'theme/license_approve_theme.dart';
 import 'widgets/approve_detail_footer.dart';
@@ -29,8 +34,15 @@ class LicenseApproveDetailPage extends StatefulWidget {
     String? routeData,
     String title = 'อนุมัติคำขอ',
   }) {
-    return ChangeNotifierProvider<LicenseApproveDetailViewModel>(
-      create: (_) => LicenseApproveDetailViewModel(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<LicenseApproveDetailViewModel>(
+          create: (_) => LicenseApproveDetailViewModel(),
+        ),
+        ChangeNotifierProvider<LicenseApproveDetailStep2ViewModel>(
+          create: (_) => LicenseApproveDetailStep2ViewModel(),
+        ),
+      ],
       child: _LicenseApproveDetailPageBody(
         title: title,
         routeData: routeData,
@@ -88,7 +100,7 @@ class _LicenseApproveDetailPageBodyState
     final vm = context.watch<LicenseApproveDetailViewModel>();
     final step = vm.currentDetailStep;
     final total = vm.totalDetailSteps;
-    final subtitle = step == 1 ? 'ตรวจสอบคำขอ' : 'บันทึกการอนุมัติ';
+    final subtitle = step == 1 ? 'ตรวจสอบคำขอ' : 'ลำดับขั้นตอนการอนุมัติ';
 
     return Scaffold(
       backgroundColor: LaColors.surface,
@@ -110,26 +122,17 @@ class _LicenseApproveDetailPageBodyState
             Expanded(
               child: step == 1
                   ? const ApproveDetailStep1()
-                  : const ApproveDetailStep2(),
+                  : ApproveDetailStep2(
+                      requestUuid: widget.routeData,
+                    ),
             ),
             ApproveDetailFooter(
-              // Step 2 มีปุ่มบันทึก/ปฏิเสธของตัวเองอยู่แล้ว
-              // จึงซ่อนปุ่ม Save ใน footer (readOnly=true) เพื่อไม่ให้ซ้ำซ้อน
+              // Step 2 เป็น read-only timeline → ไม่แสดงปุ่ม Save
               readOnly: step == total,
               currentStep: step,
               totalSteps: total,
               onNext: step < total ? vm.nextDetailStep : null,
-              onSave: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('บันทึกการอนุมัติ (placeholder)'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
-              },
+              onSave: null,
               onCancel: () {
                 if (step > 1) {
                   vm.previousDetailStep();

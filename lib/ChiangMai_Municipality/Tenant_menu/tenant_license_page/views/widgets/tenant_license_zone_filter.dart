@@ -25,6 +25,7 @@ class TenantLicenseZoneFilter extends StatefulWidget {
 class _TenantLicenseZoneFilterState extends State<TenantLicenseZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
+  bool _collapsed = true;
 
   @override
   void dispose() {
@@ -39,15 +40,105 @@ class _TenantLicenseZoneFilterState extends State<TenantLicenseZoneFilter> {
     return Container(
       padding: const EdgeInsets.all(LaSpace.md),
       decoration: LaDecor.card(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(flex: 4, child: _subZoneSection(vm)),
-          _divider(),
-          Expanded(flex: 4, child: _zoneSection(vm)),
-          _divider(),
-          Expanded(flex: 4, child: _statusSection(vm)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final body = c.maxWidth < 1100
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _subZoneSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    _zoneSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    _statusSection(vm),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(flex: 4, child: _subZoneSection(vm)),
+                    _divider(),
+                    Expanded(flex: 4, child: _zoneSection(vm)),
+                    _divider(),
+                    Expanded(flex: 4, child: _statusSection(vm)),
+                  ],
+                );
+          // จอกว้าง (≥1100) → โชว์ Row ตรงๆ ไม่มี toggle
+          if (c.maxWidth >= 1100) return body;
+          // จอแคบ (<1100) → toggle + animated
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _toggleHeader(vm),
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: LaSpace.sm),
+                  child: body,
+                ),
+                crossFadeState: _collapsed
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                duration: const Duration(milliseconds: 200),
+                sizeCurve: Curves.easeInOut,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _toggleHeader(TenantLicenseViewModel vm) {
+    final hasFilter = (vm.selectedZoneSub != null &&
+            vm.selectedZoneSub != 'ทั้งหมด') ||
+        (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
+        vm.selectedStatus != 'ทั้งหมด';
+    return InkWell(
+      onTap: () => setState(() => _collapsed = !_collapsed),
+      borderRadius: BorderRadius.circular(LaRadius.sm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: LaSpace.xs),
+        child: Row(
+          children: [
+            const Icon(Icons.tune_rounded,
+                size: 16, color: LaColors.primaryDark),
+            const SizedBox(width: LaSpace.sm),
+            Text(
+              'ตัวกรองพื้นที่',
+              style: LaText.bodyMuted.copyWith(
+                color: LaColors.textPrimary,
+                fontFamily: LaText.fontBold,
+                fontSize: 13,
+              ),
+            ),
+            if (hasFilter) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: LaColors.primary,
+                  borderRadius: BorderRadius.circular(LaRadius.pill),
+                ),
+                child: const Text(
+                  'ใช้งาน',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontFamily: LaText.fontBold,
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 200),
+              turns: _collapsed ? 0 : 0.5,
+              child: const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 20, color: LaColors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -236,6 +327,8 @@ extension on _TenantLicenseZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZoneSub,
         items: vm.subzoneModels
@@ -313,6 +406,8 @@ extension on _TenantLicenseZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZone,
         items: vm.zoneModels
@@ -385,6 +480,8 @@ extension on _TenantLicenseZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedStatus,
         items: vm.statusOptions

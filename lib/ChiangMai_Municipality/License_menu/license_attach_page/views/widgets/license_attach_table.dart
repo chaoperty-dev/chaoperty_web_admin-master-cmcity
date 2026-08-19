@@ -8,7 +8,7 @@
 // - Empty / loading state สวยงาม
 // - รหัสรายการ column: คลิกเพื่อ copy UUID
 //
-// Data shape: AttachTask (v2 /admin/requests/tasks/attachments)
+// Data shape: AttachRequestItem (v2 /admin/requests)
 // Column swap: เลขที่สัญญา = module, รหัสพื้นที่ = lease ln
 // ============================================================================
 
@@ -20,9 +20,15 @@ import 'package:provider/provider.dart';
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
 import '../../../../unity/FormatPhone.dart';
-import '../../models/attach_task_model.dart';
+import '../../models/attach_request_item.dart';
 import '../theme/license_attach_theme.dart';
 import '../../viewmodels/license_attach_view_model.dart';
+
+/// Breakpoint: < 900px = โทรศัพท์/แท็บเล็ต → ใช้ card layout
+const double kAttachMobileBreakpoint = 900;
+
+bool _isAttachListMobile(BuildContext context) =>
+    MediaQuery.of(context).size.width < kAttachMobileBreakpoint;
 
 class LicenseAttachTable extends StatelessWidget {
   const LicenseAttachTable({super.key});
@@ -40,6 +46,28 @@ class LicenseAttachTable extends StatelessWidget {
             (vm.selectedZoneSub != null && vm.selectedZoneSub != 'ทั้งหมด') ||
             (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด'),
         onClear: vm.refresh,
+      );
+    }
+
+    // ─── Mobile (card layout) ───
+    if (_isAttachListMobile(context)) {
+      return Column(
+        children: [
+          if (vm.isLoading)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: LaColors.surfaceMuted,
+              valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+            ),
+          for (int i = 0; i < vm.requests.length; i++) ...[
+            _AttachCard(
+              index: i,
+              task: vm.requests[i],
+              onTap: () => vm.onViewRequest(vm.requests[i]),
+            ),
+            if (i < vm.requests.length - 1) const SizedBox(height: LaSpace.sm),
+          ],
+        ],
       );
     }
 
@@ -80,7 +108,7 @@ class LicenseAttachTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เ�ขที่สัญญา', flex: 2),
+          _HeaderCell(label: 'รายการ', flex: 2),
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
@@ -100,12 +128,11 @@ class LicenseAttachTable extends StatelessWidget {
   Widget _dataRow(
     BuildContext context,
     LicenseAttachViewModel vm,
-    AttachTask task,
+    AttachRequestItem task,
     int index,
   ) {
-    final moduleLabel = task.module.nameTh.isNotEmpty
-        ? task.module.nameTh
-        : task.module.code;
+    final moduleLabel =
+        task.moduleNameTh.isNotEmpty ? task.moduleNameTh : task.moduleCode;
     final palette = StatusPalette.of(task.statusLabel);
     return _HoverableRow(
       index: index,
@@ -115,23 +142,21 @@ class LicenseAttachTable extends StatelessWidget {
           // Action
           SizedBox(
             width: 110,
-            child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(task))),
+            child:
+                Center(child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
           // เลขที่สัญญา (swap → module label)
           _Cell(value: moduleLabel, flex: 2, isMono: true),
-          _Cell(value: task.details.subzone, flex: 2),
-          _Cell(value: task.details.zn, flex: 2),
+          _Cell(value: task.subzone, flex: 2),
+          _Cell(value: task.zn, flex: 2),
           // รหัสพื้นที่ (swap → lease ln)
           _Cell(
-              value: task.details.ln.isEmpty ? '-' : task.details.ln,
+              value: task.ln.isEmpty ? '-' : task.ln,
               flex: 2,
               isMono: true),
+          _Cell(value: _maskName(task.customerName), flex: 3),
           _Cell(
-              value: _maskName(task.customer.cname),
-              flex: 3),
-          _Cell(
-              value: _maskPhone(formatPhoneNumber(task.customer.tel)),
+              value: _maskPhone(formatPhoneNumber(task.customerTel)),
               flex: 2,
               isMono: true),
           _Cell(
@@ -206,6 +231,264 @@ class LicenseAttachTable extends StatelessWidget {
 // ============================================================================
 // Internal widgets
 // ============================================================================
+
+/// Card layout — ใช้บน mobile/tablet (< 900px)
+class _AttachCard extends StatelessWidget {
+  final int index;
+  final AttachRequestItem task;
+  final VoidCallback onTap;
+  const _AttachCard({
+    required this.index,
+    required this.task,
+    required this.onTap,
+  });
+
+  String _shortUuid(String uuid) {
+    if (uuid.isEmpty) return '-';
+    if (uuid.length <= 12) return uuid;
+    return '${uuid.substring(0, 8)}…';
+  }
+
+  String _maskName(String raw) {
+    final name = raw.trim();
+    if (name.isEmpty || name == '-') return '-';
+    final words =
+        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+    if (words.isEmpty) return '-';
+    if (words.length == 1) {
+      final w = words.first;
+      if (w.length <= 3) return '***';
+      return '${w.substring(0, w.length - 3)}***';
+    }
+    final lastIndex = words.length - 1;
+    final last = words[lastIndex];
+    if (last.length <= 3) {
+      words[lastIndex] = '***';
+    } else {
+      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+    }
+    return words.join(' ');
+  }
+
+  String _maskPhone(String raw) {
+    if (raw.isEmpty || raw == '-') return '-';
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 3) return raw;
+    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+    if (digits.length == 10) {
+      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+    }
+    if (digits.length == 9) {
+      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+    }
+    return maskedDigits;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final moduleLabel =
+        task.moduleNameTh.isNotEmpty ? task.moduleNameTh : task.moduleCode;
+    final palette = StatusPalette.of(task.statusLabel);
+    final name = _maskName(task.customerName);
+    final phone = _maskPhone(formatPhoneNumber(task.customerTel));
+    final endDate =
+        formatDate(task.submittedAt, type: DateFormatType.dmy);
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(LaRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(LaSpace.md),
+          decoration: LaDecor.card(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Row 1: เลขที่สัญญา + status pill ───
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: LaColors.primaryLight,
+                      borderRadius: BorderRadius.circular(LaRadius.pill),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: LaText.tableCell.copyWith(
+                        color: LaColors.primaryDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  Expanded(
+                    child: Text(
+                      moduleLabel,
+                      style: LaText.tableCell.copyWith(
+                        fontFamily: 'monospace',
+                        fontFamilyFallback: const [LaText.fontRegular],
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  _StatusPill(
+                    label: task.statusLabel,
+                    palette: palette,
+                  ),
+                ],
+              ),
+              const Divider(height: LaSpace.lg, color: LaColors.border),
+              // ─── Row 2: รายละเอียด (label/value grid) ───
+              _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
+              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
+              if (task.subzone.isNotEmpty)
+                _CardRow(label: 'บริเวณ', value: task.subzone),
+              if (task.zn.isNotEmpty)
+                _CardRow(label: 'โซนพื้นที่', value: task.zn),
+              _CardRow(
+                label: 'รหัสพื้นที่',
+                value: task.ln.isEmpty ? '-' : task.ln,
+                isMono: true,
+              ),
+              _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
+              _CardRow(
+                label: 'รหัสรายการ',
+                value: _shortUuid(task.uuid),
+                isMono: true,
+                muted: true,
+                uuidCopy: task.uuid,
+              ),
+              const SizedBox(height: LaSpace.sm),
+              // ─── Row 3: ปุ่ม ───
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ViewButton(onTap: onTap),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isMono;
+  final bool muted;
+  final String? uuidCopy;
+  const _CardRow({
+    required this.label,
+    required this.value,
+    this.isMono = false,
+    this.muted = false,
+    this.uuidCopy,
+  });
+
+  Future<void> _doCopy(BuildContext context, String text) async {
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_outline_rounded,
+                size: 18, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'คัดลอกรหัสรายการแล้ว',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget valueText = Text(
+      value.isEmpty ? '-' : value,
+      style: LaText.tableCell.copyWith(
+        color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+        fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+        fontFamilyFallback: const [LaText.fontRegular],
+        fontSize: 12,
+      ),
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+    );
+
+    final canCopy = uuidCopy != null && uuidCopy!.isNotEmpty;
+    if (canCopy) {
+      valueText = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(child: valueText),
+          const SizedBox(width: 4),
+          const Icon(Icons.content_copy_rounded,
+              size: 11, color: LaColors.textMuted),
+        ],
+      );
+    }
+
+    Widget valueChild = Expanded(child: valueText);
+    if (canCopy) {
+      valueChild = Expanded(
+        child: Tooltip(
+          message: 'คลิกเพื่อคัดลอก: $uuidCopy',
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: () => _doCopy(context, uuidCopy!),
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: valueText,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: LaText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          valueChild,
+        ],
+      ),
+    );
+  }
+}
 
 class _HeaderCell extends StatelessWidget {
   final String label;
@@ -307,8 +590,7 @@ class _CopyUuidCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -317,8 +599,7 @@ class _CopyUuidCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

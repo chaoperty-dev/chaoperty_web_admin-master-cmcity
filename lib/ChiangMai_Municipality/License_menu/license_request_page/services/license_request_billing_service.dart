@@ -74,6 +74,22 @@ class BillingItem {
     );
   }
 
+  /// สร้าง BillingItem จาก JSON รูปแบบ `debt_details`
+  /// (ใช้รับรายการที่เพิ่มใหม่จาก AddBillingTable)
+  factory BillingItem.fromDebtJson(Map<String, dynamic> json) {
+    return BillingItem(
+      ser: (json['ser'] ?? '0').toString(),
+      expname: (json['expname'] ?? '').toString(),
+      sdate: (json['sdate'] ?? '').toString(),
+      ldate: (json['ldate'] ?? '').toString(),
+      unit: (json['unit'] ?? '').toString(),
+      term: (json['term'] ?? '0').toString(),
+      amount: double.tryParse((json['amt'] ?? '0').toString()) ?? 0,
+      vatRate: double.tryParse((json['nvat'] ?? '0').toString()) ?? 0,
+      whtRate: double.tryParse((json['nwht'] ?? '0').toString()) ?? 0,
+    );
+  }
+
   /// แปลง BillingItem เป็น JSON ตาม format ที่ API POST /prepayment ต้องการ
   /// (ใช้สำหรับ saveBillingItems)
   Map<String, dynamic> toDebtJson() {

@@ -703,8 +703,20 @@ class _PreviewReviewActions extends StatelessWidget {
     if (att == null) return false;
     final status = (att!.status ?? '').toString().toLowerCase();
     final label = (att!.status_label ?? '').toString().toLowerCase();
-    if (status.contains('อนุมัติ') || label.contains('อนุมัติ')) return false;
-    if (status.contains('ปฏิเสธ') || label.contains('ปฏิเสธ')) return false;
+    // approved: อนุมัติ / ผ่าน / เสร็จ
+    if (status.contains('อนุมัติ') ||
+        label.contains('อนุมัติ') ||
+        label.contains('ผ่าน') ||
+        label.contains('เสร็จ')) {
+      return false;
+    }
+    // rejected: ปฏิเสธ / ไม่ผ่าน / ขอปรับปรุง (needs_update)
+    if (status.contains('ปฏิเสธ') ||
+        label.contains('ปฏิเสธ') ||
+        label.contains('ไม่ผ่าน') ||
+        label.contains('ขอปรับปรุง')) {
+      return false;
+    }
     final hasFile = att!.uuid?.toString().isNotEmpty == true ||
         att!.filePath?.toString().isNotEmpty == true;
     return hasFile;

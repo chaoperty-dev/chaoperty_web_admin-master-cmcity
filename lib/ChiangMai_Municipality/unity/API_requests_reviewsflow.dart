@@ -87,8 +87,10 @@ Future<http.Response?> Post_ReviewsFlowAttachMents({
   // required ReviewsApprovalRoleType role,
 }) async {
   final headers = await MyHeaders.build(); // ✅ ต้อง await
-  final url =
-      Uri.parse('${MyConstant().domain_v1}/admin/approvals/$requestUuid/flow');
+  // ✨ NEW endpoint: POST /admin/requests/{requestUuid}/admin-reviewer
+  // body: { attachment_uuid, status: "approved|rejected|needs_update", description }
+  final url = Uri.parse(
+      '${MyConstant().domain_v1}/admin/requests/$requestUuid/admin-reviewer');
   final body = json.encode({
     "attachment_uuid": attachmentsUuid,
     "status": staTus,

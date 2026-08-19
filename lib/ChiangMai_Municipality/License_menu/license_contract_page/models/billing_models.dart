@@ -5,6 +5,7 @@
 // ============================================================================
 
 class LcExpTransModel {
+  String? uuid;
   String? ser;
   String? expname;
   String? exptser;
@@ -28,6 +29,7 @@ class LcExpTransModel {
   String? total;
 
   LcExpTransModel({
+    this.uuid,
     this.ser,
     this.expname,
     this.exptser,
@@ -43,16 +45,17 @@ class LcExpTransModel {
     this.vtype,
     this.nvat,
     this.vat,
-    this.pvat,
+    this.pvat = '0.00',
     this.wser,
     this.wtype,
     this.nwht,
-    this.wht,
-    this.total,
+    this.wht = '0.00',
+    this.total = '0.00',
   });
 
   /// แปลง model → Map เพื่อส่งใน `debt_details` ของ POST /admin/requests
   Map<String, dynamic> toJson() => {
+        'uuid': uuid,
         'ser': ser,
         'expname': expname,
         'exptser': exptser,

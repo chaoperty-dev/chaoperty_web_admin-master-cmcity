@@ -196,14 +196,18 @@ class _Section7MassOn extends StatelessWidget {
                                 : LaColors.statusRejectedFg,
                           ),
                           const SizedBox(width: 3),
-                          Text(
-                            isOn ? 'เปิด' : 'ปิด',
-                            style: LaText.caption.copyWith(
+                          Flexible(
+                            child: Text(
+                              isOn ? 'เปิด' : 'ปิด',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: LaText.caption.copyWith(
                               color: isOn
                                   ? const Color(0xFF06C755)
                                   : LaColors.statusRejectedFg,
                               fontWeight: FontWeight.w700,
                               fontSize: 11,
+                            ),
                             ),
                           ),
                         ],

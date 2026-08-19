@@ -201,6 +201,16 @@ class RegistrationService {
     return false;
   }
 
+  /// Toggle "สิท�ิใช้งานไลน์"
+  /// - ตอนนี้ service ยังเป็น stub (return false)
+  /// - เมื่อได้ endpoint แล้ว ให้แทน body ด้วย logic toggle LINE access
+  Future<bool> toggleCustomerLineStatus(String uuid, dynamic st) async {
+    debugPrint('⚠️ [RegistrationService.toggleCustomerLineStatus] '
+        'ยังไม่ได้ implement — รอ API ของ LINE OA');
+    debugPrint('   uuid=$uuid, st=$st → return false (no-op)');
+    return false;
+  }
+
   // ---------- Types ----------
   /// ประเภทลูกค้า (ใช้สำหรับ filter dropdown)
   Future<List<TypeModel>> fetchTypes() async {

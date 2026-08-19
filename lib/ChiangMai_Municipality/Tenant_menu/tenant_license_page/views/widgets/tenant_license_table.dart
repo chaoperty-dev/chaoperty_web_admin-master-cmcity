@@ -41,22 +41,56 @@ class TenantLicenseTable extends StatelessWidget {
 
     final pageTenants = _pagedTenants(vm);
 
-    return Container(
-      decoration: LaDecor.card(),
-      child: Column(
-        children: [
-          _headerRow(),
-          const Divider(height: 1, color: LaColors.border),
-          if (vm.isLoading)
-            const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: LaColors.surfaceMuted,
-              valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+    return LayoutBuilder(
+      builder: (context, c) {
+        final isMobile = c.maxWidth < 700;
+        if (isMobile) {
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                if (vm.isLoading)
+                  const LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: LaColors.surfaceMuted,
+                    valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+                  ),
+                for (int i = 0; i < pageTenants.length; i++) ...[
+                  _TenantCard(
+                    index: i,
+                    model: pageTenants[i],
+                    maskedName: _maskName(pageTenants[i].cname ?? '-'),
+                    maskedPhone: _maskPhone(
+                        formatPhoneNumber(pageTenants[i].tel ?? '')),
+                    endDate: _formatEndDate(
+                        pageTenants[i].ldate_q ?? pageTenants[i].ldate ?? '-'),
+                    status: _statusLabel(pageTenants[i]),
+                    onView: () => _openDetail(context, pageTenants[i]),
+                  ),
+                  if (i < pageTenants.length - 1)
+                    const SizedBox(height: LaSpace.sm),
+                ],
+              ],
             ),
-          for (int i = 0; i < pageTenants.length; i++)
-            _dataRow(context, vm, pageTenants[i], i),
-        ],
-      ),
+          );
+        }
+        return Container(
+          decoration: LaDecor.card(),
+          child: Column(
+            children: [
+              _headerRow(),
+              const Divider(height: 1, color: LaColors.border),
+              if (vm.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: LaColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+                ),
+              for (int i = 0; i < pageTenants.length; i++)
+                _dataRow(context, vm, pageTenants[i], i),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -544,6 +578,160 @@ class _LoadingState extends StatelessWidget {
           ),
           SizedBox(height: 12),
           Text('กำลังโหลดข้อมูล...', style: LaText.bodyMuted),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Card layout (mobile / narrow screen)
+// ============================================================================
+class _TenantCard extends StatelessWidget {
+  final int index;
+  final TeNantModel model;
+  final String maskedName;
+  final String maskedPhone;
+  final String endDate;
+  final String status;
+  final VoidCallback onView;
+  const _TenantCard({
+    required this.index,
+    required this.model,
+    required this.maskedName,
+    required this.maskedPhone,
+    required this.endDate,
+    required this.status,
+    required this.onView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StatusPalette.of(status);
+    return Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(LaSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: LaColors.primaryLight,
+                  borderRadius: BorderRadius.circular(LaRadius.pill),
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: LaText.tableCell.copyWith(
+                    color: LaColors.primaryDark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Expanded(
+                child: Text(
+                  maskedName,
+                  style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if ((model.cid ?? '-').isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: LaColors.primaryLight.withOpacity(.4),
+                    borderRadius: BorderRadius.circular(LaRadius.pill),
+                  ),
+                  child: Text(
+                    model.cid ?? '-',
+                    style: LaText.bodyMuted.copyWith(
+                      color: LaColors.primaryDark,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      fontFamilyFallback: const [LaText.fontRegular],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: LaSpace.lg, color: LaColors.border),
+          _TenantCardRow(label: 'เบอร์โทร', value: maskedPhone, isMono: true),
+          if ((model.subzone ?? '').isNotEmpty)
+            _TenantCardRow(label: 'บริเวณ', value: model.subzone ?? '-'),
+          if ((model.zn ?? '').isNotEmpty)
+            _TenantCardRow(label: 'โซนพื้นที่', value: model.zn ?? '-'),
+          _TenantCardRow(
+              label: 'รหัสพื้นที่', value: model.ln ?? '-', isMono: true),
+          _TenantCardRow(
+            label: 'วันที่สิ้นสุด',
+            value: endDate,
+            isMono: true,
+          ),
+          _TenantCardRow(
+            label: 'สถานะ',
+            valueWidget: _StatusPill(label: status, palette: palette),
+          ),
+          const SizedBox(height: LaSpace.sm),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _ViewButton(onTap: onView),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TenantCardRow extends StatelessWidget {
+  final String label;
+  final String? value;
+  final Widget? valueWidget;
+  final bool isMono;
+  const _TenantCardRow({
+    required this.label,
+    this.value,
+    this.valueWidget,
+    this.isMono = false,
+  }) : assert(value != null || valueWidget != null,
+            'Either value or valueWidget must be provided');
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: LaText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: valueWidget ??
+                Text(
+                  (value ?? '-').isEmpty ? '-' : value!,
+                  style: LaText.tableCell.copyWith(
+                    fontSize: 12,
+                    fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+                    fontFamilyFallback: const [LaText.fontRegular],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+          ),
         ],
       ),
     );

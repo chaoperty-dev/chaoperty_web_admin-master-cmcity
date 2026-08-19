@@ -17,6 +17,7 @@ class AttachDetailFooter extends StatelessWidget {
   final VoidCallback? onCancel;
   final String? nextLabel;
   final String? saveLabel;
+  final bool showSaveButton;
 
   const AttachDetailFooter({
     super.key,
@@ -28,6 +29,7 @@ class AttachDetailFooter extends StatelessWidget {
     this.onCancel,
     this.nextLabel,
     this.saveLabel,
+    this.showSaveButton = true,
   });
 
   @override
@@ -67,7 +69,9 @@ class AttachDetailFooter extends StatelessWidget {
           const SizedBox(width: LaSpace.sm),
           if (!readOnly)
             isLast
-                ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                ? (showSaveButton
+                    ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                    : const SizedBox.shrink())
                 : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
         ],
       ),

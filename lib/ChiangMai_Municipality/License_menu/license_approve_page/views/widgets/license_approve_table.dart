@@ -15,7 +15,8 @@ import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
-import '../../../../unity/FormatPhone.dart';
+// ─── ปิดคอลัมเบอร์โทรไว้ก่อน — import หยุดใช้ ───
+// import '../../../../unity/FormatPhone.dart';
 import '../../../../Model/Review_Model.dart';
 import '../theme/license_approve_theme.dart';
 import '../../viewmodels/license_approve_view_model.dart';
@@ -40,8 +41,7 @@ String _shortUuid(String uuid) {
 String _maskName(String raw) {
   final name = raw.trim();
   if (name.isEmpty || name == '-') return '-';
-  final words =
-      name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  final words = name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
   if (words.isEmpty) return '-';
 
   if (words.length == 1) {
@@ -61,21 +61,22 @@ String _maskName(String raw) {
 }
 
 /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
-String _maskPhone(String raw) {
-  if (raw.isEmpty || raw == '-') return '-';
-  final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-  if (digits.length <= 3) return raw;
-
-  final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-  if (digits.length == 10) {
-    return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-  }
-  if (digits.length == 9) {
-    return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-  }
-  return maskedDigits;
-}
+/// ─── ปิดคอลัมเบอร์โทรไว้ก่อน — หยุดใช้ชั่วคราว ───
+// String _maskPhone(String raw) {
+//   if (raw.isEmpty || raw == '-') return '-';
+//   final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+//   if (digits.length <= 3) return raw;
+//
+//   final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+//
+//   if (digits.length == 10) {
+//     return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+//   }
+//   if (digits.length == 9) {
+//     return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+//   }
+//   return maskedDigits;
+// }
 
 class LicenseApproveTable extends StatelessWidget {
   const LicenseApproveTable({super.key});
@@ -112,8 +113,7 @@ class LicenseApproveTable extends StatelessWidget {
               model: vm.requests[i],
               onTap: () => vm.onViewRequest(vm.requests[i]),
             ),
-            if (i < vm.requests.length - 1)
-              const SizedBox(height: LaSpace.sm),
+            if (i < vm.requests.length - 1) const SizedBox(height: LaSpace.sm),
           ],
         ],
       );
@@ -156,13 +156,15 @@ class LicenseApproveTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เลขที่สัญญา', flex: 2),
+          _HeaderCell(label: 'รายการ', flex: 2),
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
-          _HeaderCell(label: 'เบอร์โทร', flex: 2),
+          // ─── ปิดคอลัมเบอร์โทรไว้ก่อน ───
+          // _HeaderCell(label: 'เบอร์โทร', flex: 2),
           _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
+          _HeaderCell(label: 'ขั้นตอน', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -181,6 +183,27 @@ class LicenseApproveTable extends StatelessWidget {
   ) {
     final nr = model.newRequest;
     final palette = StatusPalette.of(model.statusLabel ?? model.status);
+    // ─── รายการ: ใช้ module.name_th ตรงๆ (v2: module.name_th)
+    final listName = (model.module?.nameTh?.isNotEmpty == true
+            ? model.module!.nameTh
+            : null) ??
+        (nr?.leaseNumber?.isNotEmpty == true ? nr!.leaseNumber : null) ??
+        '-';
+    // ─── ขั้นตอน: ใช้ step_name (v2: step.step_name)
+    final stepLabel =
+        (model.stepName?.isNotEmpty == true ? model.stepName : null) ?? '-';
+    // ─── วันที่สิ้นสุด: v2 ไม่มี ldate → fallback ไป created_at
+    final endDateRaw = (nr?.ldate?.isNotEmpty == true
+            ? nr!.ldate
+            : null) ??
+        (model.createdAt?.isNotEmpty == true ? model.createdAt : null) ??
+        '';
+    // ─── UUID หลัก: v2 step_uuid → v1 uuid (model.uuid รวมไว้แล้ว)
+    // ถ้าว่างจริงๆ fallback ไป request_uuid (v2) เพื่อให้ copy ได้
+    final displayUuid = (model.uuid?.isNotEmpty == true
+            ? model.uuid
+            : model.requestUuid) ??
+        '';
     return _HoverableRow(
       index: index,
       onTap: () => vm.onViewRequest(model),
@@ -192,7 +215,7 @@ class LicenseApproveTable extends StatelessWidget {
             child: Center(
                 child: _ViewButton(onTap: () => vm.onViewRequest(model))),
           ),
-          _Cell(value: nr?.leaseNumber ?? '-', flex: 2),
+          _Cell(value: listName, tooltip: listName, flex: 2),
           _Cell(value: nr?.subzone ?? '', flex: 2),
           _Cell(value: nr?.zn ?? '', flex: 2),
           _Cell(value: nr?.ln ?? '', flex: 2, isMono: true),
@@ -200,15 +223,17 @@ class LicenseApproveTable extends StatelessWidget {
               value: _maskName(model.client?.cname ?? ''),
               tooltip: model.client?.cname,
               flex: 3),
+          // ─── ปิดคอลัมเบอร์โทรไว้ก่อน ───
+          // _Cell(
+          //     value: _maskPhone(formatPhoneNumber(model.client?.tel ?? "")),
+          //     tooltip: formatPhoneNumber(model.client?.tel ?? ""),
+          //     flex: 2,
+          //     isMono: true),
           _Cell(
-              value: _maskPhone(formatPhoneNumber(model.client?.tel ?? "")),
-              tooltip: formatPhoneNumber(model.client?.tel ?? ""),
+              value: formatDate(endDateRaw, type: DateFormatType.dmy),
               flex: 2,
               isMono: true),
-          _Cell(
-              value: formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
-              flex: 2,
-              isMono: true),
+          _Cell(value: stepLabel, tooltip: stepLabel, flex: 2),
           Expanded(
             flex: 2,
             child: _StatusPill(
@@ -217,8 +242,8 @@ class LicenseApproveTable extends StatelessWidget {
             ),
           ),
           _CopyUuidCell(
-            fullValue: model.uuid ?? '',
-            display: _shortUuid(model.uuid ?? ''),
+            fullValue: displayUuid,
+            display: _shortUuid(displayUuid),
             flex: 2,
           ),
         ],
@@ -337,8 +362,7 @@ class _CopyUuidCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -347,8 +371,7 @@ class _CopyUuidCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -665,6 +688,23 @@ class _ApproveCardState extends State<_ApproveCard> {
     final m = widget.model;
     final nr = m.newRequest;
     final palette = StatusPalette.of(m.statusLabel ?? m.status ?? '');
+    // รายการ: ใช้ module.name_th ตรงๆ
+    final listName = (m.module?.nameTh?.isNotEmpty == true
+            ? m.module!.nameTh
+            : null) ??
+        (nr?.leaseNumber?.isNotEmpty == true ? nr!.leaseNumber : null) ??
+        '-';
+    // ขั้นตอน: ใช้ step_name
+    final stepLabel =
+        (m.stepName?.isNotEmpty == true ? m.stepName : null) ?? '-';
+    // วันที่สิ้นสุด: fallback ldate → createdAt
+    final endDateRaw = (nr?.ldate?.isNotEmpty == true
+            ? nr!.ldate
+            : null) ??
+        (m.createdAt?.isNotEmpty == true ? m.createdAt : null) ??
+        '';
+    final displayUuid = (m.uuid?.isNotEmpty == true ? m.uuid : m.requestUuid) ??
+        '';
     return Material(
       type: MaterialType.transparency,
       child: InkWell(
@@ -720,9 +760,7 @@ class _ApproveCardState extends State<_ApproveCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          nr?.leaseNumber?.isNotEmpty == true
-                              ? nr!.leaseNumber!
-                              : '-',
+                          listName,
                           style: LaText.h2.copyWith(fontSize: 15),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -764,22 +802,28 @@ class _ApproveCardState extends State<_ApproveCard> {
                 value: nr?.ln ?? '-',
                 isMono: true,
               ),
-              _CardRow(
-                icon: Icons.phone_outlined,
-                label: 'เบอร์โทร',
-                value: _maskPhone(formatPhoneNumber(m.client?.tel ?? '')),
-                isMono: true,
-              ),
+              // ─── ปิดคอลัมเบอร์โทรไว้ก่อน ───
+              // _CardRow(
+              //   icon: Icons.phone_outlined,
+              //   label: 'เบอร์โทร',
+              //   value: _maskPhone(formatPhoneNumber(m.client?.tel ?? '')),
+              //   isMono: true,
+              // ),
               _CardRow(
                 icon: Icons.event_outlined,
                 label: 'วันที่สิ้นสุด',
-                value: formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
+                value: formatDate(endDateRaw, type: DateFormatType.dmy),
                 isMono: true,
+              ),
+              _CardRow(
+                icon: Icons.checklist_rounded,
+                label: 'ขั้นตอน',
+                value: stepLabel,
               ),
               _CardRow(
                 icon: Icons.fingerprint,
                 label: 'รหัสรายการ',
-                value: _shortUuid(m.uuid ?? ''),
+                value: _shortUuid(displayUuid),
                 isMono: true,
                 muted: true,
               ),
@@ -796,8 +840,7 @@ class _ApproveCardState extends State<_ApproveCard> {
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     shape: RoundedRectangleBorder(
-                      borderRadius:
-                          BorderRadius.circular(LaRadius.pill),
+                      borderRadius: BorderRadius.circular(LaRadius.pill),
                     ),
                   ),
                 ),

@@ -41,7 +41,7 @@ class LicenseVerifyPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'ตรวจสอบหลักฐาน',
+    String title = 'ตรวจสอบเอกสารคำขออนุญาต',
     ValueChanged<LicenseVerifyResult>? onSave,
     LicenseVerifyConfig? config,
   }) {
@@ -147,13 +147,14 @@ class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
           children: [
             VerifyHeader(
               title: vm.title,
-              subtitle: 'ตรวจสอบหลักฐานใบอนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
+              subtitle:
+                  'ตรวจสอบหลักฐาน/เอกสารคำขออนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
               totalCount: vm.total,
             ),
             const SizedBox(height: LaSpace.lg),
             const VerifyZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -163,6 +164,7 @@ class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
             const Expanded(
               child: SingleChildScrollView(
                 child: VerifyTable(),
@@ -186,7 +188,7 @@ class LicenseVerifyHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'ตรวจสอบหลักฐาน',
+    this.title = 'ตรวจสอบเอกสารคำขออนุญาต',
     this.onSave,
   });
 

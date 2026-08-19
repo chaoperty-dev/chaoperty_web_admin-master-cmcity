@@ -145,31 +145,64 @@ class PaymentHeader extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              if (onAddPayType != null)
-                _GhostButton(
-                  icon: Icons.category_outlined,
-                  label: 'เพิ่ม PayType',
-                  onPressed: onAddPayType!,
-                ),
-              if (onAddBank != null) ...[
-                const SizedBox(width: PaySpace.sm),
-                _GhostButton(
-                  icon: Icons.account_balance_outlined,
-                  label: 'เพิ่ม Bank',
-                  onPressed: onAddBank!,
-                ),
-              ],
-              if (onAddBankType != null) ...[
-                const SizedBox(width: PaySpace.sm),
-                _GhostButton(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: 'เพิ่ม BankType',
-                  onPressed: onAddBankType!,
-                ),
-              ],
-            ],
+          LayoutBuilder(
+            builder: (context, c) {
+              if (c.maxWidth < 700) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (onAddPayType != null)
+                      _GhostButton(
+                        icon: Icons.category_outlined,
+                        label: 'เพิ่ม PayType',
+                        onPressed: onAddPayType!,
+                      ),
+                    if (onAddBank != null) ...[
+                      const SizedBox(height: PaySpace.sm),
+                      _GhostButton(
+                        icon: Icons.account_balance_outlined,
+                        label: 'เพิ่ม Bank',
+                        onPressed: onAddBank!,
+                      ),
+                    ],
+                    if (onAddBankType != null) ...[
+                      const SizedBox(height: PaySpace.sm),
+                      _GhostButton(
+                        icon: Icons.account_balance_wallet_outlined,
+                        label: 'เพิ่ม BankType',
+                        onPressed: onAddBankType!,
+                      ),
+                    ],
+                  ],
+                );
+              }
+              return Row(
+                children: [
+                  if (onAddPayType != null)
+                    _GhostButton(
+                      icon: Icons.category_outlined,
+                      label: 'เพิ่ม PayType',
+                      onPressed: onAddPayType!,
+                    ),
+                  if (onAddBank != null) ...[
+                    const SizedBox(width: PaySpace.sm),
+                    _GhostButton(
+                      icon: Icons.account_balance_outlined,
+                      label: 'เพิ่ม Bank',
+                      onPressed: onAddBank!,
+                    ),
+                  ],
+                  if (onAddBankType != null) ...[
+                    const SizedBox(width: PaySpace.sm),
+                    _GhostButton(
+                      icon: Icons.account_balance_wallet_outlined,
+                      label: 'เพิ่ม BankType',
+                      onPressed: onAddBankType!,
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
         ],
       ),

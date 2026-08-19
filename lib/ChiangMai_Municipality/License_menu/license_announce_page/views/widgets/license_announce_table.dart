@@ -12,6 +12,12 @@ import '../../viewmodels/license_announce_view_model.dart';
 // LicenseAnnounceZoneFilter ย้ายไปอยู่ใน license_announce_zone_filter.dart
 // ─────────────────────────────────────────────────────────────
 
+/// Breakpoint: < 900px = โทรศัพท์/แท็บเล็ต → ใช้ card layout
+const double kLicenseMenuMobileBreakpoint = 900;
+
+bool _isLicenseListMobile(BuildContext context) =>
+    MediaQuery.of(context).size.width < kLicenseMenuMobileBreakpoint;
+
 class LicenseAnnounceTable extends StatelessWidget {
   const LicenseAnnounceTable({super.key});
   @override
@@ -28,6 +34,31 @@ class LicenseAnnounceTable extends StatelessWidget {
       );
     }
 
+    // ─── Mobile (card layout) ───
+    if (_isLicenseListMobile(context)) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (vm.isLoading)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: LrColors.surfaceMuted,
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(LrColors.primary),
+            ),
+          for (int i = 0; i < vm.filtered.length; i++) ...[
+            _AnnounceCard(
+              index: i,
+              item: vm.filtered[i],
+              onTap: () => vm.onView(vm.filtered[i].announcementUuid),
+            ),
+            if (i < vm.filtered.length - 1)
+              const SizedBox(height: LrSpace.sm),
+          ],
+        ],
+      );
+    }
+
     return Container(
       decoration: LrDecor.card(),
       clipBehavior: Clip.antiAlias,
@@ -37,21 +68,16 @@ class LicenseAnnounceTable extends StatelessWidget {
           // Header row (sticky ด้านบน)
           _headerRow(),
           const Divider(height: 1, color: LrColors.border),
-          // Rows ใน Expanded + SingleChildScrollView แนวตั้ง
-          Expanded(
-            child: vm.isLoading
-                ? const LinearProgressIndicator(
-                    minHeight: 2,
-                    backgroundColor: LrColors.surfaceMuted,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(LrColors.primary),
-                  )
-                : ListView.builder(
-                    itemCount: vm.filtered.length,
-                    itemBuilder: (context, i) =>
-                        _dataRow(context, vm, vm.filtered[i], i),
-                  ),
-          ),
+          // Rows — outer SingleChildScrollView (จาก page wrapper) จัดการ scroll
+          if (vm.isLoading)
+            const LinearProgressIndicator(
+              minHeight: 2,
+              backgroundColor: LrColors.surfaceMuted,
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(LrColors.primary),
+            ),
+          for (int i = 0; i < vm.filtered.length; i++)
+            _dataRow(context, vm, vm.filtered[i], i),
         ],
       ),
     );
@@ -178,6 +204,142 @@ class LicenseAnnounceTable extends StatelessWidget {
 // ============================================================================
 // Internal widgets
 // ============================================================================
+
+/// Card layout สำหรับ mobile/tablet — ใช้เมื่อ viewport < 900px
+class _AnnounceCard extends StatelessWidget {
+  final int index;
+  final LicenseAnnounceItem item;
+  final VoidCallback onTap;
+  const _AnnounceCard({
+    required this.index,
+    required this.item,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final f = DateFormat('dd-MM-yyyy');
+    DateTime parse(String s) => DateTime.tryParse(s) ?? DateTime.now();
+    String safeDate(String s) => s.isEmpty ? '-' : f.format(parse(s));
+    final palette =
+        StatusPalette.of(item.computedStatus.isEmpty ? null : item.computedStatus);
+    final statusLabel = item.computedStatus.isEmpty
+        ? (item.isActive ? 'ใช้งาน' : 'ปิด')
+        : item.computedStatus;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(LrRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(LrSpace.md),
+          decoration: LrDecor.card(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ─── Row 1: ลำดับ + หัวข้อ + status pill ───
+              Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: LrColors.primaryLight,
+                      borderRadius: BorderRadius.circular(LrRadius.pill),
+                    ),
+                    child: Text(
+                      '${index + 1}',
+                      style: LrText.tableCell.copyWith(
+                        color: LrColors.primaryDark,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: LrSpace.sm),
+                  Expanded(
+                    child: Text(
+                      item.title.isEmpty ? '-' : item.title,
+                      style: LrText.tableCell.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: LrSpace.sm),
+                  _StatusPill(label: statusLabel, palette: palette),
+                ],
+              ),
+              const Divider(height: LrSpace.lg, color: LrColors.border),
+              // ─── Row 2: รายละเอียด (label/value grid) ───
+              if ((item.zonePn ?? '').isNotEmpty)
+                _CardRow(label: 'โซน', value: item.zonePn!),
+              _CardRow(label: 'วันเริ่ม', value: safeDate(item.sdate), isMono: true),
+              _CardRow(label: 'วันสิ้นสุด', value: safeDate(item.edate), isMono: true),
+              _CardRow(label: 'วันที่ประกาศ', value: safeDate(item.announceDate), isMono: true),
+              const SizedBox(height: LrSpace.sm),
+              // ─── Row 3: ปุ่ม ───
+              Align(
+                alignment: Alignment.centerRight,
+                child: _ViewButton(onTap: onTap),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool isMono;
+  final bool muted;
+  const _CardRow({
+    required this.label,
+    required this.value,
+    this.isMono = false,
+    this.muted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: LrText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: LrText.tableCell.copyWith(
+                color: muted ? LrColors.textSecondary : LrColors.textPrimary,
+                fontFamily: isMono ? 'monospace' : LrText.fontRegular,
+                fontFamilyFallback: const [LrText.fontRegular],
+                fontSize: 12,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _HeaderCell extends StatelessWidget {
   final String label;

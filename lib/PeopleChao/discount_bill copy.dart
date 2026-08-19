@@ -2371,6 +2371,10 @@ class _DiscountBillState extends State<DiscountBill> {
                                                                           10,
                                                                       maxFontSize:
                                                                           15,
+                                                                      maxLines: 1,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
                                                                       textAlign:
                                                                           TextAlign
                                                                               .start,
@@ -2560,6 +2564,10 @@ class _DiscountBillState extends State<DiscountBill> {
                                                                           10,
                                                                       maxFontSize:
                                                                           15,
+                                                                      maxLines: 1,
+                                                                      overflow:
+                                                                          TextOverflow
+                                                                              .ellipsis,
                                                                       textAlign:
                                                                           TextAlign
                                                                               .start,

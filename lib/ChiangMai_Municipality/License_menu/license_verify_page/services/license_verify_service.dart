@@ -17,6 +17,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../unity/API_requests_reviews.dart';
 import '../../../unity/API_approvals_lastaction.dart';
 import '../models/verify_task_model.dart';
+import '../models/verify_attachment_item.dart';
 
 class LicenseVerifyService {
   LicenseVerifyService({ApiCache? cache})
@@ -236,6 +237,272 @@ class LicenseVerifyService {
       print('[listVerifyTasks][ERROR] $e');
       rethrow;
     }
+  }
+
+  // ===============================================================
+  // v2 — GET /api/v2/admin/requests/tasks/attachments (ใหม่ ตามที่ user ต้องการ)
+  // ===============================================================
+  /// สร้าง Uri ไป v2 endpoint — base จาก domain_v1 ตัด /v1 ออก แล้วใส่ v2/...
+  Uri _uriV2Attachments([Map<String, String>? qp]) {
+    final base = MyConstant().domain_v1;
+    final apiRoot = base.replaceFirst(RegExp(r'/v1/?$'), '');
+    final uri = Uri.parse('$apiRoot/v2/admin/requests/tasks/attachments');
+    if (qp == null || qp.isEmpty) return uri;
+    return uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      ...qp,
+    });
+  }
+
+  /// โหลดรายการ "ตรวจสอบหลักฐาน" (attachments) — v2 endpoint
+  /// - GET /api/v2/admin/requests/tasks/attachments
+  /// - query params: include_done, sort_by, sort_dir, q, status[],
+  ///                 customer, created_from/to, submitted_from/to,
+  ///                 zser, subzoneser, per_page, page
+  /// - urlCustom: ลิงก์จาก Laravel pagination (full URL)
+  /// - ถ้า [zser] ว่าง/null/'0' → ไม่ส่งเลย (=ทั้งหมด); ถ้าส่ง ser จริง = filter โซนนั้น
+  Future<VerifyAttachmentsListResult> listTasksAttachments({
+    String? urlCustom,
+    String? q,
+    String? customer,
+    List<String>? statuses,
+    String? createdFrom,
+    String? createdTo,
+    String? submittedFrom,
+    String? submittedTo,
+    bool? reviewAttachmentsAllDone,
+    String? sortBy = 'created_at',
+    String? sortDir = 'desc',
+    bool includeDone = false,
+    int perPage = 50,
+    String? zser,
+    String? subzoneser,
+  }) async {
+    try {
+      Uri uri;
+      if (urlCustom != null && urlCustom.isNotEmpty) {
+        uri = _resolveAttachmentsPagingUrl(
+          urlCustom,
+          perPage: perPage,
+          includeDone: includeDone,
+          sortBy: sortBy,
+          sortDir: sortDir,
+          q: q,
+          customer: customer,
+          statuses: statuses,
+          createdFrom: createdFrom,
+          createdTo: createdTo,
+          submittedFrom: submittedFrom,
+          submittedTo: submittedTo,
+          reviewAttachmentsAllDone: reviewAttachmentsAllDone,
+          zser: zser,
+          subzoneser: subzoneser,
+        );
+      } else {
+        final qp = <String, String>{
+          'per_page': '$perPage',
+          'include_done': includeDone ? '1' : '0',
+          if (sortBy != null && sortBy.isNotEmpty) 'sort_by': sortBy,
+          if (sortDir != null && sortDir.isNotEmpty) 'sort_dir': sortDir,
+        };
+        if (q != null && q.trim().isNotEmpty) qp['q'] = q.trim();
+        if (customer != null && customer.trim().isNotEmpty) {
+          qp['customer'] = customer.trim();
+        }
+        if (createdFrom != null && createdFrom.isNotEmpty) {
+          qp['created_from'] = createdFrom;
+        }
+        if (createdTo != null && createdTo.isNotEmpty) {
+          qp['created_to'] = createdTo;
+        }
+        if (submittedFrom != null && submittedFrom.isNotEmpty) {
+          qp['submitted_from'] = submittedFrom;
+        }
+        if (submittedTo != null && submittedTo.isNotEmpty) {
+          qp['submitted_to'] = submittedTo;
+        }
+        if (reviewAttachmentsAllDone != null) {
+          qp['review_attachments_all_done'] =
+              reviewAttachmentsAllDone ? 'true' : 'false';
+        }
+        if (zser != null && zser.isNotEmpty && zser != '0') qp['zser'] = zser;
+        if (subzoneser != null &&
+            subzoneser.isNotEmpty &&
+            subzoneser != '0') {
+          qp['subzoneser'] = subzoneser;
+        }
+        if (statuses != null && statuses.isNotEmpty) {
+          for (final s in statuses) {
+            qp['status[]'] = s;
+          }
+        }
+        uri = _uriV2Attachments(qp);
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // DEBUG: print URL + context
+      print('╔══════════════════════════════════════════════════════════════');
+      print('║ [listTasksAttachments][v2] GET → $uri');
+      print('║   • urlCustom       : $urlCustom');
+      print('║   • q               : "$q"');
+      print('║   • customer        : $customer');
+      print('║   • statuses        : $statuses');
+      print('║   • zser / subzoneser: $zser / $subzoneser');
+      print('║   • include_done    : $includeDone');
+      print('║   • sort            : $sortBy / $sortDir');
+      print('║   • perPage         : $perPage');
+      print('╚══════════════════════════════════════════════════════════════');
+
+      final headers = await MyHeaders.build();
+      final resp = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 25));
+
+      if (resp.statusCode == 204 || resp.body.trim().isEmpty) {
+        return VerifyAttachmentsListResult.empty;
+      }
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        print('[listTasksAttachments][ERR] ${resp.statusCode} ${resp.reasonPhrase}');
+        print('[listTasksAttachments][BODY] ${_truncate(resp.body, 200)}');
+        return VerifyAttachmentsListResult.empty;
+      }
+
+      final decoded = json.decode(resp.body);
+      if (decoded is! Map) {
+        print('[listTasksAttachments][ERR] body is not a Map');
+        return VerifyAttachmentsListResult.empty;
+      }
+      final map = decoded;
+
+      int toInt(dynamic v) =>
+          v is int ? v : (v is num ? v.toInt() : (int.tryParse('$v') ?? 0));
+      int currentPage = 0, lastPage = 0, perPageVal = 0, total = 0;
+      if (map['meta'] is Map) {
+        final meta = map['meta'] as Map;
+        currentPage = toInt(meta['current_page']);
+        lastPage = toInt(meta['last_page']);
+        perPageVal = toInt(meta['per_page']);
+        total = toInt(meta['total']);
+      }
+
+      String? linksFirst, linksLast, linksPrev, linksNext;
+      if (map['links'] is Map) {
+        final lm = map['links'] as Map;
+        linksFirst = lm['first']?.toString();
+        linksLast = lm['last']?.toString();
+        linksPrev = lm['prev']?.toString();
+        linksNext = lm['next']?.toString();
+      }
+
+      final items = <VerifyAttachmentItem>[];
+      final rawData = map['data'];
+      if (rawData is List) {
+        for (final raw in rawData) {
+          if (raw is Map<String, dynamic>) {
+            items.add(VerifyAttachmentItem.fromJson(raw));
+          }
+        }
+      }
+
+      print(
+          '[listTasksAttachments][v2][result] currentPage=$currentPage lastPage=$lastPage perPage=$perPageVal total=$total dataCount=${items.length} prev=$linksPrev next=$linksNext');
+
+      return VerifyAttachmentsListResult(
+        items: items,
+        currentPage: currentPage,
+        lastPage: lastPage,
+        perPage: perPageVal,
+        total: total,
+        linksFirst: linksFirst,
+        linksLast: linksLast,
+        linksPrev: linksPrev,
+        linksNext: linksNext,
+      );
+    } catch (e, st) {
+      print('[listTasksAttachments][exception] $e');
+      print(st);
+      return VerifyAttachmentsListResult.empty;
+    }
+  }
+
+  /// แปลง pagination link (full URL หรือ relative path) → absolute Uri
+  Uri _resolveAttachmentsPagingUrl(
+    String raw, {
+    required int perPage,
+    required bool includeDone,
+    String? sortBy,
+    String? sortDir,
+    String? q,
+    String? customer,
+    List<String>? statuses,
+    String? createdFrom,
+    String? createdTo,
+    String? submittedFrom,
+    String? submittedTo,
+    bool? reviewAttachmentsAllDone,
+    String? zser,
+    String? subzoneser,
+  }) {
+    final base = MyConstant().domain_v1.replaceFirst(RegExp(r'/v1/?$'), '');
+    Uri source;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      source = Uri.parse(raw);
+    } else {
+      final path = raw.startsWith('/') ? raw : '/$raw';
+      source = Uri.parse('$base$path');
+    }
+    // backend ส่ง next URL เป็น http:// → redirect ไป https ทำให้หลุด Authorization (401)
+    if (source.scheme == 'http') {
+      source = source.replace(scheme: 'https');
+    }
+    final qp = Map<String, String>.from(source.queryParameters);
+    qp['per_page'] = qp['per_page'] ?? '$perPage';
+    qp['include_done'] = qp['include_done'] ?? (includeDone ? '1' : '0');
+    if (sortBy != null && sortBy.isNotEmpty) {
+      qp['sort_by'] = qp['sort_by'] ?? sortBy;
+    }
+    if (sortDir != null && sortDir.isNotEmpty) {
+      qp['sort_dir'] = qp['sort_dir'] ?? sortDir;
+    }
+    if (q != null && q.trim().isNotEmpty && !qp.containsKey('q')) {
+      qp['q'] = q.trim();
+    }
+    if (customer != null && customer.trim().isNotEmpty) {
+      qp['customer'] = qp['customer'] ?? customer.trim();
+    }
+    if (createdFrom != null && createdFrom.isNotEmpty) {
+      qp['created_from'] = qp['created_from'] ?? createdFrom;
+    }
+    if (createdTo != null && createdTo.isNotEmpty) {
+      qp['created_to'] = qp['created_to'] ?? createdTo;
+    }
+    if (submittedFrom != null && submittedFrom.isNotEmpty) {
+      qp['submitted_from'] = qp['submitted_from'] ?? submittedFrom;
+    }
+    if (submittedTo != null && submittedTo.isNotEmpty) {
+      qp['submitted_to'] = qp['submitted_to'] ?? submittedTo;
+    }
+    if (reviewAttachmentsAllDone != null &&
+        !qp.containsKey('review_attachments_all_done')) {
+      qp['review_attachments_all_done'] =
+          reviewAttachmentsAllDone ? 'true' : 'false';
+    }
+    if (zser != null && zser.isNotEmpty && zser != '0') {
+      qp['zser'] = qp['zser'] ?? zser;
+    }
+    if (subzoneser != null && subzoneser.isNotEmpty && subzoneser != '0') {
+      qp['subzoneser'] = qp['subzoneser'] ?? subzoneser;
+    }
+    // merge status[]
+    if (statuses != null && statuses.isNotEmpty) {
+      final existing = qp.keys.where((k) => k.startsWith('status[')).toList();
+      if (existing.isEmpty) {
+        for (final s in statuses) {
+          qp['status[]'] = s;
+        }
+      }
+    }
+    return source.replace(queryParameters: qp);
   }
 
   // ---------- Zones ----------

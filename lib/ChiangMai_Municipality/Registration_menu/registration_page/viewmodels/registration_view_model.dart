@@ -212,6 +212,7 @@ class RegistrationViewModel extends ChangeNotifier {
   /// - value = st (0/1)
   /// - ใช้เพราะ API ของแอพผู้เช่ายังไม่มี → เก็บ state ในเครื่อง
   final Map<String, int> _appStatusOverrides = {};
+  final Map<String, int> _lineStatusOverrides = {};
 
   /// อ่าน "แอพผู้เช่า" ของลูกค้า (fallback เป็น null ถ้าไม่มี)
   /// - ใช้ override ก่อน (ถ้ามี) → ไม่งั้นดู model จริง
@@ -254,7 +255,54 @@ class RegistrationViewModel extends ChangeNotifier {
     } catch (e) {
       _appStatusOverrides[uuid] = currentVal;
       notifyListeners();
-      _emitError('อัปเดตสถานะแอพผู้เช่าไม่สำเร็จ: $e');
+      _emitError('อัปเ�ตสถานะแอพผู้เช่าไม่สำเร็จ: $e');
+    }
+  }
+
+  /// อ่าน "สิทธิใช้งานไลน์" �องลูกค้า
+  /// - ใช้ override ก่อน (ถ้ามี) → ไม่งั้น fallback จาก lineid (มี lineid = เปิด)
+  bool? lineStatusFor(String uuid) {
+    if (_lineStatusOverrides.containsKey(uuid)) {
+      return _isOn(_lineStatusOverrides[uuid]);
+    }
+    final customer = findCustomerByUuid(uuid);
+    if (customer == null) return null;
+    final hasLine = (customer.lineid ?? '').trim().isNotEmpty;
+    return hasLine;
+  }
+
+  /// Toggle "สิทธิใช้งานไลน์"
+  /// - ตอนนี้ service ยังเป็น stub (return false)
+  /// - optimistic update ใน local map → rollback ถ้า fail
+  Future<void> toggleCustomerLineAccess(String uuid) async {
+    final idx = _customers.indexWhere((c) => c.uuid?.toString() == uuid);
+    if (idx < 0) return;
+
+    final current = _customers[idx];
+    final customerSer = current.ser?.toString() ?? '';
+    if (customerSer.isEmpty) {
+      _emitError('ไม่พบ ser ของลูกค้า');
+      return;
+    }
+
+    // optimistic — อ่าน state ปัจจุบัน
+    final currentVal = _lineStatusOverrides[uuid] ??
+        ((current.lineid ?? '').trim().isNotEmpty ? 1 : 0);
+    final nextVal = (currentVal == 1) ? 0 : 1;
+    _lineStatusOverrides[uuid] = nextVal;
+    notifyListeners();
+
+    try {
+      final ok = await _service.toggleCustomerLineStatus(customerSer, nextVal);
+      if (!ok) {
+        _lineStatusOverrides[uuid] = currentVal;
+        notifyListeners();
+        _emitError('อัปเดตสิทธิใช้งานไลน์ไม่สำเร็จ (รอ API)');
+      }
+    } catch (e) {
+      _lineStatusOverrides[uuid] = currentVal;
+      notifyListeners();
+      _emitError('อัปเดตสิทธิใช้งานไลน์ไม่สำเร็จ: $e');
     }
   }
 

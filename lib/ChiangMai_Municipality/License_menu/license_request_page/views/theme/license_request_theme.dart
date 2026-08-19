@@ -30,6 +30,7 @@ class LrColors {
   static const Color textPrimary = Color(0xFF0F172A); // slate-900
   static const Color textSecondary = Color(0xFF475569); // slate-600
   static const Color textMuted = Color(0xFF94A3B8); // slate-400
+  
   static const Color textInverse = Colors.white;
 
   // Status (semantic)

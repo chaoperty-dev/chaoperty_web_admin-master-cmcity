@@ -252,41 +252,75 @@ class _ViewButton extends StatefulWidget {
 }
 
 class _ViewButtonState extends State<_ViewButton> {
+  bool _hover = false;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: RgColors.primaryLight,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RgRadius.pill),
-        side: BorderSide(color: RgColors.primaryDark, width: 1),
-      ),
-      child: InkWell(
-        onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(RgRadius.pill),
-        hoverColor: RgColors.primary.withOpacity(.12),
-        highlightColor: RgColors.primary.withOpacity(.18),
-        splashColor: RgColors.primary.withOpacity(.20),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.visibility_rounded,
-                size: 14,
-                color: RgColors.primaryDark,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'เรียกดู',
-                style: TextStyle(
-                  color: RgColors.primaryDark,
-                  fontFamily: RgText.fontBold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+    final bg = _hover ? RgColors.surfaceMuted : Colors.white;
+    final borderColor = _hover
+        ? RgColors.textSecondary
+        : RgColors.borderStrong;
+    final iconBg = _hover
+        ? RgColors.textSecondary.withOpacity(.18)
+        : RgColors.surfaceMuted;
+    final iconColor =
+        _hover ? Colors.white : RgColors.textSecondary;
+    final textColor =
+        _hover ? RgColors.textPrimary : RgColors.textSecondary;
+
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Material(
+        color: bg,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(RgRadius.pill),
+          side: BorderSide(color: borderColor, width: 1),
+        ),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(RgRadius.pill),
+          hoverColor: Colors.transparent,
+          highlightColor: RgColors.textSecondary.withOpacity(.08),
+          splashColor: RgColors.textSecondary.withOpacity(.14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // ─── Icon container (neutral, rounded square) ───
+                Container(
+                  width: 22,
+                  height: 22,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: iconColor,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 6),
+                // ─── Label pill ───
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  child: Text(
+                    'เรียกดู',
+                    style: TextStyle(
+                      color: textColor,
+                      fontFamily: RgText.fontBold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

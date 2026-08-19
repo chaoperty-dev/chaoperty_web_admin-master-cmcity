@@ -9,6 +9,7 @@ import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license
 import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_payment_page/views/license_payment_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_request_page/views/license_request_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_submit_approval_request_page/views/license_submit_approval_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_verify_page/views/license_verify_page.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/SetupPage.dart';
@@ -34,6 +35,7 @@ class AppRoute {
   static const String verify = '/verify';
   static const String factCheck = '/fact-check';
   static const String approve = '/approve';
+  static const String submitApproval = '/submit-approval';
   static const String announce = '/announce';
 
   // อื่นๆ
@@ -167,6 +169,14 @@ GoRouter buildAppRouter({
               key: state.pageKey,
               locationKey: state.matchedLocation,
               child: LicenseApprovePage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.submitApproval,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: LicenseSubmitApprovalPage.create(),
             ),
           ),
           GoRoute(

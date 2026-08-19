@@ -29,28 +29,35 @@
       "status": true,
       "children": [
         {
-          "label": "ทำสัญญา",
+          "label": "ประกาศคำขอใบอนุญาต",
+          "route": "/announce",
+          "icon": "campaign_outlined",
+          "activeIcon": "campaign",
+          "status": true
+        },
+        {
+          "label": "คำขอใบอนุญาต",
           "route": "/contract",
           "icon": "edit_note_outlined",
           "activeIcon": "edit_note",
           "status": true
         },
         {
-          "label": "ชำระเงิน",
-          "route": "/payment",
-          "icon": "payments_outlined",
-          "activeIcon": "payments",
-          "status": true
-        },
-        {
-          "label": "แนบเอกสาร",
+          "label": "แนบเอกสารคำขอ",
           "route": "/attach",
           "icon": "attach_file_outlined",
           "activeIcon": "attach_file",
           "status": true
         },
         {
-          "label": "ตรวจสอบ",
+          "label": "ชำระค่าธรรมเนียม",
+          "route": "/payment",
+          "icon": "payments_outlined",
+          "activeIcon": "payments",
+          "status": true
+        },
+        {
+          "label": "ตรวจสอบเอกสารคำขอ",
           "route": "/verify",
           "icon": "rule_outlined",
           "activeIcon": "rule",
@@ -64,17 +71,17 @@
           "status": true
         },
         {
-          "label": "อนุมัติ",
-          "route": "/approve",
-          "icon": "check_circle_outline",
-          "activeIcon": "check_circle",
+          "label": "ส่งคำร้องขออนุมัติ",
+          "route": "/submit-approval",
+          "icon": "send_outlined",
+          "activeIcon": "send",
           "status": true
         },
         {
-          "label": "ประกาศ",
-          "route": "/announce",
-          "icon": "campaign_outlined",
-          "activeIcon": "campaign",
+          "label": "อนุมัติคำร้อง",
+          "route": "/approve",
+          "icon": "check_circle_outline",
+          "activeIcon": "check_circle",
           "status": true
         }
       ]

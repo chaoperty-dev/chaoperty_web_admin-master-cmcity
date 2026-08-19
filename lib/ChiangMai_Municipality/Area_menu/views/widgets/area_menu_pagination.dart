@@ -1,7 +1,7 @@
 // ============================================================================
 // area_menu_pagination.dart
 // ============================================================================
-// ปุ่มเปลี่ยนหน้า (Prev / Next) — ดีไซน์ pill + label จำนวนรายการ
+// ปุ่มเปลี่ยนหน้า — pill ยืดหุบจากด้านข้าง
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -10,8 +10,15 @@ import 'package:provider/provider.dart';
 import '../theme/area_menu_theme.dart';
 import '../../viewmodels/area_menu_view_model.dart';
 
-class AreaMenuPagination extends StatelessWidget {
+class AreaMenuPagination extends StatefulWidget {
   const AreaMenuPagination({super.key});
+
+  @override
+  State<AreaMenuPagination> createState() => _AreaMenuPaginationState();
+}
+
+class _AreaMenuPaginationState extends State<AreaMenuPagination> {
+  bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
@@ -19,69 +26,121 @@ class AreaMenuPagination extends StatelessWidget {
     final canPrev = (vm.linksPrev?.isNotEmpty ?? false) && !vm.isLoading;
     final canNext = (vm.linksNext?.isNotEmpty ?? false) && !vm.isLoading;
 
+    return LayoutBuilder(
+      builder: (context, c) {
+        final isMobile = c.maxWidth < 520;
+        if (!isMobile) {
+          return _buildFull(label: '${vm.currentPage} / ${vm.lastPage}');
+        }
+        return _buildCollapsible(
+          label: '${vm.currentPage} / ${vm.lastPage}',
+          canPrev: canPrev,
+          canNext: canNext,
+        );
+      },
+    );
+  }
+
+  Widget _buildFull({required String label}) {
     return Container(
-      height: 48,
-      padding: const EdgeInsets.symmetric(
-          horizontal: LaSpace.sm, vertical: LaSpace.sm),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(LaRadius.md),
         border: Border.all(color: LaColors.border, width: 1),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _PillButton(
-            icon: Icons.chevron_left_rounded,
-            enabled: canPrev,
-            onTap: () => vm.loadPage(vm.linksPrev),
-            tooltip: 'หน้าก่อนหน้า',
+      child: _RowContent(
+        label: label,
+        onPrev: null,
+        onNext: null,
+        canPrev: true,
+        canNext: true,
+      ),
+    );
+  }
+
+  Widget _buildCollapsible({
+    required String label,
+    required bool canPrev,
+    required bool canNext,
+  }) {
+    final vm = context.read<AreaMenuViewModel>();
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      curve: Curves.easeOutCubic,
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(color: LaColors.border, width: 1),
+      ),
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: AnimatedSize(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            child: _expanded
+                ? _RowContent(
+                    label: label,
+                    onPrev: () {
+                      vm.loadPage(vm.linksPrev);
+                      setState(() => _expanded = false);
+                    },
+                    onNext: () {
+                      vm.loadPage(vm.linksNext);
+                      setState(() => _expanded = false);
+                    },
+                    canPrev: canPrev,
+                    canNext: canNext,
+                  )
+                : SizedBox(
+                    width: 32,
+                    height: 32,
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      size: 18,
+                      color: LaColors.textSecondary,
+                    ),
+                  ),
           ),
-          const SizedBox(width: LaSpace.sm),
-          _PageLabel(current: vm.currentPage, last: vm.lastPage),
-          const SizedBox(width: LaSpace.sm),
-          _PillButton(
-            icon: Icons.chevron_right_rounded,
-            enabled: canNext,
-            onTap: () => vm.loadPage(vm.linksNext),
-            tooltip: 'หน้าถัดไป',
-          ),
-        ],
+        ),
       ),
     );
   }
 }
 
-class _PageLabel extends StatelessWidget {
-  final int current;
-  final int last;
-  const _PageLabel({required this.current, required this.last});
+class _RowContent extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPrev;
+  final VoidCallback? onNext;
+  final bool canPrev;
+  final bool canNext;
+  const _RowContent({
+    required this.label,
+    required this.onPrev,
+    required this.onNext,
+    required this.canPrev,
+    required this.canNext,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: LaSpace.md, vertical: 6),
-      decoration: BoxDecoration(
-        color: LaColors.primaryLight,
-        borderRadius: BorderRadius.circular(LaRadius.pill),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.menu_book_rounded,
-            size: 13,
-            color: LaColors.primaryDark,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            'หน้า',
-            style: LaText.caption.copyWith(color: LaColors.primaryDark),
-          ),
-          const SizedBox(width: 4),
-          Text(
-            '$current',
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _PillBtn(
+          icon: Icons.chevron_left_rounded,
+          enabled: canPrev,
+          onTap: onPrev,
+          tooltip: 'หน้าก่อนหน้า',
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Text(
+            label,
             style: const TextStyle(
               fontFamily: LaText.fontBold,
               fontSize: 13,
@@ -89,22 +148,24 @@ class _PageLabel extends StatelessWidget {
               fontWeight: FontWeight.w700,
             ),
           ),
-          Text(
-            ' / $last',
-            style: LaText.caption.copyWith(color: LaColors.primaryDark),
-          ),
-        ],
-      ),
+        ),
+        _PillBtn(
+          icon: Icons.chevron_right_rounded,
+          enabled: canNext,
+          onTap: onNext,
+          tooltip: 'หน้าถัดไป',
+        ),
+      ],
     );
   }
 }
 
-class _PillButton extends StatefulWidget {
+class _PillBtn extends StatefulWidget {
   final IconData icon;
   final bool enabled;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final String tooltip;
-  const _PillButton({
+  const _PillBtn({
     required this.icon,
     required this.enabled,
     required this.onTap,
@@ -112,25 +173,27 @@ class _PillButton extends StatefulWidget {
   });
 
   @override
-  State<_PillButton> createState() => _PillButtonState();
+  State<_PillBtn> createState() => _PillBtnState();
 }
 
-class _PillButtonState extends State<_PillButton> {
+class _PillBtnState extends State<_PillBtn> {
   bool _hover = false;
 
   @override
   Widget build(BuildContext context) {
-    final active = widget.enabled;
+    final active = widget.enabled && widget.onTap != null;
     return MouseRegion(
       cursor: active ? SystemMouseCursors.click : SystemMouseCursors.basic,
       onEnter: (_) {
-        if (active) setState(() => _hover = true);
+        if (active && mounted) setState(() => _hover = true);
       },
-      onExit: (_) => setState(() => _hover = false),
+      onExit: (_) {
+        if (mounted) setState(() => _hover = false);
+      },
       child: Tooltip(
         message: widget.tooltip,
         child: GestureDetector(
-          onTap: active ? widget.onTap : null,
+          onTap: widget.onTap,
           child: AnimatedContainer(
             duration: LrAnimations.fast,
             width: 32,

@@ -38,11 +38,166 @@ class VerifyDetailStep1 extends StatelessWidget {
   }
 }
 
-/// Breakpoint: < 600px = โทรศัพท์
-const double kVerifyMobileBreakpoint = 600;
+/// Breakpoint: < 900px = โทรศัพท์/แท็บเล็ตแนวตั้ง → ใช้ card layout
+/// (เพิ่มจาก 600 → 900 เพราะ table 6 คอลัมน์ ต้องการพื้นที่ ≥900px ถึงจะอ่านได้)
+const double kVerifyMobileBreakpoint = 900;
 
 bool _isMobile(BuildContext context) =>
     MediaQuery.of(context).size.width < kVerifyMobileBreakpoint;
+
+/// ตรวจว่า status_label เป็น "สถานะสุดท้าย" หรือยัง
+/// รวม: อนุมัติ/ผ่าน/เสร็จ (approved), ปฏิเสธ/ไม่ผ่าน (rejected), ขอปรับปรุง (needs_update)
+/// ใช้ disable review actions เมื่อเอกสารถูกตรวจเสร็จแล้ว
+bool _isFinalStatus(String label) {
+  if (label.isEmpty) return false;
+  return label.contains('อนุมัติ') ||
+      label.contains('ผ่าน') ||
+      label.contains('เสร็จ') ||
+      label.contains('ปฏิเสธ') ||
+      label.contains('ไม่ผ่าน') ||
+      label.contains('ขอปรับปรุง');
+}
+
+/// Popup ให้ admin เลือก action รอง (ปฏิเสธ / ขอปรับปรุง)
+/// คืน 'rejected' | 'needs_update' | null (กดยกเลิก)
+Future<String?> promptOtherAction(
+  BuildContext context, {
+  String docName = '',
+}) async {
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) {
+      return SimpleDialog(
+        title: const Text('เลือกการดำเนินการ'),
+        contentPadding: const EdgeInsets.fromLTRB(8, 12, 8, 8),
+        children: [
+          if (docName.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+              child: Text(
+                docName,
+                style: LaText.bodyMuted.copyWith(fontSize: 12),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(ctx).pop('rejected'),
+            child: Row(
+              children: [
+                Icon(Icons.cancel_rounded,
+                    size: 20, color: LaColors.statusRejectedFg),
+                const SizedBox(width: 12),
+                const Text('ปฏิเสธเอกสาร',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () => Navigator.of(ctx).pop('needs_update'),
+            child: Row(
+              children: [
+                Icon(Icons.edit_note_rounded,
+                    size: 20, color: LaColors.primaryDark),
+                const SizedBox(width: 12),
+                const Text('ขอให้ปรับปรุง',
+                    style: TextStyle(fontWeight: FontWeight.w600)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            child: TextButton(
+              onPressed: () => Navigator.of(ctx).pop(null),
+              style: TextButton.styleFrom(
+                foregroundColor: LaColors.textSecondary,
+              ),
+              child: const Text('ยกเลิก'),
+            ),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+/// Dialog ให้ admin กรอกเหตุผล (ใช้ได้ทั้งปฏิเสธ/ขอปรับปรุง)
+/// คืน null ถ้าผู้ใช้กดยกเลิก, คืน trimmed string ถ้ากรอก + กดยืนยัน
+/// (เหตุผลเป็น required — ถ้าเว้นว่างจะไม่ปิด dialog)
+Future<String?> promptReviewReason(
+  BuildContext context, {
+  required String title,
+  required String submitLabel,
+  String docName = '',
+  String hintText = 'เช่น ภาพไม่ชัด, ขาดลายเซ็น, ...',
+}) async {
+  final controller = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (ctx) {
+      return AlertDialog(
+        title: Text(title),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (docName.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  docName,
+                  style: LaText.bodyMuted.copyWith(fontSize: 12),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLines: 3,
+              minLines: 2,
+              decoration: InputDecoration(
+                labelText: 'เหตุผล *',
+                hintText: hintText,
+                border: const OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(null),
+            style: TextButton.styleFrom(
+              foregroundColor: LaColors.textSecondary,
+            ),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final t = controller.text.trim();
+              if (t.isEmpty) {
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text('กรุณาระบุเหตุผล'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
+                return;
+              }
+              Navigator.of(ctx).pop(t);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: LaColors.statusInfoFg,
+              foregroundColor: Colors.white,
+            ),
+            child: Text(submitLabel),
+          ),
+        ],
+      );
+    },
+  );
+}
 
 // =============================================================================
 // Body หลัก — ห่อ Provider<VerifyDocumentsViewModel>
@@ -79,8 +234,8 @@ class _Step1Scaffold extends StatelessWidget {
               const _SectionHeader(),
               const SizedBox(height: LaSpace.md),
               // ─── Section: ลายเซ็นผู้แนบ (ใหม่ — ก่อนตารางเอกสาร) ───
-              VerifySignatureSection(requestUuid: requestUuid),
-              const SizedBox(height: LaSpace.md),
+              // VerifySignatureSection(requestUuid: requestUuid),
+              // const SizedBox(height: LaSpace.md),
               // ─── Section: ตารางแนบเอกสาร (เดิม) ───
               const _DocumentsCard(),
               const SizedBox(height: LaSpace.lg),
@@ -118,7 +273,7 @@ class _SectionHeader extends StatelessWidget {
           SizedBox(width: mobile ? 6 : 8),
           Expanded(
             child: Text(
-              'เลือกเอกสารที่จะแนบ',
+              'เลือกเอกสารที่จะอนุมัติ/ปฏิเสธ',
               style: LaText.h2.copyWith(fontSize: mobile ? 14 : 16),
               overflow: TextOverflow.ellipsis,
             ),
@@ -191,7 +346,8 @@ class _DocumentsTable extends StatelessWidget {
               const Divider(height: 1, color: LaColors.border),
           ],
         ] else ...[
-          // Desktop + List view: ตารางแถวเดียว
+          // ─── Desktop: column headers + table rows ───
+          _ColumnHeaderRow(),
           const Divider(height: 1, color: LaColors.border),
           for (int i = 0; i < documents.length; i++) ...[
             _DocumentRow(index: i, doc: documents[i]),
@@ -200,6 +356,52 @@ class _DocumentsTable extends StatelessWidget {
           ],
         ],
       ],
+    );
+  }
+}
+
+/// แถวหัวคอลัมน์ — โชว์เฉพาะ desktop table view
+class _ColumnHeaderRow extends StatelessWidget {
+  const _ColumnHeaderRow();
+
+  @override
+  Widget build(BuildContext context) {
+    const fields = kVerifyDocDisplayFields;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: LaSpace.sm),
+      decoration: BoxDecoration(
+        color: LaColors.surfaceMuted.withOpacity(.6),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(LaRadius.sm),
+          topRight: Radius.circular(LaRadius.sm),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          for (final f in fields)
+            Expanded(
+              flex: f['title'] == 'ชื่อเอกสาร' ? 3 : 1,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: Text(
+                  f['header'] ?? f['title'] ?? '',
+                  style: LaText.label.copyWith(
+                    color: LaColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: f['title'] == 'ชื่อเอกสาร'
+                      ? TextAlign.left
+                      : TextAlign.center,
+                ),
+              ),
+            ),
+          const SizedBox(width: LaSpace.sm),
+          const SizedBox(width: 160),
+        ],
+      ),
     );
   }
 }
@@ -223,7 +425,7 @@ class _TableHeaderBar extends StatelessWidget {
           SizedBox(width: mobile ? 4 : 6),
           Expanded(
             child: Text(
-              'เอกสารที่ต้องแนบ (${documents.length} รายการ)',
+              'เอกสารทั้งหมด (${documents.length} รายการ)',
               style: LaText.h2.copyWith(fontSize: mobile ? 13 : 14),
               overflow: TextOverflow.ellipsis,
             ),
@@ -279,15 +481,13 @@ class _DocumentRow extends StatelessWidget {
             ),
           const SizedBox(width: LaSpace.sm),
           SizedBox(
-            width: 140,
+            width: 160,
             child: _ReviewActions(
               doc: doc,
               docId: _docId,
-              enabled: _hasFile &&
-                  !_statusLabel(doc).contains('อนุมัติ') &&
-                  !_statusLabel(doc).contains('ปฏิเสธ'),
+              enabled: _hasFile && !_isFinalStatus(_statusLabel(doc)),
               onApprove: () => _onApprove(context, doc),
-              onReject: () => _onReject(context, doc),
+              onOthers: () => _onOthers(context, doc),
             ),
           ),
         ],
@@ -316,26 +516,18 @@ class _DocumentRow extends StatelessWidget {
 
     if (isStatus) {
       final label = _statusLabel(doc);
-      final palette = _statusPalette(doc);
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: LaSpace.sm, vertical: 4),
-          decoration: LaDecor.pill(palette.bg, palette.fg),
-          child: AutoSizeText(
-            label,
-            minFontSize: 11,
-            maxFontSize: 13,
-            maxLines: 1,
-            textAlign: TextAlign.center,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: palette.fg,
-              fontFamily: LaText.fontBold,
-              fontWeight: FontWeight.w700,
-              fontSize: 11,
-            ),
+        child: AutoSizeText(
+          label,
+          minFontSize: 11,
+          maxFontSize: 13,
+          maxLines: 1,
+          textAlign: TextAlign.center,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: LaColors.textPrimary,
+            fontSize: 11,
           ),
         ),
       );
@@ -401,29 +593,8 @@ class _DocumentRow extends StatelessWidget {
     return s;
   }
 
-  StatusPalette _statusPalette(LicenseverifyDocument doc) {
-    final raw =
-        (_hasFile ? doc.attachments!.first.status : null)?.toString() ?? '';
-    final label = _statusLabel(doc);
-    if (raw.contains('อนุมัติ') ||
-        label.contains('อนุมัติ') ||
-        label.contains('ผ่าน') ||
-        label.contains('เสร็จ')) {
-      return const StatusPalette(
-          LaColors.statusApprovedBg, LaColors.statusApprovedFg);
-    }
-    if (raw.contains('ปฏิเสธ') ||
-        label.contains('ปฏิเสธ') ||
-        label.contains('ขอปรับปรุง') ||
-        label.contains('ไม่ผ่าน')) {
-      return const StatusPalette(
-          LaColors.statusRejectedBg, LaColors.statusRejectedFg);
-    }
-    return const StatusPalette(
-        LaColors.statusPendingBg, LaColors.statusPendingFg);
-  }
-
-  Future<void> _onApprove(BuildContext context, LicenseverifyDocument doc) async {
+  Future<void> _onApprove(
+      BuildContext context, LicenseverifyDocument doc) async {
     final vm = context.read<VerifyDocumentsViewModel>();
     // ignore: avoid_print
     print('🔵 [_DocumentRow] อนุมัติ docId=$_docId name=${doc.nameTh}');
@@ -439,15 +610,40 @@ class _DocumentRow extends StatelessWidget {
     );
   }
 
-  Future<void> _onReject(BuildContext context, LicenseverifyDocument doc) async {
+  Future<void> _onOthers(
+      BuildContext context, LicenseverifyDocument doc) async {
     final vm = context.read<VerifyDocumentsViewModel>();
+    final docName = doc.nameTh?.toString() ?? '';
+
+    // Step 1: เลือก action (ปฏิเสธ / ขอปรับปรุง)
+    final action = await promptOtherAction(context, docName: docName);
+    if (action == null) return;
+
+    // Step 2: กรอกเหตุผล (required)
+    final isReject = action == 'rejected';
+    final reason = await promptReviewReason(
+      context,
+      title: isReject ? 'เหตุผลการปฏิเสธ' : 'เหตุผลที่ขอปรับปรุง',
+      submitLabel: isReject ? 'ปฏิเสธ' : 'ส่งคำขอปรับปรุง',
+      docName: docName,
+    );
+    if (reason == null) return;
+
     // ignore: avoid_print
-    print('🔴 [_DocumentRow] ปฏิเสธ docId=$_docId name=${doc.nameTh}');
-    final ok = await vm.rejectDocument(documentId: _docId);
+    print(
+        '🟡 [_DocumentRow] ${isReject ? 'ปฏิเสธ' : 'ขอปรับปรุง'} docId=$_docId name=${doc.nameTh} reason="$reason"');
+
+    final ok = isReject
+        ? await vm.rejectDocument(documentId: _docId, description: reason)
+        : await vm.requestUpdateDocument(
+            documentId: _docId, description: reason);
+
     if (!context.mounted) return;
+    final okLabel = isReject ? 'ปฏิเสธสำเร็จ' : 'ส่งคำขอปรับปรุงแล้ว';
+    final failLabel = isReject ? 'ปฏิเสธไม่สำเร็จ' : 'ส่งคำขอปรับปรุงไม่สำเร็จ';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'ปฏิเสธสำเร็จ' : 'ปฏิเสธไม่สำเร็จ'),
+        content: Text(ok ? okLabel : failLabel),
         behavior: SnackBarBehavior.floating,
         backgroundColor:
             ok ? LaColors.statusApprovedFg : LaColors.statusRejectedFg,
@@ -457,56 +653,51 @@ class _DocumentRow extends StatelessWidget {
 }
 
 // =============================================================================
-// ReviewActions — ปุ่ม อนุมัติ/ปฏิเสธ วางหลังสุด
+// ReviewActions — ปุ่ม อนุมัติ / อื่นๆ (popup ปฏิเสธ/ขอปรับปรุง)
 // =============================================================================
 class _ReviewActions extends StatelessWidget {
   final LicenseverifyDocument doc;
   final int docId;
   final bool enabled;
   final VoidCallback onApprove;
-  final VoidCallback onReject;
+  final VoidCallback onOthers;
   const _ReviewActions({
     required this.doc,
     required this.docId,
     required this.enabled,
     required this.onApprove,
-    required this.onReject,
+    required this.onOthers,
   });
 
   @override
   Widget build(BuildContext context) {
+    // ปุ่มใช้สีเดียวกัน (blue) — label บอก action
+    final baseStyle = ElevatedButton.styleFrom(
+      backgroundColor: LaColors.statusInfoBg,
+      foregroundColor: LaColors.statusInfoFg,
+      disabledBackgroundColor: LaColors.surfaceMuted,
+      disabledForegroundColor: LaColors.textMuted,
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+      minimumSize: const Size(0, 28),
+      textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      elevation: 0,
+    );
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         ElevatedButton(
           onPressed: enabled ? onApprove : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: LaColors.statusApprovedBg,
-            foregroundColor: LaColors.statusApprovedFg,
-            disabledBackgroundColor: LaColors.surfaceMuted,
-            disabledForegroundColor: LaColors.textMuted,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
+          style: baseStyle,
           child: const Text('อนุมัติ'),
         ),
-        const SizedBox(width: 8),
+        const SizedBox(width: 4),
         ElevatedButton(
-          onPressed: enabled ? onReject : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: LaColors.statusRejectedBg,
-            foregroundColor: LaColors.statusRejectedFg,
-            disabledBackgroundColor: LaColors.surfaceMuted,
-            disabledForegroundColor: LaColors.textMuted,
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
-            ),
-          ),
-          child: const Text('ปฏิเสธ'),
+          onPressed: enabled ? onOthers : null,
+          style: baseStyle,
+          child: const Text('อื่นๆ'),
         ),
       ],
     );
@@ -529,7 +720,6 @@ class _DocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<VerifyDocumentsViewModel>();
-    final palette = _statusPalette(doc);
     final statusLabel = _statusLabel(doc);
 
     return Container(
@@ -579,25 +769,19 @@ class _DocumentCard extends StatelessWidget {
           ),
           const SizedBox(height: LaSpace.xs),
 
-          // ─── Row 2: Status pill ───
+          // ─── Row 2: Status text ───
           Row(
             children: [
               const Icon(Icons.flag_outlined,
                   size: 12, color: LaColors.textSecondary),
               const SizedBox(width: 4),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: LaSpace.sm, vertical: 2),
-                decoration: LaDecor.pill(palette.bg, palette.fg),
-                child: Text(
-                  statusLabel,
-                  style: TextStyle(
-                    color: palette.fg,
-                    fontFamily: LaText.fontBold,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 10,
-                  ),
+              Text(
+                statusLabel,
+                style: LaText.tableCell.copyWith(
+                  fontSize: 13,
                 ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               const Spacer(),
               if (_hasFile)
@@ -618,15 +802,13 @@ class _DocumentCard extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               SizedBox(
-                width: 140,
+                width: 160,
                 child: _ReviewActions(
                   doc: doc,
                   docId: _docId,
-                  enabled: _hasFile &&
-                      !_statusLabel(doc).contains('อนุมัติ') &&
-                      !_statusLabel(doc).contains('ปฏิเสธ'),
+                  enabled: _hasFile && !_isFinalStatus(_statusLabel(doc)),
                   onApprove: () => _onApprove(context, doc),
-                  onReject: () => _onReject(context, doc),
+                  onOthers: () => _onOthers(context, doc),
                 ),
               ),
             ],
@@ -637,27 +819,6 @@ class _DocumentCard extends StatelessWidget {
   }
 
   // -------- shared helpers (ซ้ำกับ row เพื่อไม่ผูกกัน) --------
-  StatusPalette _statusPalette(LicenseverifyDocument doc) {
-    final raw =
-        (_hasFile ? doc.attachments!.first.status : null)?.toString() ?? '';
-    final label = _statusLabel(doc);
-    if (raw.contains('อนุมัติ') ||
-        label.contains('อนุมัติ') ||
-        label.contains('ผ่าน') ||
-        label.contains('เสร็จ')) {
-      return const StatusPalette(
-          LaColors.statusApprovedBg, LaColors.statusApprovedFg);
-    }
-    if (raw.contains('ปฏิเสธ') ||
-        label.contains('ปฏิเสธ') ||
-        label.contains('ขอปรับปรุง') ||
-        label.contains('ไม่ผ่าน')) {
-      return const StatusPalette(
-          LaColors.statusRejectedBg, LaColors.statusRejectedFg);
-    }
-    return const StatusPalette(
-        LaColors.statusPendingBg, LaColors.statusPendingFg);
-  }
 
   String _statusLabel(LicenseverifyDocument doc) {
     if (!_hasFile) return 'ยังไม่แนบ';
@@ -680,7 +841,8 @@ class _DocumentCard extends StatelessWidget {
     }
   }
 
-  Future<void> _onApprove(BuildContext context, LicenseverifyDocument doc) async {
+  Future<void> _onApprove(
+      BuildContext context, LicenseverifyDocument doc) async {
     final vm = context.read<VerifyDocumentsViewModel>();
     // ignore: avoid_print
     print('🔵 [_DocumentCard] อนุมัติ docId=$_docId name=${doc.nameTh}');
@@ -696,15 +858,40 @@ class _DocumentCard extends StatelessWidget {
     );
   }
 
-  Future<void> _onReject(BuildContext context, LicenseverifyDocument doc) async {
+  Future<void> _onOthers(
+      BuildContext context, LicenseverifyDocument doc) async {
     final vm = context.read<VerifyDocumentsViewModel>();
+    final docName = doc.nameTh?.toString() ?? '';
+
+    // Step 1: เลือก action
+    final action = await promptOtherAction(context, docName: docName);
+    if (action == null) return;
+
+    // Step 2: กรอกเหตุผล (required)
+    final isReject = action == 'rejected';
+    final reason = await promptReviewReason(
+      context,
+      title: isReject ? 'เหตุผลการปฏิเสธ' : 'เหตุผลที่ขอปรับปรุง',
+      submitLabel: isReject ? 'ปฏิเสธ' : 'ส่งคำขอปรับปรุง',
+      docName: docName,
+    );
+    if (reason == null) return;
+
     // ignore: avoid_print
-    print('🔴 [_DocumentCard] ปฏิเสธ docId=$_docId name=${doc.nameTh}');
-    final ok = await vm.rejectDocument(documentId: _docId);
+    print(
+        '🟡 [_DocumentCard] ${isReject ? 'ปฏิเสธ' : 'ขอปรับปรุง'} docId=$_docId name=${doc.nameTh} reason="$reason"');
+
+    final ok = isReject
+        ? await vm.rejectDocument(documentId: _docId, description: reason)
+        : await vm.requestUpdateDocument(
+            documentId: _docId, description: reason);
+
     if (!context.mounted) return;
+    final okLabel = isReject ? 'ปฏิเสธสำเร็จ' : 'ส่งคำขอปรับปรุงแล้ว';
+    final failLabel = isReject ? 'ปฏิเสธไม่สำเร็จ' : 'ส่งคำขอปรับปรุงไม่สำเร็จ';
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok ? 'ปฏิเสธสำเร็จ' : 'ปฏิเสธไม่สำเร็จ'),
+        content: Text(ok ? okLabel : failLabel),
         behavior: SnackBarBehavior.floating,
         backgroundColor:
             ok ? LaColors.statusApprovedFg : LaColors.statusRejectedFg,
@@ -767,12 +954,31 @@ class _FileButton extends StatelessWidget {
       );
     };
 
+    // ใช้ flow เดียวกับ _onOthers: เลือก action → กรอกเหตุผล (required)
     final onReject = () async {
-      final ok = await vm.rejectDocument(documentId: docId);
+      final docName = doc.nameTh?.toString() ?? '';
+      final action = await promptOtherAction(context, docName: docName);
+      if (action == null) return;
+      final isReject = action == 'rejected';
+      final reason = await promptReviewReason(
+        context,
+        title: isReject ? 'เหตุผลการปฏิเสธ' : 'เหตุผลที่ขอปรับปรุง',
+        submitLabel: isReject ? 'ปฏิเสธ' : 'ส่งคำขอปรับปรุง',
+        docName: docName,
+      );
+      if (reason == null) return;
+
+      final ok = isReject
+          ? await vm.rejectDocument(documentId: docId, description: reason)
+          : await vm.requestUpdateDocument(
+              documentId: docId, description: reason);
       if (!context.mounted) return;
+      final okLabel = isReject ? 'ปฏิเสธสำเร็จ' : 'ส่งคำขอปรับปรุงแล้ว';
+      final failLabel =
+          isReject ? 'ปฏิเสธไม่สำเร็จ' : 'ส่งคำขอปรับปรุงไม่สำเร็จ';
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(ok ? 'ปฏิเสธสำเร็จ' : 'ปฏิเสธไม่สำเร็จ'),
+          content: Text(ok ? okLabel : failLabel),
           behavior: SnackBarBehavior.floating,
           backgroundColor:
               ok ? LaColors.statusApprovedFg : LaColors.statusRejectedFg,
@@ -808,7 +1014,7 @@ class _FileButton extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: Material(
-        color: enabled ? LaColors.statusApprovedBg : LaColors.surfaceMuted,
+        color: enabled ? LaColors.statusInfoBg : LaColors.surfaceMuted,
         borderRadius: BorderRadius.circular(LaRadius.sm),
         child: InkWell(
           borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -824,16 +1030,13 @@ class _FileButton extends StatelessWidget {
                       ? Icons.visibility_rounded
                       : Icons.visibility_off_rounded,
                   size: 14,
-                  color:
-                      enabled ? LaColors.statusApprovedFg : LaColors.textMuted,
+                  color: enabled ? LaColors.statusInfoFg : LaColors.textMuted,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'เรียกดู',
                   style: LaText.label.copyWith(
-                    color: enabled
-                        ? LaColors.statusApprovedFg
-                        : LaColors.textMuted,
+                    color: enabled ? LaColors.statusInfoFg : LaColors.textMuted,
                   ),
                 ),
               ],
@@ -1075,32 +1278,9 @@ class _DocumentGridCard extends StatelessWidget {
     return s;
   }
 
-  StatusPalette _statusPalette(LicenseverifyDocument doc) {
-    final raw =
-        (_hasFile ? doc.attachments!.first.status : null)?.toString() ?? '';
-    final label = _statusLabel(doc);
-    if (raw.contains('อนุมัติ') ||
-        label.contains('อนุมัติ') ||
-        label.contains('ผ่าน') ||
-        label.contains('เสร็จ')) {
-      return const StatusPalette(
-          LaColors.statusApprovedBg, LaColors.statusApprovedFg);
-    }
-    if (raw.contains('ปฏิเสธ') ||
-        label.contains('ปฏิเสธ') ||
-        label.contains('ขอปรับปรุง') ||
-        label.contains('ไม่ผ่าน')) {
-      return const StatusPalette(
-          LaColors.statusRejectedBg, LaColors.statusRejectedFg);
-    }
-    return const StatusPalette(
-        LaColors.statusPendingBg, LaColors.statusPendingFg);
-  }
-
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<VerifyDocumentsViewModel>();
-    final palette = _statusPalette(doc);
     final statusLabel = _statusLabel(doc);
 
     return Container(
@@ -1172,22 +1352,15 @@ class _DocumentGridCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
 
-                  // Status pill
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: LaDecor.pill(palette.bg, palette.fg),
-                    child: Text(
-                      statusLabel,
-                      style: TextStyle(
-                        color: palette.fg,
-                        fontFamily: LaText.fontBold,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 9,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                  // Status text
+                  Text(
+                    statusLabel,
+                    style: const TextStyle(
+                      color: LaColors.textPrimary,
+                      fontSize: 10,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
 
                   if (_hasFile) ...[
@@ -1406,4 +1579,3 @@ class _DocumentPreview extends StatelessWidget {
     }
   }
 }
-

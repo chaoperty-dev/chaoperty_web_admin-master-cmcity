@@ -16,7 +16,7 @@ import 'package:provider/provider.dart';
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
 import '../../../../unity/FormatPhone.dart';
-import '../../../../Model/Review_Model.dart';
+import '../../models/license_request_item.dart';
 import '../theme/license_request_theme.dart';
 import '../../viewmodels/license_request_view_model.dart';
 
@@ -124,11 +124,12 @@ class LicenseRequestTable extends StatelessWidget {
   Widget _dataRow(
     BuildContext context,
     LicenseRequestViewModel vm,
-    ReviewModel model,
+    LicenseRequestItem model,
     int index,
   ) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status);
+    final moduleLabel =
+        model.moduleNameTh.isNotEmpty ? model.moduleNameTh : model.moduleCode;
+    final palette = StatusPalette.of(model.statusLabel);
     return _HoverableRow(
       index: index,
       onTap: () => vm.onViewRequest(model),
@@ -140,33 +141,37 @@ class LicenseRequestTable extends StatelessWidget {
             child: Center(
                 child: _ViewButton(onTap: () => vm.onViewRequest(model))),
           ),
-          _Cell(value: nr?.leaseNumber ?? '-', flex: 2),
-          _Cell(value: nr?.subzone ?? '', flex: 2),
-          _Cell(value: nr?.zn ?? '', flex: 2),
-          _Cell(value: nr?.ln ?? '', flex: 2, isMono: true),
+          // รายการ (swap → module label)
+          _Cell(value: moduleLabel, flex: 2, isMono: true),
+          _Cell(value: model.subzone, flex: 2),
+          _Cell(value: model.zn, flex: 2),
           _Cell(
-              value: _maskName(model.client?.cname ?? ''),
-              tooltip: model.client?.cname,
-              flex: 3),
-          _Cell(
-              value: _maskPhone(formatPhoneNumber(model.client?.tel ?? "")),
-              tooltip: formatPhoneNumber(model.client?.tel ?? ""),
+              value: model.ln.isEmpty ? '-' : model.ln,
               flex: 2,
               isMono: true),
           _Cell(
-              value: formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
+              value: _maskName(model.customerName),
+              tooltip: model.customerName,
+              flex: 3),
+          _Cell(
+              value: _maskPhone(formatPhoneNumber(model.customerTel)),
+              tooltip: formatPhoneNumber(model.customerTel),
+              flex: 2,
+              isMono: true),
+          _Cell(
+              value: formatDate(model.submittedAt, type: DateFormatType.dmy),
               flex: 2,
               isMono: true),
           Expanded(
             flex: 2,
             child: _StatusPill(
-              label: model.statusLabel ?? model.status ?? '-',
+              label: model.statusLabel,
               palette: palette,
             ),
           ),
           _CopyUuidCell(
-            fullValue: model.uuid ?? '',
-            display: _shortUuid(model.uuid ?? ''),
+            fullValue: model.uuid,
+            display: _shortUuid(model.uuid),
             flex: 2,
           ),
         ],
@@ -229,7 +234,7 @@ class LicenseRequestTable extends StatelessWidget {
 /// Card layout — ใช้บน mobile/tablet (< 900px)
 class _RequestCard extends StatelessWidget {
   final int index;
-  final ReviewModel model;
+  final LicenseRequestItem model;
   final VoidCallback onTap;
   const _RequestCard({
     required this.index,
@@ -286,12 +291,12 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status ?? '');
-    final leaseNo = nr?.leaseNumber ?? '-';
-    final name = _maskName(model.client?.cname ?? '');
-    final phone = _maskPhone(formatPhoneNumber(model.client?.tel ?? ""));
-    final endDate = formatDate(nr?.ldate ?? '', type: DateFormatType.dmy);
+    final moduleLabel =
+        model.moduleNameTh.isNotEmpty ? model.moduleNameTh : model.moduleCode;
+    final palette = StatusPalette.of(model.statusLabel);
+    final name = _maskName(model.customerName);
+    final phone = _maskPhone(formatPhoneNumber(model.customerTel));
+    final endDate = formatDate(model.submittedAt, type: DateFormatType.dmy);
 
     return Material(
       type: MaterialType.transparency,
@@ -326,8 +331,10 @@ class _RequestCard extends StatelessWidget {
                   const SizedBox(width: LrSpace.sm),
                   Expanded(
                     child: Text(
-                      leaseNo,
+                      moduleLabel,
                       style: LrText.tableCell.copyWith(
+                        fontFamily: 'monospace',
+                        fontFamilyFallback: const [LrText.fontRegular],
                         fontWeight: FontWeight.w600,
                       ),
                       maxLines: 1,
@@ -336,7 +343,7 @@ class _RequestCard extends StatelessWidget {
                   ),
                   const SizedBox(width: LrSpace.sm),
                   _StatusPill(
-                    label: model.statusLabel ?? model.status ?? '-',
+                    label: model.statusLabel,
                     palette: palette,
                   ),
                 ],
@@ -345,19 +352,21 @@ class _RequestCard extends StatelessWidget {
               // ─── Row 2: รายละเอียด (label/value grid) ───
               _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
               _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
-              if ((nr?.subzone ?? '').isNotEmpty)
-                _CardRow(label: 'บริเวณ', value: nr!.subzone ?? '-'),
-              if ((nr?.zn ?? '').isNotEmpty)
-                _CardRow(label: 'โซนพื้นที่', value: nr!.zn ?? '-'),
+              if (model.subzone.isNotEmpty)
+                _CardRow(label: 'บริเวณ', value: model.subzone),
+              if (model.zn.isNotEmpty)
+                _CardRow(label: 'โซนพื้นที่', value: model.zn),
               _CardRow(
-                  label: 'รหัสพื้นที่', value: nr?.ln ?? '-', isMono: true),
+                  label: 'รหัสพื้นที่',
+                  value: model.ln.isEmpty ? '-' : model.ln,
+                  isMono: true),
               _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
               _CardRow(
                 label: 'รหัสรายการ',
-                value: _shortUuid(model.uuid ?? ''),
+                value: _shortUuid(model.uuid),
                 isMono: true,
                 muted: true,
-                uuidCopy: model.uuid ?? '',
+                uuidCopy: model.uuid,
               ),
               const SizedBox(height: LrSpace.sm),
               // ─── Row 3: ปุ่ม ───
@@ -588,8 +597,7 @@ class _CopyUuidCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -598,8 +606,7 @@ class _CopyUuidCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -620,8 +627,8 @@ class _CopyUuidCell extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.content_copy_rounded,
-                      size: 14,
-                      color: LrColors.primary,
+                      size: 12,
+                      color: LrColors.textMuted,
                     ),
                   ],
                 ),

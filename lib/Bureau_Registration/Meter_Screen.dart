@@ -758,6 +758,8 @@ class _MeterScreenState extends State<MeterScreen> {
                                 const AutoSizeText(
                                   minFontSize: 10,
                                   maxFontSize: 18,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   'มิเตอร์ไฟ',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -800,6 +802,8 @@ class _MeterScreenState extends State<MeterScreen> {
                           child: AutoSizeText(
                             minFontSize: 8,
                             maxFontSize: 12,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             'All 20',
                             textAlign: TextAlign.center,
                             style: TextStyle(
@@ -1035,6 +1039,8 @@ class _MeterScreenState extends State<MeterScreen> {
                                 const AutoSizeText(
                                   minFontSize: 10,
                                   maxFontSize: 18,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                   'มิเตอร์น้ำ',
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
@@ -1077,6 +1083,8 @@ class _MeterScreenState extends State<MeterScreen> {
                           child: AutoSizeText(
                             minFontSize: 8,
                             maxFontSize: 12,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                             'All 20',
                             textAlign: TextAlign.center,
                             style: TextStyle(

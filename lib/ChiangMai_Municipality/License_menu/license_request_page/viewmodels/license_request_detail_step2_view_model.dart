@@ -10,7 +10,6 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:intl/intl.dart';
 
 import '../services/license_request_billing_service.dart';
 
@@ -72,8 +71,12 @@ class LicenseRequestDetailStep2ViewModel extends ChangeNotifier {
   // CRUD (local-only — mock เหมือน step 1 viewmodel)
   // ===============================================================
   Future<void> _deleteItem(String ser) async {
-    _items.removeWhere((e) => e.ser == ser);
-    notifyListeners();
+    // ลบแค่ instance แรกที่ ser ตรงกัน (กัน ser ชนกัน → ลบทีเดียวลบทุกแถว)
+    final i = _items.indexWhere((e) => e.ser == ser);
+    if (i >= 0) {
+      _items.removeAt(i);
+      notifyListeners();
+    }
   }
 
   /// ลบ item — เรียกจาก widget หลังจาก confirm dialog
@@ -96,43 +99,33 @@ class LicenseRequestDetailStep2ViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// เพิ่ม item ใหม่จากชื่อ + หน่วย (ใช้กับ BillingTable-style Add dialog)
-  /// - ใช้ค่า default: sdate=วันนี้, ldate=วันนี้+1ปี, term=1, amount=0
-  void addItemFromAutoExp(String expname, {String unit = 'รายปี'}) {
-    final today = DateFormat('yyyy-MM-dd').format(DateTime.now());
-    final nextYear = DateFormat('yyyy-MM-dd')
-        .format(DateTime.now().add(const Duration(days: 365)));
-    final ser = DateTime.now().millisecondsSinceEpoch.toString();
-    _items.add(BillingItem(
-      ser: ser,
-      expname: expname,
-      sdate: today,
-      ldate: nextYear,
-      unit: unit,
-      term: '1',
-      amount: 0,
-    ));
+  /// เพิ่มรายการใหม่จาก JSON (debt_details) ที่ AddBillingTable ส่งกลับมา
+  /// - เพิ่มอย่างเดียว (ไม่แตะรายการเดิม) แล้วรวมกับของเดิมที่มีอยู่
+  /// - gen ser ใหม่ให้ไม่ชนกับรายการเดิม (ser ใช้อ้างอิงตอนลบ)
+  void addItemsFromJson(List<Map<String, dynamic>> rows) {
+    if (rows.isEmpty) return;
+    final existing = _items.map((e) => e.ser).toSet();
+    var seq = DateTime.now().millisecondsSinceEpoch;
+    for (final row in rows) {
+      final item = BillingItem.fromDebtJson(row);
+      var ser = item.ser;
+      if (ser.isEmpty || existing.contains(ser)) {
+        ser = (seq++).toString();
+      }
+      existing.add(ser);
+      _items.add(BillingItem(
+        ser: ser,
+        expname: item.expname,
+        sdate: item.sdate,
+        ldate: item.ldate,
+        unit: item.unit,
+        term: item.term,
+        amount: item.amount,
+        vatRate: item.vatRate,
+        whtRate: item.whtRate,
+      ));
+    }
     notifyListeners();
-  }
-
-  /// กลุ่มของ expType สำหรับ Add dialog (เลียนแบบ BillingTable.groupedAutoExps)
-  /// - ถ้ายังไม่มี item เลย ใช้ default categories
-  /// - ถ้ามี item แล้ว group by expname
-  Map<String, List<String>> get groupedAutoExps {
-    if (_items.isEmpty) {
-      return {
-        'ค่าธรรมเนียม': ['ค่าธรรมเนียมใบอนุญาต', 'ค่าธรรมเนียมต่ออายุ'],
-        'ค่าเช่า': ['ค่าเช่ารายปี', 'ค่าเช่ารายเดือน'],
-        'ค่าสาธารณูปโภค': ['ค่าน้ำประปา', 'ค่าไฟฟ้า'],
-      };
-    }
-    final groups = <String, List<String>>{};
-    for (final item in _items) {
-      // group by first word (e.g., "ค่าธรรมเนียมใบอนุญาต" → "ค่าธรรมเนียม")
-      final firstWord = item.expname.split(' ').first;
-      groups.putIfAbsent(firstWord, () => []).add(item.expname);
-    }
-    return groups;
   }
 
   // ===============================================================

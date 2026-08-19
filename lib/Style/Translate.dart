@@ -50,7 +50,7 @@ class Translate {
           return Text(
          '$text',
             overflow: TextOverflow.ellipsis,
-            maxLines: maxLines ?? 14,
+            maxLines: maxLines ?? 1,
             textAlign: textAlign,
             style: TextStyle(
               color: color,
@@ -64,7 +64,7 @@ class Translate {
           '$text',
             // 'Error: ${snapshot.error}',
             overflow: TextOverflow.ellipsis,
-            maxLines: maxLines ?? 14,
+            maxLines: maxLines ?? 1,
             textAlign: textAlign,
             style: TextStyle(
               color: color,
@@ -77,7 +77,7 @@ class Translate {
           return Text(
             snapshot.data ?? '$text',
             overflow: TextOverflow.ellipsis,
-            maxLines: maxLines ?? 14,
+            maxLines: maxLines ?? 1,
             textAlign: textAlign,
             style: TextStyle(
               color: color,

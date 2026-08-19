@@ -33,9 +33,20 @@ import 'license_request_detail_page.dart';
 /// Public API
 /// ═══════════════════════════════════════════════════════════════════════
 class LicenseRequestPage extends StatefulWidget {
+  final String? routeData;
+  final int? serTitle;
+  final String title;
   final ValueChanged<LicenseContractResult>? onSave;
+  final LicenseRequestConfig? config;
 
-  const LicenseRequestPage._({super.key, this.onSave});
+  const LicenseRequestPage({
+    super.key,
+    this.routeData,
+    this.serTitle,
+    this.title = 'คำขอต่อสัญญา',
+    this.onSave,
+    this.config,
+  });
 
   /// Factory สร้าง Page พร้อม Provider (ใช้ใน AdminScaffold / Navigator)
   static Widget create({
@@ -46,18 +57,13 @@ class LicenseRequestPage extends StatefulWidget {
     ValueChanged<LicenseContractResult>? onSave,
     LicenseRequestConfig? config,
   }) {
-    final cfg = config ??
-        LicenseRequestConfig(
-          title: title,
-          routeData: routeData,
-          serTitle: serTitle,
-        );
-    return ChangeNotifierProvider<LicenseRequestViewModel>(
-      create: (_) => LicenseRequestViewModel(config: cfg),
-      child: _LicenseRequestPageBody(
-        title: title,
-        onSave: onSave,
-      ),
+    return LicenseRequestPage(
+      key: key,
+      routeData: routeData,
+      serTitle: serTitle,
+      title: title,
+      onSave: onSave,
+      config: config,
     );
   }
 
@@ -66,11 +72,34 @@ class LicenseRequestPage extends StatefulWidget {
 }
 
 class _LicenseRequestPageState extends State<LicenseRequestPage> {
+  late LicenseRequestViewModel _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    final cfg = widget.config ??
+        LicenseRequestConfig(
+          title: widget.title,
+          routeData: widget.routeData,
+          serTitle: widget.serTitle,
+        );
+    _vm = LicenseRequestViewModel(config: cfg);
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LicenseRequestPage.create(
-      key: widget.key,
-      onSave: widget.onSave,
+    return ChangeNotifierProvider<LicenseRequestViewModel>.value(
+      value: _vm,
+      child: _LicenseRequestPageBody(
+        title: widget.title,
+        onSave: widget.onSave,
+      ),
     );
   }
 }
@@ -183,7 +212,7 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
             const SizedBox(height: LrSpace.lg),
             const LicenseRequestZoneFilter(),
             const SizedBox(height: LrSpace.md),
-            // Search + Pagination row
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -193,6 +222,7 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
               ],
             ),
             const SizedBox(height: LrSpace.lg),
+            // ─── Scroll แนวตั้ง (หลาย row) — table ปรับขนาดตาม parent ───
             const Expanded(
               child: SingleChildScrollView(
                 child: LicenseRequestTable(),

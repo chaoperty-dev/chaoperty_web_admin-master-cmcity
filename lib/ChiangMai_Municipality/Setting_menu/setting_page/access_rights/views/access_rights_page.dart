@@ -171,6 +171,7 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
               onCreate: vm.onCreate,
             ),
             const SizedBox(height: ArSpace.lg),
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -180,9 +181,24 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
               ],
             ),
             const SizedBox(height: ArSpace.lg),
-            const Expanded(
-              child: SingleChildScrollView(
-                child: AccessRightsTable(),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  if (c.maxWidth < 700) {
+                    return SingleChildScrollView(
+                      child: AccessRightsTable(),
+                    );
+                  }
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: 900,
+                      child: SingleChildScrollView(
+                        child: AccessRightsTable(),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
           ],

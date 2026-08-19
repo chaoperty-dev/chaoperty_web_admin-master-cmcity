@@ -25,6 +25,7 @@ class LicenseAnnounceZoneFilter extends StatefulWidget {
 class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
+  bool _collapsed = true;
 
   @override
   void dispose() {
@@ -39,13 +40,98 @@ class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
     return Container(
       padding: const EdgeInsets.all(LrSpace.md),
       decoration: LrDecor.card(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(flex: 5, child: _subZoneSection(vm)),
-          _divider(),
-          Expanded(flex: 5, child: _zoneSection(vm)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, c) {
+          // จอแคบ (<700px) → stack dropdown เป็นแนวตั้ง เพื่อให้แต่ละอันเต็มความกว้าง
+          final body = c.maxWidth < 700
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _subZoneSection(vm),
+                    const SizedBox(height: LrSpace.md),
+                    _zoneSection(vm),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(flex: 5, child: _subZoneSection(vm)),
+                    _divider(),
+                    Expanded(flex: 5, child: _zoneSection(vm)),
+                  ],
+                );
+          if (c.maxWidth >= 700) return body;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _toggleHeader(vm),
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: LrSpace.sm),
+                  child: body,
+                ),
+                crossFadeState: _collapsed
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                duration: const Duration(milliseconds: 200),
+                sizeCurve: Curves.easeInOut,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _toggleHeader(LicenseAnnounceViewModel vm) {
+    final hasFilter = (vm.selectedZoneSub != null &&
+            vm.selectedZoneSub != 'ทั้งหมด') ||
+        (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด');
+    return InkWell(
+      onTap: () => setState(() => _collapsed = !_collapsed),
+      borderRadius: BorderRadius.circular(LrRadius.sm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: LrSpace.xs),
+        child: Row(
+          children: [
+            const Icon(Icons.tune_rounded, size: 16, color: LrColors.primaryDark),
+            const SizedBox(width: LrSpace.sm),
+            Text(
+              'ตัวกรองพื้นที่',
+              style: LrText.bodyMuted.copyWith(
+                color: LrColors.textPrimary,
+                fontFamily: LrText.fontBold,
+                fontSize: 13,
+              ),
+            ),
+            if (hasFilter) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: LrColors.primary,
+                  borderRadius: BorderRadius.circular(LrRadius.pill),
+                ),
+                child: const Text(
+                  'ใช้งาน',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontFamily: LrText.fontBold,
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 200),
+              turns: _collapsed ? 0 : 0.5,
+              child: const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 20, color: LrColors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -226,6 +312,8 @@ extension on _LicenseAnnounceZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZoneSub,
         items: vm.subzoneModels
@@ -303,6 +391,8 @@ extension on _LicenseAnnounceZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZone,
         items: vm.zoneModels

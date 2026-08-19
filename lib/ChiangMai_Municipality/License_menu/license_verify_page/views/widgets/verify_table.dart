@@ -6,6 +6,10 @@
 // - Status pill ใช้สีตามคำสถานะ
 // - ปุ่ม "เรียกดู" เป็น pill button
 // - Empty / loading state สวยงาม
+//
+// v2 (2026-08): ใช้ข้อมูลจาก /api/v2/admin/requests/tasks/attachments
+//   - ใช้ VerifyAttachmentItem (model เป็นของตัวเอง)
+//   - เพิ่มคอลัม "เอกสาร" แสดง attachments_total/pending/approved
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -16,7 +20,7 @@ import 'package:provider/provider.dart';
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
 import '../../../../unity/FormatPhone.dart';
-import '../../models/verify_task_model.dart';
+import '../../models/verify_attachment_item.dart';
 import '../theme/license_verify_theme.dart';
 import '../../viewmodels/license_verify_view_model.dart';
 
@@ -90,7 +94,8 @@ class VerifyTable extends StatelessWidget {
   }
 
   // ========================================================================
-  // Header
+  // Header (v2 order: เรียกดู, รายการ, บริเวณ, โซนพื้นที่, รหัสพื้นที่, ชื่อผู้ติดต่อ,
+  //                   เบอร์โทร, วันที่ส่งคำร้อง, เอกสาร, สถานะ, รหัสรายการ)
   // ========================================================================
   Widget _headerRow() {
     return Container(
@@ -112,7 +117,8 @@ class VerifyTable extends StatelessWidget {
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
           _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
+          _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2),
+          _HeaderCell(label: 'เอกสาร', flex: 3),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -126,13 +132,13 @@ class VerifyTable extends StatelessWidget {
   Widget _dataRow(
     BuildContext context,
     LicenseVerifyViewModel vm,
-    VerifyTask task,
+    VerifyAttachmentItem task,
     int index,
   ) {
-    final moduleLabel =
-        task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
+    final moduleLabel = task.moduleNameTh.isNotEmpty
+        ? task.moduleNameTh
+        : task.moduleCode;
     final palette = StatusPalette.of(task.statusLabel);
-    final customer = task.customer;
     return _HoverableRow(
       index: index,
       onTap: () => vm.onViewRequest(task),
@@ -144,30 +150,51 @@ class VerifyTable extends StatelessWidget {
             child:
                 Center(child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
-          // เลขที่สัญญา (swap → module label)
-          _Cell(value: moduleLabel, flex: 2),
-          _Cell(value: task.details.subzone, flex: 2),
-          _Cell(value: task.details.zn, flex: 2),
-          // รหัสพื้นที่ (swap → ln)
+          // รายการ — module.name_th (v2)
           _Cell(
-              value: task.details.ln.isEmpty ? '-' : task.details.ln,
+              value: moduleLabel.isEmpty ? '-' : moduleLabel,
+              flex: 2),
+          // บริเวณ — details.subzone
+          _Cell(value: task.subzone, flex: 2),
+          // โซนพื้นที่ — details.zn
+          _Cell(value: task.zn, flex: 2),
+          // รหัสพื้นที่ — details.ln
+          _Cell(
+              value: task.ln.isEmpty ? '-' : task.ln,
               flex: 2,
               isMono: true),
+          // ชื่อผู้ติดต่อ — customer.cname (อาจว่าง)
           _Cell(
-              value: _maskName(customer?.cname ?? ''),
-              tooltip: customer?.cname ?? '',
+              value: _maskName(task.customerName),
+              tooltip: task.customerName,
               flex: 3),
+          // เบอร์โทร — customer.tel (อาจว่าง)
           _Cell(
-              value: _maskPhone(formatPhoneNumber(customer?.tel ?? '')),
-              tooltip: formatPhoneNumber(customer?.tel ?? ''),
+              value: _maskPhone(formatPhoneNumber(task.customerTel)),
+              tooltip: task.customerTel,
               flex: 2,
               isMono: true),
+          // วันที่ส่งคำร้อง — submitted_at (fallback created_at)
           _Cell(
               value: formatDate(
-                  task.submittedAt.isEmpty ? task.createdAt : task.submittedAt,
+                  task.submittedAt?.isNotEmpty == true
+                      ? task.submittedAt!
+                      : (task.createdAt ?? ''),
                   type: DateFormatType.dmy),
               flex: 2,
               isMono: true),
+          // เอกสาร — total / pending / approved (v2 ใหม่)
+          Expanded(
+            flex: 3,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: _AttachmentCounters(
+                total: task.attachmentsTotal,
+                pending: task.attachmentsPending,
+                approved: task.attachmentsApproved,
+              ),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _StatusPill(
@@ -373,8 +400,8 @@ class _CopyUuidCell extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.content_copy_rounded,
-                      size: 14,
-                      color: LaColors.primary,
+                      size: 12,
+                      color: LaColors.textMuted,
                     ),
                   ],
                 ),
@@ -642,13 +669,78 @@ class _LoadingState extends StatelessWidget {
   }
 }
 
+/// แสดงจำนวนเอกสาร — total / pending / approved (v2 attachments endpoint)
+class _AttachmentCounters extends StatelessWidget {
+  final int total;
+  final int pending;
+  final int approved;
+  const _AttachmentCounters({
+    required this.total,
+    required this.pending,
+    required this.approved,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final allDone = pending == 0 && total > 0;
+    return Tooltip(
+      message:
+          'เอกสารทั้งหมด: $total\nอนุมัติแล้ว: $approved\nรอตรวจ: $pending',
+      waitDuration: const Duration(milliseconds: 250),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            allDone
+                ? Icons.task_alt_rounded
+                : Icons.pending_actions_rounded,
+            size: 14,
+            color: allDone
+                ? const Color(0xFF15803D)  // green-700
+                : const Color(0xFFB45309), // amber-700
+          ),
+          const SizedBox(width: 4),
+          Text(
+            '$approved/$total',
+            style: LaText.tableCell.copyWith(
+              color: allDone
+                  ? const Color(0xFF15803D)
+                  : LaColors.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          if (pending > 0) ...[
+            const SizedBox(width: 4),
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7), // amber-100
+                borderRadius: BorderRadius.circular(LaRadius.pill),
+              ),
+              child: Text(
+                'รอ $pending',
+                style: LaText.tableCell.copyWith(
+                  fontSize: 10,
+                  color: const Color(0xFFB45309), // amber-700
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // ============================================================================
 // Card layout — ใช้บน mobile/tablet แนวตั้ง (< 900px)
 // ============================================================================
 
 class _VerifyListCard extends StatelessWidget {
   final int index;
-  final VerifyTask task;
+  final VerifyAttachmentItem task;
   final VoidCallback onTap;
   const _VerifyListCard({
     required this.index,
@@ -664,15 +756,17 @@ class _VerifyListCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final customer = task.customer;
     final palette = StatusPalette.of(task.statusLabel);
-    final leaseNo =
-        task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
-    final leaseLn = task.details.ln.isEmpty ? '-' : task.details.ln;
-    final name = _maskName(customer?.cname ?? '');
-    final phone = _maskPhone(formatPhoneNumber(customer?.tel ?? ''));
+    final leaseNo = task.moduleNameTh.isNotEmpty
+        ? task.moduleNameTh
+        : task.moduleCode;
+    final leaseLn = task.ln.isEmpty ? '-' : task.ln;
+    final name = _maskName(task.customerName);
+    final phone = _maskPhone(formatPhoneNumber(task.customerTel));
     final endDate = formatDate(
-        task.submittedAt.isEmpty ? task.createdAt : task.submittedAt,
+        task.submittedAt?.isNotEmpty == true
+            ? task.submittedAt!
+            : (task.createdAt ?? ''),
         type: DateFormatType.dmy);
 
     return Material(
@@ -686,7 +780,7 @@ class _VerifyListCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ─── Row 1: เลขที่สัญญา + status pill ───
+              // ─── Row 1: รายการ + status pill ───
               Row(
                 children: [
                   Container(
@@ -708,7 +802,7 @@ class _VerifyListCard extends StatelessWidget {
                   const SizedBox(width: LaSpace.sm),
                   Expanded(
                     child: Text(
-                      leaseNo,
+                      leaseNo.isEmpty ? '-' : leaseNo,
                       style: LaText.tableCell.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -727,12 +821,18 @@ class _VerifyListCard extends StatelessWidget {
               // ─── Row 2: รายละเอียด (label/value grid) ───
               _CardRow(label: 'ชื่อผู้ติดต่อ', value: name, flexValue: 2),
               _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
-              if (task.details.subzone.isNotEmpty)
-                _CardRow(label: 'บริเวณ', value: task.details.subzone),
-              if (task.details.zn.isNotEmpty)
-                _CardRow(label: 'โซนพื้นที่', value: task.details.zn),
+              if (task.subzone.isNotEmpty)
+                _CardRow(label: 'บริเวณ', value: task.subzone),
+              if (task.zn.isNotEmpty)
+                _CardRow(label: 'โซนพื้นที่', value: task.zn),
               _CardRow(label: 'รหัสพื้นที่', value: leaseLn, isMono: true),
-              _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
+              _CardRow(label: 'วันที่ส่งคำร้อง', value: endDate, isMono: true),
+              _CardRow(
+                label: 'เอกสาร',
+                value:
+                    '${task.attachmentsApproved}/${task.attachmentsTotal} (รอ ${task.attachmentsPending})',
+                isMono: true,
+              ),
               _CardRow(
                 label: 'รหัสรายการ',
                 value: _shortUuid(task.uuid),

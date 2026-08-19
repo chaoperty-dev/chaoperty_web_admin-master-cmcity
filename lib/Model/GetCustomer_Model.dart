@@ -26,6 +26,8 @@ class CustomerModel {
   String? email;
   String? lineid;
   String? lineRegisUrl; // line_regis_url จาก regis_data[0]
+  String? regDisplayname; // reg_displayname จาก regis_data[0]
+  List<dynamic>? regisData; // raw regis_data array
   String? lastday;
   String? status;
   dynamic st;
@@ -82,6 +84,8 @@ class CustomerModel {
     this.email,
     this.lineid,
     this.lineRegisUrl,
+    this.regDisplayname,
+    this.regisData,
     this.lastday,
     this.status,
     this.st,
@@ -155,6 +159,18 @@ class CustomerModel {
     return v.toString();
   }
 
+  /// ดึง reg_displayname จาก regis_data[0]
+  /// - คืน null ถ้า regis_data ว่าง/ไม่ใช่ list/ไม่มี key
+  static String? _extractRegDisplayName(dynamic v) {
+    if (v is! List || v.isEmpty) return null;
+    final first = v.first;
+    if (first is! Map) return null;
+    final name = first['reg_displayname'];
+    if (name == null) return null;
+    final s = name.toString().trim();
+    return s.isEmpty ? null : s;
+  }
+
   /// แปลง address จากทั้ง Map/String/null -> AddressModel?
   static AddressModel? _parseAddress(dynamic v) {
     if (v == null) return null;
@@ -202,6 +218,8 @@ class CustomerModel {
       email: _asString(json['email']),
       lineid: _asString(json['lineid']),
       lineRegisUrl: _asString(json['line_regis_url']),
+      regDisplayname: _extractRegDisplayName(json['regis_data']),
+      regisData: json['regis_data'] is List ? json['regis_data'] as List : null,
       lastday: _asString(json['lastday']),
       status: _asString(json['status']),
       st: json['st'],

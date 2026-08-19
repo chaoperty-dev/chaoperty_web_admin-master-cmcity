@@ -75,7 +75,9 @@ class _LicenseverifyDetailPageBodyState
     final vm = context.watch<LicenseverifyDetailViewModel>();
     final step = vm.currentDetailStep;
     final total = vm.totalDetailSteps;
-    final subtitle = step == 1 ? 'เลือกเอกสารที่จะแนบ' : 'สรุปการแนบเอกสาร';
+    final subtitle = step == 1
+        ? 'ตรวจสอบอนุมัติหลักฐาน/เอกสารคำขออนุญาต'
+        : 'สรุปการแนบเอกสารหลักฐาน';
 
     return Scaffold(
       backgroundColor: LaColors.surface,
@@ -100,7 +102,7 @@ class _LicenseverifyDetailPageBodyState
                   : const VerifyDetailStep2(),
             ),
             VerifyDetailFooter(
-              readOnly: false,
+              readOnly: step == 2,
               currentStep: step,
               totalSteps: total,
               onNext: step < total
@@ -112,66 +114,69 @@ class _LicenseverifyDetailPageBodyState
                       vm.nextDetailStep();
                     }
                   : null,
-              onSave: () async {
-                final messenger = ScaffoldMessenger.of(context);
-                final navigator = Navigator.of(context);
-                if (vm.isSubmitting) return;
+              onSave: step == 2
+                  ? null
+                  : () async {
+                      final messenger = ScaffoldMessenger.of(context);
+                      final navigator = Navigator.of(context);
+                      if (vm.isSubmitting) return;
 
-                messenger.showSnackBar(
-                  const SnackBar(
-                    content: Row(
-                      children: [
-                        SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
+                      messenger.showSnackBar(
+                        const SnackBar(
+                          content: Row(
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              SizedBox(width: 12),
+                              Text('กำลังบันทึก...'),
+                            ],
                           ),
+                          behavior: SnackBarBehavior.floating,
+                          duration: Duration(seconds: 2),
                         ),
-                        SizedBox(width: 12),
-                        Text('กำลังบันทึก...'),
-                      ],
-                    ),
-                    behavior: SnackBarBehavior.floating,
-                    duration: Duration(seconds: 2),
-                  ),
-                );
+                      );
 
-                final result = await vm.submitChecklist();
+                      final result = await vm.submitChecklist();
 
-                if (!mounted) return;
-                if (result == null) return;
+                      if (!mounted) return;
+                      if (result == null) return;
 
-                if (result.success) {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        result.message != null && result.message!.isNotEmpty
-                            ? 'บันทึกสำเร็จ: ${result.message}'
-                            : 'บันทึกสำเร็จ (HTTP ${result.statusCode})',
-                      ),
-                      backgroundColor: Colors.green.shade700,
-                      behavior: SnackBarBehavior.floating,
-                    ),
-                  );
-                  if (navigator.canPop()) {
-                    navigator.pop();
-                  }
-                } else {
-                  messenger.showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        'บันทึกไม่สำเร็จ (HTTP ${result.statusCode}): '
-                        '${result.message ?? '-'}',
-                      ),
-                      backgroundColor: Colors.red.shade700,
-                      behavior: SnackBarBehavior.floating,
-                      duration: const Duration(seconds: 4),
-                    ),
-                  );
-                }
-              },
+                      if (result.success) {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              result.message != null &&
+                                      result.message!.isNotEmpty
+                                  ? 'บันทึกสำเร็จ: ${result.message}'
+                                  : 'บันทึกสำเร็จ (HTTP ${result.statusCode})',
+                            ),
+                            backgroundColor: Colors.green.shade700,
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
+                        if (navigator.canPop()) {
+                          navigator.pop();
+                        }
+                      } else {
+                        messenger.showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'บันทึกไม่สำเร็จ (HTTP ${result.statusCode}): '
+                              '${result.message ?? '-'}',
+                            ),
+                            backgroundColor: Colors.red.shade700,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 4),
+                          ),
+                        );
+                      }
+                    },
               onCancel: () {
                 if (step > 1) {
                   vm.previousDetailStep();
@@ -188,5 +193,3 @@ class _LicenseverifyDetailPageBodyState
     );
   }
 }
-
-

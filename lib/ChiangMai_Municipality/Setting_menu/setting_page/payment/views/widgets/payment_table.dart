@@ -13,6 +13,8 @@ import '../theme/payment_theme.dart';
 import '../../models/payment_payment_model.dart';
 import '../../viewmodels/payment_view_model.dart';
 
+const double kPaymentMobileBreakpoint = 700;
+
 class PaymentTable extends StatelessWidget {
   const PaymentTable({super.key});
 
@@ -31,22 +33,49 @@ class PaymentTable extends StatelessWidget {
       );
     }
 
-    return Container(
-      decoration: PayDecor.card(),
-      child: Column(
-        children: [
-          _headerRow(vm),
-          const Divider(height: 1, color: PayColors.border),
-          if (vm.isLoading)
-            const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: PayColors.surfaceMuted,
-              valueColor: AlwaysStoppedAnimation<Color>(PayColors.primary),
-            ),
-          for (int i = 0; i < rows.length; i++)
-            _dataRow(context, vm, rows[i], i),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, c) {
+        final isMobile = c.maxWidth < kPaymentMobileBreakpoint;
+        if (isMobile) {
+          return Column(
+            children: [
+              if (vm.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: PayColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(PayColors.primary),
+                ),
+              for (int i = 0; i < rows.length; i++) ...[
+                _PaymentCard(
+                  index: i,
+                  model: rows[i],
+                  onEdit: () => vm.onEdit(rows[i].ser),
+                  onSlip: () => vm.onSlip(rows[i].ser),
+                  onDelete: () => _confirmDelete(context, vm, rows[i]),
+                ),
+                if (i < rows.length - 1) const SizedBox(height: PaySpace.sm),
+              ],
+            ],
+          );
+        }
+        return Container(
+          decoration: PayDecor.card(),
+          child: Column(
+            children: [
+              _headerRow(vm),
+              const Divider(height: 1, color: PayColors.border),
+              if (vm.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: PayColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(PayColors.primary),
+                ),
+              for (int i = 0; i < rows.length; i++)
+                _dataRow(context, vm, rows[i], i),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -76,6 +105,7 @@ class PaymentTable extends StatelessWidget {
                     label,
                     style: PayText.tableHeader,
                     overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
                   ),
                 ),
               ],
@@ -337,12 +367,16 @@ class _MiniButtonState extends State<_MiniButton> {
             children: [
               Icon(widget.icon, size: 12, color: _hover ? Colors.white : c),
               const SizedBox(width: 4),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  fontFamily: PayText.fontBold,
-                  fontSize: 11,
-                  color: _hover ? Colors.white : c,
+              Flexible(
+                child: Text(
+                  widget.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: PayText.fontBold,
+                    fontSize: 11,
+                    color: _hover ? Colors.white : c,
+                  ),
                 ),
               ),
             ],
@@ -402,6 +436,167 @@ class _EmptyState extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: PayColors.primary,
               side: const BorderSide(color: PayColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Card layout (mobile / narrow screen)
+// ============================================================================
+class _PaymentCard extends StatelessWidget {
+  final int index;
+  final PaymentPaymentModel model;
+  final VoidCallback onEdit;
+  final VoidCallback onSlip;
+  final Future<void> Function() onDelete;
+  const _PaymentCard({
+    required this.index,
+    required this.model,
+    required this.onEdit,
+    required this.onSlip,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bankValue = model.bankName.isEmpty
+        ? '-'
+        : (model.bankCode.isEmpty
+            ? model.bankName
+            : '${model.bankName} (${model.bankCode})');
+
+    return Container(
+      decoration: PayDecor.card(),
+      padding: const EdgeInsets.all(PaySpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: PayColors.primaryLight,
+                  borderRadius: BorderRadius.circular(PayRadius.pill),
+                ),
+                child: Text(
+                  '${model.sw}',
+                  style: PayText.tableCell.copyWith(
+                    color: PayColors.primaryDark,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: PayText.fontBold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: PaySpace.sm),
+              Expanded(
+                child: Text(
+                  model.sname.isEmpty ? '-' : model.sname,
+                  style: PayText.tableCell.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if (model.ln.isNotEmpty)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: PayColors.primaryLight.withOpacity(.4),
+                    borderRadius: BorderRadius.circular(PayRadius.pill),
+                  ),
+                  child: Text(
+                    model.ln,
+                    style: PayText.bodyMuted.copyWith(
+                      color: PayColors.primaryDark,
+                      fontSize: 11,
+                      fontFamily: PayText.fontBold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: PaySpace.lg, color: PayColors.border),
+          _PayCardRow(label: 'ชื่อย่อ', value: model.sn),
+          _PayCardRow(
+            label: 'ประเภท',
+            value: model.typeName.isEmpty ? '-' : model.typeName,
+            muted: model.typeName.isEmpty,
+          ),
+          _PayCardRow(label: 'ธนาคาร', value: bankValue, muted: model.bankName.isEmpty),
+          const SizedBox(height: PaySpace.sm),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _MiniButton(
+                icon: Icons.edit_rounded,
+                label: 'แก้ไข',
+                onTap: onEdit,
+              ),
+              const SizedBox(width: 6),
+              _MiniButton(
+                icon: Icons.image_outlined,
+                label: 'สลิป',
+                onTap: onSlip,
+                color: PayColors.statusInfoFg,
+              ),
+              const SizedBox(width: 6),
+              _MiniButton(
+                icon: Icons.delete_rounded,
+                label: 'ลบ',
+                onTap: () async => await onDelete(),
+                color: PayColors.statusRejectedFg,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PayCardRow extends StatelessWidget {
+  final String label;
+  final String value;
+  final bool muted;
+  const _PayCardRow({
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 90,
+            child: Text(
+              label,
+              style: PayText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '-' : value,
+              style: PayText.tableCell.copyWith(
+                color: muted ? PayColors.textSecondary : PayColors.textPrimary,
+                fontSize: 12,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],

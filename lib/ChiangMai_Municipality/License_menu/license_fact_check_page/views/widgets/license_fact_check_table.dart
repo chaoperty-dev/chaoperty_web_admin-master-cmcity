@@ -1,11 +1,17 @@
 // ============================================================================
 // license_fact_check_table.dart
 // ============================================================================
-// ตารางแสดงรายการ "คำขอต่อสัญญา" — ดีไซน์ใหม่
+// ตารางแสดงรายการ "ตรวจสอบข้อเท็จจริง" — ดีไซน์ใหม่
 // - Card-based header + alternating rows + hover state
 // - Status pill ใช้สีตามคำสถานะ
 // - ปุ่ม "เรียกดู" เป็น pill button
 // - Empty / loading state สวยงาม
+//
+// v2 (2026-08): ใช้ข้อมูลจาก /api/v2/admin/requests/tasks/inspections
+//   - "รายการ" → module.name_th (item.moduleNameTh)
+//   - เพิ่มคอลัม "ผ่านตรวจ" (item.inspectionPassed) ก่อน "สถานะ"
+//   - คอมเมนต์ "เบอร์โทร" ออก
+//   - ใช้ FactCheckItem ของตัวเอง (ไม่ใช้ ReviewModel)
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -15,8 +21,8 @@ import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
 import '../../../../unity/FormatDate.dart';
-import '../../../../unity/FormatPhone.dart';
-import '../../../../Model/Review_Model.dart';
+// import '../../../../unity/FormatPhone.dart'; // คอมเมนต์ปิดเบอร์โทร
+import '../../models/fact_check_item.dart';
 import '../theme/license_fact_check_theme.dart';
 import '../../viewmodels/license_fact_check_view_model.dart';
 
@@ -58,7 +64,7 @@ class LicensefactcheckTable extends StatelessWidget {
           for (int i = 0; i < vm.requests.length; i++) ...[
             _FactCheckCard(
               index: i,
-              model: vm.requests[i],
+              item: vm.requests[i],
               onTap: () => vm.onViewRequest(vm.requests[i]),
             ),
             if (i < vm.requests.length - 1) const SizedBox(height: LaSpace.sm),
@@ -73,7 +79,6 @@ class LicensefactcheckTable extends StatelessWidget {
         children: [
           _headerRow(),
           const Divider(height: 1, color: LaColors.border),
-          // Subtle skeleton ตอน refetch
           if (vm.isLoading)
             const LinearProgressIndicator(
               minHeight: 2,
@@ -88,7 +93,8 @@ class LicensefactcheckTable extends StatelessWidget {
   }
 
   // ========================================================================
-  // Header
+  // Header (v2 order: เรียกดู, รายการ, บริเวณ, โซนพื้นที่, รหัสพื้นที่, ชื่อผู้ติดต่อ,
+  //                   วันที่ส่งคำร้อง, ผ่านตรวจ, สถานะ, รหัสรายการ)
   // ========================================================================
   Widget _headerRow() {
     return Container(
@@ -109,8 +115,9 @@ class LicensefactcheckTable extends StatelessWidget {
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
-          _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
+          // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
+          _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2),
+          _HeaderCell(label: 'ผ่านตรวจ', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -124,49 +131,65 @@ class LicensefactcheckTable extends StatelessWidget {
   Widget _dataRow(
     BuildContext context,
     LicensefactcheckViewModel vm,
-    ReviewModel model,
+    FactCheckItem item,
     int index,
   ) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status);
+    final palette = StatusPalette.of(item.statusLabel);
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(model),
+      onTap: () => vm.onViewRequest(item),
       child: Row(
         children: [
           // Action
           SizedBox(
             width: 110,
-            child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(model))),
+            child:
+                Center(child: _ViewButton(onTap: () => vm.onViewRequest(item))),
           ),
-          _Cell(value: nr?.leaseNumber ?? '-', flex: 2),
-          _Cell(value: nr?.subzone ?? '', flex: 2),
-          _Cell(value: nr?.zn ?? '', flex: 2),
-          _Cell(value: nr?.ln ?? '', flex: 2, isMono: true),
+          // รายการ — module.name_th (v2)
           _Cell(
-              value: _maskName(model.client?.cname ?? ''),
-              tooltip: model.client?.cname,
+              value: item.moduleNameTh.isEmpty ? '-' : item.moduleNameTh,
+              flex: 2),
+          // บริเวณ — details.subzone
+          _Cell(value: item.subzone, flex: 2),
+          // โซนพื้นที่ — details.zn
+          _Cell(value: item.zn, flex: 2),
+          // รหัสพื้นที่ — details.ln
+          _Cell(value: item.ln, flex: 2, isMono: true),
+          // ชื่อผู้ติดต่อ — customer.cname (อาจว่าง)
+          _Cell(
+              value: _maskName(item.customerName),
+              tooltip: item.customerName,
               flex: 3),
+          // _Cell(
+          //     value: _maskPhone(item.customerTel),
+          //     tooltip: item.customerTel,
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดเบอร์โทร
+          // วันที่ส่งคำร้อง — submitted_at (fallback created_at)
           _Cell(
-              value: _maskPhone(formatPhoneNumber(model.client?.tel ?? "")),
-              tooltip: formatPhoneNumber(model.client?.tel ?? ""),
+              value: formatFactCheckDate(
+                  item.submittedAt ?? item.createdAt),
               flex: 2,
               isMono: true),
-          _Cell(
-              value: formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
-              flex: 2,
-              isMono: true),
+          // ผ่านตรวจ (v2 ใหม่) — ก่อนหน้าสถานะ
+          Expanded(
+            flex: 2,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+              child: _InspectionPassedBadge(passed: item.inspectionPassed),
+            ),
+          ),
           Expanded(
             flex: 2,
             child: _StatusPill(
-              label: model.statusLabel ?? model.status ?? '-',
+              label: item.statusLabel,
               palette: palette,
             ),
           ),
           _CopyUuidCell(
-            fullValue: model.uuid ?? '',
-            display: _shortUuid(model.uuid ?? ''),
+            fullValue: item.uuid,
+            display: _shortUuid(item.uuid),
             flex: 2,
           ),
         ],
@@ -204,36 +227,80 @@ class LicensefactcheckTable extends StatelessWidget {
     return words.join(' ');
   }
 
-  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
-  }
+  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย
+  // (คอมเมนต์ปิดเบอร์โทร — เก็บไว้ใช้ในอนาคต)
+  // String _maskPhone(String raw) {
+  //   if (raw.isEmpty || raw == '-') return '-';
+  //   final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+  //   if (digits.length <= 3) return raw;
+  //   final maskedDigits = digits.substring(0, digits.length - 3) + '***';
+  //   if (digits.length == 10) {
+  //     return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
+  //   }
+  //   if (digits.length == 9) {
+  //     return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
+  //   }
+  //   return maskedDigits;
+  // }
 }
 
 // ============================================================================
 // Internal widgets
 // ============================================================================
 
+/// Badge: แสดงผล "ผ่านตรวจ" (inspection_passed) — ใช้ก่อน status pill
+/// passed == true → ✓ สีเขียว
+/// passed == false → ⏳ สีส้ม
+class _InspectionPassedBadge extends StatelessWidget {
+  final bool passed;
+  const _InspectionPassedBadge({required this.passed});
+
+  @override
+  Widget build(BuildContext context) {
+    final Color fg;
+    final IconData icon;
+    final String label;
+    if (passed) {
+      fg = const Color(0xFF15803D); // green-700
+      icon = Icons.check_circle_rounded;
+      label = 'ผ่าน';
+    } else {
+      fg = const Color(0xFFB45309); // amber-700
+      icon = Icons.pending_actions_rounded;
+      label = 'รอ';
+    }
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Tooltip(
+        message: passed ? 'ตรวจสอบข้อเท็จจริงผ่านแล้ว' : 'ยังไม่ผ่านการตรวจสอบ',
+        waitDuration: const Duration(milliseconds: 250),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: fg),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: LaText.tableCell.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 /// Card layout — ใช้บน mobile/tablet (< 900px)
 class _FactCheckCard extends StatelessWidget {
   final int index;
-  final ReviewModel model;
+  final FactCheckItem item;
   final VoidCallback onTap;
   const _FactCheckCard({
     required this.index,
-    required this.model,
+    required this.item,
     required this.onTap,
   });
 
@@ -266,30 +333,15 @@ class _FactCheckCard extends StatelessWidget {
     return words.join(' ');
   }
 
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
-  }
+  // String _maskPhone(String raw) {...} // คอมเมนต์ปิดเบอร์โทร
 
   @override
   Widget build(BuildContext context) {
-    final nr = model.newRequest;
-    final palette = StatusPalette.of(model.statusLabel ?? model.status ?? '');
-    final leaseNo = nr?.leaseNumber ?? '-';
-    final name = _maskName(model.client?.cname ?? '');
-    final phone = _maskPhone(formatPhoneNumber(model.client?.tel ?? ""));
-    final endDate = formatDate(nr?.ldate ?? '', type: DateFormatType.dmy);
+    final palette = StatusPalette.of(item.statusLabel);
+    final moduleLabel = item.moduleNameTh.isEmpty ? '-' : item.moduleNameTh;
+    final name = _maskName(item.customerName);
+    final submitted =
+        formatFactCheckDate(item.submittedAt ?? item.createdAt);
 
     return Material(
       type: MaterialType.transparency,
@@ -323,7 +375,7 @@ class _FactCheckCard extends StatelessWidget {
                   const SizedBox(width: LaSpace.sm),
                   Expanded(
                     child: Text(
-                      leaseNo,
+                      moduleLabel,
                       style: LaText.tableCell.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -333,24 +385,29 @@ class _FactCheckCard extends StatelessWidget {
                   ),
                   const SizedBox(width: LaSpace.sm),
                   _StatusPill(
-                    label: model.statusLabel ?? model.status ?? '-',
+                    label: item.statusLabel,
                     palette: palette,
                   ),
                 ],
               ),
               const Divider(height: LaSpace.lg, color: LaColors.border),
               _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
-              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
-              if ((nr?.subzone ?? '').isNotEmpty)
-                _CardRow(label: 'บริเวณ', value: nr!.subzone ?? '-'),
-              if ((nr?.zn ?? '').isNotEmpty)
-                _CardRow(label: 'โซนพื้นที่', value: nr!.zn ?? '-'),
+              // _CardRow(label: 'เบอร์โทร', value: phone, isMono: true), // ปิดเบอร์โทร
+              if (item.subzone.isNotEmpty)
+                  _CardRow(label: 'บริเวณ', value: item.subzone),
+              if (item.zn.isNotEmpty)
+                  _CardRow(label: 'โซนพื้นที่', value: item.zn),
               _CardRow(
-                  label: 'รหัสพื้นที่', value: nr?.ln ?? '-', isMono: true),
-              _CardRow(label: 'วันที่สิ้นสุด', value: endDate, isMono: true),
+                  label: 'รหัสพื้นที่', value: item.ln, isMono: true),
+              _CardRow(
+                  label: 'วันที่ส่งคำร้อง', value: submitted, isMono: true),
+              _CardRow(
+                label: 'ผ่านตรวจ',
+                value: item.inspectionPassed ? 'ผ่าน' : 'รอ',
+              ),
               _CardRow(
                 label: 'รหัสรายการ',
-                value: _shortUuid(model.uuid ?? ''),
+                value: _shortUuid(item.uuid),
                 isMono: true,
                 muted: true,
               ),
@@ -538,7 +595,7 @@ class _Cell extends StatelessWidget {
   }
 }
 
-/// Copyable UUID cell — short uuid + persistent copy icon
+/// Copyable UUID cell
 class _CopyUuidCell extends StatelessWidget {
   final String fullValue;
   final String display;
@@ -582,8 +639,7 @@ class _CopyUuidCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -592,8 +648,7 @@ class _CopyUuidCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -614,8 +669,8 @@ class _CopyUuidCell extends StatelessWidget {
                     const SizedBox(width: 4),
                     const Icon(
                       Icons.content_copy_rounded,
-                      size: 14,
-                      color: LaColors.primary,
+                      size: 12,
+                      color: LaColors.textMuted,
                     ),
                   ],
                 ),
@@ -694,8 +749,6 @@ class _HoverableRowState extends State<_HoverableRow> {
   @override
   void didUpdateWidget(_HoverableRow oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Reset hover เมื่อ data เปลี่ยน (เช่น refresh table)
-    // — ป้องกัน hover state ค้างจาก row เก่าที่ถูก rebuild
     if (oldWidget.index != widget.index) {
       _hover = false;
     }
@@ -704,7 +757,6 @@ class _HoverableRowState extends State<_HoverableRow> {
   @override
   Widget build(BuildContext context) {
     final base = widget.index.isEven ? Colors.white : LaColors.surfaceMuted;
-    // ใช้ hover ที่ subtle กว่าเดิม เพื่อไม่ให้ดูแปลกตา
     final hoverColor = widget.index.isEven
         ? LaColors.primary.withOpacity(.05)
         : LaColors.primary.withOpacity(.08);
@@ -714,7 +766,6 @@ class _HoverableRowState extends State<_HoverableRow> {
       child: InkWell(
         onTap: widget.onTap,
         onHover: (hover) {
-          // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
           if (hover != _hover) {
             setState(() => _hover = hover);
           }

@@ -155,7 +155,7 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
             const SizedBox(height: LaSpace.lg),
             const LicensefactcheckZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -165,6 +165,7 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
             const Expanded(
               child: SingleChildScrollView(
                 child: LicensefactcheckTable(),

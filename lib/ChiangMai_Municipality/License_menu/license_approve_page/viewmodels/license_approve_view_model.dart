@@ -73,6 +73,58 @@ class LicenseApproveViewModel extends ChangeNotifier {
   String? get selectedZone => _selectedZone;
   String? get selectedZoneSer => _selectedZoneSer;
 
+  // ---------- Status filter ----------
+  /// รายการ status ทั้งหมดที่ filter ได้
+  /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
+  static const List<String> statusOptions = <String>[
+    'draft',
+    'documents_submitted',
+    'waiting_payment_info',
+    'payment_submitted',
+    'request_submitted',
+    'needs_update',
+    'under_review',
+    'in_progress',
+    'request_completed',
+    'completed',
+    'rejected',
+  ];
+
+  /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
+  static const Map<String, String> statusLabels = <String, String>{
+    'draft': 'ฉบับร่าง',
+    'documents_submitted': 'ส่งเอกสารแล้ว',
+    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
+    'payment_submitted': 'ชำระเงินแล้ว',
+    'request_submitted': 'ส่งคำขอแล้ว',
+    'needs_update': 'ต้องแก้ไข',
+    'under_review': 'กำลังพิจารณา',
+    'in_progress': 'กำลังดำเนินการ',
+    'request_completed': 'คำขอเสร็จสิ้น',
+    'completed': 'เสร็จสิ้น',
+    'rejected': 'ถูกปฏิเสธ',
+  };
+
+  /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
+  String? _selectedStatus;
+  String? get selectedStatus => _selectedStatus;
+
+  /// ผู้ใช้เลือก "สถานะ" — ถ้าเป็น "ทั้งหมด" หรือ null → ไม่ส่ง key
+  Future<void> onStatusChanged(String? value) async {
+    _selectedStatus = (value == null || value.isEmpty || value == 'ทั้งหมด')
+        ? null
+        : value;
+    notifyListeners();
+    await refresh();
+  }
+
+  /// แปลง _selectedStatus เป็น List<String>? สำหรับส่งให้ service
+  List<String>? get _statusesFilter {
+    final s = _selectedStatus;
+    if (s == null) return null;
+    return <String>[s];
+  }
+
   // ---------- Config getters ----------
   String get title => _config.title;
   String? get routeData => _config.routeData;
@@ -184,15 +236,16 @@ class LicenseApproveViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
+      final res = await _service.fetchRequestsMe(
         query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
+        page: 1,
         // ถ้าเลือก "ทั้งหมด" (ser=0) ให้ส่ง null — ไม่ filter
         zn: (_selectedZone == null ||
                 _selectedZone == '0' ||
                 _selectedZone == 'ทั้งหมด')
             ? null
             : _selectedZone,
+        statuses: _statusesFilter,
       );
       _requests = res.data;
       _currentPage = res.currentPage;
@@ -211,15 +264,15 @@ class LicenseApproveViewModel extends ChangeNotifier {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
+      final res = await _service.fetchRequestsMe(
         urlCustom: url,
         query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
         zn: (_selectedZone == null ||
                 _selectedZone == '0' ||
                 _selectedZone == 'ทั้งหมด')
             ? null
             : _selectedZone,
+        statuses: _statusesFilter,
       );
       _requests = res.data;
       _currentPage = res.currentPage;

@@ -1,8 +1,12 @@
 // ============================================================================
 // license_fact_check_service.dart
 // ============================================================================
-// Service — โหลดข้อมูล "คำขอต่อสัญญา" (status แรก) จาก API
-// ใช้ read_GC_Reviews() + HTTP ตรงสำหรับ zones/subzones
+// Service — โหลดข้อมูล "ตรวจสอบข้อเท็จจริง" (fact check) จาก API
+//
+// v1: fetchRequests() → read_GC_Reviews() → GET /v1/admin/approvals (legacy)
+// v2: fetchInspections() → GET /api/v2/admin/requests/tasks/inspections (ใหม่)
+//
+// ใช้ HTTP ตรงสำหรับ zones/subzones/inspection APIs
 // ============================================================================
 
 import 'dart:convert';
@@ -21,6 +25,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../unity/API_requests_reviews.dart';
 import '../../../unity/API_approvals_lastaction.dart';
+import '../models/fact_check_item.dart';
 
 class LicensefactcheckService {
   LicensefactcheckService({ApiCache? cache})
@@ -58,6 +63,244 @@ class LicensefactcheckService {
       ],
     );
   }
+
+  // ===============================================================
+  // v2 — GET /api/v2/admin/requests/tasks/inspections (ใหม่ ตามที่ user ต้องการ)
+  // ===============================================================
+  /// สร้าง Uri ไป v2 endpoint — base จาก domain_v1 ตัด /v1 ออก แล้วใส่ v2/...
+  Uri _uriV2Inspections([Map<String, String>? qp]) {
+    final base = MyConstant().domain_v1;
+    final apiRoot = base.replaceFirst(RegExp(r'/v1/?$'), '');
+    final uri = Uri.parse('$apiRoot/v2/admin/requests/tasks/inspections');
+    if (qp == null || qp.isEmpty) return uri;
+    return uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      ...qp,
+    });
+  }
+
+  /// โหลดรายการ fact-check (inspections) — v2 endpoint
+  /// - GET /api/v2/admin/requests/tasks/inspections
+  /// - query params: include_done, sort_by, sort_dir, q, inspection_passed,
+  ///                 created_from, created_to, zser, subzoneser, per_page, page, zn
+  /// - urlCustom: ลิงก์จาก Laravel pagination (full URL)
+  Future<FactCheckListResult> fetchInspections({
+    String? urlCustom,
+    String query = '',
+    int perPage = 50,
+    int page = 1,
+    String sortBy = 'created_at',
+    String sortDir = 'desc',
+    bool includeDone = false,
+    bool? inspectionPassed,
+    String? createdFrom, // YYYY-MM-DD
+    String? createdTo, // YYYY-MM-DD
+    String? zser,
+    String? subzoneser,
+    String? zn,
+    List<String>? statuses,
+  }) async {
+    try {
+      Uri uri;
+      if (urlCustom != null && urlCustom.isNotEmpty) {
+        uri = _resolveInspectionsPagingUrl(
+          urlCustom,
+          perPage: perPage,
+          includeDone: includeDone,
+          sortBy: sortBy,
+          sortDir: sortDir,
+          query: query,
+          inspectionPassed: inspectionPassed,
+          createdFrom: createdFrom,
+          createdTo: createdTo,
+          zn: zn,
+          statuses: statuses,
+        );
+      } else {
+        final qp = <String, String>{
+          'per_page': '$perPage',
+          'include_done': includeDone ? '1' : '0',
+          'sort_by': sortBy,
+          'sort_dir': sortDir,
+          if (page > 1) 'page': '$page',
+        };
+        if (query.trim().isNotEmpty) qp['q'] = query.trim();
+        if (inspectionPassed != null) {
+          qp['inspection_passed'] = inspectionPassed ? 'true' : 'false';
+        }
+        if (createdFrom != null && createdFrom.isNotEmpty) {
+          qp['created_from'] = createdFrom;
+        }
+        if (createdTo != null && createdTo.isNotEmpty) {
+          qp['created_to'] = createdTo;
+        }
+        if (zser != null && zser.isNotEmpty && zser != '0') qp['zser'] = zser;
+        if (subzoneser != null &&
+            subzoneser.isNotEmpty &&
+            subzoneser != '0') {
+          qp['subzoneser'] = subzoneser;
+        }
+        if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
+          qp['zn'] = zn;
+        }
+        if (statuses != null && statuses.isNotEmpty) {
+          for (final s in statuses) {
+            qp['status[]'] = s;
+          }
+        }
+        uri = _uriV2Inspections(qp);
+      }
+
+      // ────────────────────────────────────────────────────────────────
+      // DEBUG: print URL + context ทุกครั้งที่ยิง v2 /tasks/inspections
+      print('╔══════════════════════════════════════════════════════════════');
+      print('║ [fetchInspections][v2] GET → $uri');
+      print('║   • urlCustom       : $urlCustom');
+      print('║   • query           : "$query"');
+      print('║   • zn / zser       : $zn / $zser');
+      print('║   • subzoneser      : $subzoneser');
+      print('║   • include_done    : $includeDone');
+      print('║   • inspection_passed: $inspectionPassed');
+      print('║   • created_from    : $createdFrom');
+      print('║   • created_to      : $createdTo');
+      print('║   • sort            : $sortBy / $sortDir');
+      print('║   • perPage         : $perPage');
+      print('║   • page            : $page');
+      print('╚══════════════════════════════════════════════════════════════');
+      // ────────────────────────────────────────────────────────────────
+
+      final headers = await MyHeaders.build();
+      final resp = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 25));
+
+      if (resp.statusCode == 204 || resp.body.trim().isEmpty) {
+        return FactCheckListResult.empty;
+      }
+      if (resp.statusCode < 200 || resp.statusCode >= 300) {
+        print(
+            '[fetchInspections][ERR] ${resp.statusCode} ${resp.reasonPhrase}');
+        print('[fetchInspections][BODY] ${resp.body}');
+        return FactCheckListResult.empty;
+      }
+
+      final decoded = json.decode(resp.body);
+      if (decoded is! Map) {
+        print('[fetchInspections][ERR] body is not a Map');
+        return FactCheckListResult.empty;
+      }
+      final map = decoded;
+
+      // meta
+      int currentPage = 0, lastPage = 0, perPageVal = 0, total = 0;
+      if (map['meta'] is Map) {
+        final meta = map['meta'] as Map;
+        currentPage = _toInt(meta['current_page']);
+        lastPage = _toInt(meta['last_page']);
+        perPageVal = _toInt(meta['per_page']);
+        total = _toInt(meta['total']);
+      }
+
+      // links
+      String? linksFirst, linksLast, linksPrev, linksNext;
+      if (map['links'] is Map) {
+        final lm = map['links'] as Map;
+        linksFirst = lm['first']?.toString();
+        linksLast = lm['last']?.toString();
+        linksPrev = lm['prev']?.toString();
+        linksNext = lm['next']?.toString();
+      }
+
+      // data
+      final items = <FactCheckItem>[];
+      final rawData = map['data'];
+      if (rawData is List) {
+        for (final raw in rawData) {
+          if (raw is Map<String, dynamic>) {
+            items.add(FactCheckItem.fromJson(raw));
+          }
+        }
+      }
+
+      print(
+          '[fetchInspections][v2][result] currentPage=$currentPage lastPage=$lastPage perPage=$perPageVal total=$total dataCount=${items.length} prev=$linksPrev next=$linksNext');
+
+      return FactCheckListResult(
+        items: items,
+        currentPage: currentPage,
+        lastPage: lastPage,
+        perPage: perPageVal,
+        total: total,
+        linksFirst: linksFirst,
+        linksLast: linksLast,
+        linksPrev: linksPrev,
+        linksNext: linksNext,
+      );
+    } catch (e, st) {
+      print('[fetchInspections][exception] $e');
+      print(st);
+      return FactCheckListResult.empty;
+    }
+  }
+
+  /// แปลง pagination link (full URL หรือ relative path) → absolute Uri
+  Uri _resolveInspectionsPagingUrl(
+    String raw, {
+    required int perPage,
+    required bool includeDone,
+    required String sortBy,
+    required String sortDir,
+    required String query,
+    bool? inspectionPassed,
+    String? createdFrom,
+    String? createdTo,
+    String? zn,
+    List<String>? statuses,
+  }) {
+    final base = MyConstant().domain_v1.replaceFirst(RegExp(r'/v1/?$'), '');
+    Uri source;
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+      source = Uri.parse(raw);
+    } else {
+      final path = raw.startsWith('/') ? raw : '/$raw';
+      source = Uri.parse('$base$path');
+    }
+    // backend ส่ง next URL เป็น http:// → redirect ไป https ทำให้หลุด Authorization (401)
+    if (source.scheme == 'http') {
+      source = source.replace(scheme: 'https');
+    }
+    final qp = Map<String, String>.from(source.queryParameters);
+    qp['per_page'] = qp['per_page'] ?? '$perPage';
+    qp['include_done'] = qp['include_done'] ?? (includeDone ? '1' : '0');
+    qp['sort_by'] = qp['sort_by'] ?? sortBy;
+    qp['sort_dir'] = qp['sort_dir'] ?? sortDir;
+    if (query.trim().isNotEmpty && !qp.containsKey('q')) {
+      qp['q'] = query.trim();
+    }
+    if (inspectionPassed != null && !qp.containsKey('inspection_passed')) {
+      qp['inspection_passed'] = inspectionPassed ? 'true' : 'false';
+    }
+    if (createdFrom != null && createdFrom.isNotEmpty) {
+      qp['created_from'] = qp['created_from'] ?? createdFrom;
+    }
+    if (createdTo != null && createdTo.isNotEmpty) {
+      qp['created_to'] = qp['created_to'] ?? createdTo;
+    }
+    if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
+      qp['zn'] = zn;
+    }
+    if (statuses != null && statuses.isNotEmpty) {
+      final existing = qp.keys.where((k) => k.startsWith('status[')).toList();
+      if (existing.isEmpty) {
+        for (final s in statuses) {
+          qp['status[]'] = s;
+        }
+      }
+    }
+    return source.replace(queryParameters: qp);
+  }
+
+  int _toInt(dynamic v) => int.tryParse('$v') ?? 0;
 
   /// Title ตาม search field ที่เลือก (สำหรับ fild)
   String _fieldTitle(String field) {

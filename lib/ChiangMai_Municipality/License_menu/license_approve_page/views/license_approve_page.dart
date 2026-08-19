@@ -33,8 +33,19 @@ import 'license_approve_detail_page.dart';
 /// ═══════════════════════════════════════════════════════════════════════
 class LicenseApprovePage extends StatefulWidget {
   final ValueChanged<LicenseContractResult>? onSave;
+  final String? routeData;
+  final int? serTitle;
+  final String title;
+  final LicenseApproveConfig? config;
 
-  const LicenseApprovePage._({super.key, this.onSave});
+  LicenseApprovePage._({
+    super.key,
+    this.onSave,
+    this.routeData,
+    this.serTitle,
+    this.title = 'อนุมัติคำขอ',
+    this.config,
+  });
 
   /// Factory สร้าง Page พร้อม Provider (ใช้ใน AdminScaffold / Navigator)
   static Widget create({
@@ -45,18 +56,13 @@ class LicenseApprovePage extends StatefulWidget {
     ValueChanged<LicenseContractResult>? onSave,
     LicenseApproveConfig? config,
   }) {
-    final cfg = config ??
-        LicenseApproveConfig(
-          title: title,
-          routeData: routeData,
-          serTitle: serTitle,
-        );
-    return ChangeNotifierProvider<LicenseApproveViewModel>(
-      create: (_) => LicenseApproveViewModel(config: cfg),
-      child: _LicenseApprovePageBody(
-        title: title,
-        onSave: onSave,
-      ),
+    return LicenseApprovePage._(
+      key: key,
+      routeData: routeData,
+      serTitle: serTitle,
+      title: title,
+      onSave: onSave,
+      config: config,
     );
   }
 
@@ -65,11 +71,37 @@ class LicenseApprovePage extends StatefulWidget {
 }
 
 class _LicenseApprovePageState extends State<LicenseApprovePage> {
+  late final LicenseApproveConfig _cfg;
+  late final LicenseApproveViewModel _vm;
+
+  @override
+  void initState() {
+    super.initState();
+    _cfg = widget.config ??
+        LicenseApproveConfig(
+          title: widget.title,
+          routeData: widget.routeData,
+          serTitle: widget.serTitle,
+        );
+    // สร้าง VM ครั้งเดียวใน initState — ใช้ ChangeNotifierProvider.value
+    // เพื่อให้ filter state (zone/sub-zone/status) คงอยู่ตอน rebuild
+    _vm = LicenseApproveViewModel(config: _cfg);
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return LicenseApprovePage.create(
-      key: widget.key,
-      onSave: widget.onSave,
+    return ChangeNotifierProvider<LicenseApproveViewModel>.value(
+      value: _vm,
+      child: _LicenseApprovePageBody(
+        title: widget.title,
+        onSave: widget.onSave,
+      ),
     );
   }
 }
@@ -154,7 +186,7 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
             const SizedBox(height: LaSpace.lg),
             const LicenseApproveZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row
+            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -164,6 +196,7 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
             const Expanded(
               child: SingleChildScrollView(
                 child: LicenseApproveTable(),

@@ -1,8 +1,11 @@
 // ============================================================================
 // license_fact_check_view_model.dart
 // ============================================================================
-// ViewModel — จัดการ state + business logic ของหน้า "คำขอต่อสัญญา"
-// - เรียก Service โหลดรายการ tab แรก
+// ViewModel — จัดการ state + business logic ของหน้า "ตรวจสอบข้อเท็จจริง"
+//
+// v2 (2026-08): ใช้ข้อมูลจาก /api/v2/admin/requests/tasks/inspections
+// - แต่ละแถวเป็น FactCheckItem (model เป็นของตัวเอง ไม่แชร์กับหน้าอื่น)
+// - เรียก Service.fetchInspections()
 // - แจ้ง View ผ่าน Stream<LicensefactcheckEvent>
 // - ไม่ผูกกับ Flutter UI
 // ============================================================================
@@ -10,11 +13,10 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
-import '../../../Model/Review_Model.dart';
+import '../models/fact_check_item.dart';
 import '../models/license_fact_check_config.dart';
 import '../models/license_fact_check_event.dart';
 import '../services/license_fact_check_service.dart';
@@ -37,8 +39,11 @@ class LicensefactcheckViewModel extends ChangeNotifier {
   Stream<LicensefactcheckEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
-  List<ReviewModel> _requests = [];
-  List<ReviewModel> get requests => _requests;
+  List<FactCheckItem> _items = [];
+  List<FactCheckItem> get items => _items;
+
+  /// Backward-compat alias (UI เก่าเรียก vm.requests)
+  List<FactCheckItem> get requests => _items;
 
   // ---------- Pagination ----------
   int _currentPage = 0;
@@ -65,13 +70,65 @@ class LicensefactcheckViewModel extends ChangeNotifier {
   List<SubZoneModel> _subzoneModels = [];
   String? _selectedZoneSub;
   String? _selectedZone;
-  String? _selectedZoneSer; // ser ของ zone ที่เลือก
+  String? _selectedZoneSer;
 
   List<ZoneModel> get zoneModels => _zoneModels;
   List<SubZoneModel> get subzoneModels => _subzoneModels;
   String? get selectedZoneSub => _selectedZoneSub;
   String? get selectedZone => _selectedZone;
   String? get selectedZoneSer => _selectedZoneSer;
+
+  // ---------- Status filter ----------
+  /// รายการ status ทั้งหมดที่ filter ได้
+  /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
+  static const List<String> statusOptions = <String>[
+    'draft',
+    'documents_submitted',
+    'waiting_payment_info',
+    'payment_submitted',
+    'request_submitted',
+    'needs_update',
+    'under_review',
+    'in_progress',
+    'request_completed',
+    'completed',
+    'rejected',
+  ];
+
+  /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
+  static const Map<String, String> statusLabels = <String, String>{
+    'draft': 'ฉบับร่าง',
+    'documents_submitted': 'ส่งเอกสารแล้ว',
+    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
+    'payment_submitted': 'ชำระเงินแล้ว',
+    'request_submitted': 'ส่งคำขอแล้ว',
+    'needs_update': 'ต้องแก้ไข',
+    'under_review': 'กำลังพิจารณา',
+    'in_progress': 'กำลังดำเนินการ',
+    'request_completed': 'คำขอเสร็จสิ้น',
+    'completed': 'เสร็จสิ้น',
+    'rejected': 'ถูกปฏิเสธ',
+  };
+
+  /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
+  String? _selectedStatus;
+  String? get selectedStatus => _selectedStatus;
+
+  /// ผู้ใช้เลือก "สถานะ" — ถ้าเป็น "ทั้งหมด" หรือ null → ไม่ส่ง key
+  Future<void> onStatusChanged(String? value) async {
+    _selectedStatus = (value == null || value.isEmpty || value == 'ทั้งหมด')
+        ? null
+        : value;
+    notifyListeners();
+    await refresh();
+  }
+
+  /// แปลง _selectedStatus เป็น List<String>? สำหรับส่งให้ service
+  List<String>? get _statusesFilter {
+    final s = _selectedStatus;
+    if (s == null) return null;
+    return <String>[s];
+  }
 
   // ---------- Config getters ----------
   String get title => _config.title;
@@ -114,22 +171,15 @@ class LicensefactcheckViewModel extends ChangeNotifier {
   }
 
   /// ผู้ใช้เลือก "หมวดโซนพื้นที่" (sub-zone)
-  /// → reset "โซนพื้นที่" เป็น "ทั้งหมด"
-  /// → reload zones (filter ตาม sub_zone)
-  /// → ดึง API คำขอใหม่ (zn=null = ทั้งหมด)
   Future<void> onSubZoneChanged(String? value) async {
     if (value == null) return;
 
-    // 1) ตั้งค่า sub-zone ที่เลือก
     _selectedZoneSub = value;
-
-    // 2) Reset "โซนพื้นที่" กลับเป็น "ทั้งหมด"
     _selectedZone = 'ทั้งหมด';
     _selectedZoneSer = '0';
 
     notifyListeners();
 
-    // 3) Reload zones ตาม sub-zone
     final sub = _subzoneModels.firstWhere(
       (s) => s.zn == value,
       orElse: () => SubZoneModel(),
@@ -137,64 +187,42 @@ class LicensefactcheckViewModel extends ChangeNotifier {
     final subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
     await loadZones(zoneSubSer: subSer);
 
-    // 4) ดึง API คำขอต่อสัญญาใหม่ (zn=null = ทั้งหมด)
     await refresh();
   }
 
-  /// ผู้ใช้เลือก "โซน" → reload คำขอต่อสัญญา filter ด้วย zn
+  /// ผู้ใช้เลือก "โซน" → reload fact-checks filter ด้วย zn
   Future<void> onZoneChanged(String? value) async {
     if (value == null) return;
     _selectedZone = value;
-    // หา ser จาก zn
     final zone = _zoneModels.firstWhere(
       (z) => z.zn == value,
       orElse: () => ZoneModel(),
     );
     _selectedZoneSer = zone.ser;
     notifyListeners();
-    // ดึง API คำขอต่อสัญญา filter ด้วย zn
     await refresh();
   }
 
   // ===============================================================
-  // Service calls
+  // Service calls (v2)
   // ===============================================================
-  /// Auto-detect search field ตามค่าที่ผู้ใช้พิมพ์
-  /// - UUID  → 'uuid'
-  /// - ตัวเลข → 'tel' (เบอร์โทร)
-  /// - อื่นๆ → 'scname' (ชื่อผู้ติดต่อ)
-  String _autoSearchField(String value) {
-    final v = value.trim();
-    if (v.isEmpty) return 'scname';
-
-    // UUID pattern (8-4-4-4-12 hex)
-    final uuidRegex = RegExp(
-      r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$',
-      caseSensitive: false,
-    );
-    if (uuidRegex.hasMatch(v)) return 'uuid';
-
-    // ตัวเลข 9-10 หลัก → น่าจะเป็นเบอร์โทร
-    final phoneRegex = RegExp(r'^[0-9]{8,12}$');
-    if (phoneRegex.hasMatch(v.replaceAll(RegExp(r'[\s\-]'), ''))) return 'tel';
-
-    return 'scname';
-  }
-
+  /// โหลดรายการ fact-check (inspections) — v2 endpoint
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
+      // API ต้องการ zser (serial) ไม่ใช่ชื่อโซน — ส่งเป็น zser
+      final zserRaw = _selectedZoneSer;
+      final zserFilter =
+          (zserRaw == null || zserRaw == '0' || zserRaw.isEmpty)
+              ? null
+              : zserRaw;
+      final res = await _service.fetchInspections(
         query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        // ถ้าเลือก "ทั้งหมด" (ser=0) ให้ส่ง null — ไม่ filter
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+        page: 1,
+        zser: zserFilter,
+        statuses: _statusesFilter,
       );
-      _requests = res.data;
+      _items = res.items;
       _currentPage = res.currentPage;
       _lastPage = res.lastPage;
       _total = res.total;
@@ -207,21 +235,23 @@ class LicensefactcheckViewModel extends ChangeNotifier {
     }
   }
 
+  /// โหลดหน้าถัดไป/ก่อนหน้า (จาก pagination links)
   Future<void> loadPage(String? url) async {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
-      final res = await _service.fetchRequests(
+      final zserRaw = _selectedZoneSer;
+      final zserFilter =
+          (zserRaw == null || zserRaw == '0' || zserRaw.isEmpty)
+              ? null
+              : zserRaw;
+      final res = await _service.fetchInspections(
         urlCustom: url,
         query: _searchQuery,
-        searchField: _autoSearchField(_searchQuery),
-        zn: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
+        zser: zserFilter,
+        statuses: _statusesFilter,
       );
-      _requests = res.data;
+      _items = res.items;
       _currentPage = res.currentPage;
       _lastPage = res.lastPage;
       _total = res.total;
@@ -246,16 +276,18 @@ class LicensefactcheckViewModel extends ChangeNotifier {
   // ===============================================================
   // User actions
   // ===============================================================
-  /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
-
   /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
-  void onViewRequest(ReviewModel model) {
-    final uuid = model.newRequest?.requestUuid?.toString() ??
-        model.uuid?.toString() ??
-        '';
+  void onViewRequest(FactCheckItem item) {
     _eventController.add(
-      LicensefactcheckNavigateEvent('ตรวจสอบข้อเท็จจริง', routeData: uuid),
+      LicensefactcheckNavigateEvent('ตรวจสอบข้อเท็จจริง', routeData: item.uuid),
     );
+  }
+
+  /// Backward-compat: alias สำหรับ UI เก่า (dynamic type)
+  void onViewRequestDynamic(dynamic model) {
+    if (model is FactCheckItem) {
+      onViewRequest(model);
+    }
   }
 
   // ===============================================================

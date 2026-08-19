@@ -228,7 +228,7 @@ class LicensePaymentTable extends StatelessWidget {
 // Internal widgets
 // ============================================================================
 
-/// Card layout — ใช้บน mobile/tablet (< 900px)
+/// Card layout — ใช้บน mobile/tablet (< 900px) และ grid mode �อง page
 class _PaymentCard extends StatelessWidget {
   final int index;
   final PaymentTask task;
@@ -338,7 +338,7 @@ class _PaymentCard extends StatelessWidget {
                   _StatusPill(label: task.statusLabel, palette: palette),
                 ],
               ),
-              const Divider(height: LaSpace.lg, color: LaColors.border),
+              const Divider(height: LaSpace.sm, color: LaColors.border),
               _CardRow(label: 'ชื่อผู้ชำระ', value: name),
               _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
               _CardRow(label: 'บริเวณ', value: task.details.subzone),
@@ -352,7 +352,7 @@ class _PaymentCard extends StatelessWidget {
                 isMono: true,
                 muted: true,
               ),
-              const SizedBox(height: LaSpace.sm),
+              const SizedBox(height: LaSpace.xs),
               Align(
                 alignment: Alignment.centerRight,
                 child: _ViewButton(onTap: onTap),
@@ -380,12 +380,12 @@ class _CardRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 2),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 90,
+            width: 80,
             child: Text(
               label,
               style: LaText.bodyMuted.copyWith(fontSize: 11),

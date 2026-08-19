@@ -66,10 +66,12 @@ class RequestDetailFooter extends StatelessWidget {
             onTap: onCancel,
           ),
           const SizedBox(width: LrSpace.sm),
-          // ✅ Step 1: ปุ่ม "ถัดไป" / Step 2 (last): ปุ่ม "บันทึก"
+          // ✅ Step 1: ปุ่ม "ถัดไป" / Step 2 (last): ปุ่ม "บันทึก" (ถ้ามี onSave)
           if (!readOnly)
             isLast
-                ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                ? (onSave != null
+                    ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                    : const SizedBox.shrink())
                 : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
         ],
       ),

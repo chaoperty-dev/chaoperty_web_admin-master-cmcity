@@ -71,6 +71,18 @@ class _LicenseAttachDetailPageBody extends StatefulWidget {
 class _LicenseAttachDetailPageBodyState
     extends State<_LicenseAttachDetailPageBody> {
   @override
+  void initState() {
+    super.initState();
+    // โหลดข้อมูล checklist ทันทีที่เปิดหน้า — เพื่อให้ step 1 เห็น banner ประวัติการบันทึก
+    // (ไม่ต้องรอให้ user เข้า step 2 ก่อน)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<LicenseAttachDetailViewModel>().loadChecklist();
+      }
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = context.watch<LicenseAttachDetailViewModel>();
     final step = vm.currentDetailStep;
@@ -103,6 +115,7 @@ class _LicenseAttachDetailPageBodyState
               readOnly: false,
               currentStep: step,
               totalSteps: total,
+              showSaveButton: step == 1 ? true : vm.shouldShowSaveButton,
               onNext: step < total
                   ? () {
                       // ignore: avoid_print
@@ -144,15 +157,19 @@ class _LicenseAttachDetailPageBodyState
                 if (result == null) return;
 
                 if (result.success) {
+                  final noText = result.checklistNo != null
+                      ? '\nเลขที่: ${result.checklistNo}'
+                      : '';
                   messenger.showSnackBar(
                     SnackBar(
                       content: Text(
                         result.message != null && result.message!.isNotEmpty
-                            ? 'บันทึกสำเร็จ: ${result.message}'
-                            : 'บันทึกสำเร็จ (HTTP ${result.statusCode})',
+                            ? 'บันทึกสำเร็จ: ${result.message}$noText'
+                            : 'บันทึกสำเร็จ (HTTP ${result.statusCode})$noText',
                       ),
                       backgroundColor: Colors.green.shade700,
                       behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 4),
                     ),
                   );
                   if (navigator.canPop()) {

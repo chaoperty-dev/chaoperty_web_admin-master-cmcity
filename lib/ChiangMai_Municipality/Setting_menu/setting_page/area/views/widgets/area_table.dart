@@ -536,13 +536,17 @@ class _AreaCardState extends State<_AreaCard> {
                           ),
                         ),
                         const SizedBox(width: 6),
-                        Text(
-                          status.label,
-                          style: TextStyle(
-                            fontFamily: AeaText.fontBold,
-                            fontSize: 10,
-                            color: palette.fg,
-                            fontWeight: FontWeight.w700,
+                        Flexible(
+                          child: Text(
+                            status.label,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontFamily: AeaText.fontBold,
+                              fontSize: 10,
+                              color: palette.fg,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],

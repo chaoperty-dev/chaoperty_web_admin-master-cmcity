@@ -214,12 +214,16 @@ class _PeopleChaoScreen2State extends State<PeopleChaoScreen2> {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(Icons.circle, size: 8, color: color),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.w700,
-                fontFamily: FontWeight_.Fonts_T),
+          Flexible(
+            child: Text(
+              text,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: FontWeight_.Fonts_T),
+            ),
           ),
         ]),
       );
@@ -405,12 +409,16 @@ class _PeopleChaoScreen2State extends State<PeopleChaoScreen2> {
                 const Icon(Icons.verified_rounded,
                     color: Colors.green, size: 16),
                 const SizedBox(width: 6),
-                Text(
-                  'ผู้ทำสัญญาปัจจุบัน: $namemake',
-                  style: const TextStyle(
-                    color: Colors.green,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: Font_.Fonts_T,
+                Flexible(
+                  child: Text(
+                    'ผู้ทำสัญญาปัจจุบัน: $namemake',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.w700,
+                      fontFamily: Font_.Fonts_T,
+                    ),
                   ),
                 ),
               ]),

@@ -90,7 +90,18 @@ Future<ReviewResponse> read_GC_Reviews({
 
   try {
     final uri = _buildUri();
-    print('[read_GC_Reviews][GET] $uri');
+    // ────────────────────────────────────────────────────────────────
+    // DEBUG: print URL + context ทุกครั้งที่ยิง approvals endpoint
+    final activeFields = fild.where((e) => e['st'] == '1').map((e) => e['value']).toList();
+    print('╔══════════════════════════════════════════════════════════════');
+    print('║ [read_GC_Reviews] GET → $uri');
+    print('║   • urlCustom  : $urlCustom');
+    print('║   • query      : "$query"');
+    print('║   • searchFlds : $activeFields');
+    print('║   • zn (zone)  : $zn');
+    print('║   • perPage    : $perPage');
+    print('║   • orderBy    : $orderBy / $sortDir');
+    print('╚══════════════════════════════════════════════════════════════');
 
     final resp = await http
         .get(uri, headers: headers)

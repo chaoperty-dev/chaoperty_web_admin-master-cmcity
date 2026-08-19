@@ -211,15 +211,48 @@ class _PaymentPageBodyState extends State<_PaymentPageBody> {
               onAddBankType: vm.onAddBankType,
             ),
             const SizedBox(height: PaySpace.lg),
-            const Row(
-              children: [
-                Expanded(child: PaymentSearchBar()),
-                SizedBox(width: PaySpace.md),
-                PaymentPagination(),
-              ],
+            LayoutBuilder(
+              builder: (context, c) {
+                if (c.maxWidth < 700) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: const [
+                      PaymentSearchBar(),
+                      SizedBox(height: PaySpace.md),
+                      PaymentPagination(),
+                    ],
+                  );
+                }
+                return const Row(
+                  children: [
+                    Expanded(child: PaymentSearchBar()),
+                    SizedBox(width: PaySpace.md),
+                    PaymentPagination(),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: PaySpace.md),
-            const Expanded(child: PaymentTable()),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, c) {
+                  if (c.maxWidth < 700) {
+                    return SingleChildScrollView(
+                      child: PaymentTable(),
+                    );
+                  }
+                  return SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: SizedBox(
+                      width: 900,
+                      child: SingleChildScrollView(
+                        child: PaymentTable(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

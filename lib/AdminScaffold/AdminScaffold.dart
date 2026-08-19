@@ -37,6 +37,7 @@ import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license
 import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_payment_page/views/license_payment_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_request_page/views/license_request_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_submit_approval_request_page/views/license_submit_approval_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_verify_page/views/license_verify_page.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
@@ -3593,7 +3594,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                   ),
                   children: [
                     AdminMenuItem(
-                      title: '  ↳ ประกาศ',
+                      title: '  ↳ ประกาศคำขอใบอนุญาต',
                       route: '/LicenseAnnounce',
                       // icon: IconData(
                       //   int.parse('0xe94d'),
@@ -3601,7 +3602,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       // ),
                     ),
                     AdminMenuItem(
-                      title: '  ↳ คำขออนุญาต',
+                      title: '  ↳ คำขอใบอนุญาต',
                       route: '/LicenseContract',
                       // icon: IconData(
                       //   int.parse('0xe873'),
@@ -3609,7 +3610,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       // ),
                     ),
                     AdminMenuItem(
-                      title: '  ↳ แนบหลักฐาน',
+                      title: '  ↳ แนบเอกสารคำขอ',
                       route: '/LicenseAttach',
                       // icon: IconData(
                       //   int.parse('0xe226'),
@@ -3617,7 +3618,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       // ),
                     ),
                     AdminMenuItem(
-                      title: '  ↳ รับชำระ',
+                      title: '  ↳ ชำระค่าธรรมเนียม',
                       route: '/LicensePayment',
                       // icon: IconData(
                       //   int.parse('0xef63'),
@@ -3625,7 +3626,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       // ),
                     ),
                     AdminMenuItem(
-                      title: '  ↳ ตรวจสอบหลักฐาน',
+                      title: '  ↳ ตรวจสอบเอกสารคำขอ',
                       route: '/LicenseVerify',
                       // icon: IconData(
                       //   int.parse('0xf0c5'),
@@ -3641,7 +3642,15 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                       // ),
                     ),
                     AdminMenuItem(
-                      title: '  ↳ อนุมัติคำขอ',
+                      title: '  ↳ ส่งคำร้องขออนุมัติ',
+                      route: '/LicenseSubmitApproval',
+                      // icon: IconData(
+                      //   int.parse('0xe94d'),
+                      //   fontFamily: 'MaterialIcons',
+                      // ),
+                    ),
+                    AdminMenuItem(
+                      title: '  ↳ อนุมัติคำร้อง',
                       route: '/LicenseApprove',
                       // icon: IconData(
                       //   int.parse('0xe94d'),
@@ -3729,6 +3738,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                   '/LicenseFactCheck': 'LicenseFactCheck',
                   '/LicenseApprove': 'LicenseApprove',
                   '/LicenseAnnounce': 'LicenseAnnounce',
+                  '/LicenseSubmitApproval': 'LicenseSubmitApproval',
                 };
                 if (licenseRoutes.containsKey(item.route)) {
                   if (renTal_user != null) {
@@ -4980,7 +4990,9 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                                       ? LicensefactcheckPage.create()
                                       : (Value_Route == 'LicenseApprove')
                                           ? LicenseApprovePage.create()
-                                          : (Value_Route == 'LicenseAnnounce')
+                                          : (Value_Route == 'LicenseSubmitApproval')
+                                              ? LicenseSubmitApprovalPage.create()
+                                              : (Value_Route == 'LicenseAnnounce')
                                               ? LicenseAnnouncePage.create()
                                               : (Value_Route ==
                                                       'RequestExaminer1_CMM')
@@ -6248,27 +6260,27 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                 ),
                 children: const [
                   AdminMenuItem(
-                    title: 'ประกาศ',
+                    title: 'ประกาศคำขอใบอนุญาต',
                     route: '/LicenseAnnounce',
                     icon: IconData(0xe7f4, fontFamily: 'MaterialIcons'),
                   ),
                   AdminMenuItem(
-                    title: 'คำขออนุญาต',
+                    title: 'คำขอใบอนุญาต',
                     route: '/LicenseContract',
                     icon: IconData(0xe53e, fontFamily: 'MaterialIcons'),
                   ),
                   AdminMenuItem(
-                    title: 'แนบหลักฐาน',
+                    title: 'แนบเอกสารคำขอ',
                     route: '/LicenseAttach',
                     icon: IconData(0xe226, fontFamily: 'MaterialIcons'),
                   ),
                   AdminMenuItem(
-                    title: 'รับชำระ',
+                    title: 'ชำระค่าธรรมเนียม',
                     route: '/LicensePayment',
                     icon: IconData(0xe227, fontFamily: 'MaterialIcons'),
                   ),
                   AdminMenuItem(
-                    title: 'ตรวจสอบหลักฐาน',
+                    title: 'ตรวจสอบเอกสารคำขอ',
                     route: '/LicenseVerify',
                     icon: IconData(0xe8e8, fontFamily: 'MaterialIcons'),
                   ),
@@ -6278,7 +6290,12 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
                     icon: IconData(0xe8b1, fontFamily: 'MaterialIcons'),
                   ),
                   AdminMenuItem(
-                    title: 'อนุมัติคำขอ',
+                    title: 'ส่งคำร้องขออนุมัติ',
+                    route: '/LicenseSubmitApproval',
+                    icon: IconData(0xe5ca, fontFamily: 'MaterialIcons'),
+                  ),
+                  AdminMenuItem(
+                    title: 'อนุมัติคำร้อง',
                     route: '/LicenseApprove',
                     icon: IconData(0xe5ca, fontFamily: 'MaterialIcons'),
                   ),
@@ -6330,6 +6347,7 @@ class _AdminScafScreenState extends State<AdminScafScreen> {
             '/LicenseFactCheck': 'LicenseFactCheck',
             '/LicenseApprove': 'LicenseApprove',
             '/LicenseAnnounce': 'LicenseAnnounce',
+            '/LicenseSubmitApproval': 'LicenseSubmitApproval',
           };
           if (licenseRoutes.containsKey(item.route)) {
             if (renTal_user != null) {

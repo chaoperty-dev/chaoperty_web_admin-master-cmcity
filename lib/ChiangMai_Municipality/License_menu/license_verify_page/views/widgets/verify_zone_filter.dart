@@ -1,9 +1,10 @@
 // ============================================================================
 // verify_zone_filter.dart
 // ============================================================================
-// ตัวกรอง "หมวดโซนพื้นที่" + "โซนพื้นที่" — ดีไซน์ใหม่
+// ตัวกรอง "หมวดโซนพื้นที่" + "โซนพื้นที่" + "สถานะ" — ดีไซน์ใหม่
 // - ใช้ card + label chip + dropdown ที่ขอบโค้ง
 // - search inner widget ปรับให้สวยขึ้น
+// - ถ้า "สถานะ" = ทั้งหมด → ไม่ส่ง key ให้ backend
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -25,11 +26,14 @@ class VerifyZoneFilter extends StatefulWidget {
 class _LicenseRequestZoneFilterState extends State<VerifyZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
+  final TextEditingController _statusSearchCtrl = TextEditingController();
+  bool _collapsed = true;
 
   @override
   void dispose() {
     _subZoneSearchCtrl.dispose();
     _zoneSearchCtrl.dispose();
+    _statusSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -39,13 +43,102 @@ class _LicenseRequestZoneFilterState extends State<VerifyZoneFilter> {
     return Container(
       padding: const EdgeInsets.all(LaSpace.md),
       decoration: LaDecor.card(),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Expanded(flex: 5, child: _subZoneSection(vm)),
-          _divider(),
-          Expanded(flex: 5, child: _zoneSection(vm)),
-        ],
+      child: LayoutBuilder(
+        builder: (context, c) {
+          final body = c.maxWidth < 1100
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _subZoneSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    _zoneSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    _statusSection(vm),
+                  ],
+                )
+              : Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(flex: 4, child: _subZoneSection(vm)),
+                    _divider(),
+                    Expanded(flex: 4, child: _zoneSection(vm)),
+                    _divider(),
+                    Expanded(flex: 3, child: _statusSection(vm)),
+                  ],
+                );
+          if (c.maxWidth >= 1100) return body;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _toggleHeader(vm),
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: LaSpace.sm),
+                  child: body,
+                ),
+                crossFadeState: _collapsed
+                    ? CrossFadeState.showFirst
+                    : CrossFadeState.showSecond,
+                duration: const Duration(milliseconds: 200),
+                sizeCurve: Curves.easeInOut,
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _toggleHeader(LicenseVerifyViewModel vm) {
+    final hasFilter = (vm.selectedZoneSub != null &&
+            vm.selectedZoneSub != 'ทั้งหมด') ||
+        (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
+        vm.selectedStatus != null;
+    return InkWell(
+      onTap: () => setState(() => _collapsed = !_collapsed),
+      borderRadius: BorderRadius.circular(LaRadius.sm),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: LaSpace.xs),
+        child: Row(
+          children: [
+            const Icon(Icons.tune_rounded, size: 16, color: LaColors.primaryDark),
+            const SizedBox(width: LaSpace.sm),
+            Text(
+              'ตัวกรองพื้นที่',
+              style: LaText.bodyMuted.copyWith(
+                color: LaColors.textPrimary,
+                fontFamily: LaText.fontBold,
+                fontSize: 13,
+              ),
+            ),
+            if (hasFilter) ...[
+              const SizedBox(width: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: LaColors.primary,
+                  borderRadius: BorderRadius.circular(LaRadius.pill),
+                ),
+                child: const Text(
+                  'ใช้งาน',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 9,
+                    fontFamily: LaText.fontBold,
+                  ),
+                ),
+              ),
+            ],
+            const Spacer(),
+            AnimatedRotation(
+              duration: const Duration(milliseconds: 200),
+              turns: _collapsed ? 0 : 0.5,
+              child: const Icon(Icons.keyboard_arrow_down_rounded,
+                  size: 20, color: LaColors.textSecondary),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -72,6 +165,14 @@ class _LicenseRequestZoneFilterState extends State<VerifyZoneFilter> {
       icon: Icons.place_outlined,
       label: 'โซนพื้นที่',
       child: _zoneDropdown(vm),
+    );
+  }
+
+  Widget _statusSection(LicenseVerifyViewModel vm) {
+    return _FilterField(
+      icon: Icons.flag_outlined,
+      label: 'สถานะ',
+      child: _statusDropdown(vm),
     );
   }
 }
@@ -226,6 +327,8 @@ extension on _LicenseRequestZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZoneSub,
         items: vm.subzoneModels
@@ -303,6 +406,8 @@ extension on _LicenseRequestZoneFilterState {
           ),
           maxFontSize: 14,
           minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZone,
         items: vm.zoneModels
@@ -344,6 +449,109 @@ extension on _LicenseRequestZoneFilterState {
         },
         onMenuStateChange: (isOpen) {
           if (!isOpen) _zoneSearchCtrl.clear();
+        },
+      ),
+    );
+  }
+
+  Widget _statusDropdown(LicenseVerifyViewModel vm) {
+    final items = <String>['ทั้งหมด', ...LicenseVerifyViewModel.statusOptions];
+    final value = vm.selectedStatus ?? 'ทั้งหมด';
+    return _DropdownShell(
+      enabled: !vm.readOnly,
+      child: DropdownButton2<String>(
+        isExpanded: true,
+        iconSize: 18,
+        iconEnabledColor: LaColors.textSecondary,
+        buttonHeight: 40,
+        dropdownDecoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        searchController: _statusSearchCtrl,
+        searchInnerWidget: _SearchInner(_statusSearchCtrl),
+        hint: AutoSizeText(
+          vm.selectedStatus == null
+              ? 'ทั้งหมด'
+              : (LicenseVerifyViewModel.statusLabels[vm.selectedStatus] ??
+                  vm.selectedStatus!),
+          style: LaText.body.copyWith(
+            color: vm.selectedStatus == null
+                ? LaColors.textMuted
+                : LaColors.textPrimary,
+          ),
+          maxFontSize: 14,
+          minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        value: value,
+        items: items
+            .map((s) => DropdownMenuItem<String>(
+                  value: s,
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: s == 'ทั้งหมด'
+                              ? LaColors.textMuted
+                              : LaColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            AutoSizeText(
+                              s == 'ทั้งหมด'
+                                  ? s
+                                  : (LicenseVerifyViewModel
+                                          .statusLabels[s] ??
+                                      s),
+                              style: LaText.body,
+                              maxFontSize: 14,
+                              minFontSize: 11,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            if (s != 'ทั้งหมด')
+                              AutoSizeText(
+                                s,
+                                style: LaText.caption
+                                    .copyWith(color: LaColors.textMuted),
+                                maxFontSize: 10,
+                                minFontSize: 9,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ))
+            .toList(),
+        onChanged: vm.readOnly ? null : (v) => vm.onStatusChanged(v),
+        searchMatchFn: (item, searchValue) {
+          return item.value
+              .toString()
+              .toLowerCase()
+              .contains(searchValue.toLowerCase());
+        },
+        onMenuStateChange: (isOpen) {
+          if (!isOpen) _statusSearchCtrl.clear();
         },
       ),
     );

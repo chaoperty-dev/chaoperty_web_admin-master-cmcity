@@ -33,6 +33,25 @@ class LicenseverifyDetailViewModel extends ChangeNotifier {
   LicenseverifyChecklistPreview? _checklist;
   LicenseverifyChecklistPreview? get checklist => _checklist;
 
+  /// รายการเอกสารทั้งหมดที่ต้องแนบ (จาก /admin/requests/{uuid} — รวมอันที่ยังไม่อัพ)
+  List<LicenseverifyChecklistAttachment> _allAttachments = [];
+  List<LicenseverifyChecklistAttachment> get allAttachments =>
+      List.unmodifiable(_allAttachments);
+
+  /// รายการเอกสารที่ merge แล้ว (preview ทับด้วย all-attachments)
+  /// ใช้แสดงใน step 2 — ให้เห็นทั้งเอกสารที่แนบแล้วและที่ยังไม่แนบ
+  List<LicenseverifyChecklistAttachment> get mergedAttachments {
+    final byId = <int, LicenseverifyChecklistAttachment>{};
+    for (final a in _allAttachments) {
+      byId[a.clientDocumentId] = a;
+    }
+    for (final a in _checklist?.payload.attachments ?? const []) {
+      // ถ้ามี attachment จาก preview ให้ใช้ข้อมูลจาก preview (มี file info)
+      byId[a.clientDocumentId] = a;
+    }
+    return byId.values.toList(growable: false);
+  }
+
   final Map<int, String> _remarks = {};
   Map<int, String> get remarks => Map.unmodifiable(_remarks);
 
@@ -53,11 +72,24 @@ class LicenseverifyDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _checklist = await LicenseverifyChecklistService.fetchByUuid(requestUuid);
+      // เรียก 3 endpoints พร้อมกัน — saved (metadata) + preview (file info) + all-attachments (ทุกรายการ)
+      // - saved → ใช้ที่ _checklist ถ้ามี (มี version + checklistNo) — fallback ไป preview
+      // - preview → ใช้ทับข้อมูลใน mergedAttachments (มี file info)
+      // - all-attachments → เป็น base list (รวมเอกสารที่ยังไม่แนบด้วย)
+      final results = await Future.wait([
+        LicenseverifyChecklistService.fetchSavedChecklist(requestUuid),
+        LicenseverifyChecklistService.fetchAllAttachments(requestUuid),
+      ]);
+      var preview = results[0] as LicenseverifyChecklistPreview?;
+      preview ??= await LicenseverifyChecklistService.fetchByUuid(requestUuid);
+      _checklist = preview;
+      _allAttachments =
+          results[1] as List<LicenseverifyChecklistAttachment>;
       _error = null;
     } catch (e) {
       _error = e.toString();
       _checklist = null;
+      _allAttachments = [];
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -76,6 +108,13 @@ class LicenseverifyDetailViewModel extends ChangeNotifier {
       _currentDetailStep -= 1;
       notifyListeners();
     }
+  }
+
+  /// true ถ้า UI ควรแสดงปุ่ม "พิมพ์ / PDF" — แสดงเฉพาะเมื่อมีประวัติบันทึกแล้ว
+  bool get shouldShowPrintButton {
+    final preview = _checklist;
+    if (preview == null || !preview.isSaved) return false;
+    return true;
   }
 
   // --------------------------------------------------------------------------

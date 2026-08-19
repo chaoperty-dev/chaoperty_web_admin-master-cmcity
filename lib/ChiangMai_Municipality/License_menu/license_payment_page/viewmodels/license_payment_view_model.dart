@@ -79,23 +79,64 @@ class LicensePaymentViewModel extends ChangeNotifier {
   String _searchCustomer = '';
   String get searchCustomer => _searchCustomer;
 
-  List<String> _statuses = const [];
-  List<String> get statuses => List.unmodifiable(_statuses);
-
   bool _includeDone = true;
   bool get includeDone => _includeDone;
+
+  // ---------- Status filter ----------
+  /// รายการ status ทั้งหมดที่ filter ได้
+  /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
+  static const List<String> statusOptions = <String>[
+    'draft',
+    'documents_submitted',
+    'waiting_payment_info',
+    'payment_submitted',
+    'request_submitted',
+    'needs_update',
+    'under_review',
+    'in_progress',
+    'request_completed',
+    'completed',
+    'rejected',
+  ];
+
+  /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
+  static const Map<String, String> statusLabels = <String, String>{
+    'draft': 'ฉบับร่าง',
+    'documents_submitted': 'ส่งเอกสารแล้ว',
+    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
+    'payment_submitted': 'ชำระเงินแล้ว',
+    'request_submitted': 'ส่งคำขอแล้ว',
+    'needs_update': 'ต้องแก้ไข',
+    'under_review': 'กำลังพิจารณา',
+    'in_progress': 'กำลังดำเนินการ',
+    'request_completed': 'คำขอเสร็จสิ้น',
+    'completed': 'เสร็จสิ้น',
+    'rejected': 'ถูกปฏิเสธ',
+  };
+
+  /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
+  String? _selectedStatus;
+  String? get selectedStatus => _selectedStatus;
+
+  /// ผู้ใช้เลือก "สถานะ" — ถ้าเป็น "ทั้งหมด" หรือ null → ไม่ส่ง key
+  Future<void> onStatusChanged(String? value) async {
+    _selectedStatus = (value == null || value.isEmpty || value == 'ทั้งหมด')
+        ? null
+        : value;
+    notifyListeners();
+    await refresh();
+  }
+
+  /// แปลง _selectedStatus เป็น List<String>? สำหรับส่งให้ service
+  List<String>? get _statusesFilter {
+    final s = _selectedStatus;
+    if (s == null) return null;
+    return <String>[s];
+  }
 
   void setCustomerSearch(String value) {
     _searchCustomer = value;
     notifyListeners();
-  }
-
-  void toggleStatus(String s) {
-    _statuses = _statuses.contains(s)
-        ? _statuses.where((x) => x != s).toList()
-        : [..._statuses, s];
-    notifyListeners();
-    refresh();
   }
 
   void setIncludeDone(bool v) {
@@ -134,17 +175,31 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // Service calls
   // ===============================================================
   /// โหลดรายการ "Payment Tasks" ทั้งหมด — v2 endpoint
-  /// v2 ยังไม่มี `zn` param — เก็บ _selectedZone state ไว้สำหรับ UI แต่ไม่ส่งให้ backend
+  /// v2 รับ `zser` (zone serial) — ส่งเฉพาะเมื่อเลือกโซนจริง (ไม่ใช่ 0/ว่าง)
   Future<void> refresh() async {
     _setLoading(true);
     _clearError();
     try {
+      final zserRaw = _selectedZoneSer;
+      final zserFilter = (zserRaw == null ||
+              zserRaw.isEmpty ||
+              zserRaw == '0' ||
+              zserRaw == 'ทั้งหมด')
+          ? null
+          : zserRaw;
+      final subzoneserRaw = _selectedZoneSubSer;
+      final subzoneserFilter =
+          (subzoneserRaw == null || subzoneserRaw.isEmpty)
+              ? null
+              : subzoneserRaw;
       final res = await _paymentService.listPaymentTasks(
         q: _searchQuery.isNotEmpty ? _searchQuery : null,
         customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
-        statuses: _statuses.isEmpty ? null : _statuses,
+        statuses: _statusesFilter,
         includeDone: _includeDone,
         perPage: 50,
+        zser: zserFilter,
+        subzoneser: subzoneserFilter,
       );
       _payments = res.data;
       _currentPage = res.currentPage;
@@ -368,13 +423,27 @@ class LicensePaymentViewModel extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
+      final zserRaw = _selectedZoneSer;
+      final zserFilter = (zserRaw == null ||
+              zserRaw.isEmpty ||
+              zserRaw == '0' ||
+              zserRaw == 'ทั้งหมด')
+          ? null
+          : zserRaw;
+      final subzoneserRaw = _selectedZoneSubSer;
+      final subzoneserFilter =
+          (subzoneserRaw == null || subzoneserRaw.isEmpty)
+              ? null
+              : subzoneserRaw;
       final res = await _paymentService.listPaymentTasks(
         urlCustom: url,
         q: _searchQuery.isNotEmpty ? _searchQuery : null,
         customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
-        statuses: _statuses.isEmpty ? null : _statuses,
+        statuses: _statusesFilter,
         includeDone: _includeDone,
         perPage: 50,
+        zser: zserFilter,
+        subzoneser: subzoneserFilter,
       );
       _payments = res.data;
       _currentPage = res.currentPage;

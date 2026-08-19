@@ -9,6 +9,7 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 import '../../../../unity/FormatPhone.dart';
@@ -36,33 +37,89 @@ class RegistrationTable extends StatelessWidget {
       );
     }
 
-    return Container(
-      decoration: LaDecor.card(),
-      child: Column(
-        children: [
-          _headerRow(),
-          const Divider(height: 1, color: LaColors.border),
-          // Subtle skeleton ตอน refetch
-          if (vm.isLoading)
-            const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: LaColors.surfaceMuted,
-              valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
-            ),
-          // Scroll view ภายในการ์ด — ป้องกัน overflow เมื่อมี rows เกิน viewport
-          Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                children: [
-                  for (int i = 0; i < paged.length; i++)
-                    _dataRow(context, vm, paged[i], i),
+    return LayoutBuilder(
+      builder: (context, c) {
+        final isMobile = c.maxWidth < 700;
+        if (isMobile) {
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                if (vm.isLoading)
+                  const LinearProgressIndicator(
+                    minHeight: 2,
+                    backgroundColor: LaColors.surfaceMuted,
+                    valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+                  ),
+                for (int i = 0; i < paged.length; i++) ...[
+                  _RegistrationCard(
+                    index: i,
+                    model: paged[i],
+                    maskedName:
+                        _maskName(paged[i].cname ?? paged[i].scname ?? '-'),
+                    maskedTax: _maskTax(paged[i].tax ?? '-'),
+                    maskedPhone:
+                        _maskPhone(formatPhoneNumber(paged[i].tel ?? '')),
+                    onView: () => vm.onViewCustomer(paged[i]),
+                    appOn: vm.appStatusFor(paged[i].uuid?.toString() ?? '') ??
+                        false,
+                    onToggleApp: () => vm.toggleCustomerAppAccess(
+                        paged[i].uuid?.toString() ?? ''),
+                    onRegisterLine: () =>
+                        vm.registerLine(paged[i].uuid?.toString() ?? ''),
+                    onRemoveLine: () =>
+                        vm.removeLine(paged[i].uuid?.toString() ?? ''),
+                    statusOn: _isOn(paged[i].st),
+                    onToggleStatus: () =>
+                        vm.toggleAppAccess(paged[i].uuid?.toString() ?? ''),
+                  ),
+                  if (i < paged.length - 1) const SizedBox(height: LaSpace.sm),
                 ],
-              ),
+              ],
             ),
+          );
+        }
+        return Container(
+          decoration: LaDecor.card(),
+          child: Column(
+            children: [
+              _headerRow(),
+              const Divider(height: 1, color: LaColors.border),
+              // Subtle skeleton ตอน refetch
+              if (vm.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: LaColors.surfaceMuted,
+                  valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+                ),
+              // Scroll view ภายในการ์ด — ป้องกัน overflow เมื่อมี rows เกิน viewport
+              Flexible(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      for (int i = 0; i < paged.length; i++)
+                        _dataRow(context, vm, paged[i], i),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
+  }
+
+  /// แปลง st (dynamic) → bool
+  /// st = 1 → true (เปิด), อื่นๆ → false (ปิด)
+  static bool _isOn(dynamic st) {
+    if (st == null) return false;
+    if (st is bool) return st;
+    if (st is num) return st == 1;
+    if (st is String) {
+      final s = st.trim();
+      return s == '1' || s.toLowerCase() == 'true';
+    }
+    return false;
   }
 
   // ========================================================================
@@ -86,9 +143,10 @@ class RegistrationTable extends StatelessWidget {
           _HeaderCell(label: 'ชื่อลูกค้า', flex: 3),
           _HeaderCell(label: 'เลขบัตรประชาชน', flex: 2),
           _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'แอพผู้เช่า', flex: 2),
-          _HeaderCell(label: 'ไลน์', flex: 3),
-          _HeaderCell(label: 'สถานะ', flex: 2),
+          _HeaderCell(label: 'สิทธิแอพผู้เช่า', flex: 2),
+          _HeaderCell(label: 'ชื่อไลน์', flex: 2),
+          _HeaderCell(label: 'สิทธิใช้งานไลน์', flex: 2),
+          // _HeaderCell(label: 'สถานะ', flex: 2), // ปิดไว้: เอาสถานะออก
         ],
       ),
     );
@@ -116,16 +174,22 @@ class RegistrationTable extends StatelessWidget {
               child: _ViewButton(onTap: () => vm.onViewCustomer(model)),
             ),
           ),
-          _Cell(value: model.custno ?? '-', flex: 2, isMono: true),
-          _Cell(
+          _CopyCell(
+            value: model.custno ?? '-',
+            copyValue: model.custno ?? '',
+            flex: 2,
+            isMono: true,
+          ),
+          _CopyCell(
             value: _maskName(model.cname ?? model.scname ?? '-'),
-            tooltip: model.cname ?? model.scname,
+            copyValue: model.cname ?? model.scname ?? '',
             flex: 3,
           ),
-          _Cell(
+          _CopyCell(
             value: _maskTax(model.tax ?? '-'),
-            tooltip: model.tax,
+            copyValue: model.tax ?? '',
             flex: 2,
+            isMono: true,
           ),
           _Cell(
             value: _maskPhone(formatPhoneNumber(model.tel ?? '')),
@@ -142,21 +206,30 @@ class RegistrationTable extends StatelessWidget {
             onLabel: 'อนุญาต',
             offLabel: 'ไม่อนุญาต',
           ),
-          // ✅ ไลน์ — ถ้าว่าง → ปุ่ม "ลงทะเบียน", ถ้ามี → ชื่อไลน์ + ปุ่ม "ลบ"
-          _LineCell(
-            lineid: model.lineid,
-            lineRegisUrl: model.lineRegisUrl,
-            tax: model.tax,
-            flex: 3,
-            onRegister: () => vm.registerLine(model.uuid?.toString() ?? ''),
-            onRemove: () => vm.removeLine(model.uuid?.toString() ?? ''),
-          ),
-          // ✅ สถานะ (toggle จริง — เรียก API)
-          _SwitchCell(
-            value: _isOn(model.st),
+          _CopyCell(
+            value: model.regDisplayname?.isNotEmpty == true
+                ? model.regDisplayname!
+                : (model.lineid?.isNotEmpty == true ? model.lineid! : '-'),
+            copyValue: model.regDisplayname?.isNotEmpty == true
+                ? model.regDisplayname!
+                : (model.lineid ?? ''),
             flex: 2,
-            onTap: () => vm.toggleAppAccess(model.uuid?.toString() ?? ''),
           ),
+          // ✅ สิทธิใช้งานไลน์ (toggle)
+          _SwitchCell(
+            value: vm.lineStatusFor(model.uuid?.toString() ?? '') ?? false,
+            flex: 2,
+            onTap: () =>
+                vm.toggleCustomerLineAccess(model.uuid?.toString() ?? ''),
+            onLabel: 'อนุญาต',
+            offLabel: 'ไม่อนุญาต',
+          ),
+          // ✅ สถานะ (toggle จริง — เรียก API) — ปิดไว้: เอาสถานะออก
+          // _SwitchCell(
+          //   value: _isOn(model.st),
+          //   flex: 2,
+          //   onTap: () => vm.toggleAppAccess(model.uuid?.toString() ?? ''),
+          // ),
         ],
       ),
     );
@@ -169,19 +242,6 @@ class RegistrationTable extends StatelessWidget {
     if (combined.isEmpty) return '-';
     if (combined.length <= 32) return combined;
     return '${combined.substring(0, 32)}…';
-  }
-
-  /// แปลง st (dynamic) → bool
-  /// st = 1 → true (เปิด), อื่นๆ → false (ปิด)
-  static bool _isOn(dynamic st) {
-    if (st == null) return false;
-    if (st is bool) return st;
-    if (st is num) return st == 1;
-    if (st is String) {
-      final s = st.trim();
-      return s == '1' || s.toLowerCase() == 'true';
-    }
-    return false;
   }
 
   /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
@@ -307,6 +367,102 @@ class _Cell extends StatelessWidget {
   }
 }
 
+/// Copyable cell — แสดงข้อความ + ไอคอน content_copy คลิกเพื่อคัดลอก
+/// - [value]: ข้อความที่แสดง (อาจ mask แล้ว)
+/// - [copyValue]: ข้อความต้นฉบับที่จะคัดลอก (ถ้า�่างจะไม่คัดลอก)
+class _CopyCell extends StatelessWidget {
+  final String value;
+  final String copyValue;
+  final int flex;
+  final bool isMono;
+  const _CopyCell({
+    required this.value,
+    required this.copyValue,
+    this.flex = 1,
+    this.isMono = false,
+  });
+
+  Future<void> _copy(BuildContext context) async {
+    if (copyValue.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: copyValue));
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle_outline_rounded,
+                size: 18, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'คัดลอก: $copyValue',
+                style: const TextStyle(fontWeight: FontWeight.w600),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final display = value.isEmpty ? '-' : value;
+    final canCopy = copyValue.isNotEmpty;
+    return Expanded(
+      flex: flex,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: Tooltip(
+          message: canCopy ? 'คลิกเ�ื่อคัดลอก: $copyValue' : display,
+          waitDuration: const Duration(milliseconds: 300),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(4),
+            child: InkWell(
+              onTap: canCopy ? () => _copy(context) : null,
+              borderRadius: BorderRadius.circular(4),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: AutoSizeText(
+                        display,
+                        minFontSize: 11,
+                        maxFontSize: 14,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LaText.tableCell.copyWith(
+                          color: LaColors.textPrimary,
+                          fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+                          fontFamilyFallback: const [LaText.fontRegular],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.content_copy_rounded,
+                      size: 12,
+                      color: canCopy ? LaColors.textMuted : LaColors.border,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Cell ที่แสดงเป็นสวิตเปิด/ปิด (pill + dot)
 class _SwitchCell extends StatefulWidget {
   final bool value;
@@ -392,14 +548,18 @@ class _SwitchCellState extends State<_SwitchCell> {
                       ),
                     ),
                     const SizedBox(width: 6),
-                    Text(
-                      on ? widget.onLabel : widget.offLabel,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: on
-                            ? LaColors.statusApprovedFg
-                            : LaColors.statusNeutralFg,
+                    Flexible(
+                      child: Text(
+                        on ? widget.onLabel : widget.offLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: on
+                              ? LaColors.statusApprovedFg
+                              : LaColors.statusNeutralFg,
+                        ),
                       ),
                     ),
                   ],
@@ -422,38 +582,42 @@ class _ViewButton extends StatefulWidget {
 }
 
 class _ViewButtonState extends State<_ViewButton> {
+  bool _hover = false;
+
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: LaColors.primaryLight,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(LaRadius.pill),
-        side: BorderSide(color: LaColors.primaryDark, width: 1),
-      ),
-      child: InkWell(
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
         onTap: widget.onTap,
-        borderRadius: BorderRadius.circular(LaRadius.pill),
-        hoverColor: LaColors.primary.withOpacity(.12),
-        highlightColor: LaColors.primary.withOpacity(.18),
-        splashColor: LaColors.primary.withOpacity(.20),
-        child: Padding(
+        child: AnimatedContainer(
+          duration: LrAnimations.fast,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hover ? LaColors.primary : LaColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(LaRadius.pill),
+            border: Border.all(
+              color: _hover ? LaColors.primary : LaColors.border,
+              width: 1,
+            ),
+          ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.visibility_rounded,
-                size: 14,
-                color: LaColors.primaryDark,
+              Icon(
+                Icons.visibility_outlined,
+                size: 13,
+                color: _hover ? Colors.white : LaColors.textSecondary,
               ),
               const SizedBox(width: 4),
               Text(
                 'เรียกดู',
                 style: TextStyle(
-                  color: LaColors.primaryDark,
                   fontFamily: LaText.fontBold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
+                  fontSize: 11,
+                  color: _hover ? Colors.white : LaColors.textSecondary,
                 ),
               ),
             ],
@@ -530,6 +694,7 @@ class _RegisterButtonState extends State<_RegisterButton> {
 
   @override
   Widget build(BuildContext context) {
+    final fg = LaColors.statusNeutralFg;
     return Tooltip(
       message: 'ลงทะเบียนไลน์',
       child: MouseRegion(
@@ -542,31 +707,45 @@ class _RegisterButtonState extends State<_RegisterButton> {
             duration: const Duration(milliseconds: 120),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
-              color: _hover
-                  ? LaColors.primary.withOpacity(.12)
-                  : LaColors.primaryLight,
+              color: _hover ? fg.withOpacity(.15) : LaColors.statusNeutralBg,
               borderRadius: BorderRadius.circular(LaRadius.pill),
               border: Border.all(
-                color: _hover ? LaColors.primary : LaColors.primaryDark,
+                color: _hover ? fg.withOpacity(.55) : fg.withOpacity(.25),
                 width: 1,
               ),
+              boxShadow: _hover
+                  ? [
+                      BoxShadow(
+                        color: fg.withOpacity(.25),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : null,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.add_link_rounded,
-                  size: 12,
-                  color: LaColors.primaryDark,
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: fg,
+                    shape: BoxShape.circle,
+                  ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'ลงทะเบียน',
-                  style: TextStyle(
-                    color: LaColors.primaryDark,
-                    fontFamily: LaText.fontBold,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(
+                    'ลงทะเบียน',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: fg,
+                      fontFamily: LaText.fontBold,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
               ],
@@ -757,6 +936,295 @@ class _EmptyState extends StatelessWidget {
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Card layout (mobile / narrow screen)
+// ============================================================================
+class _RegistrationCard extends StatelessWidget {
+  final int index;
+  final CustomerModel model;
+  final String maskedName;
+  final String maskedTax;
+  final String maskedPhone;
+  final VoidCallback onView;
+  final bool appOn;
+  final VoidCallback onToggleApp;
+  final VoidCallback onRegisterLine;
+  final VoidCallback onRemoveLine;
+  final bool statusOn;
+  final VoidCallback onToggleStatus;
+  const _RegistrationCard({
+    required this.index,
+    required this.model,
+    required this.maskedName,
+    required this.maskedTax,
+    required this.maskedPhone,
+    required this.onView,
+    required this.appOn,
+    required this.onToggleApp,
+    required this.onRegisterLine,
+    required this.onRemoveLine,
+    required this.statusOn,
+    required this.onToggleStatus,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLine = (model.lineid ?? '').trim().isNotEmpty;
+    return Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(LaSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: LaColors.primaryLight,
+                  borderRadius: BorderRadius.circular(LaRadius.pill),
+                ),
+                child: Text(
+                  '${index + 1}',
+                  style: LaText.tableCell.copyWith(
+                    color: LaColors.primaryDark,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Expanded(
+                child: Text(
+                  maskedName,
+                  style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              if ((model.custno ?? '').isNotEmpty)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: LaColors.primaryLight.withOpacity(.4),
+                    borderRadius: BorderRadius.circular(LaRadius.pill),
+                  ),
+                  child: Text(
+                    model.custno!,
+                    style: LaText.bodyMuted.copyWith(
+                      color: LaColors.primaryDark,
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      fontFamilyFallback: const [LaText.fontRegular],
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: LaSpace.lg, color: LaColors.border),
+          _RegCardRow(label: 'เลขบัตรประชาชน', value: maskedTax, isMono: true),
+          _RegCardRow(label: 'เบอร์โทร', value: maskedPhone, isMono: true),
+          _RegCardRow(
+            label: 'สิทธิแอพผู้เช่า',
+            valueWidget: _RegStatusPill(
+              on: appOn,
+              onLabel: 'อนุญาต',
+              offLabel: 'ไม่อนุญาต',
+              onTap: onToggleApp,
+            ),
+          ),
+          _RegCardRow(
+              label: 'ชื่อไลน์',
+              value: model.regDisplayname?.isNotEmpty == true
+                  ? model.regDisplayname!
+                  : (model.lineid?.isNotEmpty == true ? model.lineid! : '-'),
+              isMono: true),
+          _RegCardRow(
+            label: 'สิทธิใช้งานไลน์',
+            valueWidget: hasLine
+                ? _LineWithRemove(
+                    lineid: model.lineid!,
+                    onRemove: onRemoveLine,
+                  )
+                : _RegisterButton(
+                    onTap: () {
+                      final url = (model.lineRegisUrl ?? '').trim();
+                      if (url.isNotEmpty) {
+                        showRegisterLineDialog(
+                          context,
+                          lineRegisUrl: url,
+                          tax: model.tax ?? '',
+                        );
+                      } else {
+                        onRegisterLine();
+                      }
+                    },
+                  ),
+          ),
+          // ✅ สถานะ — ปิดไว้: เอาสถานะออก
+          // _RegCardRow(
+          //   label: 'สถานะ',
+          //   valueWidget: _RegStatusPill(
+          //     on: statusOn,
+          //     onLabel: 'เปิดใช้งาน',
+          //     offLabel: 'ปิดใช้งาน',
+          //     onTap: onToggleStatus,
+          //   ),
+          // ),
+          const SizedBox(height: LaSpace.sm),
+          Align(
+            alignment: Alignment.centerRight,
+            child: _ViewButton(onTap: onView),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RegCardRow extends StatelessWidget {
+  final String label;
+  final String? value;
+  final Widget? valueWidget;
+  final bool isMono;
+  const _RegCardRow({
+    required this.label,
+    this.value,
+    this.valueWidget,
+    this.isMono = false,
+  }) : assert(value != null || valueWidget != null,
+            'Either value or valueWidget must be provided');
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          SizedBox(
+            width: 110,
+            child: Text(
+              label,
+              style: LaText.bodyMuted.copyWith(fontSize: 11),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: valueWidget ??
+                Text(
+                  (value ?? '-').isEmpty ? '-' : value!,
+                  style: LaText.tableCell.copyWith(
+                    fontSize: 12,
+                    fontFamily: isMono ? 'monospace' : LaText.fontRegular,
+                    fontFamilyFallback: const [LaText.fontRegular],
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RegStatusPill extends StatefulWidget {
+  final bool on;
+  final String onLabel;
+  final String offLabel;
+  final VoidCallback? onTap;
+  const _RegStatusPill({
+    required this.on,
+    required this.onLabel,
+    required this.offLabel,
+    this.onTap,
+  });
+
+  @override
+  State<_RegStatusPill> createState() => _RegStatusPillState();
+}
+
+class _RegStatusPillState extends State<_RegStatusPill> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    final on = widget.on;
+    final clickable = widget.onTap != null;
+    return MouseRegion(
+      cursor: clickable ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) {
+        if (clickable) setState(() => _hover = true);
+      },
+      onExit: (_) {
+        if (clickable) setState(() => _hover = false);
+      },
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: on ? LaColors.statusApprovedBg : LaColors.statusNeutralBg,
+            borderRadius: BorderRadius.circular(LaRadius.pill),
+            border: Border.all(
+              color: on
+                  ? LaColors.statusApprovedFg.withOpacity(.35)
+                  : LaColors.statusNeutralFg.withOpacity(.25),
+              width: 1,
+            ),
+            boxShadow: _hover && clickable
+                ? [
+                    BoxShadow(
+                      color: (on
+                              ? LaColors.statusApprovedFg
+                              : LaColors.statusNeutralFg)
+                          .withOpacity(.25),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color:
+                      on ? LaColors.statusApprovedFg : LaColors.statusNeutralFg,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  on ? widget.onLabel : widget.offLabel,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: on
+                        ? LaColors.statusApprovedFg
+                        : LaColors.statusNeutralFg,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

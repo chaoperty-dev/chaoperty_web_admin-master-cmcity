@@ -14,7 +14,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
-import '../models/attach_task_model.dart';
+import '../models/attach_request_item.dart';
 import '../models/license_attach_config.dart';
 import '../models/license_attach_event.dart';
 import '../services/license_attach_service.dart';
@@ -37,8 +37,8 @@ class LicenseAttachViewModel extends ChangeNotifier {
   Stream<LicenseAttachEvent> get events => _eventController.stream;
 
   // ---------- Data ----------
-  List<AttachTask> _requests = [];
-  List<AttachTask> get requests => _requests;
+  List<AttachRequestItem> _requests = [];
+  List<AttachRequestItem> get requests => _requests;
 
   // ---------- Pagination ----------
   int _currentPage = 0;
@@ -62,23 +62,65 @@ class LicenseAttachViewModel extends ChangeNotifier {
 
   // ---------- v2 filter state ----------
   String _searchCustomer = '';
-  List<String> _statuses = const [];
   bool _includeDone = true;
 
   bool get includeDone => _includeDone;
-  List<String> get statuses => List.unmodifiable(_statuses);
+
+  // ---------- Status filter ----------
+  /// รายการ status ทั้งหมดที่ filter ได้
+  /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
+  static const List<String> statusOptions = <String>[
+    'draft',
+    'documents_submitted',
+    'waiting_payment_info',
+    'payment_submitted',
+    'request_submitted',
+    'needs_update',
+    'under_review',
+    'in_progress',
+    'request_completed',
+    'completed',
+    'rejected',
+  ];
+
+  /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
+  static const Map<String, String> statusLabels = <String, String>{
+    'draft': 'ฉบับร่าง',
+    'documents_submitted': 'ส่งเอกสารแล้ว',
+    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
+    'payment_submitted': 'ชำระเงินแล้ว',
+    'request_submitted': 'ส่งคำขอแล้ว',
+    'needs_update': 'ต้องแก้ไข',
+    'under_review': 'กำลังพิจารณา',
+    'in_progress': 'กำลังดำเนินการ',
+    'request_completed': 'คำขอเสร็จสิ้น',
+    'completed': 'เสร็จสิ้น',
+    'rejected': 'ถูกปฏิเสธ',
+  };
+
+  /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
+  String? _selectedStatus;
+  String? get selectedStatus => _selectedStatus;
+
+  /// ผู้ใช้เลือก "สถานะ" — ถ้าเป็น "ทั้งหมด" หรือ null → ไม่ส่ง key
+  Future<void> onStatusChanged(String? value) async {
+    _selectedStatus = (value == null || value.isEmpty || value == 'ทั้งหมด')
+        ? null
+        : value;
+    notifyListeners();
+    await refresh();
+  }
+
+  /// แปลง _selectedStatus เป็น List<String>? สำหรับส่งให้ service
+  List<String>? get _statusesFilter {
+    final s = _selectedStatus;
+    if (s == null) return null;
+    return <String>[s];
+  }
 
   void setCustomerSearch(String value) {
     _searchCustomer = value;
     notifyListeners();
-  }
-
-  void toggleStatus(String s) {
-    _statuses = _statuses.contains(s)
-        ? _statuses.where((x) => x != s).toList()
-        : [..._statuses, s];
-    notifyListeners();
-    refresh();
   }
 
   void setIncludeDone(bool v) {
@@ -211,16 +253,23 @@ class LicenseAttachViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final res = await _service.listAttachTasks(
+      final zserRaw = _selectedZoneSer;
+      final zserFilter = (zserRaw == null ||
+              zserRaw.isEmpty ||
+              zserRaw == '0' ||
+              zserRaw == 'ทั้งหมด')
+          ? null
+          : zserRaw;
+      final res = await _service.listAdminRequests(
         q: _searchQuery.isNotEmpty ? _searchQuery : null,
         customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
-        statuses: _statuses.isEmpty ? null : _statuses,
-        includeDone: _includeDone,
+        statuses: _statusesFilter,
         perPage: 50,
-        // v2 endpoint ไม่มี zn param — เก็บ _selectedZone ไว้
-        // �ำหรับ UI เฉยๆ รอ backend เพิ่มทีหลัง
+        sortBy: 'created_at',
+        sortDir: 'desc',
+        zser: zserFilter,
       );
-      _requests = res.data;
+      _requests = res.items;
       _currentPage = res.currentPage;
       _lastPage = res.lastPage;
       _total = res.total;
@@ -237,15 +286,24 @@ class LicenseAttachViewModel extends ChangeNotifier {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
-      final res = await _service.listAttachTasks(
+      final zserRaw = _selectedZoneSer;
+      final zserFilter = (zserRaw == null ||
+              zserRaw.isEmpty ||
+              zserRaw == '0' ||
+              zserRaw == 'ทั้งหมด')
+          ? null
+          : zserRaw;
+      final res = await _service.listAdminRequests(
         urlCustom: url,
         q: _searchQuery.isNotEmpty ? _searchQuery : null,
         customer: _searchCustomer.isNotEmpty ? _searchCustomer : null,
-        statuses: _statuses.isEmpty ? null : _statuses,
-        includeDone: _includeDone,
+        statuses: _statusesFilter,
         perPage: 50,
+        sortBy: 'created_at',
+        sortDir: 'desc',
+        zser: zserFilter,
       );
-      _requests = res.data;
+      _requests = res.items;
       _currentPage = res.currentPage;
       _lastPage = res.lastPage;
       _total = res.total;
@@ -273,7 +331,7 @@ class LicenseAttachViewModel extends ChangeNotifier {
   /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
 
   /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
-  void onViewRequest(AttachTask task) {
+  void onViewRequest(AttachRequestItem task) {
     _eventController.add(
       LicenseAttachNavigateEvent('แนบหลักฐาน', routeData: task.uuid),
     );

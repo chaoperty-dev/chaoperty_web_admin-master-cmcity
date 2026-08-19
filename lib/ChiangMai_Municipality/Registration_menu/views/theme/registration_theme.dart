@@ -193,3 +193,9 @@ class StatusPalette {
         RgColors.statusNeutralBg, RgColors.statusNeutralFg);
   }
 }
+
+/// ✨ Subtle hover/ripple helpers
+class LrAnimations {
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration medium = Duration(milliseconds: 250);
+}

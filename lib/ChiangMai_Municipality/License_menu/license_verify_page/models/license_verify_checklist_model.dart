@@ -138,16 +138,44 @@ class LicenseverifyChecklistPreview {
   final String requestUuid;
   final LicenseverifyChecklistPayload payload;
 
+  /// Metadata จาก saved checklist (มีเฉพาะตอนโหลดจาก GET /checklist)
+  final String? checklistUuid;
+  final String? checklistNo;
+  final int? version;
+  final DateTime? checkedAt;
+
   const LicenseverifyChecklistPreview({
     required this.requestUuid,
     required this.payload,
+    this.checklistUuid,
+    this.checklistNo,
+    this.version,
+    this.checkedAt,
   });
+
+  /// true ถ้ามาจาก saved checklist (มี version + checklist_no)
+  bool get isSaved => checklistNo != null;
 
   factory LicenseverifyChecklistPreview.fromJson(Map<String, dynamic> json) {
     final payloadJson = json['payload'] as Map<String, dynamic>? ?? {};
     return LicenseverifyChecklistPreview(
       requestUuid: json['request_uuid'] as String? ?? '',
       payload: LicenseverifyChecklistPayload.fromJson(payloadJson),
+    );
+  }
+
+  /// Parse response จาก GET /admin/requests/{uuid}/checklist
+  factory LicenseverifyChecklistPreview.fromSavedJson(
+      Map<String, dynamic> json) {
+    final payloadJson = json['payload'] as Map<String, dynamic>? ?? {};
+    return LicenseverifyChecklistPreview(
+      requestUuid: json['request_uuid'] as String? ?? '',
+      payload: LicenseverifyChecklistPayload.fromJson(payloadJson),
+      checklistUuid: json['uuid'] as String?,
+      checklistNo: json['checklist_no'] as String?,
+      version: json['version'] as int?,
+      checkedAt: _parseDateTime(json['signed_at']) ??
+          _parseDateTime(payloadJson['checked_at']),
     );
   }
 }

@@ -683,30 +683,11 @@ class LicenseContractViewModel extends ChangeNotifier {
       final headers = await MyHeaders.build();
       final bodyStr = jsonEncode(requestData);
 
-      // ── DEBUG ─────────────────────────────────────────────
-      // ignore: avoid_print
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      // ignore: avoid_print
-      print('🌐 [POST] $url');
-      // ignore: avoid_print
-      print('📋 Headers: $headers');
-      // ignore: avoid_print
-      print('📦 Body: $bodyStr');
-      // ignore: avoid_print
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-
       final response = await http.post(
         url,
         headers: headers,
         body: bodyStr,
       );
-
-      // ignore: avoid_print
-      print('✅ Status: ${response.statusCode}');
-      // ignore: avoid_print
-      print('📨 Response: ${response.body}');
-      // ignore: avoid_print
-      print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
       if (response.statusCode == 201) {
         final body = json.decode(response.body);
