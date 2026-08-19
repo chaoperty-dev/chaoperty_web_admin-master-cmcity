@@ -55,6 +55,11 @@ class _LicenseRequestZoneFilterState extends State<LicenseAttachZoneFilter> {
                     _zoneSection(vm),
                     const SizedBox(height: LaSpace.md),
                     _statusSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _sortSection(vm),
+                    ),
                   ],
                 )
               : Row(
@@ -64,7 +69,10 @@ class _LicenseRequestZoneFilterState extends State<LicenseAttachZoneFilter> {
                     _divider(),
                     Expanded(flex: 4, child: _zoneSection(vm)),
                     _divider(),
-                    Expanded(flex: 3, child: _statusSection(vm)),
+                    Expanded(flex: 4, child: _statusSection(vm)),
+                    _divider(),
+                    const SizedBox(width: LaSpace.sm),
+                    _sortSection(vm),
                   ],
                 );
           if (c.maxWidth >= 1100) return body;
@@ -96,7 +104,9 @@ class _LicenseRequestZoneFilterState extends State<LicenseAttachZoneFilter> {
     final hasFilter = (vm.selectedZoneSub != null &&
             vm.selectedZoneSub != 'ทั้งหมด') ||
         (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
-        vm.selectedStatus != null;
+        vm.selectedStatus != null ||
+        vm.selectedSort != 'created_at' ||
+        vm.selectedSortDir != 'desc';
     return InkWell(
       onTap: () => setState(() => _collapsed = !_collapsed),
       borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -175,6 +185,151 @@ class _LicenseRequestZoneFilterState extends State<LicenseAttachZoneFilter> {
       icon: Icons.flag_outlined,
       label: 'สถานะ',
       child: _statusDropdown(vm),
+    );
+  }
+
+  Widget _sortSection(LicenseAttachViewModel vm) {
+    final isDesc = vm.selectedSortDir == 'desc';
+    return InkWell(
+      onTap: vm.readOnly ? null : () => _showSortMenu(vm),
+      borderRadius: BorderRadius.circular(LaRadius.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: LaColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(LaRadius.sm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isDesc
+                  ? Icons.arrow_downward_rounded
+                  : Icons.arrow_upward_rounded,
+              size: 14,
+              color: LaColors.textMuted,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'เรียง',
+              style: TextStyle(fontSize: 13, color: LaColors.textSecondary),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.expand_more_rounded,
+              size: 14,
+              color: LaColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSortMenu(LicenseAttachViewModel vm) {
+    final isDesc = vm.selectedSortDir == 'desc';
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(.05),
+      builder: (ctx) => Dialog(
+        alignment: Alignment.bottomRight,
+        insetPadding: const EdgeInsets.fromLTRB(0, 0, 24, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+        ),
+        child: SizedBox(
+          width: 280,
+          child: SafeArea(
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      vm.onSortDirChanged();
+                      Navigator.of(ctx).pop();
+                    },
+                    borderRadius: BorderRadius.circular(LaRadius.sm),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDesc
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            size: 14,
+                            color: LaColors.textMuted,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AutoSizeText(
+                              isDesc ? 'มากไปน้อย' : 'น้อยไปมาก',
+                              style: LaText.body.copyWith(
+                                color: LaColors.textMuted,
+                                fontSize: 13,
+                              ),
+                              maxFontSize: 13,
+                              minFontSize: 11,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.swap_vert_rounded,
+                            size: 14,
+                            color: LaColors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ...LicenseAttachViewModel.sortOptions.map((k) => InkWell(
+                        onTap: () {
+                          vm.onSortChanged(k);
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: k == vm.selectedSort
+                                    ? const Icon(
+                                        Icons.check_rounded,
+                                        size: 14,
+                                        color: LaColors.primary,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: AutoSizeText(
+                                  LicenseAttachViewModel.sortLabels[k] ?? k,
+                                  style: LaText.body.copyWith(fontSize: 13),
+                                  maxFontSize: 13,
+                                  minFontSize: 11,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -561,4 +716,5 @@ extension on _LicenseRequestZoneFilterState {
       ),
     );
   }
+
 }
