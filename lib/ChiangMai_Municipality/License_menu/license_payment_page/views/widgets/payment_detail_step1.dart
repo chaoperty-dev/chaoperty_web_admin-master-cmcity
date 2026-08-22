@@ -6,16 +6,21 @@
 // Render PaymentDetail ที่โหลดจาก VM (uuid ถูกส่งมาตอนกด เรียกดู จาก list page)
 // ============================================================================
 
+import 'dart:typed_data';
+
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../unity/FormatPhone.dart';
+import '../../models/license_payment_attachment.dart';
 import '../../models/license_payment_detail_model.dart';
 import '../../models/license_prepayment_model.dart' hide formatMoney;
+import '../../services/license_payment_detail_service.dart';
 import '../theme/license_payment_theme.dart';
 import '../../viewmodels/license_payment_detail_view_model.dart';
+import 'receipt_entry_stepper_dialog.dart';
 
 class PaymentDetailStep1 extends StatelessWidget {
   const PaymentDetailStep1({super.key});
@@ -87,7 +92,7 @@ class PaymentDetailStep1 extends StatelessWidget {
                 _PrepaymentCard(
                   prepayment: vm.prepayment!,
                   payments: vm.payments?.data ?? const [],
-                  onProceed: vm.proceedToPayment,
+                  onProceed: (item) => _handleProceed(context, item, vm),
                 ),
                 const SizedBox(height: LaSpace.lg),
               ],
@@ -251,6 +256,81 @@ class _PaymentSummaryCard extends StatelessWidget {
 }
 
 // ============================================================================
+// _handleProceed — สร้าง draft (ถ้ายังไม่มี) แล้วเปิด popup stepper 3 สเตป
+//   Step 1: เลือกช่องทางรับเงิน (optional)
+//   Step 2: แนบรูปสลิป (optional)
+//   Step 3: บันทึกการรับชำระ (amount + receipt_no + book_no + date)
+// ============================================================================
+
+Future<void> _handleProceed(
+  BuildContext context,
+  PrepaymentItem item,
+  LicensePaymentDetailViewModel vm,
+) async {
+  // 1) หา payment ที่ผูกกับ debtLineUuid นี้ (ถ้ามี)
+  PaymentDetail? payment;
+  for (final p in vm.payments?.data ?? const []) {
+    if (p.debtLineUuid == item.uuid) {
+      payment = p;
+      break;
+    }
+  }
+
+  // 2) ถ้ายังไม่มี → สร้าง draft (default: external — ระบบรันเลขให้)
+  //    แล้วเปิด popup ที่ step 1 (เลือกช่องทาง)
+  if (payment == null || payment.uuid.isEmpty) {
+    final created = await vm.startPayment(item);
+    if (created == null || created.uuid.isEmpty) return;
+    if (!context.mounted) return;
+    payment = created;
+
+    if (!context.mounted) return;
+    final result = await showReceiptEntryStepperDialog(
+      context: context,
+      payment: payment,
+      defaultAmount: item.totalAmount,
+      initialStep: 1,
+      paymentSystem: payment.paymentSystem,
+    );
+    if (!context.mounted) return;
+    // รีโหลดเสมอหลังปิด dialog (อาจอัปโหลดหลักฐานแล้ว แม้ไม่ได้กดยืนยัน step 3)
+    await vm.reload();
+    if (!context.mounted) return;
+    if (result != null) _showSuccessSnack(context, result);
+    return;
+  }
+
+  // 3) มี payment อยู่แล้ว → เปิด popup ที่ step 3 เลย
+  //    (ข้าม step 1/2 เพราะ draft/method ถูกสร้างมาแล้ว)
+  if (!context.mounted) return;
+  final result = await showReceiptEntryStepperDialog(
+    context: context,
+    payment: payment,
+    defaultAmount: item.totalAmount,
+    initialStep: 3,
+    paymentSystem: payment.paymentSystem,
+  );
+  if (!context.mounted) return;
+  // รีโหลดเสมอหลังปิด dialog (เผื่อผู้ใช้อัปโหลดรูปใน step 2 แล้วปิดโดยไม่ยืนยัน)
+  await vm.reload();
+  if (!context.mounted) return;
+  if (result != null) _showSuccessSnack(context, result);
+}
+
+void _showSuccessSnack(BuildContext context, PaymentDetail result) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(
+        'บันทึกการรับชำระเรียบร้อย: '
+        '${result.paymentNo.isNotEmpty ? result.paymentNo : result.uuid}',
+      ),
+      backgroundColor: LaColors.statusApprovedFg,
+      behavior: SnackBarBehavior.floating,
+    ),
+  );
+}
+
+// ============================================================================
 // Prepayment card — รายการจ่ายล่วงหน้า (from GET .../prepayment)
 // ============================================================================
 
@@ -265,19 +345,15 @@ class _PrepaymentCard extends StatelessWidget {
   });
 
   /// สถานะของแต่ละรายการจ่ายล่วงหน้า (join กับรายการชำระ)
-  /// - มี payment ที่ status=paid   → ชำระแล้ว
-  /// - มี payment (draft/อื่นๆ)      → รอชำระ
-  /// - ไม่มี payment เลย             → ยังไม่ทำรายการ
-  String statusOf(PrepaymentItem item) {
-    PaymentDetail? matched;
+  /// - มี payment ที่ status=paid + amount_received → ชำระแล้ว
+  /// - มี payment + มี latest_attachment           → หลักฐานแล้ว รอชืนยัน
+  /// - มี payment (draft/อื่นๆ)                    → รอชำระ
+  /// - ไม่มี payment เลย                          → ยังไม่ทำรายการ
+  PaymentDetail? paymentOf(PrepaymentItem item) {
     for (final p in payments) {
-      if (p.debtLineUuid == item.uuid) {
-        matched = p;
-        break;
-      }
+      if (p.debtLineUuid == item.uuid) return p;
     }
-    if (matched == null) return 'ยังไม่ทำรายการ';
-    return matched.statusLabel;
+    return null;
   }
 
   @override
@@ -356,7 +432,7 @@ class _PrepaymentCard extends StatelessWidget {
           else
             _PrepaymentList(
               items: items,
-              statusOf: statusOf,
+              paymentOf: paymentOf,
               onProceed: onProceed,
             ),
 
@@ -420,11 +496,11 @@ const double _prepayBreakpoint = 700;
 
 class _PrepaymentList extends StatelessWidget {
   final List<PrepaymentItem> items;
-  final String Function(PrepaymentItem) statusOf;
+  final PaymentDetail? Function(PrepaymentItem) paymentOf;
   final void Function(PrepaymentItem) onProceed;
   const _PrepaymentList({
     required this.items,
-    required this.statusOf,
+    required this.paymentOf,
     required this.onProceed,
   });
 
@@ -441,7 +517,7 @@ class _PrepaymentList extends StatelessWidget {
                 if (i > 0) const SizedBox(height: LaSpace.sm),
                 _PrepaymentItemCard(
                   item: items[i],
-                  status: statusOf(items[i]),
+                  payment: paymentOf(items[i]),
                   onProceed: onProceed,
                 ),
               ],
@@ -451,7 +527,7 @@ class _PrepaymentList extends StatelessWidget {
         // ─── จอกว้าง: แสดงเป็นตาราง ───
         return _PrepaymentTable(
           items: items,
-          statusOf: statusOf,
+          paymentOf: paymentOf,
           onProceed: onProceed,
         );
       },
@@ -461,11 +537,11 @@ class _PrepaymentList extends StatelessWidget {
 
 class _PrepaymentTable extends StatelessWidget {
   final List<PrepaymentItem> items;
-  final String Function(PrepaymentItem) statusOf;
+  final PaymentDetail? Function(PrepaymentItem) paymentOf;
   final void Function(PrepaymentItem) onProceed;
   const _PrepaymentTable({
     required this.items,
-    required this.statusOf,
+    required this.paymentOf,
     required this.onProceed,
   });
 
@@ -510,7 +586,7 @@ class _PrepaymentTable extends StatelessWidget {
               const Divider(height: 1, thickness: 1, color: LaColors.border),
             _PrepaymentRow(
               item: items[i],
-              status: statusOf(items[i]),
+              payment: paymentOf(items[i]),
               onProceed: onProceed,
             ),
           ],
@@ -522,11 +598,11 @@ class _PrepaymentTable extends StatelessWidget {
 
 class _PrepaymentRow extends StatelessWidget {
   final PrepaymentItem item;
-  final String status;
+  final PaymentDetail? payment;
   final void Function(PrepaymentItem) onProceed;
   const _PrepaymentRow({
     required this.item,
-    required this.status,
+    required this.payment,
     required this.onProceed,
   });
 
@@ -537,6 +613,27 @@ class _PrepaymentRow extends StatelessWidget {
         : '-';
     final shortUuid =
         item.uuid.length > 8 ? '${item.uuid.substring(0, 8)}…' : item.uuid;
+    // ─── derive state จาก payment ───
+    final hasPayment = payment != null && payment!.uuid.isNotEmpty;
+    final hasAttachment = hasPayment &&
+        payment!.latestAttachment != null &&
+        payment!.latestAttachment!.uuid.isNotEmpty;
+    final isPaid = hasPayment && payment!.status.toLowerCase() == 'paid';
+    final statusText = !hasPayment
+        ? 'ยังไม่ทำรายการ'
+        : isPaid
+            ? 'รออนุมัติ'
+            : hasAttachment
+                ? 'หลักฐานแล้ว รอชืนยัน'
+                : (payment!.statusLabel.isNotEmpty
+                    ? payment!.statusLabel
+                    : 'รอชำระ');
+    final hasButton = !isPaid;
+    final buttonLabel = !hasPayment
+        ? 'ทำรายการ'
+        : hasAttachment
+            ? 'รอบันทึกการชำระ'
+            : 'ทำรายการต่อ';
     return InkWell(
       onTap: () => onProceed(item),
       child: Padding(
@@ -590,7 +687,7 @@ class _PrepaymentRow extends StatelessWidget {
                 ],
               ),
             ),
-            Expanded(flex: 2, child: Text(status, style: LaText.tableCell)),
+            Expanded(flex: 2, child: _statusCell(statusText, hasAttachment)),
             Expanded(flex: 1, child: Text(item.unit, style: LaText.tableCell)),
             Expanded(
                 flex: 1,
@@ -615,10 +712,16 @@ class _PrepaymentRow extends StatelessWidget {
               width: 150,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: _ActionButton(
-                  status: status,
-                  onPressed: () => onProceed(item),
-                ),
+                child: hasButton
+                    ? _ActionButton(
+                        label: buttonLabel,
+                        pendingAttachment: hasAttachment,
+                        onPressed: () => onProceed(item),
+                      )
+                    : Text('-',
+                        style: LaText.tableCell.copyWith(
+                          color: LaColors.textMuted,
+                        )),
               ),
             ),
           ],
@@ -626,15 +729,46 @@ class _PrepaymentRow extends StatelessWidget {
       ),
     );
   }
+
+  Widget _statusCell(String text, bool hasAttachment) {
+    if (hasAttachment) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: LaColors.statusApprovedFg,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 6),
+          Flexible(
+            child: Text(
+              text,
+              style: LaText.tableCell.copyWith(
+                color: LaColors.statusApprovedFg,
+                fontWeight: FontWeight.w700,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      );
+    }
+    return Text(text, style: LaText.tableCell);
+  }
 }
 
 class _PrepaymentItemCard extends StatelessWidget {
   final PrepaymentItem item;
-  final String status;
+  final PaymentDetail? payment;
   final void Function(PrepaymentItem) onProceed;
   const _PrepaymentItemCard({
     required this.item,
-    required this.status,
+    required this.payment,
     required this.onProceed,
   });
 
@@ -645,6 +779,18 @@ class _PrepaymentItemCard extends StatelessWidget {
         : '-';
     final shortUuid =
         item.uuid.length > 8 ? '${item.uuid.substring(0, 8)}…' : item.uuid;
+    // ─── derive state จาก payment ───
+    final hasPayment = payment != null && payment!.uuid.isNotEmpty;
+    final hasAttachment = hasPayment &&
+        payment!.latestAttachment != null &&
+        payment!.latestAttachment!.uuid.isNotEmpty;
+    final isPaid = hasPayment && payment!.status.toLowerCase() == 'paid';
+    final hasButton = !isPaid;
+    final buttonLabel = !hasPayment
+        ? 'ทำรายการ'
+        : hasAttachment
+            ? 'รอบันทึกการชำระ'
+            : 'ทำรายการต่อ';
     return InkWell(
       onTap: () => onProceed(item),
       borderRadius: BorderRadius.circular(LaRadius.md),
@@ -724,10 +870,30 @@ class _PrepaymentItemCard extends StatelessWidget {
               children: [
                 Expanded(child: _MiniField(label: 'วันที่', value: date)),
                 const SizedBox(width: LaSpace.sm),
-                _ActionButton(
-                  status: status,
-                  onPressed: () => onProceed(item),
-                ),
+                hasButton
+                    ? _ActionButton(
+                        label: buttonLabel,
+                        pendingAttachment: hasAttachment,
+                        onPressed: () => onProceed(item),
+                      )
+                    : Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: LaColors.statusApprovedBg.withOpacity(.4),
+                          borderRadius: BorderRadius.circular(LaRadius.pill),
+                          border: Border.all(
+                            color: LaColors.statusApprovedFg.withOpacity(.5),
+                          ),
+                        ),
+                        child: Text(
+                          'รออนุมัติ',
+                          style: LaText.caption.copyWith(
+                            color: LaColors.statusApprovedFg,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
               ],
             ),
           ],
@@ -850,7 +1016,7 @@ class _PaymentStatusCard extends StatelessWidget {
   }
 }
 
-class _PaymentStatusRow extends StatelessWidget {
+class _PaymentStatusRow extends StatefulWidget {
   final PaymentDetail payment;
   final String itemName;
   const _PaymentStatusRow({
@@ -859,47 +1025,167 @@ class _PaymentStatusRow extends StatelessWidget {
   });
 
   @override
+  State<_PaymentStatusRow> createState() => _PaymentStatusRowState();
+}
+
+class _PaymentStatusRowState extends State<_PaymentStatusRow> {
+  bool _expanded = false;
+
+  @override
   Widget build(BuildContext context) {
-    final p = payment;
+    final p = widget.payment;
+    final itemName = widget.itemName;
+    final hasAttachment =
+        p.latestAttachment != null && p.latestAttachment!.uuid.isNotEmpty;
+    final isPaid = p.status.toLowerCase() == 'paid';
+    // priority: paid > attached > statusLabel
+    final statusText = isPaid
+        ? p.statusLabel
+        : (hasAttachment ? 'หลักฐานแล้ว รอชืนยัน' : p.statusLabel);
+    final showAttachedBadge = !isPaid && hasAttachment;
     return Container(
       decoration: LaDecor.softCard(),
       padding: const EdgeInsets.all(LaSpace.md),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: LaColors.statusInfoBg,
-              borderRadius: BorderRadius.circular(LaRadius.sm),
-            ),
-            child: const Icon(Icons.payments_outlined,
-                size: 18, color: LaColors.statusInfoFg),
-          ),
-          const SizedBox(width: LaSpace.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  p.paymentNo.isNotEmpty ? p.paymentNo : '-',
-                  style: LaText.h2.copyWith(
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.w700,
-                  ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: hasAttachment
+                      ? LaColors.statusApprovedBg
+                      : LaColors.statusInfoBg,
+                  borderRadius: BorderRadius.circular(LaRadius.sm),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  '${itemName.isNotEmpty ? itemName : '-'}  •  '
-                  '${_formatSystem(p.paymentSystem)}  •  ${formatMoney(p.amount)}',
-                  style: LaText.caption,
+                child: Icon(
+                  hasAttachment
+                      ? Icons.cloud_done_rounded
+                      : Icons.payments_outlined,
+                  size: 18,
+                  color: hasAttachment
+                      ? LaColors.statusApprovedFg
+                      : LaColors.statusInfoFg,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            p.paymentNo.isNotEmpty ? p.paymentNo : '-',
+                            style: LaText.h2.copyWith(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        InkWell(
+                          onTap: () => setState(() => _expanded = !_expanded),
+                          borderRadius: BorderRadius.circular(LaRadius.pill),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2),
+                            child: Icon(
+                              _expanded
+                                  ? Icons.expand_less_rounded
+                                  : Icons.expand_more_rounded,
+                              size: 18,
+                              color: LaColors.textMuted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${itemName.isNotEmpty ? itemName : '-'}  •  '
+                      '${_formatSystem(p.paymentSystem)}  •  ${formatMoney(p.amount)}',
+                      style: LaText.caption,
+                    ),
+                    if (hasAttachment)
+                      Text(
+                        'UUID: ${_shortUuid(p.uuid)}',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textMuted,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                alignment: WrapAlignment.end,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  showAttachedBadge
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: LaColors.statusApprovedBg.withOpacity(.45),
+                            borderRadius: BorderRadius.circular(LaRadius.pill),
+                            border: Border.all(
+                              color: LaColors.statusApprovedFg.withOpacity(.55),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 6,
+                                height: 6,
+                                decoration: const BoxDecoration(
+                                  color: LaColors.statusApprovedFg,
+                                  shape: BoxShape.circle,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                statusText,
+                                style: LaText.caption.copyWith(
+                                  color: LaColors.statusApprovedFg,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : _StatusBadge(label: statusText),
+                  if (hasAttachment)
+                    _AttachmentViewButton(attachment: p.latestAttachment!),
+                  if (isPaid)
+                    _ReceiptViewButton(
+                      payment: p,
+                      onTap: () => context
+                          .read<LicensePaymentDetailViewModel>()
+                          .gotoReceipt(p.uuid),
+                    ),
+                  // if (isPaid) _ApprovalActions(payment: p),  ← ซ่อนไว้ก่อน
+                ],
+              ),
+            ],
           ),
-          const SizedBox(width: LaSpace.sm),
-          _StatusBadge(label: p.statusLabel),
+          if (_expanded) ...[
+            const SizedBox(height: LaSpace.sm),
+            const Divider(height: 1),
+            const SizedBox(height: LaSpace.sm),
+            _StatusDetailGrid(payment: p),
+          ],
         ],
       ),
     );
@@ -910,6 +1196,365 @@ class _PaymentStatusRow extends StatelessWidget {
     if (v == 'internal') return 'ในระบบ';
     if (v == 'external') return 'ภายนอก';
     return s.isEmpty ? '-' : s;
+  }
+
+  String _shortUuid(String u) {
+    if (u.isEmpty) return '-';
+    if (u.length <= 12) return u;
+    return '${u.substring(0, 8)}…${u.substring(u.length - 4)}';
+  }
+}
+
+/// รายละเอียดเพิ่มเติมของ payment (โชว์เมื่อ expand)
+class _StatusDetailGrid extends StatelessWidget {
+  final PaymentDetail payment;
+  const _StatusDetailGrid({required this.payment});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = payment;
+    final items = <(IconData, String, String)>[
+      (
+        Icons.payments_outlined,
+        'จำนวนรับชำระ',
+        p.amountReceived != null ? formatMoney(p.amountReceived!) : '-'
+      ),
+      (
+        Icons.event_available_rounded,
+        'วันที่ชำระ',
+        (p.paidAt?.isNotEmpty ?? false) ? _fmtDate(p.paidAt!) : '-'
+      ),
+      (
+        Icons.tag_rounded,
+        'ประเภท',
+        p.paymentSystem.isNotEmpty ? p.paymentSystem : '-'
+      ),
+      (
+        Icons.fingerprint_rounded,
+        'วิธีชำระ',
+        (p.paymentMethodId?.isNotEmpty ?? false) ? p.paymentMethodId! : '-'
+      ),
+      // (
+      //   Icons.person_outline_rounded,
+      //   'ผู้ชำระ',
+      //   (p.payerName?.isNotEmpty ?? false) ? p.payerName! : '-'
+      // ),
+      // (Icons.phone_outlined, 'โทร', p.clientTel.isNotEmpty ? p.clientTel : '-'),
+      (
+        Icons.numbers_rounded,
+        'รหัสรายการตั้งหนี้',
+        p.debtLineUuid.isNotEmpty ? _shortUuidFull(p.debtLineUuid) : '-'
+      ),
+      (
+        Icons.link_rounded,
+        'สร้างเมื่อ',
+        (p.createdAt?.isNotEmpty ?? false) ? _fmtDate(p.createdAt!) : '-'
+      ),
+      (
+        Icons.access_time_rounded,
+        'อัพโหลดเมื่อ',
+        (p.latestAttachment?.uploadedAt?.isNotEmpty ?? false)
+            ? _fmtDate(p.latestAttachment!.uploadedAt!)
+            : '-'
+      ),
+    ];
+    return LayoutBuilder(
+      builder: (ctx, c) {
+        // 2-3 cols ตามความกว้าง
+        final cols = c.maxWidth >= 700 ? 3 : (c.maxWidth >= 460 ? 2 : 1);
+        return Wrap(
+          spacing: LaSpace.md,
+          runSpacing: LaSpace.sm,
+          children: items
+              .map((it) => SizedBox(
+                    width: (c.maxWidth - LaSpace.md * (cols - 1)) / cols,
+                    child: _DetailCell(
+                      icon: it.$1,
+                      label: it.$2,
+                      value: it.$3,
+                    ),
+                  ))
+              .toList(),
+        );
+      },
+    );
+  }
+
+  String _fmtDate(String s) {
+    try {
+      final dt = DateTime.parse(s);
+      return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+    } catch (_) {
+      return s;
+    }
+  }
+
+  String _shortUuidFull(String u) =>
+      u.length <= 16 ? u : '${u.substring(0, 8)}…${u.substring(u.length - 6)}';
+}
+
+/// cell เล็กๆ: icon + label + value
+class _DetailCell extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _DetailCell({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 14, color: LaColors.textMuted),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                style: LaText.caption.copyWith(color: LaColors.textMuted),
+              ),
+              Text(
+                value,
+                style: LaText.tableCell.copyWith(fontFamily: 'monospace'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// ปุ่มเล็ก ๆ สำหรับดูหลักฐานที่แนบ — คลิกแล้วเปิด dialog รูปเต็ม
+class _AttachmentViewButton extends StatefulWidget {
+  final PaymentAttachment attachment;
+  const _AttachmentViewButton({required this.attachment});
+
+  @override
+  State<_AttachmentViewButton> createState() => _AttachmentViewButtonState();
+}
+
+class _AttachmentViewButtonState extends State<_AttachmentViewButton> {
+  Uint8List? _bytes;
+  bool _loading = false;
+
+  Future<void> _open(BuildContext context) async {
+    final navigator = Navigator.of(context);
+    Uint8List? bytes = _bytes;
+    if (bytes == null) {
+      setState(() => _loading = true);
+      try {
+        bytes = await LicensePaymentDetailService()
+            .previewPaymentAttachment(attachmentUuid: widget.attachment.uuid);
+        if (!mounted) return;
+        setState(() {
+          _bytes = bytes;
+          _loading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+        setState(() => _loading = false);
+        return;
+      }
+    }
+    if (bytes == null) return;
+    await navigator.push(
+      PageRouteBuilder(
+        opaque: false,
+        barrierColor: Colors.black87,
+        barrierDismissible: true,
+        pageBuilder: (_, __, ___) => Scaffold(
+          backgroundColor: Colors.transparent,
+          body: GestureDetector(
+            onTap: navigator.pop,
+            child: Center(
+              child: InteractiveViewer(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(LaRadius.sm),
+                  child: Image.memory(bytes!),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'ดูหลักฐานที่แนบ',
+      child: InkWell(
+        onTap: () => _open(context),
+        borderRadius: BorderRadius.circular(LaRadius.pill),
+        child: Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: LaColors.statusApprovedBg.withOpacity(.4),
+            shape: BoxShape.circle,
+            border:
+                Border.all(color: LaColors.statusApprovedFg.withOpacity(.55)),
+          ),
+          alignment: Alignment.center,
+          child: _loading
+              ? const SizedBox(
+                  width: 12,
+                  height: 12,
+                  child: CircularProgressIndicator(strokeWidth: 1.6),
+                )
+              : const Icon(Icons.image_outlined,
+                  size: 14, color: LaColors.statusApprovedFg),
+        ),
+      ),
+    );
+  }
+}
+
+/// ปุ่ม "ดูใบเสร็จ" — โหลด GET /v2/payments/{uuid}/receipt แล้วไป Step 2
+class _ReceiptViewButton extends StatelessWidget {
+  final PaymentDetail payment;
+  final VoidCallback onTap;
+  const _ReceiptViewButton({
+    required this.payment,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'ดูใบเสร็จ',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: LaColors.primaryDark,
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.receipt_long_rounded,
+                  size: 14, color: Colors.white),
+              const SizedBox(width: 4),
+              Text(
+                'ดูใบเสร็จ',
+                style: LaText.caption.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ปุ่มอนุมัติ / ปฏิเสธ — placeholder (UI ก่อน, API ยังไม่ต่อ)
+// ignore: unused_element
+class _ApprovalActions extends StatelessWidget {
+  final PaymentDetail payment;
+  const _ApprovalActions({required this.payment});
+
+  void _snack(BuildContext context, String label, Color color) {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          '$label (ยังไม่ได้ต่อ API) — '
+          '${payment.paymentNo.isNotEmpty ? payment.paymentNo : payment.uuid}',
+        ),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // ─── อนุมัติ ───
+        InkWell(
+          onTap: () => _snack(context, 'อนุมัติ', LaColors.statusApprovedFg),
+          borderRadius: BorderRadius.circular(LaRadius.sm),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: LaColors.statusApprovedBg.withOpacity(.25),
+              borderRadius: BorderRadius.circular(LaRadius.sm),
+              border: Border.all(
+                color: LaColors.statusApprovedFg.withOpacity(.55),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle_outline_rounded,
+                    size: 14, color: LaColors.statusApprovedFg),
+                const SizedBox(width: 4),
+                Text(
+                  'อนุมัติ',
+                  style: LaText.caption.copyWith(
+                    color: LaColors.statusApprovedFg,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(width: 4),
+        // ─── ปฏิเสธ ───
+        InkWell(
+          onTap: () => _snack(context, 'ปฏิเสธ', LaColors.statusRejectedFg),
+          borderRadius: BorderRadius.circular(LaRadius.sm),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: LaColors.statusRejectedBg.withOpacity(.25),
+              borderRadius: BorderRadius.circular(LaRadius.sm),
+              border: Border.all(
+                color: LaColors.statusRejectedFg.withOpacity(.55),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.cancel_outlined,
+                    size: 14, color: LaColors.statusRejectedFg),
+                const SizedBox(width: 4),
+                Text(
+                  'ปฏิเสธ',
+                  style: LaText.caption.copyWith(
+                    color: LaColors.statusRejectedFg,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -1001,17 +1646,52 @@ class _InfoItem extends StatelessWidget {
 }
 
 class _ActionButton extends StatelessWidget {
-  final String status;
+  final String label;
+  final bool pendingAttachment;
   final VoidCallback onPressed;
-  const _ActionButton({required this.status, required this.onPressed});
+  const _ActionButton({
+    required this.label,
+    required this.pendingAttachment,
+    required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final s = status.toLowerCase();
-    final notStarted = s.contains('ยังไม่') || s.isEmpty;
+    if (pendingAttachment) {
+      // ─── แนบหลักฐานแล้ว รอชืนยัน → outlined เขียว ───
+      return InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: LaColors.statusApprovedBg.withOpacity(.4),
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+            border: Border.all(color: LaColors.statusApprovedFg, width: 1.4),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(Icons.cloud_done_rounded,
+                  size: 14, color: LaColors.statusApprovedFg),
+              SizedBox(width: 4),
+              Text(
+                'รอบันทึกการชำระ',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: LaColors.statusApprovedFg,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
-    if (notStarted) {
-      // ─── filled primary (ต้องจ่าย) ───
+    final isStart = label == 'ทำรายการ';
+    if (isStart) {
+      // ─── filled primary (เริ่มใหม่) ───
       return InkWell(
         onTap: onPressed,
         borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -1027,7 +1707,7 @@ class _ActionButton extends StatelessWidget {
               Icon(Icons.payments_rounded, size: 14, color: Colors.white),
               SizedBox(width: 4),
               Text(
-                'ชำระเงิน',
+                'ทำรายการ',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,

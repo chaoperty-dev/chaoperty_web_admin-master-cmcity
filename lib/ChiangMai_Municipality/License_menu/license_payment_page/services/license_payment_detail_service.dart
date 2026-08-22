@@ -14,12 +14,15 @@
 // ============================================================================
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:chaoperty/Constant/Myconstant.dart';
 import 'package:http/http.dart' as http;
 
 import '../../license_request_page/services/license_request_service.dart';
+import '../models/license_payment_attachment.dart';
 import '../models/license_payment_detail_model.dart';
+import '../models/license_payment_method.dart';
 import '../models/license_prepayment_model.dart';
 
 class LicensePaymentDetailService {
@@ -245,6 +248,42 @@ class LicensePaymentDetailService {
     return PaymentDetail.fromJson(data);
   }
 
+  // ---------- 1.7 ช่องทางการรับชำระ (Lookup) ----------
+  /// GET {api_root}/lookup/payments
+  /// คืนค่ารายการช่องทาง (เงินสด/โอน/QR ฯลฯ) + บัญชีรับเงิน
+  Future<List<LicensePaymentMethod>> fetchPaymentMethods() async {
+    final headers = await MyHeaders.build();
+    final uri = _uri('lookup/payments');
+
+    print('============================================================');
+    print('[fetchPaymentMethods] URL = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      print('[fetchPaymentMethods] status=${res.statusCode}');
+
+      if (res.statusCode != 200) {
+        print('[fetchPaymentMethods][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception(
+            'โหลดช่องทางรับชำระไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      print('[fetchPaymentMethods][OK body] ${_truncate(res.body, 400)}');
+
+      final body = json.decode(res.body);
+      final Map<String, dynamic> map =
+          body is Map ? Map<String, dynamic>.from(body) : <String, dynamic>{};
+      return LicensePaymentMethodList.fromJson(map).methods;
+    } catch (e) {
+      print('[fetchPaymentMethods][ERROR] $e');
+      rethrow;
+    }
+  }
+
   // ---------- 2. ใบเสร็จ / สรุปการรับชำระ ----------
   Future<PaymentReceipt> fetchReceipt({required String uuid}) async {
     if (uuid.trim().isEmpty) throw Exception('Payment UUID is required');
@@ -281,27 +320,34 @@ class LicensePaymentDetailService {
     return PaymentReceipt.fromJson(data);
   }
 
-  // ---------- 3. บันทึกการรับ�ำระ ----------
+  // ---------- 3. บันทึกการรับชำระ ----------
+  /// paymentSystem:
+  ///   - 'internal' → body: { amount_received }   (ช่องทางในระบบ — ไม่ต้องมี receipt_no/book_no)
+  ///   - 'external' → body: { amount_received, receipt_no, book_no, book_date }
   Future<PaymentDetail> pay({
     required String uuid,
     required double amountReceived,
+    String paymentSystem = 'external',
     String? receiptNo,
     String? bookNo,
     String? bookDate,
   }) async {
     if (uuid.trim().isEmpty) throw Exception('Payment UUID is required');
 
+    final isInternal = paymentSystem.toLowerCase() == 'internal';
     final payload = <String, dynamic>{
       'amount_received': amountReceived,
     };
-    if (receiptNo != null && receiptNo.trim().isNotEmpty) {
-      payload['receipt_no'] = receiptNo.trim();
-    }
-    if (bookNo != null && bookNo.trim().isNotEmpty) {
-      payload['book_no'] = bookNo.trim();
-    }
-    if (bookDate != null && bookDate.trim().isNotEmpty) {
-      payload['book_date'] = bookDate.trim();
+    if (!isInternal) {
+      if (receiptNo != null && receiptNo.trim().isNotEmpty) {
+        payload['receipt_no'] = receiptNo.trim();
+      }
+      if (bookNo != null && bookNo.trim().isNotEmpty) {
+        payload['book_no'] = bookNo.trim();
+      }
+      if (bookDate != null && bookDate.trim().isNotEmpty) {
+        payload['book_date'] = bookDate.trim();
+      }
     }
 
     final headers = await MyHeaders.build();
@@ -342,5 +388,313 @@ class LicensePaymentDetailService {
         ? Map<String, dynamic>.from(body['data'] as Map)
         : body;
     return PaymentDetail.fromJson(data);
+  }
+
+  // ---------- 4. ประวัติการเปลี่ยนสถานะ (History) ----------
+  /// GET {api_root}/v2/payments/{uuid}/history
+  /// คืนค่ารายการ history (status change + note + actor)
+  Future<PaymentHistoryListResponse> fetchPaymentHistory(
+      {required String uuid}) async {
+    if (uuid.trim().isEmpty) {
+      throw Exception('Payment UUID is required');
+    }
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/payments/$uuid/history');
+
+    print('============================================================');
+    print('[fetchPaymentHistory] uuid = $uuid');
+    print('[fetchPaymentHistory] URL = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      print('[fetchPaymentHistory] status=${res.statusCode}');
+
+      if (res.statusCode != 200) {
+        print('[fetchPaymentHistory][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception(
+            'โหลดประวัติการชำระไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      print('[fetchPaymentHistory][OK body] ${_truncate(res.body, 400)}');
+
+      final body = json.decode(res.body);
+      final Map<String, dynamic> map =
+          body is Map ? Map<String, dynamic>.from(body) : <String, dynamic>{};
+      return PaymentHistoryListResponse.fromJson(map);
+    } catch (e) {
+      print('[fetchPaymentHistory][ERROR] $e');
+      rethrow;
+    }
+  }
+
+  // ---------- 5. Activity log ----------
+  /// GET {api_root}/v2/payments/{uuid}/activity
+  /// คืนค่ารายการ activity (event + actor + meta)
+  Future<PaymentActivityListResponse> fetchPaymentActivity(
+      {required String uuid}) async {
+    if (uuid.trim().isEmpty) {
+      throw Exception('Payment UUID is required');
+    }
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/payments/$uuid/activity');
+
+    print('============================================================');
+    print('[fetchPaymentActivity] uuid = $uuid');
+    print('[fetchPaymentActivity] URL = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      print('[fetchPaymentActivity] status=${res.statusCode}');
+
+      if (res.statusCode != 200) {
+        print('[fetchPaymentActivity][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception(
+            'โหลด activity log ไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      print('[fetchPaymentActivity][OK body] ${_truncate(res.body, 400)}');
+
+      final body = json.decode(res.body);
+      final Map<String, dynamic> map =
+          body is Map ? Map<String, dynamic>.from(body) : <String, dynamic>{};
+      return PaymentActivityListResponse.fromJson(map);
+    } catch (e) {
+      print('[fetchPaymentActivity][ERROR] $e');
+      rethrow;
+    }
+  }
+
+  // ---------- 6. อัปโหลดไฟล์แนบ ----------
+  /// POST {api_root}/v2/payments/{uuid}/attachments  (multipart/form-data)
+  /// field: "file" (single file)
+  /// คืนค่า PaymentAttachment ที่อัปโหลดสำเร็จ
+  ///
+  /// รองรับทั้ง mobile (จาก path) และ web (จาก bytes) — ส่งมาอย่างใดอย่างหนึ่ง
+  Future<PaymentAttachment> uploadPaymentAttachment({
+    required String uuid,
+    String? filePath,
+    Uint8List? fileBytes,
+    String? fileName,
+    String fieldName = 'file',
+  }) async {
+    if (uuid.trim().isEmpty) {
+      throw Exception('Payment UUID is required');
+    }
+    if ((filePath == null || filePath.trim().isEmpty) &&
+        (fileBytes == null)) {
+      throw Exception('filePath หรือ fileBytes ต้องระบุอย่างใดอย่างหนึ่ง');
+    }
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/payments/$uuid/attachments');
+
+    print('============================================================');
+    print('[uploadPaymentAttachment] uuid      = $uuid');
+    print('[uploadPaymentAttachment] filePath  = $filePath');
+    print('[uploadPaymentAttachment] fileBytes = ${fileBytes?.length ?? '-'}');
+    print('[uploadPaymentAttachment] URL       = $uri');
+    print('============================================================');
+
+    try {
+      final request = http.MultipartRequest('POST', uri);
+      request.headers.addAll(headers);
+
+      if (fileBytes != null) {
+        // web-safe: ส่งเป็น bytes ตรงๆ (ไม่ต้องมี path)
+        final name = fileName?.isNotEmpty == true
+            ? fileName!
+            : 'slip_${DateTime.now().millisecondsSinceEpoch}.jpg';
+        request.files.add(
+          http.MultipartFile.fromBytes(fieldName, fileBytes, filename: name),
+        );
+      } else if (filePath != null && filePath.trim().isNotEmpty) {
+        // mobile: ใช้ path
+        request.files.add(
+          await http.MultipartFile.fromPath(fieldName, filePath),
+        );
+      }
+
+      final streamed = await request.send().timeout(
+            const Duration(seconds: 30),
+          );
+
+      print('[uploadPaymentAttachment] status=${streamed.statusCode}');
+
+      final body = await streamed.stream.bytesToString();
+      print('[uploadPaymentAttachment][body] ${_truncate(body, 400)}');
+
+      if (streamed.statusCode != 200 && streamed.statusCode != 201) {
+        String msg =
+            'อัปโหลดไฟล์แนบไม่สำเร็จ (status: ${streamed.statusCode})';
+        try {
+          final b = json.decode(body);
+          if (b is Map && b['message'] is String) msg = b['message'] as String;
+        } catch (_) {}
+        throw Exception(msg);
+      }
+
+      final decoded = json.decode(body);
+      final Map<String, dynamic> map = decoded is Map
+          ? Map<String, dynamic>.from(decoded)
+          : <String, dynamic>{};
+      final data = map['data'] is Map
+          ? Map<String, dynamic>.from(map['data'] as Map)
+          : map;
+      return PaymentAttachment.fromJson(data);
+    } catch (e) {
+      print('[uploadPaymentAttachment][ERROR] $e');
+      rethrow;
+    }
+  }
+
+  // ---------- 6.5 รายการไฟล์แนบทั้งหมดของ payment ----------
+  /// GET {api_root}/v2/payments/{uuid}/attachments
+  /// คืนค่ารายการ attachments (เพื่อเช็คว่าเคยอัปโหลดแล้วหรือยัง)
+  /// หาก 404 → คืน [] (ไม่ใช่ error)
+  Future<List<PaymentAttachment>> listPaymentAttachments({
+    required String uuid,
+  }) async {
+    if (uuid.trim().isEmpty) return const [];
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/payments/$uuid/attachments');
+
+    print('============================================================');
+    print('[listPaymentAttachments] uuid = $uuid');
+    print('[listPaymentAttachments] URL  = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 15));
+
+      print('[listPaymentAttachments] status=${res.statusCode}');
+
+      if (res.statusCode == 404) {
+        return const [];
+      }
+      if (res.statusCode != 200) {
+        print('[listPaymentAttachments][ERROR body] ${_truncate(res.body, 200)}');
+        return const [];
+      }
+
+      final body = json.decode(res.body);
+      // รองรับหลายรูปแบบ: { data: [...] } | [...] | { attachments: [...] }
+      List raw = const [];
+      if (body is List) {
+        raw = body;
+      } else if (body is Map) {
+        final m = body as Map<String, dynamic>;
+        if (m['data'] is List) {
+          raw = m['data'] as List;
+        } else if (m['attachments'] is List) {
+          raw = m['attachments'] as List;
+        }
+      }
+
+      print('[listPaymentAttachments] count=${raw.length}');
+
+      return raw
+          .whereType<Map>()
+          .map((e) => PaymentAttachment.fromJson(
+              Map<String, dynamic>.from(e as Map)))
+          .toList();
+    } catch (e) {
+      print('[listPaymentAttachments][ERROR] $e');
+      return const [];
+    }
+  }
+
+  // ---------- 7. ดูตัวอย่างไฟล์แนบ ----------
+  /// GET {api_root}/v2/payments/attachments/{uuid}/preview
+  /// คืนค่าเป็น bytes ของไฟล์ (รูป/PDF) — caller แปลงเป็น Image.memory หรือ save เอง
+  /// หาก 404 → คืน null (ไม่ใช่ error)
+  Future<Uint8List?> previewPaymentAttachment(
+      {required String attachmentUuid}) async {
+    if (attachmentUuid.trim().isEmpty) {
+      throw Exception('Attachment UUID is required');
+    }
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/payments/attachments/$attachmentUuid/preview');
+
+    print('============================================================');
+    print('[previewPaymentAttachment] uuid = $attachmentUuid');
+    print('[previewPaymentAttachment] URL  = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 20));
+
+      print('[previewPaymentAttachment] status=${res.statusCode}');
+
+      if (res.statusCode == 404) {
+        // ไม่มีไฟล์ → ไม่ใช่ error
+        return null;
+      }
+      if (res.statusCode != 200) {
+        print('[previewPaymentAttachment][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception(
+            'โหลดตัวอย่างไฟล์แนบไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      print('[previewPaymentAttachment] bytes=${res.bodyBytes.length}');
+
+      return res.bodyBytes;
+    } catch (e) {
+      print('[previewPaymentAttachment][ERROR] $e');
+      rethrow;
+    }
+  }
+
+  // ---------- 8. ดูตัวอย่างลายเซ็นเจ้าหน้าที่ ----------
+  /// GET {api_root}/v2/signatures/{uuid}/preview
+  /// คืนค่าเป็น bytes ของรูปลายเซ็น (PNG/JPG) — หาก 404 → null
+  Future<Uint8List?> previewSignature({required String signatureUuid}) async {
+    if (signatureUuid.trim().isEmpty) return null;
+
+    final headers = await MyHeaders.build();
+    final uri = _uriV2('v2/signatures/$signatureUuid/preview');
+
+    print('============================================================');
+    print('[previewSignature] uuid = $signatureUuid');
+    print('[previewSignature] URL  = $uri');
+    print('============================================================');
+
+    try {
+      final res = await http
+          .get(uri, headers: headers)
+          .timeout(const Duration(seconds: 20));
+
+      print('[previewSignature] status=${res.statusCode}');
+
+      if (res.statusCode == 404) {
+        return null;
+      }
+      if (res.statusCode != 200) {
+        print('[previewSignature][ERROR body] ${_truncate(res.body, 200)}');
+        throw Exception(
+            'โหลดลายเซ็นไม่สำเร็จ (status: ${res.statusCode})');
+      }
+
+      print('[previewSignature] bytes=${res.bodyBytes.length}');
+      return res.bodyBytes;
+    } catch (e) {
+      print('[previewSignature][ERROR] $e');
+      rethrow;
+    }
   }
 }

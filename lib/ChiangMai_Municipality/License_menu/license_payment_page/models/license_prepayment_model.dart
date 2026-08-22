@@ -32,6 +32,9 @@ class PrepaymentItem {
   final String? nwht;
   final String? wht;
   final String? total;
+  // ประเภทรายการ (server ใช้ตัดสิน fine / fee)
+  final String? etype;
+  final String? dtype;
 
   const PrepaymentItem({
     this.uuid = '',
@@ -56,6 +59,8 @@ class PrepaymentItem {
     this.nwht,
     this.wht,
     this.total,
+    this.etype,
+    this.dtype,
   });
 
   factory PrepaymentItem.fromJson(Map<String, dynamic> json) {
@@ -83,6 +88,8 @@ class PrepaymentItem {
       nwht: json['nwht']?.toString(),
       wht: json['wht']?.toString(),
       total: json['total']?.toString(),
+      etype: json['etype']?.toString(),
+      dtype: json['dtype']?.toString(),
     );
   }
 

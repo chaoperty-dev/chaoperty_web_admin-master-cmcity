@@ -18,6 +18,7 @@ import 'widgets/payment_detail_footer.dart';
 import 'widgets/payment_detail_header.dart';
 import 'widgets/payment_detail_step1.dart';
 import 'widgets/payment_detail_step2.dart';
+import 'widgets/payment_history_view.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -83,6 +84,40 @@ class _LicensePaymentDetailPageBody extends StatefulWidget {
       _LicensePaymentDetailPageBodyState();
 }
 
+/// ปุ่ม action ฝั่ง header (history) — ใช้ style เดียวกับ _IconButton ใน header
+class _HeaderActionButton extends StatelessWidget {
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _HeaderActionButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        onTap: onTap,
+        child: Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(.10),
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+            border: Border.all(color: Colors.white.withOpacity(.20)),
+          ),
+          child: Icon(icon, size: 18, color: Colors.white),
+        ),
+      ),
+    );
+  }
+}
+
 class _LicensePaymentDetailPageBodyState
     extends State<_LicensePaymentDetailPageBody> {
   StreamSubscription<LicensePaymentEvent>? _sub;
@@ -146,6 +181,22 @@ class _LicensePaymentDetailPageBodyState
                   Navigator.of(context).pop();
                 }
               },
+              actions: [
+                _HeaderActionButton(
+                  icon: Icons.history_rounded,
+                  tooltip: 'ดูประวัติ',
+                  onTap: () {
+                    final p = vm.detail;
+                    final uuid = (p?.uuid ?? widget.routeData ?? '').trim();
+                    if (uuid.isEmpty) return;
+                    showPaymentHistorySheet(
+                      context: context,
+                      paymentUuid: uuid,
+                      payment: p,
+                    );
+                  },
+                ),
+              ],
             ),
             Expanded(
               child: step == 1
@@ -153,7 +204,7 @@ class _LicensePaymentDetailPageBodyState
                   : const PaymentDetailStep2(),
             ),
             PaymentDetailFooter(
-              readOnly: false,
+              readOnly: step == 2,
               currentStep: step,
               totalSteps: total,
               onNext: step < total ? vm.nextDetailStep : null,

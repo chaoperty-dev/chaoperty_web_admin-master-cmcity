@@ -10,6 +10,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../models/license_payment_attachment.dart';
 import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_event.dart';
 import '../models/license_prepayment_model.dart';
@@ -47,6 +48,32 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
   // ---------- รายการชำระ / สถานะ (GET .../payments) ----------
   RequestPaymentsResponse? _payments;
   RequestPaymentsResponse? get payments => _payments;
+
+  // ---------- ประวัติ (GET /v2/payments/{uuid}/history) ----------
+  PaymentHistoryListResponse? _history;
+  PaymentHistoryListResponse? get history => _history;
+  bool _isHistoryLoading = false;
+  bool get isHistoryLoading => _isHistoryLoading;
+  String? _historyError;
+  String? get historyError => _historyError;
+
+  // ---------- Activity log (GET /v2/payments/{uuid}/activity) ----------
+  PaymentActivityListResponse? _activity;
+  PaymentActivityListResponse? get activity => _activity;
+  bool _isActivityLoading = false;
+  bool get isActivityLoading => _isActivityLoading;
+  String? _activityError;
+  String? get activityError => _activityError;
+
+  // ---------- Receipt (GET /v2/payments/{uuid}/receipt) ----------
+  PaymentReceipt? _receipt;
+  PaymentReceipt? get receipt => _receipt;
+  bool _isReceiptLoading = false;
+  bool get isReceiptLoading => _isReceiptLoading;
+  String? _receiptError;
+  String? get receiptError => _receiptError;
+  String? _receiptUuid;
+  String? get receiptUuid => _receiptUuid;
 
   // ---------- Step state ----------
   int _currentDetailStep = 1;
@@ -153,37 +180,208 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
   }
 
   /// กดปุ่มรายการจ่ายล่วงหน้า → สร้าง draft (ถ้ายังไม่มี) แล้วไป Step 2
+  ///
+  /// ใช้กรณี "มีรายการชำระอยู่แล้ว" (ต้องทำรายการต่อ) — ไม่สร้า�ใหม่
   Future<void> proceedToPayment(PrepaymentItem item) async {
     if (_uuid == null || _uuid!.isEmpty) {
-      _setError('ไม่พบ request_uuid สำหรับสร้างรายการรับชำระ');
+      _setError('ไม่พบ request_uuid �ำหรับสร้างรายการรับ�ำระ');
       return;
-    }
-    // ถ้ายังไม่มีรายการชำระสำหรับบรรทัดนี้ → สร้าง draft ก่อน
-    if (findPaymentByLine(item.uuid) == null) {
-      final created = await createPayment(
-        debtLineUuid: item.uuid,
-        payType: _payTypeOf(item),
-        amount: item.totalAmount,
-        paymentSystem: 'external',
-      );
-      if (created == null) return; // error ถูก set ภายใน createPayment แล้ว
     }
     nextDetailStep();
   }
 
-  /// อนุมาน pay_type จากชื่อรายการ (default = fee)
+  /// เริ่มรายการใหม่ (ยังไม่ทำรายการ) — สร้าง draft เท่านั้น ไม่ navigate
+  ///
+  /// คืน PaymentDetail ที่สร้าง (หรือ null ถ้ามีอยู่แล้ว/ล้มเหลว)
+  Future<PaymentDetail?> startPayment(
+    PrepaymentItem item, {
+    String paymentSystem = 'external',
+    int? paymentMethodId,
+  }) async {
+    if (_uuid == null || _uuid!.isEmpty) {
+      _setError('ไม่พบ request_uuid �ำหรับสร้างรายการรับชำระ');
+      return null;
+    }
+    if (paymentSystem == 'internal' && paymentMethodId == null) {
+      _setError('กรุณาเลือกบัญชี/ช่องทางรับ�ำระ');
+      return null;
+    }
+    final existing = findPaymentByLine(item.uuid);
+    if (existing != null) return existing;
+    return await createPayment(
+      debtLineUuid: item.uuid,
+      payType: _payTypeOf(item),
+      amount: item.totalAmount,
+      paymentSystem: paymentSystem,
+      paymentMethodId: paymentMethodId,
+    );
+  }
+
+  /// บันทึกการรับชำระ (POST /v2/payments/{uuid}/pay)
+  /// paymentSystem:
+  ///   - 'internal' → ส่งเฉพาะ amount_received
+  ///   - 'external' → ส่ง amount_received + receipt_no + book_no + book_date
+  /// คืน PaymentDetail ที่อัปเดตสถานะแล้ว
+  Future<PaymentDetail?> payPayment({
+    required String paymentUuid,
+    required double amountReceived,
+    String paymentSystem = 'external',
+    String? receiptNo,
+    String? bookNo,
+    String? bookDate,
+  }) async {
+    if (paymentUuid.isEmpty) {
+      _setError('ไม่พบ payment uuid');
+      return null;
+    }
+    _isPrepaymentLoading = true;
+    notifyListeners();
+    try {
+      final updated = await _service.pay(
+        uuid: paymentUuid,
+        amountReceived: amountReceived,
+        paymentSystem: paymentSystem,
+        receiptNo: receiptNo,
+        bookNo: bookNo,
+        bookDate: bookDate,
+      );
+      // reload เพื่ออัปเดต payments / statuses
+      await reload();
+      _eventController.add(LicensePaymentPaidEvent(updated));
+      return updated;
+    } catch (e) {
+      print('[LicensePaymentDetailViewModel][payPayment ERROR] $e');
+      _setError('บันทึกการรับชำระไม่สำเร็จ: $e');
+      return null;
+    } finally {
+      _isPrepaymentLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// อนุมาน pay_type — server ใช้ etype/dtype เป็นสัญญาณหลัก (fallback = fee)
+  /// DEBUG: log ให้เ�็นค่าก่อนตัดสินใจ
   String _payTypeOf(PrepaymentItem item) {
-    final name = item.expname.toLowerCase();
-    if (name.contains('ค่าปรับ') || name.contains('fine')) return 'fine';
-    if (name.contains('ไฟ') || name.contains('น้ำ') || name.contains('ค่าเช่า'))
-      return 'rent';
-    return 'fee';
+    final et = (item.etype ?? '').toLowerCase();
+    final dt = (item.dtype ?? '').toLowerCase();
+    String pick;
+    if (et == 'fine' || dt == 'fine' || et.contains('fine') || dt.contains('fine')) {
+      pick = 'fine';
+    } else {
+      pick = 'fee';
+    }
+    print('[DEBUG pay_type] expname=|${item.expname}| etype=|${item.etype}| dtype=|${item.dtype}| pick=$pick');
+    return pick;
   }
 
   /// เรียกใช้จาก UI เมื่อต้องการ reload (pull-to-refresh)
   Future<void> reload() async {
     if (_uuid == null || _uuid!.isEmpty) return;
     await _loadDetail(_uuid!);
+  }
+
+  // ===============================================================
+  // History + Activity
+  // ===============================================================
+
+  /// โหลดประวัติ (GET /v2/payments/{uuid}/history)
+  /// uuidOverride: ถ้าระบุ จะใช้แทน _uuid (รองรับ paymentUuid ที่ต่างจาก requestUuid)
+  Future<void> loadHistory({String? uuidOverride}) async {
+    final uuid = (uuidOverride ?? _uuid ?? '').trim();
+    if (uuid.isEmpty) return;
+    _isHistoryLoading = true;
+    _historyError = null;
+    notifyListeners();
+    try {
+      _history = await _service.fetchPaymentHistory(uuid: uuid);
+    } catch (e) {
+      print('[LicensePaymentDetailViewModel][loadHistory ERROR] $e');
+      _historyError = '$e';
+    } finally {
+      _isHistoryLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// โหลด activity log (GET /v2/payments/{uuid}/activity)
+  Future<void> loadActivity({String? uuidOverride}) async {
+    final uuid = (uuidOverride ?? _uuid ?? '').trim();
+    if (uuid.isEmpty) return;
+    _isActivityLoading = true;
+    _activityError = null;
+    notifyListeners();
+    try {
+      _activity = await _service.fetchPaymentActivity(uuid: uuid);
+    } catch (e) {
+      print('[LicensePaymentDetailViewModel][loadActivity ERROR] $e');
+      _activityError = '$e';
+    } finally {
+      _isActivityLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// โหลดทั้ง history + activity พร้อมกัน (ใช้ตอนเปิดหน้า history)
+  Future<void> loadHistoryAndActivity({String? uuidOverride}) async {
+    final uuid = (uuidOverride ?? _uuid ?? '').trim();
+    if (uuid.isEmpty) return;
+    await Future.wait([
+      loadHistory(uuidOverride: uuid),
+      loadActivity(uuidOverride: uuid),
+    ]);
+  }
+
+  /// โหลดใบเสร็จ (GET /v2/payments/{uuid}/receipt)
+  /// uuid คือ payment uuid (ไม่ใช่ request uuid)
+  /// เก็บ _receiptUuid ไว้ใช้ตอน gotoReceipt / reload
+  Future<void> loadReceipt({String? uuid}) async {
+    final payUuid = (uuid ?? '').trim();
+    if (payUuid.isEmpty) {
+      _setError('ไม่พบ payment uuid สำหรับโหลดใบเสร็จ');
+      return;
+    }
+    _receiptUuid = payUuid;
+    _isReceiptLoading = true;
+    _receiptError = null;
+    notifyListeners();
+    try {
+      _receipt = await _service.fetchReceipt(uuid: payUuid);
+    } catch (e) {
+      print('[LicensePaymentDetailViewModel][loadReceipt ERROR] $e');
+      _receiptError = '$e';
+    } finally {
+      _isReceiptLoading = false;
+      notifyListeners();
+    }
+  }
+
+  /// กดปุ่ม "ดูใบเสร็จ" → โหลดใบเสร็จ + ไป Step 2
+  Future<void> gotoReceipt(String paymentUuid) async {
+    if (paymentUuid.trim().isEmpty) return;
+    await loadReceipt(uuid: paymentUuid);
+    nextDetailStep();
+  }
+
+  /// อัปโหลดไฟล์แนบ (รูปสลิป) — POST /v2/payments/{uuid}/attachments
+  /// คืน PaymentAttachment? (หรือ null ถ้าล้มเหลว)
+  Future<PaymentAttachment?> uploadAttachment({
+    required String uuid,
+    required String filePath,
+  }) async {
+    if (uuid.isEmpty) {
+      _setError('ไม่พบ payment uuid สำหรับอัปโหลดไฟล์แนบ');
+      return null;
+    }
+    try {
+      return await _service.uploadPaymentAttachment(
+        uuid: uuid,
+        filePath: filePath,
+      );
+    } catch (e) {
+      print('[LicensePaymentDetailViewModel][uploadAttachment ERROR] $e');
+      _setError('อัปโหลดไฟล์แนบไม่สำเร็จ: $e');
+      return null;
+    }
   }
 
   // ===============================================================
