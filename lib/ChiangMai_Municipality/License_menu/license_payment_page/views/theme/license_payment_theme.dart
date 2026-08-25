@@ -3,9 +3,13 @@
 // ============================================================================
 // Shared design tokens (colors / typography / decoration) สำหรับหน้า
 // "คำขอต่อสัญญา" — ใช้ซ้ำในทุก widget เพื่อให้ UI สม่ำเสมอ
+//
+// StatusPalette.of() → forward ไปที่ LicenseStatusLabels.paletteOf (central)
 // ============================================================================
 
 import 'package:flutter/material.dart';
+
+import '../../../../unity/license_status_labels.dart' hide StatusPalette;
 
 /// 🎨 Brand & Semantic Colors
 class LaColors {
@@ -162,60 +166,65 @@ class StatusPalette {
   final Color fg;
   const StatusPalette(this.bg, this.fg);
 
+  /// คืนสี pill ตาม raw status — forward ไป central mapper
+  /// รองรับทั้ง raw key (preferred) และ Thai label (legacy fallback)
   static StatusPalette of(String? status) {
-    final s = (status ?? '').toLowerCase().trim();
+    final s = (status ?? '').trim();
     if (s.isEmpty) {
       return const StatusPalette(
           LaColors.statusNeutralBg, LaColors.statusNeutralFg);
     }
-    // Pending / รอ / รออนุมัติ / in_progress / กำลังดำเนินการ
+    // 1) raw API key → central
+    final central = LicenseStatusLabels.paletteOf(s);
+    // ถ้า central ตรงกับ neutral (เพราะ key ไม่รู้จัก) → ลอง legacy TH substring
+    final isNeutral = central.bg == Color(0xFFF1F5F9) &&
+        central.fg == Color(0xFF475569);
+    if (isNeutral) {
+      return _legacyPalette(s);
+    }
+    // central palette colors เป็นค่าเดียวกับ LaColors.* อยู่แล้ว → ใช้ตรงๆ
+    return StatusPalette(central.bg, central.fg);
+  }
+
+  // legacy: substring match ภาษาไทย (เก็บไว้สำหรับ TH label ที่ central ไม่รู้จัก)
+  static StatusPalette _legacyPalette(String s) {
+    final low = s.toLowerCase();
     if (s.contains('รอ') ||
-        s.contains('pending') ||
-        s.contains('wait') ||
-        s.contains('progress') ||
-        s.contains('process') ||
-        s.contains('doing') ||
-        s.contains('กำลัง') ||
-        s.contains('อยู่ระหว่าง') ||
+        low.contains('pending') ||
+        low.contains('wait') ||
+        low.contains('progress') ||
+        low.contains('กำลัง') ||
         s.contains('ดำเนินการ')) {
       return const StatusPalette(
           LaColors.statusPendingBg, LaColors.statusPendingFg);
     }
-    // Approved / อนุมัติ / ตกลง / ผ่าน / เสร็จ / ชำระแล้ว
     if (s.contains('อนุมัติ') ||
-        s.contains('approved') ||
-        s.contains('ตกลง') ||
         s.contains('ผ่าน') ||
-        s.contains('success') ||
-        s == 'ok' ||
-        s.contains('complete') ||
         s.contains('เสร็จ') ||
-        s.contains('ชำระแล้ว')) {
+        s.contains('ชำระแล้ว') ||
+        low.contains('approved') ||
+        low.contains('complete') ||
+        low == 'ok') {
       return const StatusPalette(
           LaColors.statusApprovedBg, LaColors.statusApprovedFg);
     }
-    // Rejected / ปฏิเสธ / ยกเลิก / ไม่อนุมัติ / หมดอายุ
     if (s.contains('ปฏิเสธ') ||
-        s.contains('reject') ||
-        s.contains('cancel') ||
         s.contains('ยกเลิก') ||
         s.contains('ไม่อนุมัติ') ||
-        s.contains('failed') ||
-        s.contains('fail') ||
         s.contains('หมดอายุ') ||
-        s.contains('expired')) {
+        low.contains('reject') ||
+        low.contains('cancel') ||
+        low.contains('expired') ||
+        low.contains('failed')) {
       return const StatusPalette(
           LaColors.statusRejectedBg, LaColors.statusRejectedFg);
     }
-    // Info / ตรวจสอบ / verify
     if (s.contains('ตรวจ') ||
-        s.contains('verify') ||
-        s.contains('check') ||
-        s.contains('info')) {
-      return const StatusPalette(LaColors.statusInfoBg, LaColors.statusInfoFg);
-    }
-    // Info (ยื่นเอกสาร / ส่งหลักฐาน) — v2 statuses
-    if (s.contains('ส่งหลักฐาน') || s.contains('ยื่นเอกสาร')) {
+        s.contains('ยื่นเอกสาร') ||
+        s.contains('ส่งหลักฐาน') ||
+        low.contains('verify') ||
+        low.contains('check') ||
+        low.contains('info')) {
       return const StatusPalette(LaColors.statusInfoBg, LaColors.statusInfoFg);
     }
     return const StatusPalette(

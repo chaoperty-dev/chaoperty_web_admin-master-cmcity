@@ -31,8 +31,7 @@ String _uuidV7() {
   // byte 7: rand_a low byte
   final raLo = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
   // byte 8: variant '10' + 6 bits of rand_b
-  final varByte =
-      (0x80 | rand.nextInt(0x40)).toRadixString(16).padLeft(2, '0');
+  final varByte = (0x80 | rand.nextInt(0x40)).toRadixString(16).padLeft(2, '0');
   // byte 9: rand_b next byte
   final rb1 = rand.nextInt(0x100).toRadixString(16).padLeft(2, '0');
   // bytes 10-15: 6 random bytes
@@ -124,6 +123,10 @@ class AddBillingViewModel extends ChangeNotifier {
   void _addAutoRows() {
     if (rows.isNotEmpty) return;
     for (final exp in autoExps.where((e) => e.auto == '1')) {
+      // expauto API ไม่มี uuid — สร้างเองถ้ายังว่าง
+      if (exp.uuid == null || exp.uuid!.isEmpty) {
+        exp.uuid = _uuidV7();
+      }
       final unit = units.firstWhere(
         (u) => u.ser == exp.unitser,
         orElse: () => LcUnitModel(),
@@ -140,6 +143,7 @@ class AddBillingViewModel extends ChangeNotifier {
       rows.add(LcExpTransModel(
         uuid: _uuidV7(),
         ser: exp.ser,
+        expser: exp.expser,
         expname: exp.expname,
         exptser: exp.exptser,
         unitser: exp.unitser,
@@ -158,6 +162,8 @@ class AddBillingViewModel extends ChangeNotifier {
         wser: wht.ser ?? '1',
         wtype: wht.wht ?? '',
         nwht: wht.pct ?? '0',
+        etype: exp.etype ?? '',
+        dtype: exp.dtype ?? '',
       ));
     }
     recalculateAll();
@@ -269,6 +275,10 @@ class AddBillingViewModel extends ChangeNotifier {
   }
 
   void addRow(LcAutoExpModel selected) {
+    // expauto API ไม่มี uuid — สร้างเองถ้ายังว่าง
+    if (selected.uuid == null || selected.uuid!.isEmpty) {
+      selected.uuid = _uuidV7();
+    }
     final unit = units.firstWhere(
       (u) => u.ser == selected.unitser,
       orElse: () => LcUnitModel(),
@@ -285,6 +295,7 @@ class AddBillingViewModel extends ChangeNotifier {
     final newRow = LcExpTransModel(
       uuid: _uuidV7(),
       ser: selected.ser,
+      expser: selected.expser,
       expname: selected.expname,
       exptser: selected.exptser,
       unitser: selected.unitser,
@@ -303,6 +314,8 @@ class AddBillingViewModel extends ChangeNotifier {
       wser: wht.ser ?? '1',
       wtype: wht.wht ?? '',
       nwht: wht.pct ?? '0',
+      etype: selected.etype ?? '',
+      dtype: selected.dtype ?? '',
     );
     rows.add(newRow);
     recalculate(newRow);

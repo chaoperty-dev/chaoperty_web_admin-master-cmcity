@@ -9,6 +9,8 @@
 
 import 'package:intl/intl.dart';
 
+import '../../../unity/license_status_labels.dart';
+
 /// แถวค่าใช้จ่าย (addons / debt lines) ในรายส่งคำร้องขออนุมัติ
 class SubmitApprovalAddon {
   final String label;
@@ -199,23 +201,7 @@ class SubmitApprovalDetail {
   bool get isPaid => status.toLowerCase() == 'paid';
 
   /// UI compatibility: แสดง status เป็น label (TH/EN)
-  String get statusLabel {
-    switch (status.toLowerCase()) {
-      case 'paid':
-      case 'completed':
-        return 'ส่งคำร้องแล้ว';
-      case 'draft':
-        return 'รอส่งคำร้อง';
-      case 'waiting_payment_info':
-      case 'waiting_payment':
-        return 'รอข้อมูลการชำระ';
-      case 'cancelled':
-      case 'canceled':
-        return 'ยกเลิก';
-      default:
-        return status.isEmpty ? '-' : status;
-    }
-  }
+  String get statusLabel => LicenseStatusLabels.th(status);
 
   /// UI compatibility: ข้อมูล contract ที่ UI คาดหวัง
   /// list endpoint → ใช้ details (subzone/zn/ln)

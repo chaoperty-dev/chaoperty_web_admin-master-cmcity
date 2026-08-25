@@ -19,6 +19,8 @@
 
 import 'package:intl/intl.dart';
 
+import '../../../unity/license_status_labels.dart';
+
 /// module — ดึงจาก json['module']
 class LicenseRequestModule {
   final String code;
@@ -230,35 +232,8 @@ class LicenseRequestItem {
   String get ln => details.ln;
   int? get zoneSer => details.zser;
 
-  /// Status label (TH) — map จาก status string
-  String get statusLabel {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return 'ร่าง';
-      case 'pending':
-        return 'รอดำเนินการ';
-      case 'under_review':
-        return 'กำลังตรวจสอบ';
-      case 'in_progress':
-        return 'กำลังดำเนินการ';
-      case 'documents_submitted':
-        return 'ยื่นเอกสารแล้ว';
-      case 'waiting_payment_info':
-        return 'รอข้อมูลการชำระ';
-      case 'payment_submitted':
-        return 'ส่งหลักฐานชำระแล้ว';
-      case 'completed':
-      case 'approved':
-        return 'เสร็จสิ้น';
-      case 'rejected':
-        return 'ปฏิเสธ';
-      case 'cancelled':
-      case 'canceled':
-        return 'ยกเลิก';
-      default:
-        return status.isEmpty ? '-' : status;
-    }
-  }
+  /// Status label (TH) — map จาก status string (central mapper)
+  String get statusLabel => LicenseStatusLabels.th(status);
 }
 
 /// Wrapper สำหรับ list endpoint — items + meta + links

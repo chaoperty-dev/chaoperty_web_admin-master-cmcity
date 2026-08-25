@@ -7,6 +7,7 @@
 class LcExpTransModel {
   String? uuid;
   String? ser;
+  String? expser;
   String? expname;
   String? exptser;
   String? unitser;
@@ -27,10 +28,13 @@ class LcExpTransModel {
   String? nwht;
   String? wht;
   String? total;
+  String? etype;
+  String? dtype;
 
   LcExpTransModel({
     this.uuid,
     this.ser,
+    this.expser,
     this.expname,
     this.exptser,
     this.unitser,
@@ -51,12 +55,15 @@ class LcExpTransModel {
     this.nwht,
     this.wht = '0.00',
     this.total = '0.00',
+    this.etype,
+    this.dtype,
   });
 
   /// แปลง model → Map เพื่อส่งใน `debt_details` ของ POST /admin/requests
   Map<String, dynamic> toJson() => {
         'uuid': uuid,
         'ser': ser,
+        'expser': expser,
         'expname': expname,
         'exptser': exptser,
         'unitser': unitser,
@@ -77,11 +84,15 @@ class LcExpTransModel {
         'nwht': nwht,
         'wht': wht,
         'total': total,
+        'etype': etype,
+        'dtype': dtype,
       };
 }
 
 class LcAutoExpModel {
+  String? uuid;
   String? ser;
+  String? expser;
   String? expname;
   String? exptser;
   String? unitser;
@@ -93,10 +104,13 @@ class LcAutoExpModel {
   String? wht;
   String? priAuto;
   String? etype;
+  String? dtype;
   String? auto;
 
   LcAutoExpModel({
+    this.uuid,
     this.ser,
+    this.expser,
     this.expname,
     this.exptser,
     this.unitser,
@@ -108,12 +122,15 @@ class LcAutoExpModel {
     this.wht,
     this.priAuto,
     this.etype,
+    this.dtype,
     this.auto,
   });
 
   factory LcAutoExpModel.fromJson(Map<String, dynamic> json) {
     return LcAutoExpModel(
+      uuid: json['uuid']?.toString(),
       ser: json['ser']?.toString(),
+      expser: json['expser']?.toString(),
       expname: json['expname']?.toString(),
       exptser: json['exptser']?.toString(),
       unitser: json['unitser']?.toString(),
@@ -125,6 +142,7 @@ class LcAutoExpModel {
       wht: json['wht']?.toString(),
       priAuto: json['pri_auto']?.toString() ?? json['amt']?.toString(),
       etype: json['etype']?.toString(),
+      dtype: json['dtype']?.toString(),
       auto: json['auto']?.toString(),
     );
   }

@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../Model/Review_Model.dart';
+import '../../../unity/license_status_labels.dart';
 import '../models/license_approve_config.dart';
 import '../models/license_approve_event.dart';
 import '../services/license_approve_service.dart';
@@ -74,36 +75,12 @@ class LicenseApproveViewModel extends ChangeNotifier {
   String? get selectedZoneSer => _selectedZoneSer;
 
   // ---------- Status filter ----------
-  /// รายการ status ทั้งหมดที่ filter ได้
+  /// รายการ status ทั้งหมดที่ filter ได้ (delegate ไปยัง central mapper)
   /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
-  static const List<String> statusOptions = <String>[
-    'draft',
-    'documents_submitted',
-    'waiting_payment_info',
-    'payment_submitted',
-    'request_submitted',
-    'needs_update',
-    'under_review',
-    'in_progress',
-    'request_completed',
-    'completed',
-    'rejected',
-  ];
+  static List<String> get statusOptions => LicenseStatusLabels.options;
 
-  /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
-  static const Map<String, String> statusLabels = <String, String>{
-    'draft': 'ฉบับร่าง',
-    'documents_submitted': 'ส่งเอกสารแล้ว',
-    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
-    'payment_submitted': 'ชำระเงินแล้ว',
-    'request_submitted': 'ส่งคำขอแล้ว',
-    'needs_update': 'ต้องแก้ไข',
-    'under_review': 'กำลังพิจารณา',
-    'in_progress': 'กำลังดำเนินการ',
-    'request_completed': 'คำขอเสร็จสิ้น',
-    'completed': 'เสร็จสิ้น',
-    'rejected': 'ถูกปฏิเสธ',
-  };
+  /// ป้ายภาษาไทยสำหรับ status (delegate ไปยัง central mapper)
+  static String statusLabel(String key) => LicenseStatusLabels.th(key);
 
   /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
   String? _selectedStatus;

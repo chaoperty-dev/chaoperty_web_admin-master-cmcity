@@ -19,6 +19,7 @@ import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_config.dart';
 import '../models/license_payment_event.dart';
 import '../models/payment_task_model.dart';
+import '../../../unity/license_status_labels.dart';
 import '../services/license_payment_detail_service.dart';
 import '../services/license_payment_service.dart';
 
@@ -79,40 +80,19 @@ class LicensePaymentViewModel extends ChangeNotifier {
   String _searchCustomer = '';
   String get searchCustomer => _searchCustomer;
 
-  bool _includeDone = true;
+  // default false → ส่ง include_done=0 (user request: ทุกเส้น ใส่ include_done=0)
+  bool _includeDone = false;
   bool get includeDone => _includeDone;
 
   // ---------- Status filter ----------
-  /// รายการ status ทั้งหมดที่ filter ได้
+  /// รายการ status ทั้งหมดที่ filter ได้ — ใช้ central mapper
   /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
-  static const List<String> statusOptions = <String>[
-    'draft',
-    'documents_submitted',
-    'waiting_payment_info',
-    'payment_submitted',
-    'request_submitted',
-    'needs_update',
-    'under_review',
-    'in_progress',
-    'request_completed',
-    'completed',
-    'rejected',
-  ];
+  static List<String> get statusOptions => LicenseStatusLabels.options;
 
-  /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
-  static const Map<String, String> statusLabels = <String, String>{
-    'draft': 'ฉบับร่าง',
-    'documents_submitted': 'ส่งเอกสารแล้ว',
-    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
-    'payment_submitted': 'ชำระเงินแล้ว',
-    'request_submitted': 'ส่งคำขอแล้ว',
-    'needs_update': 'ต้องแก้ไข',
-    'under_review': 'กำลังพิจารณา',
-    'in_progress': 'กำลังดำเนินการ',
-    'request_completed': 'คำขอเสร็จสิ้น',
-    'completed': 'เสร็จสิ้น',
-    'rejected': 'ถูกปฏิเสธ',
-  };
+  /// ป้ายภาษาไทยสำหรับ status — ใช้ central mapper
+  static String statusLabel(String key) {
+    return LicenseStatusLabels.th(key);
+  }
 
   /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
   String? _selectedStatus;

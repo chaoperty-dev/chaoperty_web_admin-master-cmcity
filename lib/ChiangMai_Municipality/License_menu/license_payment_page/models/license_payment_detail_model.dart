@@ -3,10 +3,14 @@
 // ============================================================================
 // Model — แมประรายการรับชำระ + ใบเสร็จ
 // map ตาม JSON จาก Postman "Payment v2 Receipts"
+//
+// status mapping: ใช้ LicenseStatusLabels (central) — ดู
+//   lib/ChiangMai_Municipality/unity/license_status_labels.dart
 // ============================================================================
 
 import 'package:intl/intl.dart';
 
+import '../../../unity/license_status_labels.dart';
 import 'license_payment_attachment.dart';
 
 /// แถวค่าใช้จ่าย (addons / debt lines) ในรายการรับชำระ
@@ -129,34 +133,9 @@ class PaymentDetail {
   bool get isPaid => status.toLowerCase() == 'paid';
 
   /// UI compatibility: แสดง status เป็น label (TH/EN)
+  /// — ใช้ central mapper เพื่อให้ทุกเมนูตรงกัน
   String get statusLabel {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return 'เสร็จสิ้น';
-      case 'draft':
-        return 'รอชำระ';
-      case 'documents_submitted':
-        return 'ยื่นเอกสารแล้ว';
-      case 'under_review':
-        return 'กำลังตรวจสอบ';
-      case 'in_progress':
-        return 'กำลังดำเนินการ';
-      case 'completed':
-        return 'เสร็จสิ้น';
-      case 'pending':
-        return 'รอดำเนินการ';
-      case 'waiting_payment_info':
-        return 'รอข้อมูลการชำระ';
-      case 'payment_submitted':
-        return 'ส่งหลักฐานชำระแล้ว';
-      case 'cancelled':
-      case 'canceled':
-        return 'ยกเลิก';
-      case 'rejected':
-        return 'ปฏิเสธ';
-      default:
-        return status.isEmpty ? '-' : status;
-    }
+    return LicenseStatusLabels.th(status);
   }
 
   /// UI compatibility: ข้อมูล contract ที่ UI คาดหวัง

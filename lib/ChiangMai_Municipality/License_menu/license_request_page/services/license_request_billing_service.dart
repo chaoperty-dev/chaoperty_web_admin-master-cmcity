@@ -25,6 +25,7 @@ import 'package:http/http.dart' as http;
 ///   "wht": "3"
 /// }
 class BillingItem {
+  final String uuid;
   final String ser;
   final String expname;
   final String sdate;
@@ -36,6 +37,7 @@ class BillingItem {
   final double whtRate;
 
   const BillingItem({
+    required this.uuid,
     required this.ser,
     required this.expname,
     required this.sdate,
@@ -61,6 +63,7 @@ class BillingItem {
 
   factory BillingItem.fromJson(Map<String, dynamic> json) {
     return BillingItem(
+      uuid: (json['uuid'] ?? '').toString(),
       ser: (json['ser'] ?? '0').toString(),
       expname: (json['expname'] ?? '').toString(),
       sdate: (json['sdate'] ?? '').toString(),
@@ -78,6 +81,7 @@ class BillingItem {
   /// (ใช้รับรายการที่เพิ่มใหม่จาก AddBillingTable)
   factory BillingItem.fromDebtJson(Map<String, dynamic> json) {
     return BillingItem(
+      uuid: (json['uuid'] ?? '').toString(),
       ser: (json['ser'] ?? '0').toString(),
       expname: (json['expname'] ?? '').toString(),
       sdate: (json['sdate'] ?? '').toString(),
@@ -96,6 +100,7 @@ class BillingItem {
     final isVat = vatRate > 0;
     final isWht = whtRate > 0;
     return {
+      'uuid': uuid,
       'ser': ser,
       'expname': expname,
       'exptser': '1',

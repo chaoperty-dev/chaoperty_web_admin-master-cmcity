@@ -16,6 +16,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
+import '../../../unity/license_status_labels.dart';
 import '../models/fact_check_item.dart';
 import '../models/license_fact_check_config.dart';
 import '../models/license_fact_check_event.dart';
@@ -81,34 +82,10 @@ class LicensefactcheckViewModel extends ChangeNotifier {
   // ---------- Status filter ----------
   /// รายการ status ทั้งหมดที่ filter ได้
   /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
-  static const List<String> statusOptions = <String>[
-    'draft',
-    'documents_submitted',
-    'waiting_payment_info',
-    'payment_submitted',
-    'request_submitted',
-    'needs_update',
-    'under_review',
-    'in_progress',
-    'request_completed',
-    'completed',
-    'rejected',
-  ];
+  static List<String> get statusOptions => LicenseStatusLabels.options;
 
   /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
-  static const Map<String, String> statusLabels = <String, String>{
-    'draft': 'ฉบับร่าง',
-    'documents_submitted': 'ส่งเอกสารแล้ว',
-    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
-    'payment_submitted': 'ชำระเงินแล้ว',
-    'request_submitted': 'ส่งคำขอแล้ว',
-    'needs_update': 'ต้องแก้ไข',
-    'under_review': 'กำลังพิจารณา',
-    'in_progress': 'กำลังดำเนินการ',
-    'request_completed': 'คำขอเสร็จสิ้น',
-    'completed': 'เสร็จสิ้น',
-    'rejected': 'ถูกปฏิเสธ',
-  };
+  static String statusLabel(String key) => LicenseStatusLabels.th(key);
 
   /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
   String? _selectedStatus;

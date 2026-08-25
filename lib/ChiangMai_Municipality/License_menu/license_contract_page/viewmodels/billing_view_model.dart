@@ -121,6 +121,10 @@ class BillingViewModel extends ChangeNotifier {
   void _addAutoRows() {
     if (rows.isNotEmpty) return;
     for (final exp in autoExps.where((e) => e.auto == '1')) {
+      // expauto API ไม่มี uuid — สร้างเองถ้ายังว่าง
+      if (exp.uuid == null || exp.uuid!.isEmpty) {
+        exp.uuid = _uuidV7();
+      }
       final unit = units.firstWhere(
         (u) => u.ser == exp.unitser,
         orElse: () => LcUnitModel(),
@@ -137,6 +141,7 @@ class BillingViewModel extends ChangeNotifier {
       rows.add(LcExpTransModel(
         uuid: _uuidV7(),
         ser: exp.ser,
+        expser: exp.expser,
         expname: exp.expname,
         exptser: exp.exptser,
         unitser: exp.unitser,
@@ -155,6 +160,8 @@ class BillingViewModel extends ChangeNotifier {
         wser: wht.ser ?? '1',
         wtype: wht.wht ?? '',
         nwht: wht.pct ?? '0',
+        etype: exp.etype ?? '',
+        dtype: exp.dtype ?? '',
       ));
     }
     recalculateAll();
@@ -266,6 +273,10 @@ class BillingViewModel extends ChangeNotifier {
   }
 
   void addRow(LcAutoExpModel selected) {
+    // expauto API ไม่มี uuid — สร้างเองถ้ายังว่าง
+    if (selected.uuid == null || selected.uuid!.isEmpty) {
+      selected.uuid = _uuidV7();
+    }
     final unit = units.firstWhere(
       (u) => u.ser == selected.unitser,
       orElse: () => LcUnitModel(),
@@ -282,6 +293,7 @@ class BillingViewModel extends ChangeNotifier {
     final newRow = LcExpTransModel(
       uuid: _uuidV7(),
       ser: selected.ser,
+      expser: selected.expser,
       expname: selected.expname,
       exptser: selected.exptser,
       unitser: selected.unitser,
@@ -300,6 +312,8 @@ class BillingViewModel extends ChangeNotifier {
       wser: wht.ser ?? '1',
       wtype: wht.wht ?? '',
       nwht: wht.pct ?? '0',
+      etype: selected.etype ?? '',
+      dtype: selected.dtype ?? '',
     );
     rows.add(newRow);
     recalculate(newRow);

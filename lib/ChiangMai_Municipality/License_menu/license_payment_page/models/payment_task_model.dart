@@ -6,7 +6,12 @@
 //
 // Response shape: Laravel paginated envelope {data[], meta{}, links{}}.
 // Each row has nested `module` / `customer` / `details` objects.
+//
+// status mapping: ใช้ LicenseStatusLabels (central) — ดู
+//   lib/ChiangMai_Municipality/unity/license_status_labels.dart
 // ============================================================================
+
+import '../../../unity/license_status_labels.dart';
 
 class PaymentTaskModule {
   final String code;
@@ -122,36 +127,10 @@ class PaymentTask {
     );
   }
 
-  /// Thai label per English status. Phrases chosen to align with
-  /// StatusPalette.of() substring matcher in license_payment_theme.dart.
+  /// แปล status (API) เป็นภาษาไทยสำหรับแสดงใน UI
+  /// — ใช้ central mapper (LicenseStatusLabels.th) เพื่อให้ทุกเมนูตรงกัน
   String get statusLabel {
-    switch (status.toLowerCase()) {
-      case 'paid':
-        return 'ชำระแล้ว';
-      case 'draft':
-        return 'รอชำระ';
-      case 'documents_submitted':
-        return 'ยื่นเอกสารแล้ว';
-      case 'under_review':
-        return 'กำลังตรวจสอบ';
-      case 'in_progress':
-        return 'กำลังดำเนินการ';
-      case 'completed':
-        return 'เสร็จสิ้น';
-      case 'pending':
-        return 'รอดำเนินการ';
-      case 'waiting_payment_info':
-        return 'รอข้อมูลการชำระ';
-      case 'payment_submitted':
-        return 'ส่งหลักฐานชำระแล้ว';
-      case 'cancelled':
-      case 'canceled':
-        return 'ยกเลิก';
-      case 'rejected':
-        return 'ปฏิเสธ';
-      default:
-        return status.isEmpty ? '-' : status;
-    }
+    return LicenseStatusLabels.th(status);
   }
 }
 

@@ -21,6 +21,7 @@ import '../models/license_submit_approval_event.dart';
 import '../services/license_submit_approval_detail_service.dart';
 import '../services/license_submit_approval_service.dart';
 import '../../license_request_page/services/license_request_service.dart';
+import '../../../unity/license_status_labels.dart';
 
 class LicenseSubmitApprovalViewModel extends ChangeNotifier {
   LicenseSubmitApprovalViewModel({
@@ -88,34 +89,10 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
   // ---------- Status filter ----------
   /// รายการ status ทั้งหมดที่ filter ได้
   /// (null = "ทั้งหมด" — ไม่ส่ง key ให้ backend)
-  static const List<String> statusOptions = <String>[
-    'draft',
-    'documents_submitted',
-    'waiting_payment_info',
-    'payment_submitted',
-    'request_submitted',
-    'needs_update',
-    'under_review',
-    'in_progress',
-    'request_completed',
-    'completed',
-    'rejected',
-  ];
+  static List<String> get statusOptions => LicenseStatusLabels.options;
 
   /// ป้ายภาษาไทยสำหรับ status (ใช้โชว์ใน dropdown ของ filter)
-  static const Map<String, String> statusLabels = <String, String>{
-    'draft': 'ฉบับร่าง',
-    'documents_submitted': 'ส่งเอกสารแล้ว',
-    'waiting_payment_info': 'รอข้อมูลชำระเงิน',
-    'payment_submitted': 'ชำระเงินแล้ว',
-    'request_submitted': 'ส่งคำขอแล้ว',
-    'needs_update': 'ต้องแก้ไข',
-    'under_review': 'กำลังพิจารณา',
-    'in_progress': 'กำลังดำเนินการ',
-    'request_completed': 'คำขอเสร็จสิ้น',
-    'completed': 'เสร็จสิ้น',
-    'rejected': 'ถูกปฏิเสธ',
-  };
+  static String statusLabel(String key) => LicenseStatusLabels.th(key);
 
   /// ค่าปัจจุบัน (string = enum, null = ทั้งหมด)
   String? _selectedStatus;

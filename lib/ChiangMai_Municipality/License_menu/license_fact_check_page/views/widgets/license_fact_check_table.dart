@@ -17,6 +17,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../unity/Enum.dart';
@@ -116,8 +117,9 @@ class LicensefactcheckTable extends StatelessWidget {
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
           // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
-          _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2),
-          _HeaderCell(label: 'ผ่านตรวจ', flex: 2),
+          // _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2), // คอมเมนต์ปิดวันที่ส่งคำร้อง
+          _HeaderCell(label: 'กำลังตรวจสอบ', flex: 2),
+          _HeaderCell(label: 'ผ่านการตรวจสอบ', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -137,7 +139,6 @@ class LicensefactcheckTable extends StatelessWidget {
     final palette = StatusPalette.of(item.statusLabel);
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(item),
       child: Row(
         children: [
           // Action
@@ -167,18 +168,20 @@ class LicensefactcheckTable extends StatelessWidget {
           //     flex: 2,
           //     isMono: true), // คอมเมนต์ปิดเบอร์โทร
           // วันที่ส่งคำร้อง — submitted_at (fallback created_at)
-          _Cell(
-              value: formatFactCheckDate(
-                  item.submittedAt ?? item.createdAt),
-              flex: 2,
-              isMono: true),
-          // ผ่านตรวจ (v2 ใหม่) — ก่อนหน้าสถานะ
+          // _Cell(
+          //     value: formatFactCheckDate(
+          //         item.submittedAt ?? item.createdAt),
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดวันที่ส่งคำร้อง
+          // กำลังตรวจสอบ — inspection_review != null → กำลังตรวจสอบอยู่
           Expanded(
             flex: 2,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              child: _InspectionPassedBadge(passed: item.inspectionPassed),
-            ),
+            child: _ReviewCheck(review: item.inspectionReview),
+          ),
+          // ผ่านการตรวจสอบ — inspection_passed (v2)
+          Expanded(
+            flex: 2,
+            child: _BoolCheck(value: item.inspectionPassed),
           ),
           Expanded(
             flex: 2,
@@ -250,6 +253,97 @@ class LicensefactcheckTable extends StatelessWidget {
 // ============================================================================
 // Internal widgets
 // ============================================================================
+
+/// Checkbox icon แสดง boolean — true → ติ๊กถูกสีเขียว, false → กล่องว่าง
+class _BoolCheck extends StatelessWidget {
+  final bool value;
+  const _BoolCheck({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Align(
+        alignment: Alignment.center,
+        child: Tooltip(
+          message: value ? 'ดำเนินการแล้ว' : 'ยังไม่ดำเนินการ',
+          waitDuration: const Duration(milliseconds: 200),
+          child: Icon(
+            value
+                ? Icons.check_box_rounded
+                : Icons.check_box_outline_blank_rounded,
+            size: 18,
+            color: value ? const Color(0xFF15803D) : LaColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Checkbox สำหรับ inspection_review — เหมือน _BoolCheck แต่มี tooltip
+/// แสดง 4 ฟิลด์: state_label, round, created_at, updated_at
+/// review == null → กล่องว่าง, ไม่มี tooltip
+class _ReviewCheck extends StatelessWidget {
+  final FactCheckReview? review;
+  const _ReviewCheck({required this.review});
+
+  @override
+  Widget build(BuildContext context) {
+    final hasReview = review != null;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Align(
+        alignment: Alignment.center,
+        child: Tooltip(
+          message: hasReview ? _buildTooltipMessage(review!) : 'ยังไม่เริ่มตรวจสอบ',
+          waitDuration: const Duration(milliseconds: 200),
+          child: Icon(
+            hasReview
+                ? Icons.check_box_rounded
+                : Icons.check_box_outline_blank_rounded,
+            size: 18,
+            color: hasReview
+                ? const Color(0xFF15803D)
+                : LaColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// สร้าง tooltip แบบหลายบรรทัด "label: value"
+  /// แสดง 4 ฟิลด์: state_label, round, created_at, updated_at
+  String _buildTooltipMessage(FactCheckReview r) {
+    final rows = <String>[];
+    final stateLabel =
+        (r.stateLabel ?? '').trim().isNotEmpty ? r.stateLabel! : (r.state ?? '-');
+    rows.add('สถานะ: ${_truncate(stateLabel, 30)}');
+    if (r.round != null) rows.add('รอบ: ${r.round}');
+    if ((r.createdAt ?? '').isNotEmpty) {
+      rows.add('สร้าง: ${_fmt(r.createdAt)}');
+    }
+    if ((r.updatedAt ?? '').isNotEmpty) {
+      rows.add('อัปเดต: ${_fmt(r.updatedAt)}');
+    }
+    return rows.join('\n');
+  }
+
+  String _truncate(String s, int max) {
+    if (s.length <= max) return s;
+    return '${s.substring(0, max)}…';
+  }
+
+  String _fmt(String? raw) {
+    if (raw == null || raw.isEmpty) return '-';
+    try {
+      final dt = DateTime.parse(raw);
+      return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+    } catch (_) {
+      return raw;
+    }
+  }
+}
 
 /// Badge: แสดงผล "ผ่านตรวจ" (inspection_passed) — ใช้ก่อน status pill
 /// passed == true → ✓ สีเขียว
@@ -482,8 +576,12 @@ class _CardRow extends StatelessWidget {
               onTap: () async {
                 await Clipboard.setData(ClipboardData(text: uuidCopy!));
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
+                // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+                if (Scaffold.maybeOf(context) == null) return;
+                final messenger = ScaffoldMessenger.maybeOf(context);
+                if (messenger == null) return;
+                messenger.hideCurrentSnackBar();
+                messenger.showSnackBar(
                   SnackBar(
                     content: const Row(
                       children: [
@@ -613,8 +711,12 @@ class _CopyUuidCell extends StatelessWidget {
     if (fullValue.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: fullValue));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+    if (Scaffold.maybeOf(context) == null) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: const Row(
           children: [
@@ -735,11 +837,11 @@ class _StatusPill extends StatelessWidget {
 class _HoverableRow extends StatefulWidget {
   final int index;
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _HoverableRow({
     required this.index,
     required this.child,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -768,12 +870,14 @@ class _HoverableRowState extends State<_HoverableRow> {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: widget.onTap,
-        onHover: (hover) {
-          if (hover != _hover) {
-            setState(() => _hover = hover);
-          }
-        },
-        hoverColor: hoverColor,
+        onHover: widget.onTap == null
+            ? null
+            : (hover) {
+                if (hover != _hover) {
+                  setState(() => _hover = hover);
+                }
+              },
+        hoverColor: widget.onTap == null ? null : hoverColor,
         splashColor: LaColors.primary.withOpacity(.12),
         highlightColor: Colors.transparent,
         child: AnimatedContainer(

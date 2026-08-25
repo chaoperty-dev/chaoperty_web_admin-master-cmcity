@@ -647,8 +647,7 @@ extension on _LicensePaymentZoneFilterState {
         hint: AutoSizeText(
           vm.selectedStatus == null
               ? 'ทั้งหมด'
-              : (LicensePaymentViewModel.statusLabels[vm.selectedStatus] ??
-                  vm.selectedStatus!),
+              : LicensePaymentViewModel.statusLabel(vm.selectedStatus!),
           style: LrText.body.copyWith(
             color: vm.selectedStatus == null
                 ? LrColors.textMuted
@@ -684,9 +683,7 @@ extension on _LicensePaymentZoneFilterState {
                             AutoSizeText(
                               s == 'ทั้งหมด'
                                   ? s
-                                  : (LicensePaymentViewModel
-                                          .statusLabels[s] ??
-                                      s),
+                                  : LicensePaymentViewModel.statusLabel(s),
                               style: LrText.body,
                               maxFontSize: 14,
                               minFontSize: 11,
@@ -696,8 +693,10 @@ extension on _LicensePaymentZoneFilterState {
                             if (s != 'ทั้งหมด')
                               AutoSizeText(
                                 s,
-                                style: LrText.caption
-                                    .copyWith(color: LrColors.textMuted),
+                                style: LrText.caption.copyWith(
+                                  color: LrColors.textMuted,
+                                  fontFamily: 'monospace',
+                                ),
                                 maxFontSize: 10,
                                 minFontSize: 9,
                                 maxLines: 1,

@@ -114,6 +114,7 @@ class LicenseRequestDetailStep2ViewModel extends ChangeNotifier {
       }
       existing.add(ser);
       _items.add(BillingItem(
+        uuid: item.uuid,
         ser: ser,
         expname: item.expname,
         sdate: item.sdate,

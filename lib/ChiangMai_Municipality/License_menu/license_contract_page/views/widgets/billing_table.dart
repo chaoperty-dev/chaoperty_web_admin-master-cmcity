@@ -127,12 +127,19 @@ class BillingTable extends StatelessWidget {
                               Container(
                                 constraints:
                                     const BoxConstraints(maxWidth: 180),
-                                child: Text(
-                                  row.expname ?? '-',
-                                  style: LcText.tableCell.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  overflow: TextOverflow.ellipsis,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      row.expname ?? '-',
+                                      style: LcText.tableCell.copyWith(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    _UuidSubtitle(uuid: row.uuid),
+                                  ],
                                 ),
                               ),
                             ),
@@ -579,6 +586,69 @@ class _Badge extends StatelessWidget {
           fontSize: 12,
           fontWeight: FontWeight.w700,
           color: tone,
+        ),
+      ),
+    );
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Widget — UUID Subtitle (แสดงใต้ชื่อรายการ: "รหัส 01a0184a…" + copy on tap)
+// ═══════════════════════════════════════════════════════════════════════════
+class _UuidSubtitle extends StatelessWidget {
+  final String? uuid;
+  const _UuidSubtitle({required this.uuid});
+
+  String _short(String u) {
+    if (u.length <= 12) return u;
+    return '${u.substring(0, 8)}…';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = uuid ?? '';
+    final empty = v.isEmpty;
+    return InkWell(
+      onTap: empty
+          ? null
+          : () async {
+              await Clipboard.setData(ClipboardData(text: v));
+              if (context.mounted) {
+                // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+                if (Scaffold.maybeOf(context) == null) return;
+                final messenger = ScaffoldMessenger.maybeOf(context);
+                if (messenger != null) {
+                  messenger.showSnackBar(
+                    const SnackBar(
+                      content: Text('คัดลอก uuid แล้ว'),
+                      duration: Duration(seconds: 1),
+                    ),
+                  );
+                }
+              }
+            },
+      borderRadius: BorderRadius.circular(4),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.tag_rounded,
+                size: 11, color: LcColors.textSecondary),
+            const SizedBox(width: 4),
+            Text(
+              empty ? 'ยังไม่มีรหัส' : 'รหัส ${_short(v)}',
+              style: LcText.caption.copyWith(
+                color: LcColors.textSecondary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            if (!empty) ...[
+              const SizedBox(width: 4),
+              const Icon(Icons.copy_rounded,
+                  size: 10, color: LcColors.textSecondary),
+            ],
+          ],
         ),
       ),
     );

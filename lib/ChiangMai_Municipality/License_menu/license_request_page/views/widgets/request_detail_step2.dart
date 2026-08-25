@@ -19,6 +19,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/gestures.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -370,17 +371,86 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
             textAlign: TextAlign.right,
             style: LrText.tableCell.copyWith(
               fontWeight: FontWeight.w700,
-              color: LrColors.primaryDark,
             ),
           ),
         ),
       );
     }
 
+    Widget uuidSubtitle(String v) {
+      final empty = v.isEmpty;
+      final short = v.length <= 12 ? v : '${v.substring(0, 8)}…';
+      return InkWell(
+        onTap: empty
+            ? null
+            : () async {
+                await Clipboard.setData(ClipboardData(text: v));
+                if (mounted) {
+                  // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+                  if (Scaffold.maybeOf(context) == null) return;
+                  final messenger = ScaffoldMessenger.maybeOf(context);
+                  if (messenger != null) {
+                    messenger.showSnackBar(
+                      const SnackBar(
+                        content: Text('คัดลอก uuid แล้ว'),
+                        duration: Duration(seconds: 1),
+                      ),
+                    );
+                  }
+                }
+              },
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.tag_rounded,
+                  size: 11, color: LrColors.textSecondary),
+              const SizedBox(width: 4),
+              Text(
+                empty ? 'ยังไม่มีรหัส' : 'รหัส $short',
+                style: LrText.caption.copyWith(
+                  color: LrColors.textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              if (!empty) ...[
+                const SizedBox(width: 4),
+                const Icon(Icons.copy_rounded,
+                    size: 10, color: LrColors.textSecondary),
+              ],
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget expnameCell(String v) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              v.isEmpty ? '-' : v,
+              style: LrText.tableCell.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            uuidSubtitle(row.uuid),
+          ],
+        ),
+      );
+    }
+
+
+
     return TableRow(
       decoration: BoxDecoration(color: bg),
       children: [
-        textCell(row.expname, bold: true),
+        expnameCell(row.expname),
         selectCell(row.unit.isEmpty ? '-' : row.unit),
         chipCell(row.term,
             color: LrColors.primaryDark, bg: LrColors.primaryLight),

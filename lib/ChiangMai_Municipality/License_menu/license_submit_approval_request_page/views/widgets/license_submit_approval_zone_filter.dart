@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../license_request_page/views/theme/license_request_theme.dart';
+import '../../../../unity/license_status_labels.dart' hide StatusPalette;
 import '../../viewmodels/license_submit_approval_view_model.dart';
 
 class LicenseSubmitApprovalZoneFilter extends StatefulWidget {
@@ -651,9 +652,7 @@ extension on _LicenseSubmitApprovalZoneFilterState {
         hint: AutoSizeText(
           vm.selectedStatus == null
               ? 'ทั้งหมด'
-              : (LicenseSubmitApprovalViewModel
-                      .statusLabels[vm.selectedStatus] ??
-                  vm.selectedStatus!),
+              : LicenseStatusLabels.th(vm.selectedStatus),
           style: LrText.body.copyWith(
             color: vm.selectedStatus == null
                 ? LrColors.textMuted
@@ -689,9 +688,7 @@ extension on _LicenseSubmitApprovalZoneFilterState {
                             AutoSizeText(
                               s == 'ทั้งหมด'
                                   ? s
-                                  : (LicenseSubmitApprovalViewModel
-                                          .statusLabels[s] ??
-                                      s),
+                                  : LicenseStatusLabels.th(s),
                               style: LrText.body,
                               maxFontSize: 14,
                               minFontSize: 11,

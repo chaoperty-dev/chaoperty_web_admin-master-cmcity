@@ -116,9 +116,10 @@ class VerifyTable extends StatelessWidget {
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
-          _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2),
-          _HeaderCell(label: 'เอกสาร', flex: 3),
+          // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
+          // _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2), // คอมเมนต์ปิดวันที่ส่งคำร้อง
+          _HeaderCell(label: 'เอกสาร', flex: 2),
+          _HeaderCell(label: 'ตรวจ', flex: 1),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -141,7 +142,6 @@ class VerifyTable extends StatelessWidget {
     final palette = StatusPalette.of(task.statusLabel);
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(task),
       child: Row(
         children: [
           // Action
@@ -169,23 +169,23 @@ class VerifyTable extends StatelessWidget {
               tooltip: task.customerName,
               flex: 3),
           // เบอร์โทร — customer.tel (อาจว่าง)
-          _Cell(
-              value: _maskPhone(formatPhoneNumber(task.customerTel)),
-              tooltip: task.customerTel,
-              flex: 2,
-              isMono: true),
+          // _Cell(
+          //     value: _maskPhone(formatPhoneNumber(task.customerTel)),
+          //     tooltip: task.customerTel,
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดเบอร์โทร
           // วันที่ส่งคำร้อง — submitted_at (fallback created_at)
-          _Cell(
-              value: formatDate(
-                  task.submittedAt?.isNotEmpty == true
-                      ? task.submittedAt!
-                      : (task.createdAt ?? ''),
-                  type: DateFormatType.dmy),
-              flex: 2,
-              isMono: true),
+          // _Cell(
+          //     value: formatDate(
+          //         task.submittedAt?.isNotEmpty == true
+          //             ? task.submittedAt!
+          //             : (task.createdAt ?? ''),
+          //         type: DateFormatType.dmy),
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดวันที่ส่งคำร้อง
           // เอกสาร — total / pending / approved (v2 ใหม่)
           Expanded(
-            flex: 3,
+            flex: 2,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
               child: _AttachmentCounters(
@@ -194,6 +194,11 @@ class VerifyTable extends StatelessWidget {
                 approved: task.attachmentsApproved,
               ),
             ),
+          ),
+          // ตรวจ — review_attachments_all_done
+          Expanded(
+            flex: 1,
+            child: _BoolCheck(value: task.reviewAttachmentsAllDone),
           ),
           Expanded(
             flex: 2,
@@ -330,6 +335,33 @@ class _Cell extends StatelessWidget {
 }
 
 /// Copyable UUID cell — short uuid + persistent copy icon
+/// Checkbox icon แสดง boolean — true → ติ๊กถูกสีเขียว, false → กล่องว่าง
+class _BoolCheck extends StatelessWidget {
+  final bool value;
+  const _BoolCheck({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Align(
+        alignment: Alignment.center,
+        child: Tooltip(
+          message: value ? 'ดำเนินการแล้ว' : 'ยังไม่ดำเนินการ',
+          waitDuration: const Duration(milliseconds: 200),
+          child: Icon(
+            value
+                ? Icons.check_box_rounded
+                : Icons.check_box_outline_blank_rounded,
+            size: 18,
+            color: value ? const Color(0xFF15803D) : LaColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CopyUuidCell extends StatelessWidget {
   final String fullValue;
   final String display;
@@ -344,8 +376,12 @@ class _CopyUuidCell extends StatelessWidget {
     if (fullValue.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: fullValue));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+    if (Scaffold.maybeOf(context) == null) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: const Row(
           children: [
@@ -466,11 +502,11 @@ class _StatusPill extends StatelessWidget {
 class _HoverableRow extends StatefulWidget {
   final int index;
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _HoverableRow({
     required this.index,
     required this.child,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -502,13 +538,15 @@ class _HoverableRowState extends State<_HoverableRow> {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: widget.onTap,
-        onHover: (hover) {
-          // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
-          if (hover != _hover) {
-            setState(() => _hover = hover);
-          }
-        },
-        hoverColor: hoverColor,
+        onHover: widget.onTap == null
+            ? null
+            : (hover) {
+                // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
+                if (hover != _hover) {
+                  setState(() => _hover = hover);
+                }
+              },
+        hoverColor: widget.onTap == null ? null : hoverColor,
         splashColor: LaColors.primary.withOpacity(.12),
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
@@ -959,8 +997,12 @@ class _CardRow extends StatelessWidget {
               onTap: () async {
                 await Clipboard.setData(ClipboardData(text: uuidCopy!));
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).hideCurrentSnackBar();
-                ScaffoldMessenger.of(context).showSnackBar(
+                // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+                if (Scaffold.maybeOf(context) == null) return;
+                final messenger = ScaffoldMessenger.maybeOf(context);
+                if (messenger == null) return;
+                messenger.hideCurrentSnackBar();
+                messenger.showSnackBar(
                   SnackBar(
                     content: const Row(
                       children: [

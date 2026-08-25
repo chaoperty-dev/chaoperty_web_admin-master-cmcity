@@ -163,7 +163,7 @@ class LicenseApproveTable extends StatelessWidget {
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
           // ─── ปิดคอลัมเบอร์โทรไว้ก่อน ───
           // _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
+          // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
           _HeaderCell(label: 'ขั้นตอน', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
@@ -192,12 +192,12 @@ class LicenseApproveTable extends StatelessWidget {
     // ─── ขั้นตอน: ใช้ step_name (v2: step.step_name)
     final stepLabel =
         (model.stepName?.isNotEmpty == true ? model.stepName : null) ?? '-';
-    // ─── วันที่สิ้นสุด: v2 ไม่มี ldate → fallback ไป created_at
-    final endDateRaw = (nr?.ldate?.isNotEmpty == true
-            ? nr!.ldate
-            : null) ??
-        (model.createdAt?.isNotEmpty == true ? model.createdAt : null) ??
-        '';
+    // ─── วันที่สิ้นสุด: ปิดคอลัมวันที่สิ้นสุดไว้ก่อน
+    // final endDateRaw = (nr?.ldate?.isNotEmpty == true
+    //         ? nr!.ldate
+    //         : null) ??
+    //     (model.createdAt?.isNotEmpty == true ? model.createdAt : null) ??
+    //     '';
     // ─── UUID หลัก: v2 step_uuid → v1 uuid (model.uuid รวมไว้แล้ว)
     // ถ้าว่างจริงๆ fallback ไป request_uuid (v2) เพื่อให้ copy ได้
     final displayUuid = (model.uuid?.isNotEmpty == true
@@ -206,7 +206,6 @@ class LicenseApproveTable extends StatelessWidget {
         '';
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(model),
       child: Row(
         children: [
           // Action
@@ -229,10 +228,11 @@ class LicenseApproveTable extends StatelessWidget {
           //     tooltip: formatPhoneNumber(model.client?.tel ?? ""),
           //     flex: 2,
           //     isMono: true),
-          _Cell(
-              value: formatDate(endDateRaw, type: DateFormatType.dmy),
-              flex: 2,
-              isMono: true),
+          // ─── ปิดคอลัมวันที่สิ้นสุดไว้ก่อน ───
+          // _Cell(
+          //     value: formatDate(endDateRaw, type: DateFormatType.dmy),
+          //     flex: 2,
+          //     isMono: true),
           _Cell(value: stepLabel, tooltip: stepLabel, flex: 2),
           Expanded(
             flex: 2,
@@ -336,8 +336,12 @@ class _CopyUuidCell extends StatelessWidget {
     if (fullValue.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: fullValue));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+    if (Scaffold.maybeOf(context) == null) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: const Row(
           children: [
@@ -458,11 +462,11 @@ class _StatusPill extends StatelessWidget {
 class _HoverableRow extends StatefulWidget {
   final int index;
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _HoverableRow({
     required this.index,
     required this.child,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -494,13 +498,15 @@ class _HoverableRowState extends State<_HoverableRow> {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: widget.onTap,
-        onHover: (hover) {
-          // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
-          if (hover != _hover) {
-            setState(() => _hover = hover);
-          }
-        },
-        hoverColor: hoverColor,
+        onHover: widget.onTap == null
+            ? null
+            : (hover) {
+                // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
+                if (hover != _hover) {
+                  setState(() => _hover = hover);
+                }
+              },
+        hoverColor: widget.onTap == null ? null : hoverColor,
         splashColor: LaColors.primary.withOpacity(.12),
         highlightColor: Colors.transparent,
         child: AnimatedContainer(

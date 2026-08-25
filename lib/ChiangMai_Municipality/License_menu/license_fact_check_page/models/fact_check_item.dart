@@ -12,6 +12,8 @@
 
 import 'package:intl/intl.dart';
 
+import '../../../unity/license_status_labels.dart';
+
 /// module — ดึงจาก json['module']
 class FactCheckModule {
   final String code;
@@ -124,21 +126,64 @@ class FactCheckDetails {
 class FactCheckReview {
   final String? uuid;
   final String? state;
+  final String? stateLabel;
   final String? comment;
+  final int? round;
+  final String? reviewerFirstName;
+  final String? reviewerLastName;
+  final String? startedAt;
+  final String? completedAt;
   final String? createdAt;
+  final String? updatedAt;
+
   const FactCheckReview({
     this.uuid,
     this.state,
+    this.stateLabel,
     this.comment,
+    this.round,
+    this.reviewerFirstName,
+    this.reviewerLastName,
+    this.startedAt,
+    this.completedAt,
     this.createdAt,
+    this.updatedAt,
   });
-  factory FactCheckReview.fromJson(Map<String, dynamic> json) =>
-      FactCheckReview(
-        uuid: json['uuid']?.toString(),
-        state: json['state']?.toString(),
-        comment: json['comment']?.toString(),
-        createdAt: json['created_at']?.toString(),
-      );
+
+  factory FactCheckReview.fromJson(Map<String, dynamic> json) {
+    final reviewer = json['reviewer'];
+    String? fn;
+    String? ln;
+    if (reviewer is Map) {
+      fn = reviewer['first_name']?.toString();
+      ln = reviewer['last_name']?.toString();
+    }
+    final rawRound = json['round'];
+    final round = rawRound is int
+        ? rawRound
+        : (rawRound is String ? int.tryParse(rawRound) : null);
+    return FactCheckReview(
+      uuid: json['uuid']?.toString(),
+      state: json['state']?.toString(),
+      stateLabel: json['state_label']?.toString(),
+      comment: json['comment']?.toString(),
+      round: round,
+      reviewerFirstName: fn,
+      reviewerLastName: ln,
+      startedAt: json['started_at']?.toString(),
+      completedAt: json['completed_at']?.toString(),
+      createdAt: json['created_at']?.toString(),
+      updatedAt: json['updated_at']?.toString(),
+    );
+  }
+
+  /// ชื่อผู้ตรวจ (first_name + last_name) — ถ้าไม่มีข้อมูล → '-'
+  String get reviewerName {
+    final first = (reviewerFirstName ?? '').trim();
+    final last = (reviewerLastName ?? '').trim();
+    final combined = '$first $last'.trim();
+    return combined.isEmpty ? '-' : combined;
+  }
 }
 
 /// 1 แถวรายการตรวจสอบข้อเท็จจริง — list v2
@@ -201,34 +246,8 @@ class FactCheckItem {
   String get zn => details.zn;
   String get ln => details.ln;
 
-  /// Status label (TH) — map จาก status string
-  String get statusLabel {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return 'ร่าง';
-      case 'pending':
-        return 'รอตรวจ';
-      case 'under_review':
-        return 'กำลังตรวจสอบ';
-      case 'in_progress':
-        return 'ดำเนินการ';
-      case 'documents_submitted':
-        return 'ส่งเอกสารแล้ว';
-      case 'waiting_payment_info':
-        return 'รอข้อมูลชำระ';
-      case 'payment_submitted':
-        return 'ส่งชำระแล้ว';
-      case 'completed':
-      case 'approved':
-        return 'เสร็จสิ้น';
-      case 'rejected':
-      case 'cancelled':
-      case 'canceled':
-        return 'ยกเลิก';
-      default:
-        return status.isEmpty ? '-' : status;
-    }
-  }
+  /// Status label (TH) — ใช้ central mapper
+  String get statusLabel => LicenseStatusLabels.th(status);
 }
 
 /// Wrapper สำหรับ list endpoint — items + meta + links

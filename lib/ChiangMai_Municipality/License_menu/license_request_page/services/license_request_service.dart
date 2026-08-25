@@ -170,6 +170,8 @@ class LicenseRequestService {
             qp['status[]'] = s;
           }
         }
+        // ซ่อนรายการที่ done แล้วเป็น default (user request: ทุกเส้น ใส่ include_done=0)
+        qp['include_done'] = '0';
         uri = _uriV2AdminRequests(qp);
       }
 
@@ -350,6 +352,8 @@ class LicenseRequestService {
         }
       }
     }
+    // ซ่อนรายการที่ done แล้วเป็น default (user request: ทุกเส้น ใส่ include_done=0)
+    qp['include_done'] = '0';
     return source.replace(queryParameters: qp);
   }
 

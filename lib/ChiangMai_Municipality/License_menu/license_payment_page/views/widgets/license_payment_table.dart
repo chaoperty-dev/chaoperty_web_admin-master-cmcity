@@ -109,8 +109,9 @@ class LicensePaymentTable extends StatelessWidget {
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
-          _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
+          // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
+          // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
+          _HeaderCell(label: 'ชำระ', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -133,7 +134,6 @@ class LicensePaymentTable extends StatelessWidget {
         task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(task),
       child: Row(
         children: [
           // Action
@@ -150,15 +150,24 @@ class LicensePaymentTable extends StatelessWidget {
               value: _maskName(task.customer.cname),
               tooltip: task.customer.cname,
               flex: 3),
-          _Cell(
-              value: _maskPhone(formatPhoneNumber(task.customer.tel)),
-              tooltip: formatPhoneNumber(task.customer.tel),
-              flex: 2,
-              isMono: true),
-          _Cell(
-              value: fd.formatDate(task.submittedAt, type: DateFormatType.dmy),
-              flex: 2,
-              isMono: true),
+          // _Cell(
+          //     value: _maskPhone(formatPhoneNumber(task.customer.tel)),
+          //     tooltip: formatPhoneNumber(task.customer.tel),
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดเบอร์โทร
+          // _Cell(
+          //     value: fd.formatDate(task.submittedAt, type: DateFormatType.dmy),
+          //     flex: 2,
+          //     isMono: true), // คอมเมนต์ปิดวันที่สิ้นสุด
+          Expanded(
+            flex: 2,
+            child: _PaymentProgress(
+              paid: task.paymentsPaid,
+              total: task.paymentsTotal,
+              pending: task.paymentsPending,
+              allDone: task.paymentAllDone,
+            ),
+          ),
           Expanded(
             flex: 2,
             child: Align(
@@ -479,6 +488,115 @@ class _Cell extends StatelessWidget {
 }
 
 /// Cell ที่คลิกได้เพื่อ copy �่าเต็มลง Clipboard
+/// Checkbox icon แสดง boolean — true → ติ๊กถูกสีเขียว, false → กล่องว่าง
+class _BoolCheck extends StatelessWidget {
+  final bool value;
+  const _BoolCheck({required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Align(
+        alignment: Alignment.center,
+        child: Tooltip(
+          message: value ? 'ดำเนินการแล้ว' : 'ยังไม่ดำเนินการ',
+          waitDuration: const Duration(milliseconds: 200),
+          child: Icon(
+            value
+                ? Icons.check_box_rounded
+                : Icons.check_box_outline_blank_rounded,
+            size: 18,
+            color: value ? const Color(0xFF15803D) : LaColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Payment progress: paid/total + pending badge + allDone check
+class _PaymentProgress extends StatelessWidget {
+  final int paid;
+  final int total;
+  final int pending;
+  final bool allDone;
+  const _PaymentProgress({
+    required this.paid,
+    required this.total,
+    required this.pending,
+    required this.allDone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasAny = total > 0;
+    final allOk = allDone;
+    final tip = hasAny
+        ? 'ชำระแล้ว $paid / $total รายการ (รอ $pending)'
+        : 'ไม่มีรายการชำระ';
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Tooltip(
+          message: tip,
+          waitDuration: const Duration(milliseconds: 200),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                allOk
+                    ? Icons.check_box_rounded
+                    : Icons.check_box_outline_blank_rounded,
+                size: 16,
+                color: allOk
+                    ? const Color(0xFF15803D)
+                    : LaColors.textMuted,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '$paid/$total',
+                style: LaText.tableCell.copyWith(
+                  fontFamily: 'monospace',
+                  fontFamilyFallback: const [LaText.fontRegular],
+                  fontWeight: FontWeight.w700,
+                  color: allOk
+                      ? const Color(0xFF15803D)
+                      : LaColors.textPrimary,
+                ),
+              ),
+              if (pending > 0) ...[
+                const SizedBox(width: 6),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7), // amber-100
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: const Color(0xFFFBBF24), // amber-400
+                      width: 1,
+                    ),
+                  ),
+                  child: Text(
+                    'รอ $pending',
+                    style: LaText.tableCell.copyWith(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFFB45309), // amber-700
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _CopyCell extends StatelessWidget {
   final String fullValue;
   final String display;
@@ -493,8 +611,12 @@ class _CopyCell extends StatelessWidget {
     if (fullValue.isEmpty) return;
     await Clipboard.setData(ClipboardData(text: fullValue));
     if (!context.mounted) return;
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    ScaffoldMessenger.of(context).showSnackBar(
+    // กัน assert fail: ต้องมีทั้ง Scaffold + ScaffoldMessenger ancestor
+    if (Scaffold.maybeOf(context) == null) return;
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
       SnackBar(
         content: const Row(
           children: [
@@ -617,11 +739,11 @@ class _StatusPill extends StatelessWidget {
 class _HoverableRow extends StatefulWidget {
   final int index;
   final Widget child;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   const _HoverableRow({
     required this.index,
     required this.child,
-    required this.onTap,
+    this.onTap,
   });
 
   @override
@@ -653,13 +775,15 @@ class _HoverableRowState extends State<_HoverableRow> {
       type: MaterialType.transparency,
       child: InkWell(
         onTap: widget.onTap,
-        onHover: (hover) {
-          // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
-          if (hover != _hover) {
-            setState(() => _hover = hover);
-          }
-        },
-        hoverColor: hoverColor,
+        onHover: widget.onTap == null
+            ? null
+            : (hover) {
+                // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
+                if (hover != _hover) {
+                  setState(() => _hover = hover);
+                }
+              },
+        hoverColor: widget.onTap == null ? null : hoverColor,
         splashColor: LaColors.primary.withOpacity(.12),
         highlightColor: Colors.transparent,
         child: AnimatedContainer(
