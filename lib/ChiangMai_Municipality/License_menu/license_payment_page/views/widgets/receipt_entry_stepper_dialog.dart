@@ -490,8 +490,13 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   }
 
   void _back() {
-    // ✅ ออกจาก dialog เลย — ไม่ถาม (เพราะ "ห้ามเลือกใหม่" เป็นกฎที่ชัดเจนอยู่แล้ว)
-    Navigator.of(context).pop();
+    if (_step == 3) {
+      // ✅ step 3 → step 2 (ต้องกลับไปแนบรูปได้เสมอ)
+      setState(() => _step = 2);
+    } else {
+      // ✅ step 1 → ออก dialog (ห้ามเลือกใหม่)
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -701,8 +706,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
         const SizedBox(height: LaSpace.sm),
         // ⚠️ แจ้งเตือนชัดเจน: ถูกเลือกไปแล้วห้ามเลือกใหม่
         Container(
-          padding: const EdgeInsets.symmetric(
-              horizontal: LaSpace.sm, vertical: 6),
+          padding:
+              const EdgeInsets.symmetric(horizontal: LaSpace.sm, vertical: 6),
           decoration: BoxDecoration(
             color: LaColors.statusInfoBg.withOpacity(.35),
             borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -1285,12 +1290,20 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   Widget _footer() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ✅ step 1: ปุ่ม "ปิด" (ออก dialog — ห้ามเลือกใหม่) — step 2+: ซ่อน (ห้ามย้อนกลับ)
+          // ✅ step 1: ปุ่ม "ปิด" (ออก dialog — ห้ามเลือกใหม่)
+          // ✅ step 3: ปุ่ม "กลับไปแนบรูป" (ไป step 2)
+          // ✅ step 2: ซ่อน (ห้ามย้อนไป step 1)
           if (_step == 1)
             TextButton.icon(
               onPressed: _submitting ? null : _back,
               icon: const Icon(Icons.close_rounded, size: 16),
               label: const Text('ปิด'),
+            )
+          else if (_step == 3)
+            TextButton.icon(
+              onPressed: _submitting ? null : _back,
+              icon: const Icon(Icons.image_rounded, size: 16),
+              label: const Text('กลับไปแนบรูป'),
             )
           else
             const SizedBox.shrink(),
