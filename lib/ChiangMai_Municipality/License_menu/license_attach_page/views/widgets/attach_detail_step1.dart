@@ -279,6 +279,8 @@ class _TableHeaderBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AttachDocumentsViewModel>();
+    final detailVm = context.watch<LicenseAttachDetailViewModel>();
+    final locked = detailVm.isLocked;
     final hasAny = documents.isNotEmpty;
     final mobile = _isMobile(context);
 
@@ -315,7 +317,7 @@ class _TableHeaderBar extends StatelessWidget {
             icon: Icons.library_add_rounded,
             label: 'เพิ่มหลายรายการ',
             showLabel: !mobile,
-            onTap: hasAny && !vm.isUploading
+            onTap: hasAny && !vm.isUploading && !locked
                 ? () => _openBatchSheet(context, vm)
                 : null,
           ),
@@ -416,6 +418,8 @@ class _DocumentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AttachDocumentsViewModel>();
+    final detailVm = context.watch<LicenseAttachDetailViewModel>();
+    final locked = detailVm.isLocked;
     const fields = kAttachDocDisplayFields;
     final mobile = _isMobile(context);
 
@@ -438,36 +442,47 @@ class _DocumentRow extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  tooltip: _hasFile ? 'อัปโหลดใหม่' : 'อัปโหลดเอกสาร',
+                  tooltip: locked
+                      ? 'คำขอนี้ถูกล็อก — ไม่สามารถอัปโหลดได้'
+                      : (_hasFile ? 'อัปโหลดใหม่' : 'อัปโหลดเอกสาร'),
                   visualDensity:
                       mobile ? VisualDensity.compact : VisualDensity.standard,
                   padding: EdgeInsets.zero,
                   constraints: mobile
                       ? const BoxConstraints(minWidth: 36, minHeight: 36)
                       : null,
-                  onPressed:
-                      vm.isUploading ? null : () => _onUpload(context, vm),
+                  onPressed: (vm.isUploading || locked)
+                      ? null
+                      : () => _onUpload(context, vm),
                   icon: Icon(
                     Icons.upload_file_rounded,
                     size: mobile ? 20 : 24,
-                    color: vm.isUploading
+                    color: (vm.isUploading || locked)
                         ? LaColors.textMuted
                         : (_hasFile ? LaColors.statusInfoFg : LaColors.primary),
                   ),
                 ),
                 if (_hasFile)
                   IconButton(
-                    tooltip: 'ลบไฟล์แนบ',
+                    tooltip: locked
+                        ? 'คำขอนี้ถูกล็อก — ไม่สามารถลบได้'
+                        : 'ลบไฟล์แนบ',
                     visualDensity:
                         mobile ? VisualDensity.compact : VisualDensity.standard,
                     padding: EdgeInsets.zero,
                     constraints: mobile
                         ? const BoxConstraints(minWidth: 36, minHeight: 36)
                         : null,
-                    onPressed:
-                        vm.isLoading ? null : () => _onDelete(context, vm),
-                    icon: const Icon(Icons.delete_outline_rounded,
-                        size: 20, color: LaColors.statusRejectedFg),
+                    onPressed: (vm.isLoading || locked)
+                        ? null
+                        : () => _onDelete(context, vm),
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 20,
+                      color: (vm.isLoading || locked)
+                          ? LaColors.textMuted
+                          : LaColors.statusRejectedFg,
+                    ),
                   ),
               ],
             ),
@@ -706,6 +721,8 @@ class _DocumentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AttachDocumentsViewModel>();
+    final detailVm = context.watch<LicenseAttachDetailViewModel>();
+    final locked = detailVm.isLocked;
     final palette = _statusPalette(doc);
     final statusLabel = _statusLabel(doc);
 
@@ -796,23 +813,35 @@ class _DocumentCard extends StatelessWidget {
               const SizedBox(width: LaSpace.xs),
               // ปุ่มอัปโหลด
               IconButton(
-                tooltip: _hasFile ? 'อัปโหลดใหม่' : 'อัปโหลดเอกสาร',
+                tooltip: locked
+                    ? 'คำขอนี้ถูกล็อก — ไม่สามารถอัปโหลดได้'
+                    : (_hasFile ? 'อัปโหลดใหม่' : 'อัปโหลดเอกสาร'),
                 visualDensity: VisualDensity.compact,
-                onPressed: vm.isUploading ? null : () => _onUpload(context, vm),
+                onPressed: (vm.isUploading || locked)
+                    ? null
+                    : () => _onUpload(context, vm),
                 icon: Icon(
                   Icons.upload_file_rounded,
-                  color: vm.isUploading
+                  color: (vm.isUploading || locked)
                       ? LaColors.textMuted
                       : (_hasFile ? LaColors.statusInfoFg : LaColors.primary),
                 ),
               ),
               if (_hasFile)
                 IconButton(
-                  tooltip: 'ลบไฟล์แนบ',
+                  tooltip: locked
+                      ? 'คำขอนี้ถูกล็อก — ไม่สามารถลบได้'
+                      : 'ลบไฟล์แนบ',
                   visualDensity: VisualDensity.compact,
-                  onPressed: vm.isLoading ? null : () => _onDelete(context, vm),
-                  icon: const Icon(Icons.delete_outline_rounded,
-                      color: LaColors.statusRejectedFg),
+                  onPressed: (vm.isLoading || locked)
+                      ? null
+                      : () => _onDelete(context, vm),
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    color: (vm.isLoading || locked)
+                        ? LaColors.textMuted
+                        : LaColors.statusRejectedFg,
+                  ),
                 ),
             ],
           ),
@@ -1301,6 +1330,8 @@ class _DocumentGridCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AttachDocumentsViewModel>();
+    final detailVm = context.watch<LicenseAttachDetailViewModel>();
+    final locked = detailVm.isLocked;
     final palette = _statusPalette(doc);
     final statusLabel = _statusLabel(doc);
 
@@ -1406,36 +1437,44 @@ class _DocumentGridCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       IconButton(
-                        tooltip: _hasFile ? 'อัปโหลดใหม่' : 'อัปโหลด',
+                        tooltip: locked
+                            ? 'คำขอนี้ถูกล็อก — ไม่สามารถอัปโหลดได้'
+                            : (_hasFile ? 'อัปโหลดใหม่' : 'อัปโหลด'),
                         visualDensity: VisualDensity.compact,
                         padding: EdgeInsets.zero,
                         constraints:
                             const BoxConstraints(minWidth: 28, minHeight: 28),
-                        onPressed: vm.isUploading
+                        onPressed: (vm.isUploading || locked)
                             ? null
                             : () => _onUpload(context, vm),
                         icon: Icon(
                           Icons.upload_file_rounded,
                           size: 16,
-                          color: _hasFile
-                              ? LaColors.statusInfoFg
-                              : LaColors.primary,
+                          color: (vm.isUploading || locked)
+                              ? LaColors.textMuted
+                              : (_hasFile
+                                  ? LaColors.statusInfoFg
+                                  : LaColors.primary),
                         ),
                       ),
                       if (_hasFile)
                         IconButton(
-                          tooltip: 'ลบไฟล์แนบ',
+                          tooltip: locked
+                              ? 'คำขอนี้ถูกล็อก — ไม่สามารถลบได้'
+                              : 'ลบไฟล์แนบ',
                           visualDensity: VisualDensity.compact,
                           padding: EdgeInsets.zero,
                           constraints:
                               const BoxConstraints(minWidth: 28, minHeight: 28),
-                          onPressed: vm.isLoading
+                          onPressed: (vm.isLoading || locked)
                               ? null
                               : () => _onDelete(context, vm),
-                          icon: const Icon(
+                          icon: Icon(
                             Icons.delete_outline_rounded,
                             size: 16,
-                            color: LaColors.statusRejectedFg,
+                            color: (vm.isLoading || locked)
+                                ? LaColors.textMuted
+                                : LaColors.statusRejectedFg,
                           ),
                         ),
                     ],

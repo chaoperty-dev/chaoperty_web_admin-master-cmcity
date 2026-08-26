@@ -115,7 +115,9 @@ class _LicenseAttachDetailPageBodyState
               readOnly: false,
               currentStep: step,
               totalSteps: total,
-              showSaveButton: step == 1 ? true : vm.shouldShowSaveButton,
+              showSaveButton: step == 1
+                  ? true
+                  : (vm.shouldShowSaveButton && !vm.isLocked),
               onNext: step < total
                   ? () {
                       // ignore: avoid_print

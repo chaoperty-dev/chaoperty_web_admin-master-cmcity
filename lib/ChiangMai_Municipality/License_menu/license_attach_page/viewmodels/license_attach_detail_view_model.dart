@@ -38,6 +38,26 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
   String? _requestStatus;
   String? get requestStatus => _requestStatus;
 
+  /// ล็อก step1 + step2 — ห้ามลบ ห้ามแนบ ห้ามบันทึก
+  /// 6 statuses: rejected/cancelled/completed/in_progress (เหมือน license_request)
+  bool get isLocked {
+    final s = (_requestStatus ?? '').toLowerCase().trim();
+    return s == 'rejected' ||
+        s == 'cancelled' ||
+        s == 'canceled' ||
+        s == 'completed' ||
+        s == 'request_completed' ||
+        s == 'in_progress';
+  }
+
+  /// sync status จาก API ภายนอก
+  void setRequestStatus(String? raw) {
+    final next = raw?.trim();
+    if (_requestStatus == next) return;
+    _requestStatus = next;
+    notifyListeners();
+  }
+
   /// รายการเอกสารทั้งหมดที่ต้องแนบ (จาก /admin/requests/{uuid} — รวมอันที่ยังไม่อัพ)
   List<LicenseAttachChecklistAttachment> _allAttachments = [];
   List<LicenseAttachChecklistAttachment> get allAttachments =>
@@ -216,17 +236,17 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
           _requestStatus = 'documents_submitted';
         }
         notifyListeners();
-        // ✅ รอ 1s ก่อน API ถัดไป — backend มี queue ต้องเว้นระยะ
-        await Future.delayed(const Duration(seconds: 1));
+        // ✅ รอ 1.5s ก่อน API ถัดไป — backend มี queue ต้องเว้นระยะ
+        await Future.delayed(const Duration(milliseconds: 1500));
       }
 
       final result = await LicenseAttachChecklistService.submitChecklist(
         requestUuid,
       );
       _submitResult = result;
-      // ✅ ถ้าบันทึกสำเร็จ → รอ 1s ให้ backend commit เสร็จ แล้ว refresh list
+      // ✅ ถ้าบันทึกสำเร็จ → รอ 1.5s ให้ backend commit เสร็จ แล้ว refresh list
       if (result.success) {
-        await Future.delayed(const Duration(seconds: 1));
+        await Future.delayed(const Duration(milliseconds: 1500));
         // ✅ refresh แบบ fire-and-forget (ไม่ block pop)
         // version/checked_at ใหม่จะมาทันตอนเปิดหน้านี้ครั้งหน้า
         // ignore: unawaited_futures
