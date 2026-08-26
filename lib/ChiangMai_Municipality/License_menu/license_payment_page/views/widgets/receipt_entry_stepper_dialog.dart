@@ -810,16 +810,16 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // ─── Header row: "ขั้นตอนที่ 1" (top, prominent) ───
+          // ─── Header row: "สรุปจากขั้นตอนที่ 1" (top, subtle) ───
           Row(
             children: [
-              Icon(Icons.flag_rounded, size: 13, color: accent),
+              Icon(Icons.bookmark_rounded, size: 13, color: accent),
               const SizedBox(width: 4),
               Text(
-                'ขั้นตอนที่ 1',
+                'สรุปจากขั้นตอนที่ 1',
                 style: LaText.caption.copyWith(
                   color: accent,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                   fontSize: 11,
                 ),
               ),
