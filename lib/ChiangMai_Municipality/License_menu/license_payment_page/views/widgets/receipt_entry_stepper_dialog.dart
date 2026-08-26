@@ -1558,13 +1558,24 @@ class _PaymentMethodPickerDialogState
     final want = widget.initialMethodId;
     if (want != null && want.trim().isNotEmpty) {
       for (final m in widget.methods) {
-        if (m.id.toString() == want ||
-            (m.uuid.isNotEmpty && m.uuid.toLowerCase() == want.toLowerCase())) {
+        if (m.uuid.isNotEmpty && m.uuid.toLowerCase() == want.toLowerCase()) {
+          _picked = m;
+          break;
+        }
+        if (m.id.toString() == want) {
           _picked = m;
           break;
         }
       }
     }
+  }
+
+  /// เทียบ method 2 ตัว — ใช้ uuid เป็นหลัก (id อาจซ้ำ/parse fail)
+  bool _sameMethod(LicensePaymentMethod a, LicensePaymentMethod b) {
+    if (a.uuid.isNotEmpty && b.uuid.isNotEmpty) {
+      return a.uuid.toLowerCase() == b.uuid.toLowerCase();
+    }
+    return a.id == b.id;
   }
 
   bool get _canConfirm => _picked != null;
@@ -1696,7 +1707,8 @@ class _PaymentMethodPickerDialogState
       );
 
   Widget _methodOption(LicensePaymentMethod m) {
-    final selected = _picked?.id == m.id;
+    // ใช้ uuid เทียบ (id อาจซ้ำ/parse fail → match ผิด)
+    final selected = _picked != null && _sameMethod(_picked!, m);
     final IconData icon =
         m.isCash ? Icons.payments_rounded : Icons.account_balance_rounded;
     final Color iconColor =
