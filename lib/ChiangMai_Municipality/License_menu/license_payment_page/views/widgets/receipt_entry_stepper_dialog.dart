@@ -516,6 +516,11 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
             children: [
               _header(),
               const SizedBox(height: LaSpace.md),
+              // ✅ Banner สรุปจากขั้นตอนที่ 1 — แยกกล่องบนสุด (เห็นทุก step ที่ >= 2)
+              if (_step > 1) ...[
+                _SelectedSystemBanner(isInternal: _isInternal),
+                const SizedBox(height: LaSpace.md),
+              ],
               Flexible(child: _stepBody()),
               if (_error != null && _step == _kTotalSteps) ...[
                 const SizedBox(height: LaSpace.sm),
@@ -908,9 +913,6 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        // ✅ แสดงข้อมูล step 1 ที่เลือกไปแล้ว (กันลืม/กันงง)
-        _SelectedSystemBanner(isInternal: _isInternal),
-        const SizedBox(height: LaSpace.sm),
         // ─── พื้นที่แสดงรูปที่เลือก (หรือ placeholder) ───
         if (hasImage)
           Container(
