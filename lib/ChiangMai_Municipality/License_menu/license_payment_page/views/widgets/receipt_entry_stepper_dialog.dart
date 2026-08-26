@@ -794,6 +794,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
 
   // ──────────────── Banner: แสดง system ที่เลือกใน step 1 (ใช้ใน step 2) ────────────────
   Widget _SelectedSystemBanner({required bool isInternal}) {
+    final accent =
+        isInternal ? LaColors.statusInfoFg : LaColors.statusApprovedFg;
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: LaSpace.md, vertical: LaSpace.sm),
@@ -802,69 +804,83 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
             ? LaColors.statusInfoBg.withOpacity(.45)
             : LaColors.statusApprovedBg.withOpacity(.35),
         borderRadius: BorderRadius.circular(LaRadius.sm),
-        border: Border.all(
-          color: (isInternal
-                  ? LaColors.statusInfoFg
-                  : LaColors.statusApprovedFg)
-              .withOpacity(.45),
-        ),
+        border: Border.all(color: accent.withOpacity(.45)),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isInternal
-                ? Icons.account_balance_rounded
-                : Icons.receipt_long_rounded,
-            size: 16,
-            color: isInternal
-                ? LaColors.statusInfoFg
-                : LaColors.statusApprovedFg,
+          // ─── Header row: "ขั้นตอนที่ 1" (top, prominent) ───
+          Row(
+            children: [
+              Icon(Icons.flag_rounded, size: 13, color: accent),
+              const SizedBox(width: 4),
+              Text(
+                'ขั้นตอนที่ 1',
+                style: LaText.caption.copyWith(
+                  color: accent,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Row(
+          const SizedBox(height: 4),
+          // ─── Detail row: icon + selection + subtitle ───
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                isInternal
+                    ? Icons.account_balance_rounded
+                    : Icons.receipt_long_rounded,
+                size: 16,
+                color: accent,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      'ขั้นตอนที่ 1: เลือก',
-                      style: LaText.caption.copyWith(color: LaColors.textMuted),
+                    Row(
+                      children: [
+                        Text(
+                          'เลือก',
+                          style: LaText.caption
+                              .copyWith(color: LaColors.textMuted),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isInternal ? 'Internal' : 'External',
+                          style: LaText.caption.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '✓ ถูกเลือกไปแล้ว',
+                          style: LaText.caption.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 4),
                     Text(
-                      isInternal ? 'Internal' : 'External',
+                      isInternal
+                          ? 'ช่องทางในระบบ — ไม่ต้องออกใบเสร็จ'
+                          : 'ช่องทางภายนอก — ต้องระบุ receipt_no / book_no',
                       style: LaText.caption.copyWith(
-                        color: isInternal
-                            ? LaColors.statusInfoFg
-                            : LaColors.statusApprovedFg,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      '✓ ถูกเลือกไปแล้ว',
-                      style: LaText.caption.copyWith(
-                        color: isInternal
-                            ? LaColors.statusInfoFg
-                            : LaColors.statusApprovedFg,
-                        fontWeight: FontWeight.w700,
+                        color: LaColors.textMuted,
+                        fontSize: 10,
                       ),
                     ),
                   ],
                 ),
-                Text(
-                  isInternal
-                      ? 'ช่องทางในระบบ — ไม่ต้องออกใบเสร็จ'
-                      : 'ช่องทางภายนอก — ต้องระบุ receipt_no / book_no',
-                  style: LaText.caption.copyWith(
-                    color: LaColors.textMuted,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
