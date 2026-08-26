@@ -1524,6 +1524,9 @@ Future<LicensePaymentMethod?> showPaymentMethodPickerDialog({
     context: context,
     barrierDismissible: true,
     builder: (_) => _PaymentMethodPickerDialog(
+      // ✅ unique key — state reset ทุกครั้งที่เปิด (กัน stale selection)
+      key: ValueKey(
+          'method_picker_${DateTime.now().microsecondsSinceEpoch}'),
       methods: methods,
       isLoading: isLoading,
       initialMethodId: initialMethodId,
@@ -1537,6 +1540,7 @@ class _PaymentMethodPickerDialog extends StatefulWidget {
   final String? initialMethodId;
 
   const _PaymentMethodPickerDialog({
+    super.key,
     required this.methods,
     required this.isLoading,
     this.initialMethodId,
