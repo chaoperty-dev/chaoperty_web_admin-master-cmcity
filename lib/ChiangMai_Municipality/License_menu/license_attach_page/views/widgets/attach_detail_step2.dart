@@ -136,6 +136,7 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
             _SavedChecklistBanner(
               preview: preview,
               isEditMode: vm.isEditMode,
+              locked: vm.isLocked,
               onEdit: () => vm.enterEditMode(),
               onCancelEdit: () => vm.exitEditMode(),
             ),
@@ -1152,12 +1153,14 @@ class _StepHeader extends StatelessWidget {
 class _SavedChecklistBanner extends StatelessWidget {
   final LicenseAttachChecklistPreview preview;
   final bool isEditMode;
+  final bool locked;
   final VoidCallback onEdit;
   final VoidCallback onCancelEdit;
 
   const _SavedChecklistBanner({
     required this.preview,
     required this.isEditMode,
+    required this.locked,
     required this.onEdit,
     required this.onCancelEdit,
   });
@@ -1226,7 +1229,10 @@ class _SavedChecklistBanner extends StatelessWidget {
               ],
             ),
           ),
-          if (!isEditMode)
+          if (locked)
+            // 🔒 ล็อก — ซ่อนปุ่มแก้ไข/ยกเลิกแก้ไข
+            const _LockedBadge()
+          else if (!isEditMode)
             _EditButton(onTap: onEdit)
           else
             _CancelEditButton(onTap: onCancelEdit),
@@ -1288,6 +1294,40 @@ class _EditButtonState extends State<_EditButton> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// 🔒 Badge แสดงเมื่อคำขอถูกล็อก — แทนปุ่มแก้ไขใน banner
+class _LockedBadge extends StatelessWidget {
+  const _LockedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: LaColors.statusRejectedBg.withOpacity(.5),
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        border: Border.all(color: LaColors.statusRejectedFg.withOpacity(.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.lock_outline_rounded,
+              size: 14, color: LaColors.statusRejectedFg),
+          const SizedBox(width: 4),
+          Text(
+            'ล็อก',
+            style: TextStyle(
+              color: LaColors.statusRejectedFg,
+              fontFamily: LaText.fontBold,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
       ),
     );
   }

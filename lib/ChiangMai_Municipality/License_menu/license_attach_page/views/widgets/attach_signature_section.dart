@@ -21,6 +21,7 @@ import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 import '../theme/license_attach_theme.dart';
 import '../../viewmodels/attach_documents_view_model.dart';
 import '../../viewmodels/attach_signature_view_model.dart';
+import '../../viewmodels/license_attach_detail_view_model.dart';
 
 class AttachSignatureSection extends StatefulWidget {
   /// UUID ของ request
@@ -77,15 +78,20 @@ class _AttachSignatureSectionState extends State<AttachSignatureSection> {
   @override
   Widget build(BuildContext context) {
     final docsVm = context.watch<AttachDocumentsViewModel>();
+    final detailVm = context.watch<LicenseAttachDetailViewModel>();
     _signatureVm = _ensureVm(docsVm);
+
+    // 🔒 ถ้าคำขอถูกล็อก → บังคับปิด pad (กัน state ค้าง)
+    final locked = detailVm.isLocked;
 
     return _SectionContainer(
       signatureKey: _signatureKey,
       signatureVm: _signatureVm!,
       hasSignature: _signatureVm!.hasSignature,
       requestUuid: widget.requestUuid,
-      isPadVisible: _isPadVisible,
-      onShowPad: _showPad,
+      isPadVisible: locked ? false : _isPadVisible,
+      locked: locked,
+      onShowPad: locked ? () {} : _showPad,
       onHidePad: _hidePad,
       onUploaded: _onUploaded,
     );
@@ -98,6 +104,7 @@ class _SectionContainer extends StatelessWidget {
   final bool hasSignature;
   final String? requestUuid;
   final bool isPadVisible;
+  final bool locked;
   final VoidCallback onShowPad;
   final VoidCallback onHidePad;
   final VoidCallback onUploaded;
@@ -108,6 +115,7 @@ class _SectionContainer extends StatelessWidget {
     required this.hasSignature,
     required this.requestUuid,
     required this.isPadVisible,
+    required this.locked,
     required this.onShowPad,
     required this.onHidePad,
     required this.onUploaded,
@@ -128,6 +136,7 @@ class _SectionContainer extends StatelessWidget {
             mobile: mobile,
             hasSignature: hasSignature,
             isPadVisible: isPadVisible,
+            locked: locked,
             onShowPad: onShowPad,
             onHidePad: onHidePad,
           ),
@@ -143,6 +152,7 @@ class _SectionContainer extends StatelessWidget {
                     hasSignature: hasSignature,
                     requestUuid: requestUuid,
                     mobile: mobile,
+                    locked: locked,
                     onUploaded: onUploaded,
                     onCancel: onHidePad,
                   )
@@ -161,6 +171,7 @@ class _SectionHeader extends StatelessWidget {
   final bool mobile;
   final bool hasSignature;
   final bool isPadVisible;
+  final bool locked;
   final VoidCallback onShowPad;
   final VoidCallback onHidePad;
 
@@ -168,6 +179,7 @@ class _SectionHeader extends StatelessWidget {
     required this.mobile,
     required this.hasSignature,
     required this.isPadVisible,
+    required this.locked,
     required this.onShowPad,
     required this.onHidePad,
   });
@@ -212,8 +224,17 @@ class _SectionHeader extends StatelessWidget {
             ),
           ),
 
+          // 🔒 ล็อก → ซ่อนปุ่มเซ็น/เซ็นใหม่ทั้งหมด
+          if (locked)
+            _StatusPill(
+              icon: Icons.lock_outline_rounded,
+              text: 'ล็อก',
+              bg: LaColors.statusRejectedBg.withOpacity(.5),
+              fg: LaColors.statusRejectedFg,
+              compact: true,
+            )
           // ─── ปุ่ม toggle (ซ่อน ถ้ามีลายเซ็นแล้วและ body ปิดอยู่) ───
-          if (hasSignature && !isPadVisible)
+          else if (hasSignature && !isPadVisible)
             _HeaderIconButton(
               icon: Icons.edit_rounded,
               tooltip: 'เซ็นใหม่',
@@ -324,6 +345,7 @@ class _SectionBody extends StatelessWidget {
   final bool hasSignature;
   final String? requestUuid;
   final bool mobile;
+  final bool locked;
   final VoidCallback onUploaded;
   final VoidCallback onCancel;
 
@@ -333,6 +355,7 @@ class _SectionBody extends StatelessWidget {
     required this.hasSignature,
     required this.requestUuid,
     required this.mobile,
+    required this.locked,
     required this.onUploaded,
     required this.onCancel,
   });
@@ -367,6 +390,7 @@ class _SectionBody extends StatelessWidget {
             signatureKey: signatureKey,
             requestUuid: requestUuid,
             mobile: mobile,
+            locked: locked,
             onUploaded: onUploaded,
             onCancel: onCancel,
           ),
@@ -419,6 +443,7 @@ class _SignatureActions extends StatelessWidget {
   final GlobalKey<SfSignaturePadState> signatureKey;
   final String? requestUuid;
   final bool mobile;
+  final bool locked;
   final VoidCallback onUploaded;
   final VoidCallback onCancel;
 
@@ -427,6 +452,7 @@ class _SignatureActions extends StatelessWidget {
     required this.signatureKey,
     required this.requestUuid,
     required this.mobile,
+    required this.locked,
     required this.onUploaded,
     required this.onCancel,
   });
@@ -435,6 +461,7 @@ class _SignatureActions extends StatelessWidget {
   Widget build(BuildContext context) {
     final docsVm = context.read<AttachDocumentsViewModel>();
     final canUpload = !signatureVm.isUploading &&
+        !locked &&
         (requestUuid ?? '').isNotEmpty &&
         signatureVm.signatureDocId != 0;
 
@@ -445,7 +472,7 @@ class _SignatureActions extends StatelessWidget {
             icon: Icons.close_rounded,
             label: 'ยกเลิก',
             primary: false,
-            onTap: signatureVm.isUploading ? null : onCancel,
+            onTap: (signatureVm.isUploading || locked) ? null : onCancel,
           ),
         ),
         SizedBox(width: LaSpace.sm),
@@ -454,7 +481,7 @@ class _SignatureActions extends StatelessWidget {
             icon: Icons.clear_rounded,
             label: 'ล้าง',
             primary: false,
-            onTap: signatureVm.isUploading
+            onTap: (signatureVm.isUploading || locked)
                 ? null
                 : () => signatureKey.currentState?.clear(),
           ),
