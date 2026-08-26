@@ -1570,11 +1570,14 @@ class _PaymentMethodPickerDialogState
     }
   }
 
-  /// เทียบ method 2 ตัว — ใช้ uuid เป็นหลัก (id อาจซ้ำ/parse fail)
+  /// เทียบ method 2 ตัว — uuid ก่อน, fallback id, สุดท้าย identity
+  /// (uuid/id อาจว่าง/ซ้ำจาก API → ต้องมี identity เป็น fallback)
   bool _sameMethod(LicensePaymentMethod a, LicensePaymentMethod b) {
+    if (identical(a, b)) return true;
     if (a.uuid.isNotEmpty && b.uuid.isNotEmpty) {
       return a.uuid.toLowerCase() == b.uuid.toLowerCase();
     }
+    if (a.uuid.isNotEmpty || b.uuid.isNotEmpty) return false;
     return a.id == b.id;
   }
 
