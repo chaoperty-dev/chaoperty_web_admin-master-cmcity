@@ -33,6 +33,11 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
   LicenseAttachChecklistPreview? _checklist;
   LicenseAttachChecklistPreview? get checklist => _checklist;
 
+  /// status ปัจจุบันของ request (เช่น 'draft', 'documents_submitted')
+  /// ใช้ตัดสินใจว่าต้องยิง POST /submit ก่อน POST /checklist หรือไม่
+  String? _requestStatus;
+  String? get requestStatus => _requestStatus;
+
   /// รายการเอกสารทั้งหมดที่ต้องแนบ (จาก /admin/requests/{uuid} — รวมอันที่ยังไม่อัพ)
   List<LicenseAttachChecklistAttachment> _allAttachments = [];
   List<LicenseAttachChecklistAttachment> get allAttachments =>
@@ -72,16 +77,17 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // เรียก 2 endpoints พร้อมกัน — อันแรกลองเอา saved checklist ก่อน (มี signer + version)
-      // ถ้ายังไม่เคยบันทึก → fallback ไป preview, อันที่สองขอเอกสารทั้งหมด
+      // เรียก 3 endpoints พร้อมกัน — saved checklist + all attachments + request status
       final results = await Future.wait([
         LicenseAttachChecklistService.fetchSavedChecklist(requestUuid),
         LicenseAttachChecklistService.fetchAllAttachments(requestUuid),
+        LicenseAttachChecklistService.fetchRequestStatus(requestUuid),
       ]);
       var preview = results[0] as LicenseAttachChecklistPreview?;
       preview ??= await LicenseAttachChecklistService.fetchByUuid(requestUuid);
       _checklist = preview;
       _allAttachments = results[1] as List<LicenseAttachChecklistAttachment>;
+      _requestStatus = results[2] as String?;
       _error = null;
       syncEditMode();
     } catch (e) {
@@ -194,13 +200,37 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // ถ้า request ยังอยู่ในสถานะ 'draft' → ต้องยิง POST /submit ก่อน
+      // เพื่อเปลี่ยนเป็น 'documents_submitted' ก่อนยิง POST /checklist
+      if (_requestStatus == 'draft') {
+        final submitDraft =
+            await LicenseAttachChecklistService.submitRequest(requestUuid);
+        if (!submitDraft.success) {
+          _submitResult = submitDraft;
+          return _submitResult;
+        }
+        // update status หลัง submit สำเร็จ (response.data.status เช่น documents_submitted)
+        if (submitDraft.requestStatus != null) {
+          _requestStatus = submitDraft.requestStatus;
+        } else {
+          _requestStatus = 'documents_submitted';
+        }
+        notifyListeners();
+        // ✅ รอ 1s ก่อน API ถัดไป — backend มี queue ต้องเว้นระยะ
+        await Future.delayed(const Duration(seconds: 1));
+      }
+
       final result = await LicenseAttachChecklistService.submitChecklist(
         requestUuid,
       );
       _submitResult = result;
-      // ถ้าบันทึกสำเร็จ → refetch ทันที เพื่อดึง version/checked_at ใหม่
+      // ✅ ถ้าบันทึกสำเร็จ → รอ 1s ให้ backend commit เสร็จ แล้ว refresh list
       if (result.success) {
-        await loadChecklist();
+        await Future.delayed(const Duration(seconds: 1));
+        // ✅ refresh แบบ fire-and-forget (ไม่ block pop)
+        // version/checked_at ใหม่จะมาทันตอนเปิดหน้านี้ครั้งหน้า
+        // ignore: unawaited_futures
+        loadChecklist();
       }
       return result;
     } catch (e) {

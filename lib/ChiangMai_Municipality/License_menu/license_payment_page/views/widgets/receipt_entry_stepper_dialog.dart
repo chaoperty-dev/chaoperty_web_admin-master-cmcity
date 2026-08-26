@@ -11,7 +11,6 @@
 //   - POST /v2/payments/{uuid}/attachments (อัปโหลดรูป — ถ้ามี)
 // ============================================================================
 
-import 'package:animated_custom_dropdown/custom_dropdown.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -40,6 +39,11 @@ Future<PaymentDetail?> showReceiptEntryStepperDialog({
   LicensePaymentDetailService? service,
   int initialStep = 1,
   String? paymentSystem,
+  String? defaultMethodId,
+  // ─── สำหรับ new draft: ถ้า payment.uuid ว่าง → dialog จะสร้าง payment ตอน step 1 → next ───
+  String? requestUuid,
+  String? debtLineUuid,
+  String? payType,
 }) {
   return showDialog<PaymentDetail>(
     context: context,
@@ -50,6 +54,10 @@ Future<PaymentDetail?> showReceiptEntryStepperDialog({
       service: service ?? LicensePaymentDetailService(),
       initialStep: initialStep,
       paymentSystem: paymentSystem ?? payment.paymentSystem,
+      defaultMethodId: defaultMethodId,
+      requestUuid: requestUuid,
+      debtLineUuid: debtLineUuid,
+      payType: payType,
     ),
   );
 }
@@ -64,6 +72,13 @@ class ReceiptEntryStepperDialog extends StatefulWidget {
   final LicensePaymentDetailService service;
   final int initialStep;
   final String paymentSystem; // internal | external
+  final String?
+      defaultMethodId; // pre-select method จากประวัติ (lock ไม่ให้แก้)
+
+  // ─── new draft fields — ถ้า payment.uuid ว่าง จะสร้าง payment ใหม่ตอน step 1 → next ───
+  final String? requestUuid;
+  final String? debtLineUuid;
+  final String? payType;
 
   const ReceiptEntryStepperDialog({
     super.key,
@@ -72,6 +87,10 @@ class ReceiptEntryStepperDialog extends StatefulWidget {
     required this.service,
     this.initialStep = 1,
     this.paymentSystem = 'external',
+    this.defaultMethodId,
+    this.requestUuid,
+    this.debtLineUuid,
+    this.payType,
   });
 
   @override
@@ -81,17 +100,28 @@ class ReceiptEntryStepperDialog extends StatefulWidget {
 
 class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   late int _step;
+
+  /// 3 steps หลัก:
+  ///   1 = เลือก external/internal (ถ้า internal → เด้ง popup เลือก method แยก)
+  ///   2 = อัพรูป (optional)
+  ///   3 = บันทึกการรับชำระ
   static const int _kTotalSteps = 3;
 
-  /// ช่องทางรับเงิน — internal ซ่อน receipt_no/book_no/date
-  bool get _isInternal =>
-      widget.paymentSystem.toLowerCase() == 'internal';
+  /// mutable copy ของ widget.payment — update หลัง createPayment สำเร็จ
+  late PaymentDetail _payment;
 
-  // ─── Step 1 state ───
+  /// mutable payment_system (external/internal) — user เลือกใน step 1
+  late String _paymentSystem;
+
+  /// ช่องทางรับเงิน — internal ซ่อน receipt_no/book_no/date
+  bool get _isInternal => _paymentSystem.toLowerCase() == 'internal';
+
+  /// pay_type 'fine' (ค่าปรับ) — ใช้โชว์ chip + เปลี่ยนสี label
+  bool get _isFine => (widget.payType ?? '').toLowerCase() == 'fine';
+
+  // ─── Methods cache (ใช้ตอนเด้ง popup เลือก method) ───
   List<LicensePaymentMethod> _methods = const [];
   bool _loadingMethods = true;
-  LicensePaymentMethod? _selectedMethod;
-  LicensePaymentBank? _selectedBank;
 
   // ─── Step 2 state (image upload) ───
   XFile? _pickedImage;
@@ -115,18 +145,28 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   @override
   void initState() {
     super.initState();
-    // ─── ถ้า payment มี payment_method_id แล้ว → ข้าม step 1 (เลือกรูปแบบการชำระ) ───
-    final hasMethod =
-        (widget.payment.paymentMethodId ?? '').trim().isNotEmpty;
-    _step = hasMethod
-        ? 2
-        : widget.initialStep.clamp(1, _kTotalSteps);
+    _payment = widget.payment;
+    _paymentSystem = widget.payment.paymentSystem.isNotEmpty
+        ? widget.payment.paymentSystem
+        : widget.paymentSystem;
+    // ─── ถ้า payment มี payment_method_id แล้ว → ข้ามไป step 2 (upload) ───
+    final hasMethod = (widget.payment.paymentMethodId ?? '').trim().isNotEmpty;
+    if (hasMethod) {
+      _step = 2; // skip system picker (method มาจาก payment)
+    } else if ((widget.requestUuid ?? '').isEmpty) {
+      // ไม่ใช่ new draft — caller เปิดมาที่ step ที่ระบุ
+      _step = widget.initialStep.clamp(1, _kTotalSteps);
+    } else {
+      // new draft — เริ่มที่ step 1 (เลือก system)
+      _step = 1;
+    }
     _amountCtrl = TextEditingController(
       text: widget.payment.amount > 0
           ? widget.payment.amount.toStringAsFixed(2)
           : widget.defaultAmount.toStringAsFixed(2),
     );
-    _receiptCtrl = TextEditingController(text: widget.payment.paymentNo);
+    // ─── ห้ามดีฟอล — ให้ user กรอกเอง ───
+    _receiptCtrl = TextEditingController();
     _bookCtrl = TextEditingController();
     final today = DateTime.now();
     _dateCtrl = TextEditingController(
@@ -153,6 +193,20 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
     _bookCtrl.dispose();
     _dateCtrl.dispose();
     super.dispose();
+  }
+
+  /// Validate ก่อนบันทึก — required fields ต้องครบ
+  /// - amount > 0
+  /// - internal: แค่ amount
+  /// - external: amount + receipt_no + book_no + date
+  bool _canSubmit() {
+    final raw = _amountCtrl.text.trim().replaceAll(',', '');
+    final amount = double.tryParse(raw);
+    if (amount == null || amount <= 0) return false;
+    if (_isInternal) return true;
+    return _receiptCtrl.text.trim().isNotEmpty &&
+        _bookCtrl.text.trim().isNotEmpty &&
+        _dateCtrl.text.trim().isNotEmpty;
   }
 
   Future<void> _loadMethods() async {
@@ -201,7 +255,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       _snack('กรุณาเลือกรูปสลิปก่อน');
       return false;
     }
-    if (widget.payment.uuid.isEmpty) {
+    if (_payment.uuid.isEmpty) {
       _snack('ไม่พบ payment uuid');
       return false;
     }
@@ -210,7 +264,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       // web: ส่ง bytes ตรงๆ (MultipartFile.fromBytes)
       // mobile: ส่ง path (MultipartFile.fromPath)
       PaymentAttachment? uploaded;
-      final uploadUuid = _resolvedPaymentUuid ?? widget.payment.uuid;
+      final uploadUuid = _resolvedPaymentUuid ?? _payment.uuid;
       if (kIsWeb || _pickedImage!.path.isEmpty) {
         final bytes = _pickedImageBytes ?? await _pickedImage!.readAsBytes();
         uploaded = await widget.service.uploadPaymentAttachment(
@@ -295,23 +349,21 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
         }
         final dt = DateTime(y, m, d);
         final today = DateTime.now();
-        final endOfToday =
-            DateTime(today.year, today.month, today.day, 23, 59);
+        final endOfToday = DateTime(today.year, today.month, today.day, 23, 59);
         if (dt.isAfter(endOfToday)) {
           throw Exception('วันที่ต้องไม่เกินวันนี้');
         }
       }
 
-      if (widget.payment.uuid.isEmpty) {
+      if (_payment.uuid.isEmpty) {
         throw Exception('ไม่พบ payment uuid');
       }
       // resolve uuid ที่จะใช้ — ถ้ามี latest_attachment.paymentUuid หรือ upload สำเร็จไปก่อนหน้า ให้ใช้อันนั้น
-      final payUuid = _resolvedPaymentUuid ?? widget.payment.uuid;
+      final payUuid = _resolvedPaymentUuid ?? _payment.uuid;
       // 1) อัปโหลดรูปก่อน (ถ้ามี)
       if (_pickedImage != null) {
         if (kIsWeb || _pickedImage!.path.isEmpty) {
-          final bytes =
-              _pickedImageBytes ?? await _pickedImage!.readAsBytes();
+          final bytes = _pickedImageBytes ?? await _pickedImage!.readAsBytes();
           await widget.service.uploadPaymentAttachment(
             uuid: payUuid,
             fileBytes: bytes,
@@ -329,11 +381,9 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
         uuid: payUuid,
         amountReceived: amount,
         paymentSystem: widget.paymentSystem,
-        receiptNo: _receiptCtrl.text.trim().isEmpty
-            ? null
-            : _receiptCtrl.text.trim(),
-        bookNo:
-            _bookCtrl.text.trim().isEmpty ? null : _bookCtrl.text.trim(),
+        receiptNo:
+            _receiptCtrl.text.trim().isEmpty ? null : _receiptCtrl.text.trim(),
+        bookNo: _bookCtrl.text.trim().isEmpty ? null : _bookCtrl.text.trim(),
         bookDate: dateStr.isEmpty ? null : dateStr,
       );
 
@@ -361,20 +411,81 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
 
   bool _canGoNext() {
     if (_step == 1) {
-      if (_selectedMethod != null &&
-          _selectedMethod!.hasBankAccounts &&
-          _selectedBank == null) {
-        return false;
-      }
-      return true;
+      // step 1: ต้องเลือก external/internal ก่อน
+      return _paymentSystem.isNotEmpty;
     }
     // step 2 (image) optional — ข้ามได้
     return true;
   }
 
   void _next() {
-    if (_step < _kTotalSteps && _canGoNext()) {
-      setState(() => _step += 1);
+    if (_step >= _kTotalSteps || !_canGoNext()) return;
+    // ─── step 1: เลือก external/internal → ถ้า internal เด้ง popup เลือก method แยก ───
+    if (_step == 1) {
+      if (_payment.uuid.isNotEmpty) {
+        // payment ถูกสร้างมาแล้ว (e.g. user back จาก step 2) → ข้ามไป step 2 เฉยๆ
+        setState(() => _step = 2);
+      } else if (_isInternal) {
+        // new draft + internal → เด้ง popup เลือก method
+        _showMethodPickerAndProceed();
+      } else {
+        // new draft + external → สร้าง draft ทันที
+        _createDraftAndAdvance(targetStep: 2);
+      }
+      return;
+    }
+    setState(() => _step += 1);
+  }
+
+  bool _creatingDraft = false;
+
+  /// เด้ง popup เลือก method (เฉพาะ internal) → หลังเลือกแล้ว create draft + ไป step 2
+  Future<void> _showMethodPickerAndProceed() async {
+    // ถ้ายังโหลด methods ไม่เสร็จ → รอก่อน
+    if (_methods.isEmpty && _loadingMethods) {
+      // รอสักครู่ให้ _loadMethods เสร็จ (initState เรียกไปแล้ว)
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+    if (!mounted) return;
+    // เปิด popup เลือก method
+    final picked = await showPaymentMethodPickerDialog(
+      context: context,
+      methods: _methods,
+      isLoading: _loadingMethods,
+      initialMethodId: widget.defaultMethodId,
+    );
+    if (picked == null || !mounted) return;
+    // สร้าง draft พร้อม method ที่เลือก → ไป step 2
+    await _createDraftAndAdvance(targetStep: 2, methodId: picked.id);
+  }
+
+  Future<void> _createDraftAndAdvance({
+    required int targetStep,
+    int? methodId,
+  }) async {
+    if (_creatingDraft) return;
+    final useMethodId =
+        methodId ?? (_isInternal ? null : null); // external → no method
+    setState(() => _creatingDraft = true);
+    try {
+      final created = await widget.service.createPayment(
+        requestUuid: widget.requestUuid ?? '',
+        debtLineUuid: widget.debtLineUuid ?? '',
+        payType: widget.payType ?? 'fee',
+        amount: widget.defaultAmount,
+        paymentSystem: _paymentSystem,
+        paymentMethodId: useMethodId,
+      );
+      if (!mounted) return;
+      setState(() {
+        _payment = created;
+        _creatingDraft = false;
+        _step = targetStep;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _creatingDraft = false);
+      _snack('สร้างรายการรับชำระไม่สำเร็จ: $e');
     }
   }
 
@@ -438,7 +549,35 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('บันทึกการรับชำระ', style: LaText.h2.copyWith(fontSize: 16)),
+                Row(
+                  children: [
+                    Text('บันทึกการรับชำระ',
+                        style: LaText.h2.copyWith(fontSize: 16)),
+                    if ((widget.payType ?? '').isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: _isFine
+                              ? LaColors.statusRejectedFg.withOpacity(.12)
+                              : LaColors.statusInfoFg.withOpacity(.12),
+                          borderRadius: BorderRadius.circular(LaRadius.pill),
+                        ),
+                        child: Text(
+                          _isFine ? 'ค่าปรับ' : 'ค่าธรรมเนียม',
+                          style: LaText.caption.copyWith(
+                            color: _isFine
+                                ? LaColors.statusRejectedFg
+                                : LaColors.statusInfoFg,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 10,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
                 Text(
                   widget.payment.uuid.isEmpty
                       ? '-'
@@ -456,8 +595,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
           IconButton(
             tooltip: 'ปิด',
             icon: const Icon(Icons.close_rounded, size: 18),
-            onPressed:
-                _submitting ? null : () => Navigator.of(context).pop(),
+            onPressed: _submitting ? null : () => Navigator.of(context).pop(),
           ),
         ],
       );
@@ -468,7 +606,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       case 1:
         return _stepSection(
           number: 1,
-          title: 'เลือกรูปแบบการชำระ',
+          title: 'เลือกประเภทการรับชำระ',
           child: _step1Body(),
         );
       case 2:
@@ -524,8 +662,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
               ),
               const SizedBox(width: 8),
               Text(title,
-                  style: LaText.body
-                      .copyWith(fontWeight: FontWeight.w700)),
+                  style: LaText.body.copyWith(fontWeight: FontWeight.w700)),
             ],
           ),
           const SizedBox(height: LaSpace.sm),
@@ -535,321 +672,100 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
     );
   }
 
-  // ──────────────── Step 1 ────────────────
+  // ──────────────── Step 1: เลือก external/internal ────────────────
   Widget _step1Body() {
-    // ─── ถ้า payment มี payment_method_id แล้ว → แสดง read-only summary ───
-    final lockedMethod =
-        (widget.payment.paymentMethodId ?? '').trim().isNotEmpty;
-    if (lockedMethod) {
-      return _lockedMethodSummary();
-    }
+    // lock ถ้า: payment.uuid ไม่ว่าง (edit) หรือ widget.paymentSystem มาจากประวัติ
+    final isLocked = _payment.uuid.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
-        CustomDropdown<LicensePaymentMethod>(
-          items: _methods,
-          initialItem: _selectedMethod,
-          hintText: _loadingMethods
-              ? 'กำลังโหลด...'
-              : 'กรุงเทพมหานครมหา...',
-          overlayHeight: 280,
-          headerBuilder: (ctx, m, _) => _methodRow(m),
-          listItemBuilder: (ctx, m, isSel, onSelect) => InkWell(
-            onTap: onSelect,
-            child: _methodRow(m),
-          ),
-          onChanged: (m) => setState(() {
-            _selectedMethod = m;
-            _selectedBank = null;
-          }),
-        ),
-        if (_selectedMethod != null && _selectedMethod!.hasBankAccounts) ...[
-          const SizedBox(height: LaSpace.sm),
-          CustomDropdown<LicensePaymentBank>(
-            items: _selectedMethod!.banks,
-            initialItem: _selectedBank,
-            hintText: 'เลือกบัญชี',
-            overlayHeight: 220,
-            headerBuilder: (ctx, b, _) => _bankRow(b),
-            listItemBuilder: (ctx, b, isSel, onSelect) => InkWell(
-              onTap: onSelect,
-              child: _bankRow(b),
+        Row(
+          children: [
+            _systemPickerCard(
+              value: 'external',
+              icon: Icons.receipt_long_rounded,
+              title: 'External',
+              subtitle: 'ออกใบเสร็จเอง — ต้องระบุ receipt_no / book_no',
+              selected: _paymentSystem == 'external',
+              enabled: !isLocked,
             ),
-            onChanged: (b) => setState(() => _selectedBank = b),
-          ),
-        ],
+            const SizedBox(width: LaSpace.sm),
+            _systemPickerCard(
+              value: 'internal',
+              icon: Icons.account_balance_rounded,
+              title: 'Internal',
+              subtitle: 'ใช้ช่องทางในระบบ — ไม่ต้องออกใบเสร็จ',
+              selected: _paymentSystem == 'internal',
+              enabled: !isLocked,
+            ),
+          ],
+        ),
         const SizedBox(height: LaSpace.sm),
         Text(
-          'เลือกหรือข้ามได้ — กด "ถัดไป" เพื่อไปอัพหลักฐาน',
+          'เลือกประเภทการรับเงิน — กด "ถัดไป" เพื่อไปเลือกช่องทาง',
           style: LaText.caption.copyWith(color: LaColors.textMuted),
         ),
       ],
     );
   }
 
-  /// การ์ด read-only เมื่อ payment มี payment_method_id แล้ว
-  /// (ไม่ให้ผู้ใช้เปลี่ยน method — popup จะข้ามไป step 2/3 ทันที)
-  ///
-  /// แสดงเป็นรายการ methods + banks ทั้งหมดที่ผูกกับ payment นี้
-  /// (CASH = 1 row, BANK_TRANSFER = 1 row ต่อ bank account)
-  Widget _lockedMethodSummary() {
-    final p = widget.payment;
-    final mid = (p.paymentMethodId ?? '').trim();
-    int? midInt = int.tryParse(mid);
-    // match method ที่ถูกเลือก (highlight แถวนั้น)
-    LicensePaymentMethod? matched;
-    for (final m in _methods) {
-      if (m.id == midInt || m.id.toString() == mid) {
-        matched = m;
-        break;
-      }
-    }
-
-    final cashMethods = _methods.where((m) => m.isCash).toList();
-    final bankMethods =
-        _methods.where((m) => !m.isCash && m.hasBankAccounts).toList();
-
-    final hasAnyData = cashMethods.isNotEmpty || bankMethods.isNotEmpty;
-    if (!hasAnyData && matched == null) {
-      // fallback — ไม่มีข้อมูล lookup เลย
-      return Container(
-        padding: const EdgeInsets.all(LaSpace.md),
-        decoration: BoxDecoration(
-          color: LaColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(LaRadius.sm),
-          border: Border.all(color: LaColors.border),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.lock_outline_rounded,
-                size: 16, color: LaColors.textMuted),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                p.methodName.isNotEmpty
-                    ? p.methodName
-                    : 'ช่องทางรับเงิน (method_id=$mid)',
-                style: LaText.body
-                    .copyWith(fontWeight: FontWeight.w600),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      decoration: BoxDecoration(
-        color: LaColors.cardBg,
-        borderRadius: BorderRadius.circular(LaRadius.sm),
-        border: Border.all(color: LaColors.border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // ─── header ───
-          Container(
-            padding: const EdgeInsets.fromLTRB(
-                LaSpace.md, LaSpace.sm, LaSpace.md, LaSpace.sm),
-            decoration: BoxDecoration(
-              color: LaColors.statusApprovedBg.withOpacity(.5),
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(LaRadius.sm)),
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 22,
-                  height: 22,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: LaColors.statusApprovedFg,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.check_rounded,
-                      size: 14, color: Colors.white),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'เลือกการชำระ',
-                    style: LaText.body
-                        .copyWith(fontWeight: FontWeight.w700),
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: LaColors.statusApprovedFg,
-                    borderRadius: BorderRadius.circular(LaRadius.pill),
-                  ),
-                  child: Text(
-                    'เลือกแล้ว',
-                    style: LaText.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 10,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // ─── rows (cash แล้วตามด้วย banks) ───
-          ..._buildLockedRows(cashMethods, bankMethods, matched),
-        ],
-      ),
-    );
-  }
-
-  List<Widget> _buildLockedRows(
-    List<LicensePaymentMethod> cashMethods,
-    List<LicensePaymentMethod> bankMethods,
-    LicensePaymentMethod? selectedMethod,
-  ) {
-    final rows = <Widget>[];
-    var index = 0;
-    final total =
-        cashMethods.length + bankMethods.fold<int>(0, (s, m) => s + m.banks.length);
-
-    // cash row(s)
-    for (final m in cashMethods) {
-      rows.add(_lockedRow(
-        index: index++,
-        total: total,
-        icon: Icons.payments_rounded,
-        iconColor: LaColors.statusApprovedFg,
-        title: m.nameTh.isNotEmpty ? m.nameTh : 'เงินสด',
-        subtitle: '(ช่องรับแบบเงินสด)',
-        rightPrimary: m.code.isNotEmpty ? m.code : 'เงินสด',
-        rightSecondary: null,
-        isSelected: selectedMethod != null && m.id == selectedMethod.id,
-      ));
-    }
-
-    // bank rows (one row per bank)
-    for (final m in bankMethods) {
-      for (final b in m.banks) {
-        // ขวาบน: bank_id (ถ้ามี) ไม่งั้น bank_account
-        final rightPrimary = (b.bankId != null && b.bankId! > 0)
-            ? b.bankId.toString()
-            : (b.bankAccount?.isNotEmpty == true
-                ? b.bankAccount!
-                : (b.bankCode ?? '-'));
-        // ขวาล่าง: ชื่อบัญชี/ผู้ถือบัญชี
-        final rightSecondary = (b.bankName ?? '').isNotEmpty
-            ? b.bankName!
-            : ((b.branch ?? '').isNotEmpty ? 'สาขา ${b.branch}' : null);
-
-        rows.add(_lockedRow(
-          index: index++,
-          total: total,
-          icon: Icons.account_balance_rounded,
-          iconColor: LaColors.statusInfoFg,
-          title: 'เงินโอน',
-          subtitle: '(แบบเอกสาร QR แอป)',
-          rightPrimary: rightPrimary,
-          rightSecondary: rightSecondary,
-          isSelected: selectedMethod != null && m.id == selectedMethod.id,
-        ));
-      }
-    }
-
-    return rows;
-  }
-
-  Widget _lockedRow({
-    required int index,
-    required int total,
+  Widget _systemPickerCard({
+    required String value,
     required IconData icon,
-    required Color iconColor,
     required String title,
     required String subtitle,
-    required String rightPrimary,
-    required String? rightSecondary,
-    required bool isSelected,
+    required bool selected,
+    required bool enabled,
   }) {
-    final showDivider = index > 0;
-    return Container(
-      decoration: BoxDecoration(
-        color: isSelected
-            ? LaColors.statusApprovedBg.withOpacity(.25)
-            : Colors.transparent,
-        border: showDivider
-            ? const Border(
-                top: BorderSide(color: LaColors.border, width: 1),
-              )
-            : null,
-      ),
-      padding: const EdgeInsets.symmetric(
-          horizontal: LaSpace.md, vertical: LaSpace.sm),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          // ─── left: icon + title/subtitle ───
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: iconColor.withOpacity(.15),
-              borderRadius: BorderRadius.circular(LaRadius.pill),
-            ),
-            child: Icon(icon, size: 16, color: iconColor),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  title,
-                  style:
-                      LaText.body.copyWith(fontWeight: FontWeight.w700),
-                ),
-                Text(
-                  subtitle,
-                  style: LaText.caption
-                      .copyWith(color: LaColors.textMuted),
-                ),
-              ],
+    return Expanded(
+      child: InkWell(
+        onTap: enabled ? () => setState(() => _paymentSystem = value) : null,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        child: Container(
+          padding: const EdgeInsets.all(LaSpace.md),
+          decoration: BoxDecoration(
+            color: selected ? LaColors.primaryLight : LaColors.cardBg,
+            borderRadius: BorderRadius.circular(LaRadius.md),
+            border: Border.all(
+              color: selected ? LaColors.primary : LaColors.border,
+              width: selected ? 2 : 1,
             ),
           ),
-          // ─── right: primary + secondary ───
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                rightPrimary,
-                style: LaText.body.copyWith(
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w600,
-                  color: LaColors.primaryDark,
-                ),
+              Row(
+                children: [
+                  Icon(icon,
+                      size: 18,
+                      color:
+                          selected ? LaColors.primaryDark : LaColors.textMuted),
+                  const SizedBox(width: 6),
+                  Text(title,
+                      style: LaText.body.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: selected
+                            ? LaColors.primaryDark
+                            : LaColors.textPrimary,
+                      )),
+                  const Spacer(),
+                  if (selected)
+                    const Icon(Icons.check_circle_rounded,
+                        size: 16, color: LaColors.primaryDark),
+                ],
               ),
-              if (rightSecondary != null && rightSecondary.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 180),
-                  child: Text(
-                    rightSecondary,
-                    style: LaText.caption
-                        .copyWith(color: LaColors.textMuted),
-                    textAlign: TextAlign.end,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: LaText.caption.copyWith(color: LaColors.textMuted),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -882,8 +798,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
             decoration: BoxDecoration(
               color: LaColors.statusApprovedBg.withOpacity(.3),
               borderRadius: BorderRadius.circular(LaRadius.md),
-              border: Border.all(
-                  color: LaColors.statusApprovedFg.withOpacity(.4)),
+              border:
+                  Border.all(color: LaColors.statusApprovedFg.withOpacity(.4)),
             ),
             child: Row(
               children: [
@@ -926,8 +842,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
                       ),
                       Text(
                         'รองรับ .jpg, .png (สูงสุด ~15 MB)',
-                        style: LaText.caption
-                            .copyWith(color: LaColors.textMuted),
+                        style:
+                            LaText.caption.copyWith(color: LaColors.textMuted),
                       ),
                     ],
                   ),
@@ -981,8 +897,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
                       ),
                       Text(
                         'รองรับ .jpg, .png (สูงสุด ~15 MB)',
-                        style: LaText.caption
-                            .copyWith(color: LaColors.textMuted),
+                        style:
+                            LaText.caption.copyWith(color: LaColors.textMuted),
                       ),
                     ],
                   ),
@@ -998,8 +914,9 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
           children: [
             Expanded(
               child: OutlinedButton.icon(
-                onPressed:
-                    _uploadingImage ? null : () => _pickImage(ImageSource.gallery),
+                onPressed: _uploadingImage
+                    ? null
+                    : () => _pickImage(ImageSource.gallery),
                 icon: const Icon(Icons.photo_library_rounded, size: 16),
                 label: const Text('Gallery'),
                 style: OutlinedButton.styleFrom(
@@ -1013,8 +930,9 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
             const SizedBox(width: LaSpace.sm),
             Expanded(
               child: OutlinedButton.icon(
-                onPressed:
-                    _uploadingImage ? null : () => _pickImage(ImageSource.camera),
+                onPressed: _uploadingImage
+                    ? null
+                    : () => _pickImage(ImageSource.camera),
                 icon: const Icon(Icons.photo_camera_rounded, size: 16),
                 label: const Text('ถ่ายรูป'),
                 style: OutlinedButton.styleFrom(
@@ -1045,9 +963,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
                       ),
                     )
                   : const Icon(Icons.cloud_upload_rounded, size: 16),
-              label: Text(_uploadingImage
-                  ? 'กำลังอัปโหลด...'
-                  : 'รอบันทึกการชำระ'),
+              label:
+                  Text(_uploadingImage ? 'กำลังอัปโหลด...' : 'รอบันทึกการชำระ'),
               style: FilledButton.styleFrom(
                 backgroundColor: LaColors.primaryDark,
                 foregroundColor: Colors.white,
@@ -1081,8 +998,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
           decoration: BoxDecoration(
             color: LaColors.statusApprovedBg.withOpacity(.35),
             borderRadius: BorderRadius.circular(LaRadius.md),
-            border: Border.all(
-                color: LaColors.statusApprovedFg.withOpacity(.5)),
+            border:
+                Border.all(color: LaColors.statusApprovedFg.withOpacity(.5)),
           ),
           child: Row(
             children: [
@@ -1105,13 +1022,11 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
                   children: [
                     Text(
                       'หลักฐานแล้ว รอชืนยัน',
-                      style: LaText.body
-                          .copyWith(fontWeight: FontWeight.w700),
+                      style: LaText.body.copyWith(fontWeight: FontWeight.w700),
                     ),
                     Text(
                       '${_attachments.length} ไฟล์ — แนบเพิ่มได้ (สูงสุด ~15 MB/ไฟล์)',
-                      style: LaText.caption
-                          .copyWith(color: LaColors.textMuted),
+                      style: LaText.caption.copyWith(color: LaColors.textMuted),
                     ),
                   ],
                 ),
@@ -1127,7 +1042,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
           final i = entry.key;
           final a = entry.value;
           return Padding(
-            padding: EdgeInsets.only(bottom: i < _attachments.length - 1 ? 6 : 0),
+            padding:
+                EdgeInsets.only(bottom: i < _attachments.length - 1 ? 6 : 0),
             child: _attachmentRow(a),
           );
         }),
@@ -1183,10 +1099,9 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   Widget _attachmentRow(PaymentAttachment a) {
     final name = a.filename?.isNotEmpty == true
         ? a.filename!
-        : (a.uuid.isNotEmpty
-            ? '${a.uuid.substring(0, 8)}…'
-            : 'attachment');
-    final sizeKb = a.size != null ? '${(a.size! / 1024).toStringAsFixed(1)} KB' : '';
+        : (a.uuid.isNotEmpty ? '${a.uuid.substring(0, 8)}…' : 'attachment');
+    final sizeKb =
+        a.size != null ? '${(a.size! / 1024).toStringAsFixed(1)} KB' : '';
     return Container(
       padding: const EdgeInsets.all(LaSpace.sm),
       decoration: BoxDecoration(
@@ -1360,9 +1275,20 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
           ),
           if (_step < _kTotalSteps)
             FilledButton.icon(
-              onPressed: (!_canGoNext() || _submitting) ? null : _next,
-              icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-              label: const Text('ถัดไป'),
+              onPressed: (!_canGoNext() || _submitting || _creatingDraft)
+                  ? null
+                  : _next,
+              icon: _creatingDraft
+                  ? const SizedBox(
+                      width: 14,
+                      height: 14,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.arrow_forward_rounded, size: 16),
+              label: Text(_creatingDraft ? 'กำลังสร้าง...' : 'ถัดไป'),
               style: FilledButton.styleFrom(
                 backgroundColor: LaColors.primaryDark,
                 foregroundColor: Colors.white,
@@ -1370,7 +1296,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
             )
           else
             FilledButton.icon(
-              onPressed: _submitting ? null : _submit,
+              onPressed: (_submitting || !_canSubmit()) ? null : _submit,
               icon: _submitting
                   ? const SizedBox(
                       width: 14,
@@ -1407,6 +1333,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
         TextField(
           controller: controller,
           keyboardType: keyboardType,
+          onChanged: (_) => setState(() {}),
           decoration: InputDecoration(
             isDense: true,
             hintText: hint,
@@ -1443,101 +1370,296 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       });
     }
   }
+}
 
-  Widget _methodRow(LicensePaymentMethod m) {
-    final fg =
+// ============================================================================
+// Separate popup: เลือก method (internal)
+// ============================================================================
+//
+// เด้งขึ้นตอน user เลือก "internal" ใน stepper → กด "ถัดไป"
+// คืน LicensePaymentMethod? (null = ยกเลิก)
+// ============================================================================
+
+Future<LicensePaymentMethod?> showPaymentMethodPickerDialog({
+  required BuildContext context,
+  required List<LicensePaymentMethod> methods,
+  bool isLoading = false,
+  String? initialMethodId,
+}) {
+  return showDialog<LicensePaymentMethod>(
+    context: context,
+    barrierDismissible: true,
+    builder: (_) => _PaymentMethodPickerDialog(
+      methods: methods,
+      isLoading: isLoading,
+      initialMethodId: initialMethodId,
+    ),
+  );
+}
+
+class _PaymentMethodPickerDialog extends StatefulWidget {
+  final List<LicensePaymentMethod> methods;
+  final bool isLoading;
+  final String? initialMethodId;
+
+  const _PaymentMethodPickerDialog({
+    required this.methods,
+    required this.isLoading,
+    this.initialMethodId,
+  });
+
+  @override
+  State<_PaymentMethodPickerDialog> createState() =>
+      _PaymentMethodPickerDialogState();
+}
+
+class _PaymentMethodPickerDialogState
+    extends State<_PaymentMethodPickerDialog> {
+  LicensePaymentMethod? _picked;
+
+  @override
+  void initState() {
+    super.initState();
+    // pre-select จาก initialMethodId (ถ้ามี)
+    final want = widget.initialMethodId;
+    if (want != null && want.trim().isNotEmpty) {
+      for (final m in widget.methods) {
+        if (m.id.toString() == want ||
+            (m.uuid.isNotEmpty && m.uuid.toLowerCase() == want.toLowerCase())) {
+          _picked = m;
+          break;
+        }
+      }
+    }
+  }
+
+  bool get _canConfirm => _picked != null;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: LaColors.cardBg,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(LaRadius.md),
+      ),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520),
+        child: Padding(
+          padding: const EdgeInsets.all(LaSpace.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _header(),
+              const SizedBox(height: LaSpace.md),
+              _body(),
+              const SizedBox(height: LaSpace.md),
+              _footer(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _header() => Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: LaColors.primaryDark,
+              borderRadius: BorderRadius.circular(LaRadius.sm),
+            ),
+            child: const Icon(Icons.account_balance_rounded,
+                size: 18, color: Colors.white),
+          ),
+          const SizedBox(width: LaSpace.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('เลือกช่องทางรับชำระ',
+                    style: LaText.h2.copyWith(fontSize: 16)),
+                Text(
+                  'ช่องทางในระบบ — ต้องระบุ',
+                  style: LaText.caption.copyWith(color: LaColors.textMuted),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'ปิด',
+            icon: const Icon(Icons.close_rounded, size: 18),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      );
+
+  Widget _body() {
+    if (widget.isLoading && widget.methods.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: 32),
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      );
+    }
+    if (widget.methods.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(LaSpace.md),
+        decoration: BoxDecoration(
+          color: LaColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(LaRadius.sm),
+          border: Border.all(color: LaColors.border),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.info_outline_rounded,
+                size: 16, color: LaColors.textMuted),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text('ไม่พบช่องทางรับเงิน — ลองใหม่อีกครั้ง'),
+            ),
+          ],
+        ),
+      );
+    }
+    // ─── แยก cash / bank methods ───
+    final cashMethods = widget.methods.where((m) => m.isCash).toList();
+    final bankMethods =
+        widget.methods.where((m) => !m.isCash && m.hasBankAccounts).toList();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (cashMethods.isNotEmpty) ...[
+          _sectionLabel('ช่องทางเงินสด'),
+          const SizedBox(height: 6),
+          ...cashMethods.map((m) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _methodOption(m),
+              )),
+        ],
+        if (bankMethods.isNotEmpty) ...[
+          const SizedBox(height: LaSpace.sm),
+          _sectionLabel('ช่องทางเงินโอน / QR'),
+          const SizedBox(height: 6),
+          ...bankMethods.map((m) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: _methodOption(m),
+              )),
+        ],
+      ],
+    );
+  }
+
+  Widget _sectionLabel(String s) => Text(
+        s,
+        style: LaText.caption.copyWith(
+          color: LaColors.textMuted,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+
+  Widget _methodOption(LicensePaymentMethod m) {
+    final selected = _picked?.id == m.id;
+    final IconData icon =
+        m.isCash ? Icons.payments_rounded : Icons.account_balance_rounded;
+    final Color iconColor =
         m.isCash ? LaColors.statusApprovedFg : LaColors.statusInfoFg;
-    final bg = m.isCash ? const Color(0x1A22C55E) : LaColors.statusInfoBg;
-    return Row(
-      children: [
-        Container(
-          width: 28,
-          height: 28,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(LaRadius.sm),
-          ),
-          child: Icon(
-            m.isCash
-                ? Icons.payments_rounded
-                : Icons.account_balance_rounded,
-            size: 14,
-            color: fg,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                m.nameTh.isNotEmpty ? m.nameTh : m.code,
-                style: LaText.body,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                '${m.code}  •  id=${m.id}'
-                '${m.hasBankAccounts ? '  •  ${m.banks.length} บัญชี' : ''}',
-                style: LaText.caption.copyWith(
-                  fontFamily: 'monospace',
-                  color: LaColors.textMuted,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+    final subtitle = m.banks.isNotEmpty
+        ? [
+            if ((m.banks.first.bankCode ?? '').isNotEmpty)
+              m.banks.first.bankCode,
+            if ((m.banks.first.bankAccount ?? '').isNotEmpty)
+              m.banks.first.bankAccount,
+            if ((m.banks.first.branch ?? '').isNotEmpty)
+              'สาขา ${m.banks.first.branch}',
+            if (m.banks.length > 1) '+${m.banks.length - 1} บัญชี',
+          ].join(' · ')
+        : m.code;
+
+    return InkWell(
+      onTap: () => setState(() {
+        _picked = m;
+      }),
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      child: Container(
+        padding: const EdgeInsets.all(LaSpace.sm),
+        decoration: BoxDecoration(
+          color: selected
+              ? LaColors.primaryLight.withOpacity(.5)
+              : LaColors.cardBg,
+          borderRadius: BorderRadius.circular(LaRadius.md),
+          border: Border.all(
+            color: selected ? LaColors.primary : LaColors.border,
+            width: selected ? 2 : 1,
           ),
         ),
-      ],
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: iconColor.withOpacity(.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, size: 16, color: iconColor),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    m.nameTh.isNotEmpty ? m.nameTh : m.code,
+                    style: LaText.body.copyWith(fontWeight: FontWeight.w700),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      style: LaText.caption.copyWith(
+                        color: LaColors.textMuted,
+                        fontFamily: 'monospace',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            if (selected)
+              const Icon(Icons.check_circle_rounded,
+                  size: 18, color: LaColors.primaryDark),
+          ],
+        ),
+      ),
     );
   }
 
-  Widget _bankRow(LicensePaymentBank b) {
-    return Row(
-      children: [
-        Container(
-          width: 24,
-          height: 24,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: LaColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(LaRadius.sm),
+  Widget _footer() => Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          TextButton.icon(
+            onPressed: () => Navigator.of(context).pop(),
+            icon: const Icon(Icons.close_rounded, size: 16),
+            label: const Text('ยกเลิก'),
           ),
-          child: const Icon(Icons.account_balance_rounded,
-              size: 12, color: LaColors.textMuted),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                (b.bankName ?? '-').isEmpty ? '-' : b.bankName!,
-                style: LaText.tableCell,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              Text(
-                [
-                  if ((b.bankCode ?? '').isNotEmpty) b.bankCode,
-                  if ((b.bankAccount ?? '').isNotEmpty) b.bankAccount,
-                  if ((b.branch ?? '').isNotEmpty) 'สาขา ${b.branch}',
-                ].join(' • '),
-                style: LaText.caption.copyWith(
-                  fontFamily: 'monospace',
-                  color: LaColors.textMuted,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+          FilledButton.icon(
+            onPressed:
+                _canConfirm ? () => Navigator.of(context).pop(_picked) : null,
+            icon: const Icon(Icons.check_rounded, size: 16),
+            label: const Text('ยืนยัน'),
+            style: FilledButton.styleFrom(
+              backgroundColor: LaColors.primaryDark,
+              foregroundColor: Colors.white,
+            ),
           ),
-        ),
-      ],
-    );
-  }
+        ],
+      );
 }

@@ -276,21 +276,39 @@ Future<void> _handleProceed(
     }
   }
 
-  // 2) ถ้ายังไม่มี → สร้าง draft (default: external — ระบบรันเลขให้)
-  //    แล้วเปิด popup ที่ step 1 (เลือกช่องทาง)
+  // 2) ถ้ายังไม่มี → เปิด popup ที่ step 1 (เลือก external/internal)
+  //    **Dialog จะยิง POST /v2/payments หลังเลือก system (internal) + method เสร็จ**
+  //    ไม่ยิงล่วงหน้า เพราะต้องรู้ payment_system + payment_method_id ก่อน
   if (payment == null || payment.uuid.isEmpty) {
-    final created = await vm.startPayment(item);
-    if (created == null || created.uuid.isEmpty) return;
-    if (!context.mounted) return;
-    payment = created;
+    // ─── ดึง defaults จากประวัติ (GET /v2/requests/{uuid}/payments) ───
+    //    - paymentSystem: external/internal (most recent)
+    //    - paymentMethodId: เฉพาะกรณี internal (most recent ที่มี)
+    String? defaultPaymentSystem;
+    String? defaultMethodId;
+    final history = vm.payments?.data ?? const <PaymentDetail>[];
+    for (final h in history) {
+      final sys = h.paymentSystem.trim();
+      if (sys.isNotEmpty) {
+        defaultPaymentSystem = sys;
+      }
+      final mid = (h.paymentMethodId ?? '').trim();
+      if (mid.isNotEmpty) {
+        defaultMethodId = mid;
+      }
+      if (defaultPaymentSystem != null) break; // ใช้ most recent พอ
+    }
 
     if (!context.mounted) return;
     final result = await showReceiptEntryStepperDialog(
       context: context,
-      payment: payment,
+      payment: const PaymentDetail(), // ยังไม่มี — dialog จะสร้างเองตอนไป step 3
       defaultAmount: item.totalAmount,
       initialStep: 1,
-      paymentSystem: payment.paymentSystem,
+      paymentSystem: defaultPaymentSystem ?? 'external',
+      defaultMethodId: defaultMethodId,
+      requestUuid: vm.requestUuid,
+      debtLineUuid: item.uuid,
+      payType: vm.payTypeOf(item),
     );
     if (!context.mounted) return;
     // รีโหลดเสมอหลังปิด dialog (อาจอัปโหลดหลักฐานแล้ว แม้ไม่ได้กดยืนยัน step 3)
@@ -307,7 +325,7 @@ Future<void> _handleProceed(
     context: context,
     payment: payment,
     defaultAmount: item.totalAmount,
-    initialStep: 3,
+    initialStep: 2, // skip system picker — method/system มาจาก payment แล้ว
     paymentSystem: payment.paymentSystem,
   );
   if (!context.mounted) return;

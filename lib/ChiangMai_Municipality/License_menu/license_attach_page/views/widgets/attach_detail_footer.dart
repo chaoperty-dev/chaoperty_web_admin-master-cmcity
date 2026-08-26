@@ -70,7 +70,9 @@ class AttachDetailFooter extends StatelessWidget {
           if (!readOnly)
             isLast
                 ? (showSaveButton
-                    ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                    ? 
+                    
+                    _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
                     : const SizedBox.shrink())
                 : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
         ],

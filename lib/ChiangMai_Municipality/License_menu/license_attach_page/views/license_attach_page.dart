@@ -116,7 +116,8 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
       case LicenseAttachNavigateEvent(:final routeData):
         // เปิด full-page detail route (เต็มจอ)
         final title = context.read<LicenseAttachViewModel>().title;
-        Navigator.of(context).push(
+        Navigator.of(context)
+            .push<bool>(
           MaterialPageRoute(
             builder: (_) => LicenseAttachDetailPage.create(
               routeData: routeData,
@@ -124,7 +125,16 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
             ),
             fullscreenDialog: true,
           ),
-        );
+        )
+            // ✅ ถ้า detail page คืน true (เช่น บันทึกสำเร็จ) → reload list
+            .then((result) {
+          if (!mounted) return;
+          if (result == true) {
+            // ✅ submit + loadChecklist ใช้เวลารวม ~2.5s ไปแล้ว → refresh ทันทีได้เลย
+            // ลด delay จาก 1.5s เหลือ 0 (ประหยัดเวลารอรวม 1.5s)
+            context.read<LicenseAttachViewModel>().refresh();
+          }
+        });
         break;
     }
   }

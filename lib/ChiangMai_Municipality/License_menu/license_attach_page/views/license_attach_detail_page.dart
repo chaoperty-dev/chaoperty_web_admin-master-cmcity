@@ -122,6 +122,10 @@ class _LicenseAttachDetailPageBodyState
                       print(
                         'Next clicked — Request UUID: ${vm.requestUuid}',
                       );
+                      // refresh parent VM ก่อนขึ้น step 2
+                      // — เพื่อให้ step 2 เห็นไฟล์ที่อัปโหลด/ลบ ใน step 1
+                      // (ไม่งั้น mergedAttachments จะ stale จนกว่าจะออกแล้วเข้าใหม่)
+                      vm.loadChecklist();
                       vm.nextDetailStep();
                     }
                   : null,
@@ -173,7 +177,8 @@ class _LicenseAttachDetailPageBodyState
                     ),
                   );
                   if (navigator.canPop()) {
-                    navigator.pop();
+                    // ✅ คืน true → list page จะ refresh ข้อมูล
+                    navigator.pop(true);
                   }
                 } else {
                   messenger.showSnackBar(

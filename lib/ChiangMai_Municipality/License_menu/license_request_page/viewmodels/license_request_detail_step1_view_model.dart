@@ -43,6 +43,10 @@ class LicenseRequestDetailStep1ViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  // ---------- Raw review data (สำหรับ status) ----------
+  String _status = '';
+  String get status => _status;
+
   // ---------- Public getters ----------
   List<PersonFieldModel> get dataPerson => _dataPerson;
   List<ShopFieldModel> get dataShop => _dataShop;
@@ -127,6 +131,9 @@ class LicenseRequestDetailStep1ViewModel extends ChangeNotifier {
     final client = rd.client;
     final addr = client.json;
     final nr = rd.newRequest;
+
+    // ─── Status (สำหรับ shared VM) ───
+    _status = rd.status;
 
     // ─── Person fields ───
     _setPersonField('ชื่อ-นามสกุล', client.cname);

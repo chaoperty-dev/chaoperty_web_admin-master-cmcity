@@ -18,6 +18,7 @@ import 'package:provider/provider.dart';
 
 import '../../license_contract_page/models/license_contract_result.dart';
 import '../../license_contract_page/views/license_contract_page.dart';
+import 'package:chaoperty/main.dart';
 import '../models/license_request_config.dart';
 import '../models/license_request_event.dart';
 import '../viewmodels/license_request_view_model.dart';
@@ -150,7 +151,8 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
       case LicenseRequestNavigateEvent(:final routeData):
         // เปิด full-page detail route (เต็มจอ)
         final title = context.read<LicenseRequestViewModel>().title;
-        Navigator.of(context).push(
+        Navigator.of(context)
+            .push<bool>(
           MaterialPageRoute(
             builder: (_) => LicenseRequestDetailPage.create(
               routeData: routeData,
@@ -158,7 +160,79 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
             ),
             fullscreenDialog: true,
           ),
-        );
+        )
+            // ✅ ถ้า detail page คืน true (เช่น ยกเลิกคำขอสำเร็จ) → reload list + แสดง toast
+            .then((result) {
+          if (!mounted) return;
+          if (result == true) {
+            context.read<LicenseRequestViewModel>().refresh();
+            // ✅ ใช้ showGeneralDialog — Navigator overlay อยู่บนสุดเสมอ (bypass ScaffoldMessenger overlay issue)
+            showGeneralDialog(
+              context: context,
+              barrierDismissible: false,
+              barrierLabel: 'cancel-success',
+              barrierColor: Colors.transparent,
+              transitionDuration: const Duration(milliseconds: 200),
+              pageBuilder: (ctx, anim1, anim2) {
+                Future.delayed(const Duration(seconds: 2), () {
+                  if (Navigator.of(ctx).canPop()) {
+                    Navigator.of(ctx).pop();
+                  }
+                });
+                // ✅ เว้นระยะให้พ้น sidebar ฝั่งซ้าย (เฉพาะ desktop + sidebar เปิด)
+                final sidebarOpen = ctx.watch<SidebarController>().isOpen;
+                final isDesktop = MediaQuery.of(ctx).size.width >= 768;
+                final leftInset = (isDesktop && sidebarOpen) ? 248.0 : 16.0;
+                return SafeArea(
+                  child: Stack(
+                    children: [
+                      Positioned(
+                        bottom: 16,
+                        left: leftInset,
+                        right: 16,
+                        child: Material(
+                          color: Colors.transparent,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF16A34A),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(.2),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(Icons.check_circle,
+                                    color: Colors.white, size: 22),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'ยกเลิกคำขอเรียบร้อย',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            );
+          }
+        });
         break;
     }
   }

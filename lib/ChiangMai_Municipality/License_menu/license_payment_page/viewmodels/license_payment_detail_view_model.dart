@@ -33,6 +33,7 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
   }
 
   final String? _uuid;
+  String? get requestUuid => _uuid;
   final LicensePaymentDetailService _service;
 
   // ---------- Detail data ----------
@@ -210,7 +211,7 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
     if (existing != null) return existing;
     return await createPayment(
       debtLineUuid: item.uuid,
-      payType: _payTypeOf(item),
+      payType: payTypeOf(item),
       amount: item.totalAmount,
       paymentSystem: paymentSystem,
       paymentMethodId: paymentMethodId,
@@ -260,16 +261,28 @@ class LicensePaymentDetailViewModel extends ChangeNotifier {
   }
 
   /// อนุมาน pay_type — server ใช้ etype/dtype เป็นสัญญาณหลัก (fallback = fee)
+  /// ตรวจหลายช่องทาง: etype/dtype + expname (กรณี server ไม่ใส่ code)
+  /// DEBUG: log ให้เห็นค่าก่อนตัดสินใจ
   /// DEBUG: log ให้เ�็นค่าก่อนตัดสินใจ
-  String _payTypeOf(PrepaymentItem item) {
+  String payTypeOf(PrepaymentItem item) {
     final et = (item.etype ?? '').toLowerCase();
     final dt = (item.dtype ?? '').toLowerCase();
-    String pick;
-    if (et == 'fine' || dt == 'fine' || et.contains('fine') || dt.contains('fine')) {
-      pick = 'fine';
-    } else {
-      pick = 'fee';
-    }
+    final name = (item.expname ?? '').toLowerCase();
+    // ─── ตรวจ 'fine' หลายช่องทาง ───
+    // 1) etype/dtype ตรงๆ: 'fine' / 'ko' / 'f' (short code)
+    // 2) expname มีคำว่า 'ค่าปรับ' / 'fine' / 'penal'
+    final isFine = et == 'fine' ||
+        dt == 'fine' ||
+        et == 'ko' ||
+        dt == 'ko' ||
+        (et.length == 1 && et == 'f') ||
+        (dt.length == 1 && dt == 'f') ||
+        et.contains('fine') ||
+        dt.contains('fine') ||
+        name.contains('ค่าปรับ') ||
+        name.contains('fine') ||
+        name.contains('penal');
+    final pick = isFine ? 'fine' : 'fee';
     print('[DEBUG pay_type] expname=|${item.expname}| etype=|${item.etype}| dtype=|${item.dtype}| pick=$pick');
     return pick;
   }

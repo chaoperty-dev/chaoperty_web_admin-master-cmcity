@@ -85,12 +85,19 @@ class LicensePaymentMethod {
         v is int ? v : int.tryParse('$v') ?? d;
 
     final rawMeta = json['meta'];
-    final banks = rawMeta is List
-        ? rawMeta
-            .whereType<Map<String, dynamic>>()
-            .map(LicensePaymentBank.fromJson)
-            .toList()
-        : <LicensePaymentBank>[];
+    List<LicensePaymentBank> banks;
+    if (rawMeta is List) {
+      // กรณี meta = [...] (array ของ banks)
+      banks = rawMeta
+          .whereType<Map<String, dynamic>>()
+          .map(LicensePaymentBank.fromJson)
+          .toList();
+    } else if (rawMeta is Map) {
+      // กรณี meta = {...} (single bank object — BANK_TRANSFER, QR methods)
+      banks = [LicensePaymentBank.fromJson(Map<String, dynamic>.from(rawMeta))];
+    } else {
+      banks = <LicensePaymentBank>[];
+    }
 
     return LicensePaymentMethod(
       id: toInt(json['id']),

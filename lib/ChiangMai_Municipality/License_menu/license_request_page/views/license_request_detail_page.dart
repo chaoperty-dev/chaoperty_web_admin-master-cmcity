@@ -98,6 +98,8 @@ class _LicenseRequestDetailPageBodyState
               subtitle: subtitle,
               currentStep: step,
               totalSteps: total,
+              // ✅ ปุ่ม "ยกเลิกคำขอ" อยู่ใน title bar ของ step1 (แถวเดียวกับ "ตรวจสอบคำขอ")
+              //    ไม่อยู่ใน header — header แสดงแค่ title + step
               onBack: () {
                 if (Navigator.of(context).canPop()) {
                   Navigator.of(context).pop();
@@ -126,6 +128,7 @@ class _LicenseRequestDetailPageBodyState
                   }
                 }
               },
+              // ✅ ปุ่ม "ยกเลิกคำขอ" อยู่ใน step1 (ของตัวเอง ไม่ดึงจาก footer)
             ),
           ],
         ),

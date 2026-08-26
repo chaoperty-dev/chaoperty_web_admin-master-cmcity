@@ -29,6 +29,9 @@ class LicenseAttachChecklistSubmitResult {
   final String? signerPosition;
   final DateTime? signedAt;
 
+  /// status ของ request ที่ response กลับมา (เช่น documents_submitted)
+  final String? requestStatus;
+
   const LicenseAttachChecklistSubmitResult({
     required this.success,
     required this.statusCode,
@@ -39,6 +42,7 @@ class LicenseAttachChecklistSubmitResult {
     this.signerName,
     this.signerPosition,
     this.signedAt,
+    this.requestStatus,
   });
 }
 
@@ -48,7 +52,7 @@ class LicenseAttachChecklistService {
   /// ถ้ายังไม่เคยบันทึก → 404 → fallback ไปใช้ preview
   static Future<LicenseAttachChecklistPreview?> fetchSavedChecklist(
       String? requestUuid) async {
-    final uuid = requestUuid ?? 'a2c54e97-8c06-4dca-8007-9f6b34d9e93f';
+    final uuid = requestUuid ?? '';
     final headers = await MyHeaders.build();
     final url =
         Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid/checklist');
@@ -69,7 +73,7 @@ class LicenseAttachChecklistService {
   /// ดึง checklist preview (เฉพาะเอกสารที่แนบแล้ว)
   static Future<LicenseAttachChecklistPreview> fetchByUuid(
       String? requestUuid) async {
-    final uuid = requestUuid ?? 'a2c54e97-8c06-4dca-8007-9f6b34d9e93f';
+    final uuid = requestUuid ?? '';
     final headers = await MyHeaders.build();
     final url = Uri.parse(
         '${MyConstant().domain_v1}/admin/requests/$uuid/checklist/preview');
@@ -85,12 +89,86 @@ class LicenseAttachChecklistService {
         jsonBody['data'] as Map<String, dynamic>);
   }
 
+  /// ดึง status ของ request (GET /admin/requests/{uuid})
+  /// คืน string เช่น 'draft', 'documents_submitted', 'in_progress' — หรือ null ถ้าดึงไม่ได้
+  static Future<String?> fetchRequestStatus(String? requestUuid) async {
+    final uuid = requestUuid ?? '';
+    try {
+      final headers = await MyHeaders.build();
+      final url = Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid');
+      final response = await http.get(url, headers: headers);
+      if (response.statusCode != 200) return null;
+      final body = json.decode(response.body);
+      // status อยู่ใต้ data (ตาม standard response shape)
+      final data = body is Map ? body['data'] : null;
+      if (data is Map) {
+        final s = data['status'];
+        if (s is String && s.isNotEmpty) return s;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// POST /api/v1/admin/requests/{uuid}/submit
+  /// ยิงเมื่อ request ยังอยู่ในสถานะ `draft` เพื่อเปลี่ยนเป็น `documents_submitted`
+  /// ก่อนจะยิง checklist POST ตามมา
+  static Future<LicenseAttachChecklistSubmitResult> submitRequest(
+    String? requestUuid, {
+    Map<String, String>? extraHeaders,
+  }) async {
+    final uuid = requestUuid ?? '';
+    final baseHeaders = await MyHeaders.build();
+    final headers = <String, String>{
+      ...baseHeaders,
+      'Accept': 'application/json',
+      if (extraHeaders != null) ...extraHeaders,
+    };
+
+    final url =
+        Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid/submit');
+    final request = http.Request('POST', url)..headers.addAll(headers);
+    print('LicenseAttachChecklistSubmitResult: $url');
+    try {
+      final streamed = await request.send();
+      final body = await streamed.stream.bytesToString();
+      final ok = streamed.statusCode >= 200 && streamed.statusCode < 300;
+      String? message;
+      String? requestStatus;
+      try {
+        final j = json.decode(body);
+        if (j is Map) {
+          if (j['message'] is String) message = j['message'] as String;
+          final data = j['data'];
+          if (data is Map && data['status'] is String) {
+            requestStatus = data['status'] as String;
+          }
+        }
+      } catch (_) {}
+      return LicenseAttachChecklistSubmitResult(
+        success: ok,
+        statusCode: streamed.statusCode,
+        message: message ?? streamed.reasonPhrase,
+        rawBody: body,
+        requestStatus: requestStatus,
+      );
+    } catch (e) {
+      debugPrint('Submit request (draft) error: $e');
+      return LicenseAttachChecklistSubmitResult(
+        success: false,
+        statusCode: -1,
+        message: e.toString(),
+      );
+    }
+  }
+
   /// ดึงข้อมูล request ทั้งหมด (รวมเอกสารที่ต้องแนบทั้งหมด — ทั้งอัพแล้วและยังไม่อัพ)
   /// Endpoint: GET /admin/requests/{uuid}
   /// คืนแค่ list ของ attachments (ทั้งหมด)
   static Future<List<LicenseAttachChecklistAttachment>> fetchAllAttachments(
       String? requestUuid) async {
-    final uuid = requestUuid ?? 'a2c54e97-8c06-4dca-8007-9f6b34d9e93f';
+    final uuid = requestUuid ?? '';
     final headers = await MyHeaders.build();
     final url = Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid');
     try {
@@ -179,7 +257,7 @@ class LicenseAttachChecklistService {
     String? requestUuid, {
     Map<String, String>? extraHeaders,
   }) async {
-    final uuid = requestUuid ?? 'a2c54e97-8c06-4dca-8007-9f6b34d9e93f';
+    final uuid = requestUuid ?? '';
     final baseHeaders = await MyHeaders.build();
     final headers = <String, String>{
       ...baseHeaders,

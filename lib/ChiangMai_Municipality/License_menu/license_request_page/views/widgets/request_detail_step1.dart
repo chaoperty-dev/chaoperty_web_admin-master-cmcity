@@ -21,6 +21,7 @@ import 'package:provider/provider.dart';
 
 import '../../viewmodels/license_request_detail_step1_view_model.dart';
 import '../../viewmodels/license_request_detail_view_model.dart';
+import 'cancel_request_button.dart';
 import 'request_detail_contract_section.dart';
 import 'request_detail_person_section.dart';
 import 'request_detail_section_title.dart';
@@ -59,6 +60,10 @@ class _RequestDetailStep1State extends State<RequestDetailStep1> {
     }
     try {
       await _vm.loadFromUuid(uuid);
+      // ✅ sync status ไปยัง shared VM (ใช้ใน step1 badge + step2 lock)
+      if (mounted) {
+        context.read<LicenseRequestDetailViewModel>().setStatus(_vm.status);
+      }
       if (mounted) {
         setState(() {
           _isLoading = _vm.isLoading;
@@ -126,8 +131,8 @@ class _RequestDetailStep1State extends State<RequestDetailStep1> {
                     Text(
                       _errorMessage!,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
-                          fontSize: 14, color: Colors.red.shade700),
+                      style:
+                          TextStyle(fontSize: 14, color: Colors.red.shade700),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -151,7 +156,7 @@ class _RequestDetailStep1State extends State<RequestDetailStep1> {
             );
           }
 
-          return const _Step1Body();
+          return _Step1Body(requestUuid: widget.requestUuid);
         },
       ),
     );
@@ -162,7 +167,8 @@ class _RequestDetailStep1State extends State<RequestDetailStep1> {
 /// Internal body — ต้องอยู่ใต้ Provider<LicenseRequestDetailStep1ViewModel>
 /// ───────────────────────────────────────────────────────────────────────────
 class _Step1Body extends StatelessWidget {
-  const _Step1Body();
+  final String? requestUuid;
+  const _Step1Body({this.requestUuid});
 
   @override
   Widget build(BuildContext context) {
@@ -177,25 +183,35 @@ class _Step1Body extends StatelessWidget {
             children: [
               // ─── Title bar ───
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFDCFCE7).withOpacity(.5),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Row(
+                child: Row(
                   children: [
-                    Icon(Icons.assignment_rounded,
+                    const Icon(Icons.assignment_rounded,
                         size: 18, color: Color(0xFF15803D)),
-                    SizedBox(width: 8),
-                    Text(
-                      'ตรวจสอบคำขอ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: Color(0xFF0F172A),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'ตรวจสอบคำขอ',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF0F172A),
+                        ),
                       ),
                     ),
+                    // ✅ ถ้า rejected → แสดง badge สถานะแทนปุ่มยกเลิก (กันกดซ้ำ)
+                    if (context.watch<LicenseRequestDetailViewModel>().isRejected)
+                      _RejectedStatusBadge()
+                    else if (requestUuid != null &&
+                        requestUuid!.trim().isNotEmpty)
+                      CancelRequestButton(
+                        requestUuid: requestUuid!.trim(),
+                      ),
                   ],
                 ),
               ),
@@ -226,8 +242,7 @@ class _Step1Body extends StatelessWidget {
                           RequestDetailShopSection(),
                           SizedBox(height: 16),
                           RequestDetailSectionTitle(
-                              icon: Icons.receipt_long,
-                              title: 'ข้อมูลสัญญา'),
+                              icon: Icons.receipt_long, title: 'ข้อมูลสัญญา'),
                           RequestDetailContractSection(),
                         ],
                       )
@@ -241,8 +256,7 @@ class _Step1Body extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 RequestDetailSectionTitle(
-                                    icon: Icons.person,
-                                    title: 'ข้อมูลผู้เช่า'),
+                                    icon: Icons.person, title: 'ข้อมูลผู้เช่า'),
                                 RequestDetailPersonSection(),
                               ],
                             ),
@@ -254,8 +268,7 @@ class _Step1Body extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 RequestDetailSectionTitle(
-                                    icon: Icons.store,
-                                    title: 'ข้อมูลร้านค้า'),
+                                    icon: Icons.store, title: 'ข้อมูลร้านค้า'),
                                 RequestDetailShopSection(),
                                 SizedBox(height: 16),
                                 RequestDetailSectionTitle(
@@ -287,9 +300,42 @@ class _Step1Body extends StatelessWidget {
                   ),
                 ],
               ),
+              // ✅ ปุ่ม "ยกเลิกคำขอ" ย้ายไปไว้ใน header (ด้านบน) — ไม่อยู่ใน body
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// ───────────────────────────────────────────────────────────────────────────
+/// Status badge — แสดงเมื่อ status = rejected (แทนปุ่มยกเลิก กันกดซ้ำ)
+/// ───────────────────────────────────────────────────────────────────────────
+class _RejectedStatusBadge extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEE2E2), // red-100
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: const Color(0xFFFCA5A5)), // red-300
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.cancel_rounded, size: 14, color: Color(0xFF991B1B)),
+          SizedBox(width: 6),
+          Text(
+            'ถูกปฏิเสธ',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF991B1B), // red-800
+            ),
+          ),
+        ],
       ),
     );
   }

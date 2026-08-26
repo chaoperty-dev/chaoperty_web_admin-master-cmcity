@@ -10,6 +10,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
+import 'app/root_scaffold_messenger.dart';
 import 'router/app_router.dart';
 import 'router/auth_state_notifier.dart';
 
@@ -106,6 +107,7 @@ class _MyAppState extends State<MyApp> {
       locale: const Locale('th'),
       title: 'Chaoperty',
       debugShowCheckedModeBanner: false,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       theme: ThemeData(
         primarySwatch: Colors.green,
         scrollbarTheme: ScrollbarThemeData().copyWith(

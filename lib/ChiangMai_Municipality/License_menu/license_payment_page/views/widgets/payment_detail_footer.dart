@@ -75,14 +75,16 @@ class PaymentDetailFooter extends StatelessWidget {
           // ปุ่มหลัก: ถัดไป (Step 1) หรือ บันทึก (Step 2)
           if (!readOnly)
             isLast
-                ? _SaveButton(
-                    label: saveLabel ?? 'บันทึก',
-                    onTap: onSave,
-                  )
-                : _NextButton(
-                    label: nextLabel ?? 'ถัดไป',
-                    onTap: onNext,
-                  ),
+                ? const SizedBox.shrink()
+                //  _SaveButton(
+                //     label: saveLabel ?? 'บันทึก',
+                //     onTap: onSave,
+                //   )
+                : const SizedBox.shrink()
+          //  _NextButton(
+          //     label: nextLabel ?? 'ถัดไป',
+          //     onTap: onNext,
+          //   ),
         ],
       ),
     );

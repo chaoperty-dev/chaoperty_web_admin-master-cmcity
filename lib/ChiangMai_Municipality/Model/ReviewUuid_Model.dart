@@ -859,7 +859,9 @@ class Payment {
     reference1 = map['reference1'];
     reference2 = map['reference2'];
     status = map['status'];
-    json = map['json']; // ✅ fixed bug
+    // json: API ส่งเป็น Map {lines: [...]} — เลยไม่ assign เข้า String? field
+    // (เก็บไว้ใน PayPaymentJson nested object ถ้าต้องใช้)
+    json = null;
     createdAt = map['created_at'];
     payAttachment = map['payAttachment'] != null
         ? PayAttachment.fromJson(map['payAttachment'])

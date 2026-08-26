@@ -26,6 +26,8 @@ import 'package:provider/provider.dart';
 
 import '../../services/license_request_billing_service.dart';
 import '../../viewmodels/license_request_detail_step2_view_model.dart';
+import '../../viewmodels/license_request_detail_view_model.dart';
+import 'package:chaoperty/ChiangMai_Municipality/unity/license_status_labels.dart';
 import '../theme/license_request_theme.dart';
 import 'license_request_addbilling_table.dart';
 
@@ -61,6 +63,8 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<LicenseRequestDetailStep2ViewModel>();
+    // ✅ อ่าน isLocked จาก shared VM (3 terminal statuses: rejected/cancelled/completed + in_progress)
+    final isLocked = context.watch<LicenseRequestDetailViewModel>().isLocked;
 
     if (vm.isLoading && vm.items.isEmpty) {
       return const Padding(
@@ -75,10 +79,14 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ✅ Banner แจ้งเมื่อถูกล็อก
+          if (isLocked) const _LockedBanner(),
           // ─── Toolbar (gradient add + counter) ───
           Row(
             children: [
-              _GradientAddButton(onPressed: () => _onAddRow(context)),
+              _GradientAddButton(
+                onPressed: isLocked ? null : () => _onAddRow(context),
+              ),
               const SizedBox(width: 12),
               _RowCounter(count: vm.items.length),
               const Spacer(),
@@ -92,7 +100,10 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
           const SizedBox(height: LrSpace.md),
 
           // ─── Main Table / Empty State ───
-          if (vm.items.isEmpty) _EmptyState() else _buildTable(vm.items),
+          if (vm.items.isEmpty)
+            _EmptyState(isLocked: isLocked)
+          else
+            _buildTable(vm.items, isLocked: isLocked),
           const SizedBox(height: LrSpace.md),
 
           // ─── Grand Total Card ───
@@ -186,7 +197,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     }
   }
 
-  Widget _buildTable(List<BillingItem> items) {
+  Widget _buildTable(List<BillingItem> items, {required bool isLocked}) {
     final table = Table(
       border: TableBorder(
         horizontalInside:
@@ -209,7 +220,7 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
       children: [
         _buildTableHeaderRow(),
         for (int i = 0; i < items.length; i++)
-          _buildTableDataRow(items[i], isAlt: i.isEven),
+          _buildTableDataRow(items[i], isAlt: i.isEven, isLocked: isLocked),
       ],
     );
 
@@ -269,7 +280,8 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
     );
   }
 
-  TableRow _buildTableDataRow(BillingItem row, {required bool isAlt}) {
+  TableRow _buildTableDataRow(BillingItem row,
+      {required bool isAlt, required bool isLocked}) {
     final bg = isAlt ? LrColors.cardBg : LrColors.surfaceMuted.withOpacity(.5);
 
     Widget textCell(String text,
@@ -445,8 +457,6 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
       );
     }
 
-
-
     return TableRow(
       decoration: BoxDecoration(color: bg),
       children: [
@@ -466,9 +476,14 @@ class _RequestDetailStep2State extends State<RequestDetailStep2> {
           alignment: Alignment.center,
           child: IconButton(
             tooltip: 'ลบ',
-            icon: const Icon(Icons.delete_outline,
-                color: LrColors.statusRejectedFg, size: 18),
-            onPressed: () => _onDeleteRow(context, row),
+            icon: Icon(
+              Icons.delete_outline,
+              color: isLocked
+                  ? LrColors.statusRejectedFg.withOpacity(.3)
+                  : LrColors.statusRejectedFg,
+              size: 18,
+            ),
+            onPressed: isLocked ? null : () => _onDeleteRow(context, row),
           ),
         ),
       ],
@@ -558,49 +573,53 @@ String _formatDate(String raw) {
 // ============================================================================
 
 class _GradientAddButton extends StatelessWidget {
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   const _GradientAddButton({required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(LrRadius.md),
-        child: Ink(
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [LrColors.primary, LrColors.primaryAccent],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(LrRadius.md),
-            boxShadow: [
-              BoxShadow(
-                color: LrColors.primary.withOpacity(.3),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+    final disabled = onPressed == null;
+    return Opacity(
+      opacity: disabled ? .45 : 1,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(LrRadius.md),
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [LrColors.primary, LrColors.primaryAccent],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.add_rounded, color: Colors.white, size: 18),
-                SizedBox(width: 6),
-                Text(
-                  'เพิ่มรายการ',
-                  style: TextStyle(
-                    fontFamily: LrText.fontBold,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
+              borderRadius: BorderRadius.circular(LrRadius.md),
+              boxShadow: [
+                BoxShadow(
+                  color: LrColors.primary.withOpacity(.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
                 ),
               ],
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.add_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'เพิ่มรายการ',
+                    style: TextStyle(
+                      fontFamily: LrText.fontBold,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
@@ -642,7 +661,8 @@ class _RowCounter extends StatelessWidget {
 }
 
 class _EmptyState extends StatelessWidget {
-  const _EmptyState();
+  final bool isLocked;
+  const _EmptyState({this.isLocked = false});
 
   @override
   Widget build(BuildContext context) {
@@ -663,8 +683,49 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: LrSpace.md),
           const Text('ยังไม่มีรายการค่าบริการ', style: LrText.h2),
           const SizedBox(height: 6),
-          const Text('กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น',
-              style: LrText.bodyMuted),
+          Text(
+            isLocked
+                ? 'คำขอนี้ถูกล็อกแล้ว ไม่สามารถเพิ่มรายการได้'
+                : 'กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น',
+            style: LrText.bodyMuted,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Banner แจ้งเมื่อ status = rejected/cancelled/completed/in_progress
+class _LockedBanner extends StatelessWidget {
+  const _LockedBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final status = context.read<LicenseRequestDetailViewModel>().status;
+    final label = LicenseStatusLabels.th(status);
+    return Container(
+      margin: const EdgeInsets.only(bottom: LrSpace.md),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFFEF3C7), // amber-100
+        borderRadius: BorderRadius.circular(LrRadius.md),
+        border: Border.all(color: const Color(0xFFFCD34D)), // amber-300
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.lock_outline_rounded,
+              size: 18, color: Color(0xFF92400E)), // amber-800
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'คำขอนี้อยู่ในสถานะ "$label" — ไม่สามารถเพิ่มหรือลบรายการได้',
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFF92400E),
+              ),
+            ),
+          ),
         ],
       ),
     );

@@ -128,7 +128,8 @@ class LicenseAttachService {
         final parsed = Uri.parse(urlCustom);
         final merged = Map<String, String>.from(parsed.queryParameters);
         if (q != null && q.isNotEmpty) merged['q'] = q;
-        if (customer != null && customer.isNotEmpty) merged['customer'] = customer;
+        if (customer != null && customer.isNotEmpty)
+          merged['customer'] = customer;
         if (moduleId != null) merged['module_id'] = '$moduleId';
         if (announcementUuid != null && announcementUuid.isNotEmpty) {
           merged['announcement_uuid'] = announcementUuid;
@@ -355,9 +356,7 @@ class LicenseAttachService {
           qp['payment_all_done'] = paymentAllDone ? 'true' : 'false';
         }
         if (zser != null && zser.isNotEmpty && zser != '0') qp['zser'] = zser;
-        if (subzoneser != null &&
-            subzoneser.isNotEmpty &&
-            subzoneser != '0') {
+        if (subzoneser != null && subzoneser.isNotEmpty && subzoneser != '0') {
           qp['subzoneser'] = subzoneser;
         }
         if (statuses != null && statuses.isNotEmpty) {
@@ -393,7 +392,8 @@ class LicenseAttachService {
         return AttachRequestsListResult.empty;
       }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
-        print('[listAdminRequests][ERR] ${resp.statusCode} ${resp.reasonPhrase}');
+        print(
+            '[listAdminRequests][ERR] ${resp.statusCode} ${resp.reasonPhrase}');
         print('[listAdminRequests][BODY] ${_truncate(resp.body, 200)}');
         return AttachRequestsListResult.empty;
       }
