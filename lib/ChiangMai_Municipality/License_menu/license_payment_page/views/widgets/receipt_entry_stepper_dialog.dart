@@ -792,6 +792,85 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
     );
   }
 
+  // ──────────────── Banner: แสดง system ที่เลือกใน step 1 (ใช้ใน step 2) ────────────────
+  Widget _SelectedSystemBanner({required bool isInternal}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: LaSpace.md, vertical: LaSpace.sm),
+      decoration: BoxDecoration(
+        color: isInternal
+            ? LaColors.statusInfoBg.withOpacity(.45)
+            : LaColors.statusApprovedBg.withOpacity(.35),
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        border: Border.all(
+          color: (isInternal
+                  ? LaColors.statusInfoFg
+                  : LaColors.statusApprovedFg)
+              .withOpacity(.45),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isInternal
+                ? Icons.account_balance_rounded
+                : Icons.receipt_long_rounded,
+            size: 16,
+            color: isInternal
+                ? LaColors.statusInfoFg
+                : LaColors.statusApprovedFg,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'ขั้นตอนที่ 1: เลือก',
+                      style: LaText.caption.copyWith(color: LaColors.textMuted),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isInternal ? 'Internal' : 'External',
+                      style: LaText.caption.copyWith(
+                        color: isInternal
+                            ? LaColors.statusInfoFg
+                            : LaColors.statusApprovedFg,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '✓ ถูกเลือกไปแล้ว',
+                      style: LaText.caption.copyWith(
+                        color: isInternal
+                            ? LaColors.statusInfoFg
+                            : LaColors.statusApprovedFg,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                Text(
+                  isInternal
+                      ? 'ช่องทางในระบบ — ไม่ต้องออกใบเสร็จ'
+                      : 'ช่องทางภายนอก — ต้องระบุ receipt_no / book_no',
+                  style: LaText.caption.copyWith(
+                    color: LaColors.textMuted,
+                    fontSize: 10,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ──────────────── Step 2 — Image upload ────────────────
   Widget _step2Body() {
     final hasImage = _pickedImage != null;
@@ -813,6 +892,9 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
+        // ✅ แสดงข้อมูล step 1 ที่เลือกไปแล้ว (กันลืม/กันงง)
+        _SelectedSystemBanner(isInternal: _isInternal),
+        const SizedBox(height: LaSpace.sm),
         // ─── พื้นที่แสดงรูปที่เลือก (หรือ placeholder) ───
         if (hasImage)
           Container(
