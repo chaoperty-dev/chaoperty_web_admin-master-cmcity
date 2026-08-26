@@ -876,7 +876,7 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
                     Text(
                       isInternal
                           ? 'ช่องทางในระบบ — ไม่ต้องออกใบเสร็จ'
-                          : 'ช่องทางภายนอก — ต้องระบุ receipt_no / book_no',
+                          : 'ช่องทางภายนอก — ต้องระบุ เลขที่ใบเสร็จ / เล่มที่ใบเสร็จ',
                       style: LaText.caption.copyWith(
                         color: LaColors.textMuted,
                         fontSize: 10,
