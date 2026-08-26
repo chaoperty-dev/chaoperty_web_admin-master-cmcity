@@ -490,11 +490,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   }
 
   void _back() {
-    if (_step > 1) {
-      setState(() => _step -= 1);
-    } else {
-      Navigator.of(context).pop();
-    }
+    // ✅ ออกจาก dialog เลย — ไม่ถาม (เพราะ "ห้ามเลือกใหม่" เป็นกฎที่ชัดเจนอยู่แล้ว)
+    Navigator.of(context).pop();
   }
 
   @override
@@ -702,9 +699,29 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
           ],
         ),
         const SizedBox(height: LaSpace.sm),
-        Text(
-          'เลือกประเภทการรับเงิน — กด "ถัดไป" เพื่อไปเลือกช่องทาง',
-          style: LaText.caption.copyWith(color: LaColors.textMuted),
+        // ⚠️ แจ้งเตือนชัดเจน: ถูกเลือกไปแล้วห้ามเลือกใหม่
+        Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: LaSpace.sm, vertical: 6),
+          decoration: BoxDecoration(
+            color: LaColors.statusInfoBg.withOpacity(.35),
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+            border: Border.all(color: LaColors.statusInfoFg.withOpacity(.35)),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline_rounded,
+                  size: 14, color: LaColors.statusInfoFg),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'เลือกแล้วห้ามเลือกใหม่ — กด "ถัดไป" เพื่อดำเนินการต่อ',
+                  style: LaText.caption
+                      .copyWith(color: LaColors.statusInfoFg, fontSize: 11),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -1268,11 +1285,15 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   Widget _footer() => Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          TextButton.icon(
-            onPressed: _submitting ? null : _back,
-            icon: const Icon(Icons.arrow_back_rounded, size: 16),
-            label: Text(_step == 1 ? 'ยกเลิก' : 'ย้อนกลับ'),
-          ),
+          // ✅ step 1: ปุ่ม "ปิด" (ออก dialog — ห้ามเลือกใหม่) — step 2+: ซ่อน (ห้ามย้อนกลับ)
+          if (_step == 1)
+            TextButton.icon(
+              onPressed: _submitting ? null : _back,
+              icon: const Icon(Icons.close_rounded, size: 16),
+              label: const Text('ปิด'),
+            )
+          else
+            const SizedBox.shrink(),
           if (_step < _kTotalSteps)
             FilledButton.icon(
               onPressed: (!_canGoNext() || _submitting || _creatingDraft)
