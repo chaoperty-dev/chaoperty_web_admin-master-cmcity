@@ -1549,7 +1549,13 @@ class _PaymentMethodPickerDialog extends StatefulWidget {
 
 class _PaymentMethodPickerDialogState
     extends State<_PaymentMethodPickerDialog> {
-  LicensePaymentMethod? _picked;
+  /// เก็บ index ของ method ที่เลือก (unique ต่อ render — uuid/id อาจว่าง/ซ้ำจาก API)
+  int? _pickedIndex;
+
+  LicensePaymentMethod? get _picked =>
+      _pickedIndex != null && _pickedIndex! < widget.methods.length
+          ? widget.methods[_pickedIndex!]
+          : null;
 
   @override
   void initState() {
@@ -1557,28 +1563,32 @@ class _PaymentMethodPickerDialogState
     // pre-select จาก initialMethodId (ถ้ามี)
     final want = widget.initialMethodId;
     if (want != null && want.trim().isNotEmpty) {
-      for (final m in widget.methods) {
+      for (var i = 0; i < widget.methods.length; i++) {
+        final m = widget.methods[i];
         if (m.uuid.isNotEmpty && m.uuid.toLowerCase() == want.toLowerCase()) {
-          _picked = m;
+          _pickedIndex = i;
           break;
         }
         if (m.id.toString() == want) {
-          _picked = m;
+          _pickedIndex = i;
           break;
         }
       }
     }
   }
 
-  /// เทียบ method 2 ตัว — uuid ก่อน, fallback id, สุดท้าย identity
-  /// (uuid/id อาจว่าง/ซ้ำจาก API → ต้องมี identity เป็น fallback)
-  bool _sameMethod(LicensePaymentMethod a, LicensePaymentMethod b) {
-    if (identical(a, b)) return true;
-    if (a.uuid.isNotEmpty && b.uuid.isNotEmpty) {
-      return a.uuid.toLowerCase() == b.uuid.toLowerCase();
+  /// หา index ของ method m ใน list (เทียบ uuid ก่อน, ไม่งั้นใช้ object identity)
+  int? _indexOf(LicensePaymentMethod m) {
+    for (var i = 0; i < widget.methods.length; i++) {
+      final x = widget.methods[i];
+      if (identical(x, m)) return i;
+      if (m.uuid.isNotEmpty &&
+          x.uuid.isNotEmpty &&
+          m.uuid.toLowerCase() == x.uuid.toLowerCase()) {
+        return i;
+      }
     }
-    if (a.uuid.isNotEmpty || b.uuid.isNotEmpty) return false;
-    return a.id == b.id;
+    return null;
   }
 
   bool get _canConfirm => _picked != null;
@@ -1710,8 +1720,8 @@ class _PaymentMethodPickerDialogState
       );
 
   Widget _methodOption(LicensePaymentMethod m) {
-    // ใช้ uuid เทียบ (id อาจซ้ำ/parse fail → match ผิด)
-    final selected = _picked != null && _sameMethod(_picked!, m);
+    final selectedIndex = _indexOf(m);
+    final selected = _pickedIndex != null && selectedIndex == _pickedIndex;
     final IconData icon =
         m.isCash ? Icons.payments_rounded : Icons.account_balance_rounded;
     final Color iconColor =
@@ -1729,9 +1739,11 @@ class _PaymentMethodPickerDialogState
         : m.code;
 
     return InkWell(
-      onTap: () => setState(() {
-        _picked = m;
-      }),
+      onTap: selectedIndex == null
+          ? null
+          : () => setState(() {
+                _pickedIndex = selectedIndex;
+              }),
       borderRadius: BorderRadius.circular(LaRadius.md),
       child: Container(
         padding: const EdgeInsets.all(LaSpace.sm),
