@@ -1,4 +1,6 @@
 import 'package:chaoperty/ChiangMai_Municipality/Area_menu/views/area_menu_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Report_menu/areas/areas_report_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Report_menu/customers/customers_report_page.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -44,6 +46,10 @@ class AppRoute {
   static const String registration = '/registration';
   static const String profileManage = '/profile/manage';
   static const String setting = '/setting';
+
+  // ✅ รายงาน (Branch ใหม่)
+  static const String reportCustomers = '/report/customers';
+  static const String reportAreas = '/report/areas';
 }
 
 /// Fade transition สำหรับทุกหน้าใน Shell — ทำให้ navigation smooth
@@ -216,6 +222,26 @@ GoRouter buildAppRouter({
               key: state.pageKey,
               locationKey: state.matchedLocation,
               child: RegistrationPage.create(),
+            ),
+          ),
+
+          // ✅ รายงาน → รายงานลูกค้า (อยู่ก่อน ตั้งค่า)
+          GoRoute(
+            path: AppRoute.reportCustomers,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: const CustomersReportPage(),
+            ),
+          ),
+
+          // ✅ รายงานพื้นที่เช่า
+          GoRoute(
+            path: AppRoute.reportAreas,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: const AreasReportPage(),
             ),
           ),
 

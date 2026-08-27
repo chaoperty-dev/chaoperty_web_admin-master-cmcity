@@ -25,6 +25,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.0.1+6"
+  aes_crypt_null_safe:
+    dependency: transitive
+    description:
+      name: aes_crypt_null_safe
+      sha256: f73e782400d54056de2cbf3cb50f680d8fc1328ce59eb9749ec94c080ea4ec0d
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.2"
   animated_checkmark:
     dependency: transitive
     description:
@@ -861,6 +869,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.15.3"
+  html_character_entities:
+    dependency: transitive
+    description:
+      name: html_character_entities
+      sha256: "0eaf2acb67feeae8aba67c113aedbda71a57a36c38e3670fd677ec26e397faa3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0+1"
   http:
     dependency: "direct main"
     description:
@@ -1389,6 +1405,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.2.4"
+  protect:
+    dependency: "direct main"
+    description:
+      name: protect
+      sha256: "8ee84aa188731de92ddd0b8510cc950b8996b5488bb96caeaa19f089490c89cb"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   provider:
     dependency: "direct main"
     description:
@@ -1453,6 +1477,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.1"
+  recursive_regex:
+    dependency: transitive
+    description:
+      name: recursive_regex
+      sha256: f7252e3d3dfd1665e594d9fe035eca6bc54139b1f2fee38256fa427ea41adc60
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   responsive_grid_list:
     dependency: "direct main"
     description:
@@ -2074,6 +2106,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.2.2"
+  xml_parser:
+    dependency: transitive
+    description:
+      name: xml_parser
+      sha256: "5db4f4a1640320855caccad9c6de5a371c195ca36e703e977652e86f52424829"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
 sdks:
   dart: ">=3.0.5 <4.0.0"
   flutter: ">=3.10.0"

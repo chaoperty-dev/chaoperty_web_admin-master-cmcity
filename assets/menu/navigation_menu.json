@@ -95,6 +95,30 @@
       "status": true
     },
     {
+      "type": "group",
+      "label": "รายงาน",
+      "icon": "analytics_outlined",
+      "activeIcon": "analytics",
+      "expandedByDefault": true,
+      "status": true,
+      "children": [
+        {
+          "label": "รายงานลูกค้า",
+          "route": "/report/customers",
+          "icon": "people_alt_outlined",
+          "activeIcon": "people_alt",
+          "status": true
+        },
+        {
+          "label": "รายงานพื้นที่เช่า",
+          "route": "/report/areas",
+          "icon": "area_chart_outlined",
+          "activeIcon": "area_chart",
+          "status": true
+        }
+      ]
+    },
+    {
       "type": "item",
       "label": "ตั้งค่า",
       "route": "/setting",

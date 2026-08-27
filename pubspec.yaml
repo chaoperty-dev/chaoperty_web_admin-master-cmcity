@@ -65,6 +65,7 @@ dependencies:
   syncfusion_flutter_datagrid_export: ^20.4.43-beta
   excel_dart: ^3.0.0
   excel: ^2.0.1
+  protect: ^1.0.0
   pdf: ^3.8.4
   syncfusion_flutter_pdf: ^20.4.44
   # font_awesome_flutter: ^10.3.0
