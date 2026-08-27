@@ -30,16 +30,24 @@ class PasswordWithValue extends PasswordResult {
 
 enum PasswordMode { useDefault, custom }
 
-/// ✅ Validation: ตรวจสอบรหัสผ่านตาม policy
+/// Validation
 class PasswordValidator {
-  // ✅ ใช้ double-quote ใน regex เพื่อหลีกเลี่ยงปัญหา single-quote ภายใน
   static final RegExp _lower = RegExp(r"[a-z]");
   static final RegExp _upper = RegExp(r"[A-Z]");
   static final RegExp _digit = RegExp(r"[0-9]");
   static final RegExp _special =
       RegExp(r'[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\;/`~]');
 
-  /// ตรวจทุกเงื่อนไขแบบ real-time
+  static const Set<String> _blacklist = {
+    'password', 'password1', 'password123', 'passw0rd', 'p@ssw0rd',
+    '123456', '12345678', '1234567890', 'qwerty', 'qwerty123',
+    'abc123', '111111', '000000', 'iloveyou', 'admin', 'admin123',
+    'letmein', 'welcome', 'monkey', 'dragon', 'master', 'sunshine',
+    'princess', 'football', 'baseball', 'superman', 'batman',
+    'shadow', 'ashley', 'michael', 'thomas', 'charlie', 'jordan',
+    'chaocmcity',
+  };
+
   static Map<String, bool> checkAll(String value) {
     return {
       'อย่างน้อย 6 ตัวอักษร': value.length >= 6,
@@ -47,12 +55,19 @@ class PasswordValidator {
       'ตัวพิมพ์ใหญ่ (A-Z)': _upper.hasMatch(value),
       'ตัวเลข (0-9)': _digit.hasMatch(value),
       'อักษรพิเศษ (!@#\$%^&*)': _special.hasMatch(value),
+      'ไม่ใช่รหัสที่ใช้บ่อย': !isCommonPassword(value),
+      'ไม่มีตัวอักษรซ้ำเกิน 3 ตัว': !hasExcessiveRepeat(value),
     };
   }
 
-  /// คืน error message ถ้าไม่ผ่าน (null = ผ่าน)
   static String? validate(String value) {
     if (value.length < 6) return 'ต้องมีอย่างน้อย 6 ตัวอักษร';
+    if (isCommonPassword(value)) {
+      return 'รหัสผ่านนี้อ่อนแอเกินไป กรุณาเลือกรหัสอื่น';
+    }
+    if (hasExcessiveRepeat(value)) {
+      return 'มีตัวอักษรซ้ำเกิน 3 ตัวติดกัน';
+    }
     if (!_lower.hasMatch(value)) return 'ต้องมีตัวพิมพ์เล็ก (a-z)';
     if (!_upper.hasMatch(value)) return 'ต้องมีตัวพิมพ์ใหญ่ (A-Z)';
     if (!_digit.hasMatch(value)) return 'ต้องมีตัวเลข (0-9)';
@@ -60,6 +75,51 @@ class PasswordValidator {
       return 'ต้องมีอักษรพิเศษ (!@#\$%^&* ฯลฯ)';
     }
     return null;
+  }
+
+  static bool isCommonPassword(String value) {
+    final lower = value.toLowerCase();
+    if (_blacklist.contains(lower)) return true;
+    // substring match (เช่น "Password1!" มี "password" อยู่)
+    for (final common in _blacklist) {
+      if (common.length >= 4 && lower.contains(common)) return true;
+    }
+    if (_isSequential(lower)) return true;
+    return false;
+  }
+
+  static bool _isSequential(String value) {
+    if (value.length < 4) return false;
+    // ตัด special chars + uppercase ออก
+    final cleaned = value.toLowerCase().replaceAll(
+      RegExp(r'[^a-z0-9]'),
+      '',
+    );
+    if (cleaned.length < 4) return false;
+    const sequences = [
+      'abcdefghijklmnopqrstuvwxyz',
+      '0123456789',
+      'qwertyuiop',
+      'asdfghjkl',
+      'zxcvbnm',
+    ];
+    // ✅ ตรวจทุก substring ของ cleaned (length ≥ 4) ว่าอยู่ใน sequence ใด
+    for (int len = cleaned.length; len >= 4; len--) {
+      for (int i = 0; i + len <= cleaned.length; i++) {
+        final sub = cleaned.substring(i, i + len);
+        for (final seq in sequences) {
+          if (seq.contains(sub)) return true;
+          // reverse
+          final rev = sub.split('').reversed.join();
+          if (seq.contains(rev)) return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  static bool hasExcessiveRepeat(String value) {
+    return RegExp(r'(.)\1{3,}').hasMatch(value);
   }
 }
 
@@ -96,6 +156,9 @@ class _CustomersReportPasswordDialogState
 
   @override
   void dispose() {
+    // ✅ Clear password from memory ก่อน dispose
+    _passwordCtrl.clear();
+    _confirmCtrl.clear();
     _passwordCtrl.dispose();
     _confirmCtrl.dispose();
     super.dispose();
@@ -164,7 +227,7 @@ class _CustomersReportPasswordDialogState
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ============ Header ============
+              // Header
               Row(
                 children: [
                   Container(
@@ -198,7 +261,7 @@ class _CustomersReportPasswordDialogState
               ),
               const SizedBox(height: CrSpace.md),
 
-              // ============ Radio choice ============
+              // Radio choice
               Container(
                 decoration: BoxDecoration(
                   color: CrColors.surfaceMuted,
@@ -260,7 +323,7 @@ class _CustomersReportPasswordDialogState
               ),
               const SizedBox(height: CrSpace.md),
 
-              // ============ Password field ============
+              // Password field
               TextField(
                 controller: _passwordCtrl,
                 autofocus: _mode == PasswordMode.custom,
@@ -294,7 +357,6 @@ class _CustomersReportPasswordDialogState
                 onSubmitted: (_) => _submit(),
               ),
 
-              // ============ Confirm field (custom only) ============
               if (isCustom) ...[
                 const SizedBox(height: 8),
                 TextField(
@@ -330,7 +392,6 @@ class _CustomersReportPasswordDialogState
                 ),
               ],
 
-              // ============ Validation checklist (custom only) ============
               if (isCustom) ...[
                 const SizedBox(height: 12),
                 Container(
@@ -391,7 +452,6 @@ class _CustomersReportPasswordDialogState
 
               const SizedBox(height: CrSpace.md),
 
-              // ============ AES info box ============
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
@@ -416,7 +476,6 @@ class _CustomersReportPasswordDialogState
               ),
               const SizedBox(height: CrSpace.md),
 
-              // ============ Buttons ============
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
