@@ -13,7 +13,8 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
 import '../../../../unity/FormatPhone.dart';
-import '../../../../../Model/GetCustomer_Model.dart';
+import '../../../../../ChiangMai_Municipality/Report_menu/customers/services/customers_report_service.dart'
+    show CustomerReportItem;
 import '../theme/registration_theme.dart';
 import '../../viewmodels/registration_view_model.dart';
 import 'register_line_dialog.dart';
@@ -55,22 +56,11 @@ class RegistrationTable extends StatelessWidget {
                     index: i,
                     model: paged[i],
                     maskedName:
-                        _maskName(paged[i].cname ?? paged[i].scname ?? '-'),
-                    maskedTax: _maskTax(paged[i].tax ?? '-'),
+                        _maskName(paged[i].cname ?? paged[i].sname ?? '-'),
+                    maskedTax: _maskTax(paged[i].taxno ?? '-'),
                     maskedPhone:
                         _maskPhone(formatPhoneNumber(paged[i].tel ?? '')),
-                    onView: () => vm.onViewCustomer(paged[i]),
-                    appOn: vm.appStatusFor(paged[i].uuid?.toString() ?? '') ??
-                        false,
-                    onToggleApp: () => vm.toggleCustomerAppAccess(
-                        paged[i].uuid?.toString() ?? ''),
-                    onRegisterLine: () =>
-                        vm.registerLine(paged[i].uuid?.toString() ?? ''),
-                    onRemoveLine: () =>
-                        vm.removeLine(paged[i].uuid?.toString() ?? ''),
-                    statusOn: _isOn(paged[i].st),
-                    onToggleStatus: () =>
-                        vm.toggleAppAccess(paged[i].uuid?.toString() ?? ''),
+                    onView: () => vm.onViewTenant(paged[i]),
                   ),
                   if (i < paged.length - 1) const SizedBox(height: LaSpace.sm),
                 ],
@@ -139,14 +129,14 @@ class RegistrationTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'รหัสลูกค้า', flex: 2),
+          _HeaderCell(label: 'รหัส', flex: 2),
           _HeaderCell(label: 'ชื่อลูกค้า', flex: 3),
-          _HeaderCell(label: 'เลขบัตรประชาชน', flex: 2),
+          _HeaderCell(label: 'ชื่อร้าน', flex: 2),
+          _HeaderCell(label: 'เลขประจำตัวผู้เสียภาษี', flex: 2),
           _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'สิทธิแอพผู้เช่า', flex: 2),
-          _HeaderCell(label: 'ชื่อไลน์', flex: 2),
-          _HeaderCell(label: 'สิทธิใช้งานไลน์', flex: 2),
-          // _HeaderCell(label: 'สถานะ', flex: 2), // ปิดไว้: เอาสถานะออก
+          _HeaderCell(label: 'อีเมล', flex: 2),
+          _HeaderCell(label: 'Line ID', flex: 2),
+          _HeaderCell(label: 'สถานะ', flex: 1),
         ],
       ),
     );
@@ -158,12 +148,13 @@ class RegistrationTable extends StatelessWidget {
   Widget _dataRow(
     BuildContext context,
     RegistrationViewModel vm,
-    CustomerModel model,
+    CustomerReportItem model,
     int index,
   ) {
+    final statusOn = model.st == 1;
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewCustomer(model),
+      onTap: () => vm.onViewTenant(model),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
@@ -171,23 +162,28 @@ class RegistrationTable extends StatelessWidget {
           SizedBox(
             width: 110,
             child: Center(
-              child: _ViewButton(onTap: () => vm.onViewCustomer(model)),
+              child: _ViewButton(onTap: () => vm.onViewTenant(model)),
             ),
           ),
           _CopyCell(
-            value: model.custno ?? '-',
-            copyValue: model.custno ?? '',
+            value: model.custno ?? model.uuid ?? '-',
+            copyValue: model.custno ?? model.uuid ?? '',
             flex: 2,
             isMono: true,
           ),
           _CopyCell(
-            value: _maskName(model.cname ?? model.scname ?? '-'),
-            copyValue: model.cname ?? model.scname ?? '',
+            value: _maskName(model.cname ?? model.sname ?? '-'),
+            copyValue: model.cname ?? model.sname ?? '',
             flex: 3,
           ),
           _CopyCell(
-            value: _maskTax(model.tax ?? '-'),
-            copyValue: model.tax ?? '',
+            value: model.scname ?? '-',
+            copyValue: model.scname ?? '',
+            flex: 2,
+          ),
+          _CopyCell(
+            value: _maskTax(model.taxno ?? '-'),
+            copyValue: model.taxno ?? '',
             flex: 2,
             isMono: true,
           ),
@@ -197,53 +193,23 @@ class RegistrationTable extends StatelessWidget {
             flex: 2,
             isMono: true,
           ),
-          // ✅ แอพผู้เช่า (toggle แยก — ใช้ local state จนกว่า API จะมา)
-          _SwitchCell(
-            value: vm.appStatusFor(model.uuid?.toString() ?? '') ?? false,
-            flex: 2,
-            onTap: () =>
-                vm.toggleCustomerAppAccess(model.uuid?.toString() ?? ''),
-            onLabel: 'อนุญาต',
-            offLabel: 'ไม่อนุญาต',
-          ),
-          _CopyCell(
-            value: model.regDisplayname?.isNotEmpty == true
-                ? model.regDisplayname!
-                : (model.lineid?.isNotEmpty == true ? model.lineid! : '-'),
-            copyValue: model.regDisplayname?.isNotEmpty == true
-                ? model.regDisplayname!
-                : (model.lineid ?? ''),
+          _Cell(
+            value: model.email ?? '-',
             flex: 2,
           ),
-          // ✅ สิทธิใช้งานไลน์ (toggle)
-          _SwitchCell(
-            value: vm.lineStatusFor(model.uuid?.toString() ?? '') ?? false,
+          _Cell(
+            value: model.lineid ?? '-',
             flex: 2,
-            onTap: () =>
-                vm.toggleCustomerLineAccess(model.uuid?.toString() ?? ''),
-            onLabel: 'อนุญาต',
-            offLabel: 'ไม่อนุญาต',
           ),
-          // ✅ สถานะ (toggle จริง — เรียก API) — ปิดไว้: เอาสถานะออก
-          // _SwitchCell(
-          //   value: _isOn(model.st),
-          //   flex: 2,
-          //   onTap: () => vm.toggleAppAccess(model.uuid?.toString() ?? ''),
-          // ),
+          _Cell(
+            value: model.status ?? (statusOn ? 'ใช้งาน' : 'ยกเลิก'),
+            flex: 1,
+            muted: !statusOn,
+          ),
         ],
       ),
     );
   }
-
-  String _shortAddr(CustomerModel model) {
-    final a1 = model.addr1 ?? '';
-    final a2 = model.addr2 ?? '';
-    final combined = '$a1 $a2'.trim();
-    if (combined.isEmpty) return '-';
-    if (combined.length <= 32) return combined;
-    return '${combined.substring(0, 32)}…';
-  }
-
   /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
   String _maskName(String raw) {
     final name = raw.trim();
@@ -612,12 +578,16 @@ class _ViewButtonState extends State<_ViewButton> {
                 color: _hover ? Colors.white : LaColors.textSecondary,
               ),
               const SizedBox(width: 4),
-              Text(
-                'เรียกดู',
-                style: TextStyle(
-                  fontFamily: LaText.fontBold,
-                  fontSize: 11,
-                  color: _hover ? Colors.white : LaColors.textSecondary,
+              Flexible(
+                child: Text(
+                  'เรียกดู',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: LaText.fontBold,
+                    fontSize: 11,
+                    color: _hover ? Colors.white : LaColors.textSecondary,
+                  ),
                 ),
               ),
             ],
@@ -947,17 +917,11 @@ class _EmptyState extends StatelessWidget {
 // ============================================================================
 class _RegistrationCard extends StatelessWidget {
   final int index;
-  final CustomerModel model;
+  final CustomerReportItem model;
   final String maskedName;
   final String maskedTax;
   final String maskedPhone;
   final VoidCallback onView;
-  final bool appOn;
-  final VoidCallback onToggleApp;
-  final VoidCallback onRegisterLine;
-  final VoidCallback onRemoveLine;
-  final bool statusOn;
-  final VoidCallback onToggleStatus;
   const _RegistrationCard({
     required this.index,
     required this.model,
@@ -965,17 +929,10 @@ class _RegistrationCard extends StatelessWidget {
     required this.maskedTax,
     required this.maskedPhone,
     required this.onView,
-    required this.appOn,
-    required this.onToggleApp,
-    required this.onRegisterLine,
-    required this.onRemoveLine,
-    required this.statusOn,
-    required this.onToggleStatus,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasLine = (model.lineid ?? '').trim().isNotEmpty;
     return Container(
       decoration: LaDecor.card(),
       padding: const EdgeInsets.all(LaSpace.md),
@@ -1009,7 +966,7 @@ class _RegistrationCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              if ((model.custno ?? '').isNotEmpty)
+              if ((model.custno ?? model.uuid ?? '').isNotEmpty)
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1018,7 +975,7 @@ class _RegistrationCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(LaRadius.pill),
                   ),
                   child: Text(
-                    model.custno!,
+                    model.custno ?? model.uuid ?? '',
                     style: LaText.bodyMuted.copyWith(
                       color: LaColors.primaryDark,
                       fontSize: 11,
@@ -1030,55 +987,15 @@ class _RegistrationCard extends StatelessWidget {
             ],
           ),
           const Divider(height: LaSpace.lg, color: LaColors.border),
-          _RegCardRow(label: 'เลขบัตรประชาชน', value: maskedTax, isMono: true),
+          _RegCardRow(label: 'เลขประจำตัวผู้เสียภาษี', value: maskedTax, isMono: true),
           _RegCardRow(label: 'เบอร์โทร', value: maskedPhone, isMono: true),
+          _RegCardRow(label: 'ชื่อร้าน', value: model.scname ?? '-'),
+          _RegCardRow(label: 'อีเมล', value: model.email ?? '-'),
+          _RegCardRow(label: 'Line ID', value: model.lineid ?? '-'),
           _RegCardRow(
-            label: 'สิทธิแอพผู้เช่า',
-            valueWidget: _RegStatusPill(
-              on: appOn,
-              onLabel: 'อนุญาต',
-              offLabel: 'ไม่อนุญาต',
-              onTap: onToggleApp,
-            ),
+            label: 'สถานะ',
+            value: model.status ?? (model.st == 1 ? 'ใช้งาน' : 'ยกเลิก'),
           ),
-          _RegCardRow(
-              label: 'ชื่อไลน์',
-              value: model.regDisplayname?.isNotEmpty == true
-                  ? model.regDisplayname!
-                  : (model.lineid?.isNotEmpty == true ? model.lineid! : '-'),
-              isMono: true),
-          _RegCardRow(
-            label: 'สิทธิใช้งานไลน์',
-            valueWidget: hasLine
-                ? _LineWithRemove(
-                    lineid: model.lineid!,
-                    onRemove: onRemoveLine,
-                  )
-                : _RegisterButton(
-                    onTap: () {
-                      final url = (model.lineRegisUrl ?? '').trim();
-                      if (url.isNotEmpty) {
-                        showRegisterLineDialog(
-                          context,
-                          lineRegisUrl: url,
-                          tax: model.tax ?? '',
-                        );
-                      } else {
-                        onRegisterLine();
-                      }
-                    },
-                  ),
-          ),
-          // ✅ สถานะ — ปิดไว้: เอาสถานะออก
-          // _RegCardRow(
-          //   label: 'สถานะ',
-          //   valueWidget: _RegStatusPill(
-          //     on: statusOn,
-          //     onLabel: 'เปิดใช้งาน',
-          //     offLabel: 'ปิดใช้งาน',
-          //     onTap: onToggleStatus,
-          //   ),
-          // ),
           const SizedBox(height: LaSpace.sm),
           Align(
             alignment: Alignment.centerRight,

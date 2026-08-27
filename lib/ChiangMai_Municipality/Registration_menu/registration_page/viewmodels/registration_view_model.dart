@@ -1,17 +1,18 @@
 // ============================================================================
 // registration_view_model.dart
 // ============================================================================
-// ViewModel — จัดการ state + business logic ของหน้า "ทะเบียน"
-// - เรียก Service โหลดรายการลูกค้า (จาก GC_custo_se.php)
-// - filter ผ่าน search field
-// - ไม่ผูกกับ Flutter UI
+// ViewModel — จัดการ state + business logic ของหน้า "ทะเบียนผู้เช่า"
+// - ตารางเมนูใช้รายงานลูกค้า (CustomerReportItem) จากรายงานผู้เช่า
+// - filter + search + pagination (client-side)
+// - การแก้ไขทะเบียนยังคงใช้ CustomerModel ผ่าน detail viewmodel
 // ============================================================================
 
 import 'dart:async';
 
+import 'package:chaoperty/ChiangMai_Municipality/Report_menu/customers/services/customers_report_service.dart'
+    show CustomerReportItem;
 import 'package:flutter/foundation.dart';
 
-import '../../../../Model/GetCustomer_Model.dart';
 import '../models/registration_config.dart';
 import '../models/registration_event.dart';
 import '../services/registration_service.dart';
@@ -34,18 +35,20 @@ class RegistrationViewModel extends ChangeNotifier {
   Stream<RegistrationEvent> get events => _eventController.stream;
 
   // ---------- Data (master + filtered) ----------
-  List<CustomerModel> _customers = [];
-  List<CustomerModel> _filtered = [];
-  List<CustomerModel> get customers => _customers;
-  List<CustomerModel> get filtered => _filtered;
+  List<CustomerReportItem> _customers = [];
+  List<CustomerReportItem> _filtered = [];
+  List<CustomerReportItem> get customers => _customers;
+  List<CustomerReportItem> get filtered => _filtered;
 
-  // ---------- Pagination (derived — API ส่ง list ทั้งหมด) ----------
-  int _currentPage = 0;
-  int _lastPage = 0;
+  // ---------- Pagination ----------
+  int _currentPage = 1;
   int _total = 0;
   int get currentPage => _currentPage;
-  int get lastPage => _lastPage;
   int get total => _total;
+  int get lastPage {
+    if (_total == 0) return 0;
+    return ((_total - 1) ~/ perPage) + 1;
+  }
 
   // ---------- UI state ----------
   bool _isLoading = false;
@@ -54,22 +57,25 @@ class RegistrationViewModel extends ChangeNotifier {
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
 
-  String _searchField = 'scname';
+  String _searchField = 'cname';
   String get searchField => _searchField;
+
+  // ---------- Status filter ----------
+  String _selectedStatus = 'ทั้งหมด';
+  String get selectedStatus => _selectedStatus;
+  static const List<String> statusOptions = [
+    'ทั้งหมด',
+    'ปัจจุบัน',
+    'หมดสัญญา',
+    'ใกล้หมดสัญญา',
+  ];
 
   // ---------- Pagination constants ----------
   static const int perPage = 50;
 
-  /// จำนวนหน้า derived จาก filtered list
-  int get computedLastPage {
-    if (_filtered.isEmpty) return 0;
-    return ((_filtered.length - 1) ~/ perPage) + 1;
-  }
-
-  /// รายการที่จะแสดงในหน้าปัจจุบัน (slice จาก filtered)
-  List<CustomerModel> get paged {
+  /// รายการที่จะแสดงในหน้าปัจจุบัน
+  List<CustomerReportItem> get paged {
     if (_filtered.isEmpty) return const [];
-    // ถ้ายังไม่มี currentPage (เช่น ก่อน refresh เสร็จ) ใช้หน้า 1
     final page = _currentPage < 1 ? 1 : _currentPage;
     final start = (page - 1) * perPage;
     if (start >= _filtered.length) return const [];
@@ -88,7 +94,7 @@ class RegistrationViewModel extends ChangeNotifier {
   Future<void> _loadInitial() async {
     if (_config.routeData != null && _config.routeData!.isNotEmpty) {
       _searchQuery = _config.routeData!;
-      _searchField = 'uuid';
+      _searchField = 'custno';
     }
     await refresh();
   }
@@ -99,9 +105,8 @@ class RegistrationViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final list = await _service.fetchCustomers();
+      final list = await _service.fetchReportCustomers();
       _customers = list;
-      _total = list.length;
       _applyFilter();
     } catch (e) {
       _emitError('โหลดข้อมูลไม่สำเร็จ: $e');
@@ -111,54 +116,99 @@ class RegistrationViewModel extends ChangeNotifier {
   }
 
   void _applyFilter() {
+    // 1) ค้นหาตามคำค้น
     final q = _searchQuery.trim().toLowerCase();
     if (q.isEmpty) {
-      _filtered = List.of(_customers);
+      _filtered = List<CustomerReportItem>.from(_customers);
     } else {
-      _filtered = _customers.where((c) {
-        final hay = _getField(c, _searchField)?.toLowerCase() ?? '';
-        return hay.contains(q);
+      _filtered = _customers.where((t) {
+        final fields = [
+          t.uuid,
+          t.custno,
+          t.taxno,
+          t.scname,
+          t.sname,
+          t.cname,
+          t.branch,
+          t.attn,
+          t.addr1,
+          t.addr2,
+          t.zip,
+          t.tel,
+          t.tax,
+          t.fax,
+          t.email,
+          t.lineid,
+          t.status,
+          t.birth,
+          t.national,
+          t.religion,
+        ];
+        return fields.any((f) => (f ?? '').toLowerCase().contains(q));
       }).toList();
     }
-    // คำนวณหน้าใหม่ — ถ้า current page เกิน lastPage ให้ clamp ลง
-    final last = computedLastPage;
-    _lastPage = last;
+
+    // 2) กรองตามสถานะ (client-side ตาม field st)
+    if (_selectedStatus != 'ทั้งหมด') {
+      _filtered = _filtered.where((t) {
+        switch (_selectedStatus) {
+          case 'ปัจจุบัน':
+            return t.st == 1;
+          case 'หมดสัญญา':
+            return t.st == 0 || t.st == 2;
+          case 'ใกล้หมดสัญญา':
+            return t.st == 3;
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
+    _total = _filtered.length;
+    final last = lastPage;
     if (_currentPage < 1) _currentPage = 1;
     if (_currentPage > last && last > 0) _currentPage = last;
   }
 
-  String? _getField(CustomerModel c, String field) {
+  String? _getField(CustomerReportItem t, String field) {
     switch (field) {
-      case 'custno':
-        return c.custno;
-      case 'scname':
-        return c.scname;
-      case 'cname':
-        return c.cname;
-      case 'tel':
-        return c.tel;
-      case 'email':
-        return c.email;
-      case 'tax':
-        return c.tax;
-      case 'addr':
-        return '${c.addr1 ?? ''} ${c.addr2 ?? ''}';
       case 'uuid':
-        return c.uuid;
+        return t.uuid;
+      case 'custno':
+        return t.custno;
+      case 'taxno':
+        return t.taxno;
+      case 'scname':
+        return t.scname;
+      case 'sname':
+        return t.sname;
+      case 'cname':
+        return t.cname;
+      case 'branch':
+        return t.branch;
+      case 'attn':
+        return t.attn;
+      case 'tel':
+        return t.tel;
+      case 'tax':
+        return t.tax;
+      case 'email':
+        return t.email;
+      case 'lineid':
+        return t.lineid;
       default:
-        return c.scname;
+        return t.uuid;
     }
   }
 
   static const List<Map<String, String>> kSearchFields = [
-    {'value': 'scname', 'label': 'ชื่อย่อ'},
     {'value': 'cname', 'label': 'ชื่อลูกค้า'},
-    {'value': 'custno', 'label': 'รหัสลูกค้า'},
+    {'value': 'scname', 'label': 'ชื่อร้าน'},
+    {'value': 'custno', 'label': 'เลขที่ลูกค้า'},
+    {'value': 'taxno', 'label': 'เลขประจำตัวผู้เสียภาษี'},
     {'value': 'tel', 'label': 'เบอร์โทร'},
     {'value': 'email', 'label': 'อีเมล'},
-    {'value': 'tax', 'label': 'เลขประจำตัวผู้เสียภาษี'},
-    {'value': 'addr', 'label': 'ที่อยู่'},
-    {'value': 'uuid', 'label': 'UUID'},
+    {'value': 'lineid', 'label': 'Line ID'},
   ];
 
   void setSearch(String value) {
@@ -173,242 +223,57 @@ class RegistrationViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
+  void onStatusChanged(String? value) {
+    if (value == null) return;
+    _selectedStatus = value;
+    _applyFilter();
+    notifyListeners();
+  }
+
   Future<void> executeSearch() async {
-    if (_customers.isEmpty) {
-      await refresh();
-    } else {
-      _setLoading(true);
-      try {
-        _applyFilter();
-      } finally {
-        _setLoading(false);
-      }
+    _setLoading(true);
+    try {
+      _applyFilter();
+    } finally {
+      _setLoading(false);
     }
   }
 
   // ===============================================================
   // User actions
   // ===============================================================
-  void onViewCustomer(CustomerModel model) {
-    // ใช้ ser เป็น key หลัก (API V2 ไม่มี field uuid)
-    final key = model.ser?.toString() ?? model.uuid?.toString() ?? '';
+  void onViewTenant(CustomerReportItem model) {
+    // ใช้ uuid เป็น key หลัก (รายงานไม่มี ser)
+    final key = model.uuid?.toString() ?? model.custno ?? '';
     _eventController.add(
-      RegistrationNavigateEvent('ทะเบียนลูกค้า', routeData: key),
+      RegistrationNavigateEvent('ทะเบียนผู้เช่า', routeData: key),
     );
   }
 
-  CustomerModel? findCustomerByUuid(String key) {
+  CustomerReportItem? findTenantByKey(String key) {
     if (key.isEmpty) return null;
-    for (final c in _customers) {
-      // match ด้วย ser ก่อน (API V2) → fallback uuid
-      if (c.ser?.toString() == key) return c;
-      if (c.uuid?.toString() == key) return c;
+    for (final t in _customers) {
+      if (t.uuid?.toString() == key) return t;
+      if (t.custno?.toString() == key) return t;
     }
     return null;
   }
 
-  /// Local override สำหรับ "แอพผู้เช่า" (แยกจาก st ของลูกค้า)
-  /// - key = ser (preferred) หรือ uuid (fallback)
-  /// - value = st (0/1)
-  /// - ใช้เพราะ API ของแอพผู้เช่ายังไม่มี → เก็บ state ในเครื่อง
-  final Map<String, int> _appStatusOverrides = {};
-  final Map<String, int> _lineStatusOverrides = {};
-
-  /// อ่าน "แอพผู้เช่า" ของลูกค้า (fallback เป็น null ถ้าไม่มี)
-  /// - ใช้ override ก่อน (ถ้ามี) → ไม่งั้นดู model จริง
-  bool? appStatusFor(String uuid) {
-    if (_appStatusOverrides.containsKey(uuid)) {
-      return _isOn(_appStatusOverrides[uuid]);
-    }
-    return null;
-  }
-
-  /// Toggle "แอพผู้เช่า" (toggleCustomerAppStatus)
-  /// - ตอนนี้ service ยังเป็น stub (return false)
-  /// - optimistic update ใน local map → rollback ถ้า fail
-  Future<void> toggleCustomerAppAccess(String uuid) async {
-    final idx = _customers.indexWhere((c) => c.uuid?.toString() == uuid);
-    if (idx < 0) return;
-
-    final current = _customers[idx];
-    final customerSer = current.ser?.toString() ?? '';
-    if (customerSer.isEmpty) {
-      _emitError('ไม่พบ ser ของลูกค้า');
-      return;
-    }
-
-    // optimistic — อ่าน state ปัจจุบัน (override ก่อน, ไม่งั้น fallback เป็น 0)
-    final currentVal =
-        _appStatusOverrides[uuid] ?? (current.st is int ? current.st : 0);
-    final nextVal = (currentVal == 1) ? 0 : 1;
-    _appStatusOverrides[uuid] = nextVal;
-    notifyListeners();
-
-    try {
-      final ok = await _service.toggleCustomerAppStatus(customerSer, nextVal);
-      if (!ok) {
-        // rollback
-        _appStatusOverrides[uuid] = currentVal;
-        notifyListeners();
-        _emitError('อัปเดตสถานะแอพผู้เช่าไม่สำเร็จ (รอ API)');
-      }
-    } catch (e) {
-      _appStatusOverrides[uuid] = currentVal;
-      notifyListeners();
-      _emitError('อัปเ�ตสถานะแอพผู้เช่าไม่สำเร็จ: $e');
-    }
-  }
-
-  /// อ่าน "สิทธิใช้งานไลน์" �องลูกค้า
-  /// - ใช้ override ก่อน (ถ้ามี) → ไม่งั้น fallback จาก lineid (มี lineid = เปิด)
-  bool? lineStatusFor(String uuid) {
-    if (_lineStatusOverrides.containsKey(uuid)) {
-      return _isOn(_lineStatusOverrides[uuid]);
-    }
-    final customer = findCustomerByUuid(uuid);
-    if (customer == null) return null;
-    final hasLine = (customer.lineid ?? '').trim().isNotEmpty;
-    return hasLine;
-  }
-
-  /// Toggle "สิทธิใช้งานไลน์"
-  /// - ตอนนี้ service ยังเป็น stub (return false)
-  /// - optimistic update ใน local map → rollback ถ้า fail
-  Future<void> toggleCustomerLineAccess(String uuid) async {
-    final idx = _customers.indexWhere((c) => c.uuid?.toString() == uuid);
-    if (idx < 0) return;
-
-    final current = _customers[idx];
-    final customerSer = current.ser?.toString() ?? '';
-    if (customerSer.isEmpty) {
-      _emitError('ไม่พบ ser ของลูกค้า');
-      return;
-    }
-
-    // optimistic — อ่าน state ปัจจุบัน
-    final currentVal = _lineStatusOverrides[uuid] ??
-        ((current.lineid ?? '').trim().isNotEmpty ? 1 : 0);
-    final nextVal = (currentVal == 1) ? 0 : 1;
-    _lineStatusOverrides[uuid] = nextVal;
-    notifyListeners();
-
-    try {
-      final ok = await _service.toggleCustomerLineStatus(customerSer, nextVal);
-      if (!ok) {
-        _lineStatusOverrides[uuid] = currentVal;
-        notifyListeners();
-        _emitError('อัปเดตสิทธิใช้งานไลน์ไม่สำเร็จ (รอ API)');
-      }
-    } catch (e) {
-      _lineStatusOverrides[uuid] = currentVal;
-      notifyListeners();
-      _emitError('อัปเดตสิทธิใช้งานไลน์ไม่สำเร็จ: $e');
-    }
-  }
-
-  /// ===== LINE (ลงทะเบียน / ลบ ไลน์) =====
-  /// TODO: รอ API ของฝั่งไลน์ OA (ตอนนี้ยังไม่มี endpoint)
-  /// - ตอนนี้ส่ง SnackBar แจ้ง user ว่ายังไม่พร้อม
-  Future<void> registerLine(String uuid) async {
-    final name = findCustomerByUuid(uuid)?.scname ?? '';
-    debugPrint('⚠️ [registerLine] uuid=$uuid, name=$name — API ยังไม่มี');
-    _eventController.add(
-      RegistrationErrorEvent('ยังไม่รองรับการลงทะเบียนไลน์ (รอ API)'),
-    );
-  }
-
-  Future<void> removeLine(String uuid) async {
-    final c = findCustomerByUuid(uuid);
-    final name = c?.scname ?? '';
-    final oldLine = c?.lineid ?? '';
-    debugPrint(
-        '⚠️ [removeLine] uuid=$uuid, name=$name, lineid=$oldLine — API ยังไม่มี');
-    _eventController.add(
-      RegistrationErrorEvent('ยังไม่รองรับการลบไลน์ (รอ API)'),
-    );
-  }
-
-  /// สลับ st ของลูกค้า (เปิด/ปิดใช้งาน)
-  /// - อัพเดต state ในเครื่องทันที (optimistic)
-  /// - ส่ง API ไป update — ถ้า fail ค่อย rollback
-  Future<void> toggleAppAccess(String uuid) async {
-    final idx = _customers.indexWhere((c) => c.uuid?.toString() == uuid);
-    if (idx < 0) return;
-
-    // อ่านค่าปัจจุบัน
-    final current = _customers[idx];
-    final currentSt = current.st;
-    final bool currentOn = _isOn(currentSt);
-
-    // ใช้ ser ของลูกค้า (running number) เป็น key ส่งไป API
-    final customerSer = current.ser?.toString() ?? '';
-    if (customerSer.isEmpty) {
-      _emitError('ไม่พบ ser ของลูกค้า');
-      return;
-    }
-
-    // optimistic update
-    current.st = currentOn ? 0 : 1;
-    _applyFilter(); // refresh filter (no-op สำหรับ toggle แต่ safe)
-    notifyListeners();
-
-    try {
-      final ok = await _service.toggleCustomerStatus(customerSer, current.st);
-      if (!ok) {
-        // rollback
-        current.st = currentSt;
-        notifyListeners();
-        _emitError('อัปเดตสถานะไม่สำเร็จ');
-      } else {
-        // ─── สำเร็จ → รีเฟรชข้อมูลจาก API ───
-        debugPrint('🔄 [toggleAppAccess] success → กำลัง refresh ข้อมูล...');
-        await refresh();
-        debugPrint('✅ [toggleAppAccess] refresh เสร็จ');
-      }
-    } catch (e) {
-      // rollback
-      current.st = currentSt;
-      notifyListeners();
-      _emitError('อัปเดตสถานะไม่สำเร็จ: $e');
-    }
-  }
-
-  static bool _isOn(dynamic st) {
-    if (st == null) return false;
-    if (st is bool) return st;
-    if (st is num) return st == 1;
-    if (st is String) {
-      final s = st.trim();
-      return s == '1' || s.toLowerCase() == 'true';
-    }
-    return false;
-  }
+  // ---------- Pagination (alias สำหรับ widget) ----------
+  int get computedLastPage => lastPage;
+  void goToPage(int page) => loadPage(page);
 
   // ===============================================================
   // Pagination
   // ===============================================================
-  /// กด Prev / Next → เปลี่ยนหน้า (client-side)
-  void loadPage(String? urlOrMarker) {
-    // urlOrMarker รับได้ทั้ง "prev" / "next" (string) หรือ int
-    if (urlOrMarker == null) return;
-    if (urlOrMarker == 'prev') {
-      goToPage(_currentPage - 1);
-    } else if (urlOrMarker == 'next') {
-      goToPage(_currentPage + 1);
-    } else {
-      final n = int.tryParse(urlOrMarker);
-      if (n != null) goToPage(n);
-    }
-  }
-
-  void goToPage(int page) {
-    final last = computedLastPage;
-    if (page < 1) page = 1;
-    if (page > last && last > 0) page = last;
-    if (page == _currentPage) return;
+  void loadPage(int page) {
+    if (page < 1 || page > lastPage) return;
     _currentPage = page;
     notifyListeners();
   }
+
+  void nextPage() => loadPage(_currentPage + 1);
+  void prevPage() => loadPage(_currentPage - 1);
 
   // ===============================================================
   // Helpers
