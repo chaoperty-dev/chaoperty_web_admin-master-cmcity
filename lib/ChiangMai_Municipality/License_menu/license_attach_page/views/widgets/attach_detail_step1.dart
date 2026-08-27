@@ -3,9 +3,12 @@
 // ============================================================================
 // Step 1 — เลือกเอกสารที่จะแนบ
 //
-// UI frame (SingleChildScrollView > Center > ConstrainedBox > Column > section
-// header + section card + info row) คงรูปแบบเดิมทั้งหมด
-// ภายใน "section card" ใช้ตารางแสดงรายการเอกสาร + ปุ่มอัปโหลด/ลบ
+// UI frame: TabBar (2 tabs) + TabBarView
+//   • Tab 1: เอกสารที่ต้องแนบ (SingleChildScrollView > Center > ConstrainedBox >
+//             Column > saved notice + signature section + documents card + footer hint)
+//   • Tab 2: ข้อมูลคำขอ (หน้าว่าง — placeholder สำหรับพัฒนาต่อภายหลัง)
+//
+// เนื้อหาใน "section card" ของ Tab 1 ใช้ตารางแสดงรายการเอกสาร + ปุ่มอัปโหลด/ลบ
 // (ลอจิกคัดมาจาก Make_contract_CMM Step 2 แต่เขียนใหม่ทั้งหมด standalone)
 // ============================================================================
 
@@ -17,6 +20,9 @@ import 'package:chaoperty/ChiangMai_Municipality/PDF_CMM/unity_pdf_cmm/perviewpd
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../license_request_page/views/widgets/request_detail_contract_section.dart';
+import '../../../license_request_page/views/widgets/request_detail_person_section.dart';
+import '../../../license_request_page/views/widgets/request_detail_shop_section.dart';
 import '../../viewmodels/attach_documents_view_model.dart';
 import '../../viewmodels/license_attach_detail_view_model.dart';
 import '../theme/license_attach_theme.dart';
@@ -27,6 +33,14 @@ import '../../models/license_attach_document.dart';
 import 'attach_signature_section.dart';
 import 'attach_batch_upload_sheet.dart';
 import 'attach_file_preview_dialog.dart';
+
+// ★ Import widgets + VM จาก license_request_page (สำหรับ Tab 2: ข้อมูลคำขอ)
+import '../../../license_request_page/viewmodels/license_request_detail_step1_view_model.dart';
+import 'request_detail_section_title.dart';
+import 'request_detail_zone_row.dart';
+import 'request_detail_person_section.dart';
+import 'request_detail_shop_section.dart';
+import 'request_detail_contract_section.dart';
 
 class AttachDetailStep1 extends StatelessWidget {
   /// UUID ของ request ที่ต้องการแนบเอกสาร
@@ -69,6 +83,197 @@ class _Step1Scaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final mobile = _isMobile(context);
+
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ─── TabBar (header ของ section) ───
+          _Step1TabBar(mobile: mobile),
+          // ─── TabBarView: แต่ละแท็บเป็น content แยกกัน ───
+          Expanded(
+            child: TabBarView(
+              physics: const BouncingScrollPhysics(),
+              children: [
+                // Tab 1: เอกสารที่ต้องแนบ (เนื้อหาเดิมทั้งหมด)
+                _DocumentsTabContent(requestUuid: requestUuid),
+                // Tab 2: ข้อมูลคำขอ (คัดลอก UI มาจาก license_request_page)
+                _RequestInfoTabContent(requestUuid: requestUuid),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// TabBar — สลับระหว่าง "เอกสารที่ต้องแนบ" กับ "ข้อมูลคำขอ"
+// ใช้สไตล์ Segmented Control: tab ที่ active มีพื้นหลังขาว + shadow + เส้นใต้สีเขียว
+// =============================================================================
+class _Step1TabBar extends StatelessWidget {
+  final bool mobile;
+  const _Step1TabBar({required this.mobile});
+
+  @override
+  Widget build(BuildContext context) {
+    final tabController = DefaultTabController.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: LaSpace.md),
+      height: mobile ? 44 : 48,
+      decoration: BoxDecoration(
+        color: LaColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(color: LaColors.border, width: 1),
+      ),
+      child: AnimatedBuilder(
+        animation: tabController,
+        builder: (context, _) {
+          return LayoutBuilder(
+            builder: (context, constraints) {
+              final selectedIndex = tabController.index;
+              final tabWidth = (constraints.maxWidth - 8) / 2;
+              return Stack(
+                children: [
+                  // ─── Sliding indicator (เลื่อนตาม tab ที่ active) ───
+                  AnimatedPositioned(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    top: 4,
+                    bottom: 4,
+                    left: 4 + (selectedIndex * tabWidth),
+                    width: tabWidth,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: LaColors.cardBg,
+                        borderRadius: BorderRadius.circular(LaRadius.sm),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(.06),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  // ─── Tab labels ───
+                  TabBar(
+                    controller: tabController,
+                    indicator: const BoxDecoration(),
+                    indicatorSize: TabBarIndicatorSize.label,
+                    labelColor: LaColors.primaryDark,
+                    unselectedLabelColor: LaColors.textSecondary,
+                    labelStyle: LaText.body.copyWith(
+                      fontFamily: LaText.fontBold,
+                      fontWeight: FontWeight.w700,
+                      fontSize: mobile ? 13 : 14,
+                      height: 1.0,
+                    ),
+                    unselectedLabelStyle: LaText.body.copyWith(
+                      fontFamily: LaText.fontBold,
+                      fontWeight: FontWeight.w600,
+                      fontSize: mobile ? 13 : 14,
+                      height: 1.0,
+                    ),
+                    dividerColor: Colors.transparent,
+                    splashFactory: NoSplash.splashFactory,
+                    overlayColor: MaterialStateProperty.all(Colors.transparent),
+                    tabs: const [
+                      Tab(
+                        height: double.infinity,
+                        iconMargin: EdgeInsets.zero,
+                        child: _TabLabel(
+                          icon: Icons.upload_file_rounded,
+                          label: 'เอกสารที่ต้องแนบ',
+                          index: 0,
+                        ),
+                      ),
+                      Tab(
+                        height: double.infinity,
+                        iconMargin: EdgeInsets.zero,
+                        child: _TabLabel(
+                          icon: Icons.info_outline_rounded,
+                          label: 'ข้อมูลคำขอ',
+                          index: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// TabLabel — icon + label ในแนวนอน
+// ใช้ index ของ tab เพื่อเปลี่ยนสีตามสถานะ active
+// =============================================================================
+class _TabLabel extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  const _TabLabel({
+    required this.icon,
+    required this.label,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final mobile = _isMobile(context);
+    final tabController = DefaultTabController.of(context);
+    return AnimatedBuilder(
+      animation: tabController,
+      builder: (context, _) {
+        final isActive = tabController.index == index;
+        final color = isActive ? LaColors.primaryDark : LaColors.textSecondary;
+        return Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: mobile ? 14 : 16, color: color),
+              SizedBox(width: mobile ? 4 : 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontFamily: LaText.fontBold,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: mobile ? 12 : 13,
+                    height: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// =============================================================================
+// Tab 1: เอกสารที่ต้องแนบ — เนื้อหาเดิมทั้งหมด (ย้ายมาจาก _Step1Scaffold เดิม)
+// =============================================================================
+class _DocumentsTabContent extends StatelessWidget {
+  final String? requestUuid;
+  const _DocumentsTabContent({required this.requestUuid});
+
+  @override
+  Widget build(BuildContext context) {
+    final mobile = _isMobile(context);
     // ดึงจาก detail VM (ที่ parent provide ไว้) เพื่อเช็คว่ามี checklist ที่บันทึกแล้วหรือไม่
     final detailVm = context.watch<LicenseAttachDetailViewModel>();
     final savedChecklist = detailVm.checklist;
@@ -82,18 +287,15 @@ class _Step1Scaffold extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ─── Section: เลือกเอกสาร (เดิม) ───
-              const _SectionHeader(),
-              const SizedBox(height: LaSpace.md),
               // ─── Banner แจ้งเตือนว่าเคยมีการบันทึกแบบฟอร์มไปแล้ว ───
               if (hasSaved) ...[
                 _SavedChecklistNotice(preview: savedChecklist!),
                 const SizedBox(height: LaSpace.md),
               ],
-              // ─── Section: ลายเซ็นผู้แนบ (ใหม่ — ก่อนตารางเอกสาร) ───
+              // ─── Section: ลายเซ็นผู้แนบ (ก่อนตารางเอกสาร) ───
               AttachSignatureSection(requestUuid: requestUuid),
               const SizedBox(height: LaSpace.md),
-              // ─── Section: ตารางแนบเอกสาร (เดิม) ───
+              // ─── Section: ตารางแนบเอกสาร ───
               const _DocumentsCard(),
               const SizedBox(height: LaSpace.lg),
               const _FooterHint(),
@@ -105,9 +307,246 @@ class _Step1Scaffold extends StatelessWidget {
   }
 }
 
+// =============================================================================
+// Tab 2: ข้อมูลคำขอ — โหลดข้อมูลผ่าน LicenseRequestDetailStep1ViewModel
+// ใช้ widgets ที่คัดลอกมาจาก license_request_page
+// =============================================================================
+class _RequestInfoTabContent extends StatefulWidget {
+  /// UUID ของ Request (ส่งต่อมาจาก parent เพื่อโหลด review data)
+  final String? requestUuid;
+
+  const _RequestInfoTabContent({this.requestUuid});
+
+  @override
+  State<_RequestInfoTabContent> createState() => _RequestInfoTabContentState();
+}
+
+class _RequestInfoTabContentState extends State<_RequestInfoTabContent> {
+  // ★ ใช้ VM เดียวกับ license_request_page (import ข้าม module)
+  late final LicenseRequestDetailStep1ViewModel _vm;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = LicenseRequestDetailStep1ViewModel().init();
+    _loadReviewData();
+  }
+
+  Future<void> _loadReviewData() async {
+    final uuid = widget.requestUuid?.trim();
+    if (uuid == null || uuid.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'ไม่พบ UUID ของคำขอ';
+        });
+      }
+      return;
+    }
+    try {
+      await _vm.loadFromUuid(uuid);
+      if (mounted) {
+        setState(() {
+          _isLoading = _vm.isLoading;
+          _errorMessage = _vm.errorMessage;
+        });
+      }
+    } catch (e) {
+      debugPrint('❌ _AttachRequestInfoTab _loadReviewData error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'เกิดข้อผิดพลาด: $e';
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LicenseRequestDetailStep1ViewModel>.value(
+      value: _vm,
+      child: Builder(
+        builder: (context) {
+          if (_isLoading) {
+            return const _AttachInfoLoadingState();
+          }
+          if (_errorMessage != null) {
+            return _AttachInfoErrorState(
+              message: _errorMessage!,
+              onRetry: () {
+                setState(() {
+                  _isLoading = true;
+                  _errorMessage = null;
+                });
+                _loadReviewData();
+              },
+            );
+          }
+          return const _RequestInfoBody();
+        },
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Body ของ Tab 2 (แยกออกมาให้อยู่ใต้ Provider)
+// =============================================================================
+class _RequestInfoBody extends StatelessWidget {
+  const _RequestInfoBody();
+
+  @override
+  Widget build(BuildContext context) {
+    final mobile = _isMobile(context);
+    final mediaWidth = MediaQuery.of(context).size.width;
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(mobile ? LaSpace.sm : LaSpace.lg),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ─── Title bar ───
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: mobile ? LaSpace.sm : LaSpace.md,
+                  vertical: LaSpace.sm,
+                ),
+                decoration: BoxDecoration(
+                  color: LaColors.primaryLight.withOpacity(.25),
+                  borderRadius: BorderRadius.circular(LaRadius.md),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.assignment_rounded,
+                      size: mobile ? 16 : 18,
+                      color: LaColors.primaryDark,
+                    ),
+                    SizedBox(width: mobile ? 6 : 8),
+                    Expanded(
+                      child: Text(
+                        'ข้อมูลคำขอ',
+                        style: LaText.h2.copyWith(fontSize: mobile ? 14 : 16),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: LaSpace.md),
+
+              // ─── Zone row (read-only) ───
+              const RequestDetailZoneRow(),
+              const SizedBox(height: LaSpace.md),
+
+              // ─── Form card ───
+              Container(
+                decoration: LaDecor.card(),
+                padding: EdgeInsets.all(mobile ? LaSpace.sm : LaSpace.lg),
+                child: mediaWidth < 1100
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: const [
+                          RequestDetailSectionTitle(
+                            icon: Icons.person,
+                            title: 'ข้อมูลผู้เช่า',
+                          ),
+                          RequestDetailPersonSection(),
+                          SizedBox(height: 16),
+                          RequestDetailSectionTitle(
+                            icon: Icons.store,
+                            title: 'ข้อมูลร้านค้า',
+                          ),
+                          RequestDetailShopSection(),
+                          SizedBox(height: 16),
+                          RequestDetailSectionTitle(
+                            icon: Icons.receipt_long,
+                            title: 'ข้อมูลสัญญา',
+                          ),
+                          RequestDetailContractSection(),
+                        ],
+                      )
+                    : Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Expanded(
+                            flex: 5,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                RequestDetailSectionTitle(
+                                  icon: Icons.person,
+                                  title: 'ข้อมูลผู้เช่า',
+                                ),
+                                RequestDetailPersonSection(),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 24),
+                          Expanded(
+                            flex: 6,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: const [
+                                RequestDetailSectionTitle(
+                                  icon: Icons.store,
+                                  title: 'ข้อมูลร้านค้า',
+                                ),
+                                RequestDetailShopSection(),
+                                SizedBox(height: 16),
+                                RequestDetailSectionTitle(
+                                  icon: Icons.receipt_long,
+                                  title: 'ข้อมูลสัญญา',
+                                ),
+                                RequestDetailContractSection(),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
+
+              const SizedBox(height: LaSpace.md),
+              // ─── Info row ───
+              const Row(
+                children: [
+                  Icon(
+                    Icons.visibility_outlined,
+                    size: 14,
+                    color: LaColors.textMuted,
+                  ),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'โหมดดูข้อมูลอย่างเดียว ไม่สามารถแก้ไขได้',
+                      style: LaText.caption,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// Banner แจ้งเตือนใน step 1 ว่ามีประวัติการบันทึก checklist ไปแล้ว
 class _SavedChecklistNotice extends StatelessWidget {
-  final dynamic preview; // LicenseAttachChecklistPreview (หลีกเลี่ยง circular import)
+  final dynamic
+      preview; // LicenseAttachChecklistPreview (หลีกเลี่ยง circular import)
   const _SavedChecklistNotice({required this.preview});
 
   @override
@@ -140,8 +579,8 @@ class _SavedChecklistNotice extends StatelessWidget {
               children: [
                 Text(
                   'มีประวัติการบันทึกแบบฟอร์มตรวจสอบเอกสารแล้ว',
-                  style: LaText.body.copyWith(
-                      fontFamily: LaText.fontBold, fontSize: 13),
+                  style: LaText.body
+                      .copyWith(fontFamily: LaText.fontBold, fontSize: 13),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -153,42 +592,6 @@ class _SavedChecklistNotice extends StatelessWidget {
                       .copyWith(color: LaColors.textSecondary, fontSize: 11),
                 ),
               ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// =============================================================================
-// Section Header (เหมือนเดิม 1:1)
-// =============================================================================
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final mobile = _isMobile(context);
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: mobile ? LaSpace.sm : LaSpace.md,
-        vertical: LaSpace.sm,
-      ),
-      decoration: BoxDecoration(
-        color: LaColors.primaryLight.withOpacity(.25),
-        borderRadius: BorderRadius.circular(LaRadius.md),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.upload_file_rounded,
-              size: mobile ? 16 : 18, color: LaColors.primaryDark),
-          SizedBox(width: mobile ? 6 : 8),
-          Expanded(
-            child: Text(
-              'เลือกเอกสารที่จะแนบ',
-              style: LaText.h2.copyWith(fontSize: mobile ? 14 : 16),
-              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -829,9 +1232,8 @@ class _DocumentCard extends StatelessWidget {
               ),
               if (_hasFile)
                 IconButton(
-                  tooltip: locked
-                      ? 'คำขอนี้ถูกล็อก — ไม่สามารถลบได้'
-                      : 'ลบไฟล์แนบ',
+                  tooltip:
+                      locked ? 'คำขอนี้ถูกล็อก — ไม่สามารถลบได้' : 'ลบไฟล์แนบ',
                   visualDensity: VisualDensity.compact,
                   onPressed: (vm.isLoading || locked)
                       ? null
@@ -1760,5 +2162,83 @@ class _DocumentPreview extends StatelessWidget {
         titles: allTitles,
       );
     }
+  }
+}
+
+// =============================================================================
+// Loading state สำหรับ Tab 2 (ข้อมูลคำขอ)
+// =============================================================================
+class _AttachInfoLoadingState extends StatelessWidget {
+  const _AttachInfoLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: LaSpace.xxl),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+              ),
+            ),
+            SizedBox(height: LaSpace.md),
+            Text('กำลังโหลดข้อมูลคำขอ…', style: LaText.bodyMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Error state สำหรับ Tab 2 (ข้อมูลคำขอ)
+// =============================================================================
+class _AttachInfoErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _AttachInfoErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(LaSpace.lg),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 48,
+              color: LaColors.statusRejectedFg,
+            ),
+            const SizedBox(height: LaSpace.md),
+            Text(
+              message,
+              style: LaText.body,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: LaSpace.md),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LaColors.primary,
+                foregroundColor: LaColors.textInverse,
+              ),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('ลองอีกครั้ง'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
