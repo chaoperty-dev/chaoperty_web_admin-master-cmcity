@@ -301,7 +301,8 @@ Future<void> _handleProceed(
     if (!context.mounted) return;
     final result = await showReceiptEntryStepperDialog(
       context: context,
-      payment: const PaymentDetail(), // ยังไม่มี — dialog จะสร้างเองตอนไป step 3
+      payment:
+          const PaymentDetail(), // ยังไม่มี — dialog จะสร้างเองตอนไป step 3
       defaultAmount: item.totalAmount,
       initialStep: 1,
       paymentSystem: defaultPaymentSystem ?? 'external',
@@ -346,6 +347,27 @@ void _showSuccessSnack(BuildContext context, PaymentDetail result) {
       behavior: SnackBarBehavior.floating,
     ),
   );
+}
+
+/// เปิด dialog upload จาก _PaymentStatusRow
+/// (payment มีอยู่แล้ว — เปิดเฉพาะ step 2 ให้ user แนบรูป โดยไม่ต้องเลือก system ใหม่)
+Future<void> _openUploadDialog(
+  BuildContext context,
+  PaymentDetail payment,
+) async {
+  if (!context.mounted) return;
+  final vm = context.read<LicensePaymentDetailViewModel>();
+  final result = await showReceiptEntryStepperDialog(
+    context: context,
+    payment: payment,
+    defaultAmount: payment.amount,
+    initialStep: 2, // ข้าม step 1 — system/method มาจาก payment แล้ว
+    paymentSystem: payment.paymentSystem,
+  );
+  if (!context.mounted) return;
+  await vm.reload(); // รีโหลด list หลังปิด dialog (เผื่ออัปโหลดสำเร็จ)
+  if (!context.mounted) return;
+  if (result != null) _showSuccessSnack(context, result);
 }
 
 // ============================================================================
@@ -417,10 +439,13 @@ class _PrepaymentCard extends StatelessWidget {
                 ),
               ],
               const Spacer(),
-              _PillIcon(
-                icon: Icons.tag_rounded,
-                text: 'Prepay: ${_short(prepayment.uuid ?? '')}',
-                muted: true,
+              // ✅ จำกัดความกว้าง — กัน overflow ตอนจอแคบ
+              Flexible(
+                child: _PillIcon(
+                  icon: Icons.tag_rounded,
+                  text: 'Prepay: ${_short(prepayment.uuid ?? '')}',
+                  muted: true,
+                ),
               ),
             ],
           ),
@@ -1068,10 +1093,11 @@ class _PaymentStatusRowState extends State<_PaymentStatusRow> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
+          // ─── responsive layout: row (จอกว้าง) | column (จอแคบ) ─ ───
+          LayoutBuilder(
+            builder: (ctx, c) {
+              final isNarrow = c.maxWidth < 480;
+              final iconBox = Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
@@ -1089,62 +1115,62 @@ class _PaymentStatusRowState extends State<_PaymentStatusRow> {
                       ? LaColors.statusApprovedFg
                       : LaColors.statusInfoFg,
                 ),
-              ),
-              const SizedBox(width: LaSpace.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            p.paymentNo.isNotEmpty ? p.paymentNo : '-',
-                            style: LaText.h2.copyWith(
-                              fontFamily: 'monospace',
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+              );
+              final content = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          p.paymentNo.isNotEmpty ? p.paymentNo : '-',
+                          style: LaText.h2.copyWith(
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.w700,
                           ),
-                        ),
-                        const SizedBox(width: 6),
-                        InkWell(
-                          onTap: () => setState(() => _expanded = !_expanded),
-                          borderRadius: BorderRadius.circular(LaRadius.pill),
-                          child: Padding(
-                            padding: const EdgeInsets.all(2),
-                            child: Icon(
-                              _expanded
-                                  ? Icons.expand_less_rounded
-                                  : Icons.expand_more_rounded,
-                              size: 18,
-                              color: LaColors.textMuted,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '${itemName.isNotEmpty ? itemName : '-'}  •  '
-                      '${_formatSystem(p.paymentSystem)}  •  ${formatMoney(p.amount)}',
-                      style: LaText.caption,
-                    ),
-                    if (hasAttachment)
-                      Text(
-                        'UUID: ${_shortUuid(p.uuid)}',
-                        style: LaText.caption.copyWith(
-                          color: LaColors.textMuted,
-                          fontFamily: 'monospace',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: LaSpace.sm),
-              Wrap(
+                      const SizedBox(width: 6),
+                      InkWell(
+                        onTap: () => setState(() => _expanded = !_expanded),
+                        borderRadius: BorderRadius.circular(LaRadius.pill),
+                        child: Padding(
+                          padding: const EdgeInsets.all(2),
+                          child: Icon(
+                            _expanded
+                                ? Icons.expand_less_rounded
+                                : Icons.expand_more_rounded,
+                            size: 18,
+                            color: LaColors.textMuted,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${itemName.isNotEmpty ? itemName : '-'}  •  '
+                    '${_formatSystem(p.paymentSystem)}  •  ${formatMoney(p.amount)}',
+                    style: LaText.caption,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (hasAttachment)
+                    Text(
+                      'UUID: ${_shortUuid(p.uuid)}',
+                      style: LaText.caption.copyWith(
+                        color: LaColors.textMuted,
+                        fontFamily: 'monospace',
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              );
+              final actions = Wrap(
                 spacing: 6,
                 runSpacing: 6,
                 alignment: WrapAlignment.end,
@@ -1184,8 +1210,15 @@ class _PaymentStatusRowState extends State<_PaymentStatusRow> {
                           ),
                         )
                       : _StatusBadge(label: statusText),
-                  if (hasAttachment)
+                  if (hasAttachment) ...[
                     _AttachmentViewButton(attachment: p.latestAttachment!),
+                  ] else ...[
+                    _UploadButton(
+                      payment: p,
+                      onUpload: () => _openUploadDialog(context, p),
+                    ),
+                  ],
+
                   if (isPaid)
                     _ReceiptViewButton(
                       payment: p,
@@ -1195,8 +1228,43 @@ class _PaymentStatusRowState extends State<_PaymentStatusRow> {
                     ),
                   // if (isPaid) _ApprovalActions(payment: p),  ← ซ่อนไว้ก่อน
                 ],
-              ),
-            ],
+              );
+
+              // ─── เลือก layout ตามความกว้าง ───
+              if (isNarrow) {
+                // จอแคบ: icon + content บน, actions ล่าง
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        iconBox,
+                        const SizedBox(width: LaSpace.sm),
+                        Expanded(child: content),
+                      ],
+                    ),
+                    const SizedBox(height: LaSpace.sm),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: actions,
+                    ),
+                  ],
+                );
+              }
+              // จอกว้าง: row เดิม
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  iconBox,
+                  const SizedBox(width: LaSpace.sm),
+                  Expanded(child: content),
+                  const SizedBox(width: LaSpace.sm),
+                  actions,
+                ],
+              );
+            },
           ),
           if (_expanded) ...[
             const SizedBox(height: LaSpace.sm),
@@ -1472,6 +1540,57 @@ class _ReceiptViewButton extends StatelessWidget {
                 style: LaText.caption.copyWith(
                   color: Colors.white,
                   fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ปุ่ม "อัพโหลดหลักฐาน" — เปิด dialog stepper ที่ step 2
+/// ใช้ตอน payment ยังไม่มี attachment (status = draft หรือ หลักฐานยังไม่แนบ)
+class _UploadButton extends StatelessWidget {
+  final PaymentDetail payment;
+  final Future<void> Function() onUpload;
+  const _UploadButton({
+    required this.payment,
+    required this.onUpload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: 'อัพโหลดหลักฐาน',
+      child: InkWell(
+        onTap: () => onUpload(),
+        borderRadius: BorderRadius.circular(LaRadius.sm),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: LaColors.primaryDark.withOpacity(.08),
+            borderRadius: BorderRadius.circular(LaRadius.sm),
+            border: Border.all(
+              color: LaColors.primaryDark.withOpacity(.55),
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: const [
+              Icon(
+                Icons.cloud_upload_outlined,
+                size: 14,
+                color: LaColors.primaryDark,
+              ),
+              SizedBox(width: 4),
+              Text(
+                'อัพโหลด',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: LaColors.primaryDark,
                 ),
               ),
             ],
@@ -1851,15 +1970,19 @@ class _PillIcon extends StatelessWidget {
         children: [
           Icon(icon, size: 13, color: fg),
           const SizedBox(width: 6),
-          AutoSizeText(
-            text,
-            minFontSize: 11,
-            maxFontSize: 12,
-            maxLines: 1,
-            style: LaText.caption.copyWith(
-              color: fg,
-              fontFamily: 'monospace',
-              fontWeight: FontWeight.w600,
+          Flexible(
+            // ✅ หดได้
+            child: AutoSizeText(
+              text,
+              minFontSize: 11,
+              maxFontSize: 12,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis, // ✅ กัน overflow
+              style: LaText.caption.copyWith(
+                color: fg,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

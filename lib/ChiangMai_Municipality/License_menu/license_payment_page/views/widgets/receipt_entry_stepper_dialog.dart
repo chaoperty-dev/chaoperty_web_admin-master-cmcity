@@ -123,6 +123,9 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   List<LicensePaymentMethod> _methods = const [];
   bool _loadingMethods = true;
 
+  /// method ที่ user เลือกจาก popup (เก็บไว้แสดงใน banner ตอน step >= 2)
+  LicensePaymentMethod? _selectedMethod;
+
   // ─── Step 2 state (image upload) ───
   XFile? _pickedImage;
   Uint8List? _pickedImageBytes;
@@ -216,10 +219,36 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       setState(() {
         _methods = res;
         _loadingMethods = false;
+        // ✅ ถ้า payment มี payment_method_id แล้ว (edit mode) →
+        //    resolve LicensePaymentMethod จาก list อัตโนมัติเพื่อแสดงใน Banner
+        _resolveSelectedMethodFromPayment();
       });
     } catch (_) {
       if (!mounted) return;
       setState(() => _loadingMethods = false);
+    }
+  }
+
+  /// หา LicensePaymentMethod ที่ตรงกับ payment.paymentMethodId
+  /// ใช้ตอน edit mode (payment มี method มาแล้ว — ไม่ได้เลือกผ่าน popup)
+  void _resolveSelectedMethodFromPayment() {
+    if (_selectedMethod != null) return; // user เลือกเองแล้ว
+    final mid = (widget.payment.paymentMethodId ?? '').trim();
+    if (mid.isEmpty) return;
+    // จับคู่ด้วย uuid ก่อน (แม่นที่สุด) แล้ว fallback ด้วย id
+    LicensePaymentMethod? found;
+    for (final m in _methods) {
+      if (m.uuid.isNotEmpty && m.uuid.toLowerCase() == mid.toLowerCase()) {
+        found = m;
+        break;
+      }
+    }
+    found ??= _methods.cast<LicensePaymentMethod?>().firstWhere(
+          (m) => m?.id.toString() == mid,
+          orElse: () => null,
+        );
+    if (found != null) {
+      _selectedMethod = found;
     }
   }
 
@@ -455,6 +484,8 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
       initialMethodId: widget.defaultMethodId,
     );
     if (picked == null || !mounted) return;
+    // ✅ เก็บ method ที่เลือกไว้แสดงใน banner (ตอน step 2/3)
+    setState(() => _selectedMethod = picked);
     // สร้าง draft พร้อม method ที่เลือก → ไป step 2
     await _createDraftAndAdvance(targetStep: 2, methodId: picked.id);
   }
@@ -518,7 +549,10 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
               const SizedBox(height: LaSpace.md),
               // ✅ Banner สรุปจากขั้นตอนที่ 1 — แยกกล่องบนสุด (เห็นทุก step ที่ >= 2)
               if (_step > 1) ...[
-                _SelectedSystemBanner(isInternal: _isInternal),
+                _SelectedSystemBanner(
+                  isInternal: _isInternal,
+                  method: _selectedMethod,
+                ),
                 const SizedBox(height: LaSpace.md),
               ],
               Flexible(child: _stepBody()),
@@ -798,9 +832,19 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
   }
 
   // ──────────────── Banner: แสดง system ที่เลือกใน step 1 (ใช้ใน step 2) ────────────────
-  Widget _SelectedSystemBanner({required bool isInternal}) {
+  Widget _SelectedSystemBanner({
+    required bool isInternal,
+    LicensePaymentMethod? method,
+  }) {
     final accent =
         isInternal ? LaColors.statusInfoFg : LaColors.statusApprovedFg;
+
+    // ข้อมูลบัญชีธนาคาร (กรณี BANK_TRANSFER — มี banks)
+    LicensePaymentBank? bank;
+    if (method != null && method.banks.isNotEmpty) {
+      bank = method.banks.first;
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: LaSpace.md, vertical: LaSpace.sm),
@@ -887,6 +931,109 @@ class _ReceiptEntryStepperDialogState extends State<ReceiptEntryStepperDialog> {
               ),
             ],
           ),
+
+          // ✅ รายละเอียด method + บัญชีธนาคาร (ถ้ามี)
+          if (method != null) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: LaSpace.sm, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(.6),
+                borderRadius: BorderRadius.circular(LaRadius.sm),
+                border: Border.all(color: accent.withOpacity(.3)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ─── ชื่อ method (เช่น "โอนผ่านธนาคาร") ───
+                  Row(
+                    children: [
+                      Icon(
+                        method.isCash
+                            ? Icons.payments_rounded
+                            : Icons.account_balance_rounded,
+                        size: 13,
+                        color: accent,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          method.nameTh.isNotEmpty
+                              ? method.nameTh
+                              : method.code,
+                          style: LaText.caption.copyWith(
+                            color: accent,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  // ─── รายละเอียดบัญชี (ถ้ามี) ───
+                  if (bank != null) ...[
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 17),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ชื่อธนาคาร
+                          if ((bank.bankName ?? '').isNotEmpty)
+                            Text(
+                              bank.bankName!,
+                              style: LaText.caption.copyWith(
+                                color: LaColors.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 11,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          // เลขบัญชี + สาขา
+                          if ((bank.bankAccount ?? '').isNotEmpty ||
+                              (bank.branch ?? '').isNotEmpty)
+                            Text(
+                              [
+                                if ((bank.bankAccount ?? '').isNotEmpty)
+                                  'เลขบัญชี ${bank.bankAccount}',
+                                if ((bank.branch ?? '').isNotEmpty)
+                                  'สาขา${bank.branch}',
+                              ].join(' • '),
+                              style: LaText.caption.copyWith(
+                                color: LaColors.textMuted,
+                                fontFamily: 'monospace',
+                                fontSize: 10,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          // หมายเหตุ
+                          if ((bank.note ?? '').isNotEmpty)
+                            Text(
+                              bank.note!,
+                              style: LaText.caption.copyWith(
+                                color: LaColors.textMuted,
+                                fontSize: 10,
+                                fontStyle: FontStyle.italic,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -1525,8 +1672,7 @@ Future<LicensePaymentMethod?> showPaymentMethodPickerDialog({
     barrierDismissible: true,
     builder: (_) => _PaymentMethodPickerDialog(
       // ✅ unique key — state reset ทุกครั้งที่เปิด (กัน stale selection)
-      key: ValueKey(
-          'method_picker_${DateTime.now().microsecondsSinceEpoch}'),
+      key: ValueKey('method_picker_${DateTime.now().microsecondsSinceEpoch}'),
       methods: methods,
       isLoading: isLoading,
       initialMethodId: initialMethodId,
@@ -1551,15 +1697,50 @@ class _PaymentMethodPickerDialog extends StatefulWidget {
       _PaymentMethodPickerDialogState();
 }
 
+/// Composite key สำหรับ track รายการที่เลือก — ป้องกันกรณี backend ส่ง
+/// method เดียวกันซ้ำหลาย record (uuid ซ้ำ แต่ bankId ต่าง) เช่น
+///   { id:1, uuid:"A", code:"BANK_TRANSFER", meta:{ bank_id:1, bcode:"BBL" } }
+///   { id:1, uuid:"A", code:"BANK_TRANSFER", meta:{ bank_id:2, bcode:"KBANK" } }
+/// ถ้าใช้แค่ uuid เป็น key → ทั้ง 2 record ถูกมองเป็น "รายการเดียวกัน"
+/// → UI ติ๊ก 2 อันพร้อมกัน ทั้งที่ user เลือกแค่ 1
+@immutable
+class _PickedKey {
+  final String uuid;
+  final int? bankId;
+  const _PickedKey(this.uuid, this.bankId);
+
+  factory _PickedKey.fromMethod(LicensePaymentMethod m) {
+    // key หลัก = uuid (กรณี cash/QR ที่ไม่มี banks) → ใช้ uuid อย่างเดียว
+    // key รอง = bankId ของบัญชีแรก (กรณี BANK_TRANSFER หลายบัญชี)
+    final bankId = m.banks.isNotEmpty ? m.banks.first.bankId : null;
+    return _PickedKey(m.uuid, bankId);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _PickedKey &&
+        other.uuid.toLowerCase() == uuid.toLowerCase() &&
+        other.bankId == bankId;
+  }
+
+  @override
+  int get hashCode => Object.hash(uuid.toLowerCase(), bankId);
+}
+
 class _PaymentMethodPickerDialogState
     extends State<_PaymentMethodPickerDialog> {
-  /// เก็บ index ของ method ที่เลือก (unique ต่อ render — uuid/id อาจว่าง/ซ้ำจาก API)
-  int? _pickedIndex;
+  /// key ของ method ที่เลือก (uuid + bankId) — unique ต่อบัญชีธนาคารจริง ๆ
+  /// (เพราะ backend อาจส่ง method เดิมซ้ำหลาย record เพื่อแทนหลายบัญชี)
+  _PickedKey? _pickedKey;
 
-  LicensePaymentMethod? get _picked =>
-      _pickedIndex != null && _pickedIndex! < widget.methods.length
-          ? widget.methods[_pickedIndex!]
-          : null;
+  LicensePaymentMethod? get _picked {
+    if (_pickedKey == null) return null;
+    for (final m in widget.methods) {
+      if (_PickedKey.fromMethod(m) == _pickedKey) return m;
+    }
+    return null;
+  }
 
   @override
   void initState() {
@@ -1567,30 +1748,33 @@ class _PaymentMethodPickerDialogState
     // pre-select จาก initialMethodId (ถ้ามี)
     final want = widget.initialMethodId;
     if (want != null && want.trim().isNotEmpty) {
-      for (var i = 0; i < widget.methods.length; i++) {
-        final m = widget.methods[i];
+      // ลองจับคู่ด้วย uuid ก่อน
+      for (final m in widget.methods) {
         if (m.uuid.isNotEmpty && m.uuid.toLowerCase() == want.toLowerCase()) {
-          _pickedIndex = i;
-          break;
+          _pickedKey = _PickedKey.fromMethod(m);
+          return;
         }
+      }
+      // ไม่เจอ uuid → ลองจับคู่ด้วย id
+      for (final m in widget.methods) {
         if (m.id.toString() == want) {
-          _pickedIndex = i;
-          break;
+          _pickedKey = _PickedKey.fromMethod(m);
+          return;
         }
       }
     }
   }
 
-  /// หา index ของ method m ใน list (เทียบ uuid ก่อน, ไม่งั้นใช้ object identity)
-  int? _indexOf(LicensePaymentMethod m) {
-    for (var i = 0; i < widget.methods.length; i++) {
-      final x = widget.methods[i];
-      if (identical(x, m)) return i;
-      if (m.uuid.isNotEmpty &&
-          x.uuid.isNotEmpty &&
-          m.uuid.toLowerCase() == x.uuid.toLowerCase()) {
-        return i;
-      }
+  /// หา key ของ method m ใน list — ใช้ composite (uuid + bankId)
+  /// เพื่อแยกแยะ method ที่ backend ส่ง uuid ซ้ำแต่คนละบัญชี
+  _PickedKey? _keyOf(LicensePaymentMethod m) {
+    if (widget.methods.any((x) => identical(x, m))) {
+      return _PickedKey.fromMethod(m);
+    }
+    // ถ้าไม่ใช่ object เดียวกัน (เช่น re-render) → หาด้วย composite key
+    final want = _PickedKey.fromMethod(m);
+    for (final x in widget.methods) {
+      if (_PickedKey.fromMethod(x) == want) return want;
     }
     return null;
   }
@@ -1724,8 +1908,8 @@ class _PaymentMethodPickerDialogState
       );
 
   Widget _methodOption(LicensePaymentMethod m) {
-    final selectedIndex = _indexOf(m);
-    final selected = _pickedIndex != null && selectedIndex == _pickedIndex;
+    final myKey = _keyOf(m);
+    final selected = myKey != null && _pickedKey == myKey;
     final IconData icon =
         m.isCash ? Icons.payments_rounded : Icons.account_balance_rounded;
     final Color iconColor =
@@ -1743,10 +1927,10 @@ class _PaymentMethodPickerDialogState
         : m.code;
 
     return InkWell(
-      onTap: selectedIndex == null
+      onTap: myKey == null
           ? null
           : () => setState(() {
-                _pickedIndex = selectedIndex;
+                _pickedKey = myKey;
               }),
       borderRadius: BorderRadius.circular(LaRadius.md),
       child: Container(
