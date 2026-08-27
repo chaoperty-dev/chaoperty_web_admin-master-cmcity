@@ -48,21 +48,17 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
                     const SizedBox(height: LaSpace.md),
                     _zoneSection(vm),
                     const SizedBox(height: LaSpace.md),
-                    _statusSection(vm),
-                    const SizedBox(height: LaSpace.md),
                     _requestStatusSection(vm),
                   ],
                 )
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(flex: 3, child: _subZoneSection(vm)),
+                    Expanded(flex: 4, child: _subZoneSection(vm)),
                     _divider(),
-                    Expanded(flex: 3, child: _zoneSection(vm)),
+                    Expanded(flex: 4, child: _zoneSection(vm)),
                     _divider(),
-                    Expanded(flex: 3, child: _statusSection(vm)),
-                    _divider(),
-                    Expanded(flex: 3, child: _requestStatusSection(vm)),
+                    Expanded(flex: 4, child: _requestStatusSection(vm)),
                   ],
                 );
           // จอกว้าง (≥1100) → โชว์ Row ตรงๆ ไม่มี toggle
@@ -92,11 +88,10 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
   }
 
   Widget _toggleHeader(AreaMenuViewModel vm) {
-    final hasFilter = (vm.selectedZoneSub != null &&
-            vm.selectedZoneSub != 'ทั้งหมด') ||
-        (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
-        vm.selectedStatus != 'ทั้งหมด' ||
-        vm.selectedRequestStatus != 'ทั้งหมด';
+    final hasFilter =
+        (vm.selectedZoneSub.isNotEmpty && vm.selectedZoneSub != 'ทั้งหมด') ||
+            (vm.selectedZone.isNotEmpty && vm.selectedZone != 'ทั้งหมด') ||
+            vm.selectedRequestStatus != 'ทั้งหมด';
     return InkWell(
       onTap: () => setState(() => _collapsed = !_collapsed),
       borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -169,14 +164,6 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
       icon: Icons.place_outlined,
       label: 'โซนพื้นที่',
       child: _zoneDropdown(vm),
-    );
-  }
-
-  Widget _statusSection(AreaMenuViewModel vm) {
-    return _FilterField(
-      icon: Icons.flag_outlined,
-      label: 'สถานะ',
-      child: _statusDropdown(vm),
     );
   }
 
@@ -327,9 +314,9 @@ extension on _AreaMenuZoneFilterState {
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
         hint: AutoSizeText(
-          vm.selectedZoneSub ?? 'ทั้งหมด',
+          vm.selectedZoneSub,
           style: LaText.body.copyWith(
-            color: vm.selectedZoneSub == null
+            color: vm.selectedZoneSub == 'ทั้งหมด'
                 ? LaColors.textMuted
                 : LaColors.textPrimary,
           ),
@@ -416,9 +403,9 @@ extension on _AreaMenuZoneFilterState {
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
         hint: AutoSizeText(
-          vm.selectedZone ?? 'เลือกโซน',
+          vm.selectedZone,
           style: LaText.body.copyWith(
-            color: vm.selectedZone == null
+            color: vm.selectedZone == 'ทั้งหมด'
                 ? LaColors.textMuted
                 : LaColors.textPrimary,
           ),
@@ -479,81 +466,15 @@ extension on _AreaMenuZoneFilterState {
     );
   }
 
-  Widget _statusDropdown(AreaMenuViewModel vm) {
-    return _DropdownShell(
-      child: DropdownButton2<String>(
-        isExpanded: true,
-        iconSize: 18,
-        iconEnabledColor: LaColors.textSecondary,
-        buttonHeight: 40,
-        dropdownMaxHeight: 320,
-        dropdownDecoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(LaRadius.md),
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.08),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        hint: AutoSizeText(
-          vm.selectedStatus,
-          style: LaText.body.copyWith(
-            color: LaColors.textPrimary,
-          ),
-          maxFontSize: 14,
-          minFontSize: 11,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        value: vm.selectedStatus,
-        items: vm.statusOptions.map((status) {
-          final isAll = status == 'ทั้งหมด';
-          final palette = isAll
-              ? const StatusPalette(LaColors.textMuted, LaColors.textMuted)
-              : StatusPalette.of(status);
-          return DropdownMenuItem<String>(
-            value: status,
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: palette.fg,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Expanded(
-                  child: AutoSizeText(
-                    status.isEmpty ? '-' : status,
-                    style: LaText.body,
-                    maxFontSize: 14,
-                    minFontSize: 11,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-        onChanged: (v) => vm.onStatusChanged(v),
-      ),
-    );
-  }
-
   Widget _requestStatusDropdown(AreaMenuViewModel vm) {
+    // ✅ ใช้ requestStatusItems เพื่อแสดง TH + EN key
     return _DropdownShell(
       child: DropdownButton2<String>(
         isExpanded: true,
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
-        buttonHeight: 40,
-        dropdownMaxHeight: 320,
+        buttonHeight: 50,
+        dropdownMaxHeight: 360,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -565,24 +486,18 @@ extension on _AreaMenuZoneFilterState {
             ),
           ],
         ),
-        hint: AutoSizeText(
-          vm.selectedRequestStatus,
-          style: LaText.body.copyWith(
-            color: LaColors.textPrimary,
-          ),
-          maxFontSize: 14,
-          minFontSize: 11,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        // Hint: แสดง TH + EN key
+        hint: _requestStatusHintLabel(vm),
         value: vm.selectedRequestStatus,
-        items: vm.requestStatusOptions.map((status) {
-          final isAll = status == 'ทั้งหมด';
+        items: vm.requestStatusItems.map((item) {
+          final th = item['th'] ?? '';
+          final en = item['en'] ?? '';
+          final isAll = th == 'ทั้งหมด';
           final palette = isAll
               ? const StatusPalette(LaColors.textMuted, LaColors.textMuted)
-              : StatusPalette.of(status);
+              : StatusPalette.of(th);
           return DropdownMenuItem<String>(
-            value: status,
+            value: th,
             child: Row(
               children: [
                 Container(
@@ -595,14 +510,7 @@ extension on _AreaMenuZoneFilterState {
                   ),
                 ),
                 Expanded(
-                  child: AutoSizeText(
-                    status.isEmpty ? '-' : status,
-                    style: LaText.body,
-                    maxFontSize: 14,
-                    minFontSize: 11,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+                  child: _requestStatusItemLabel(th, en),
                 ),
               ],
             ),
@@ -610,6 +518,62 @@ extension on _AreaMenuZoneFilterState {
         }).toList(),
         onChanged: (v) => vm.onRequestStatusChanged(v),
       ),
+    );
+  }
+
+  /// Hint label สำหรับ dropdown (TH + EN ใต้กัน)
+  Widget _requestStatusHintLabel(AreaMenuViewModel vm) {
+    final th = vm.selectedRequestStatus;
+    final en = th == 'ทั้งหมด'
+        ? ''
+        : (vm.requestStatusItems.firstWhere(
+              (e) => e['th'] == th,
+              orElse: () => const {'th': '', 'en': ''},
+            )['en'] ??
+            '');
+    return _requestStatusItemLabel(th, en, isHint: true);
+  }
+
+  /// Render item — TH label (บน) + EN key (ล่าง, monospace, สี muted)
+  Widget _requestStatusItemLabel(String th, String en, {bool isHint = false}) {
+    final thStyle = LaText.body.copyWith(
+      color: isHint ? LaColors.textPrimary : LaColors.textPrimary,
+    );
+    final enStyle = LaText.caption.copyWith(
+      color: LaColors.textMuted,
+      fontFamily: 'monospace',
+      fontSize: 10,
+      letterSpacing: .3,
+    );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Expanded(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              AutoSizeText(
+                th.isEmpty ? '-' : th,
+                style: thStyle,
+                maxFontSize: 14,
+                minFontSize: 11,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              if (en.isNotEmpty)
+                AutoSizeText(
+                  en,
+                  style: enStyle,
+                  maxFontSize: 10,
+                  minFontSize: 8,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 } // end extension

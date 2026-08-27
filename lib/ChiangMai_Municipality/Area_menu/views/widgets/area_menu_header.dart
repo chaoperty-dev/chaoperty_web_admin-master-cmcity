@@ -59,7 +59,7 @@ class AreaMenuHeader extends StatelessWidget {
               ),
             ),
             child: const Icon(
-              Icons.payments_rounded,
+              Icons.area_chart_rounded,
               color: LaColors.primaryAccent,
               size: 22,
             ),
@@ -72,7 +72,7 @@ class AreaMenuHeader extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
-                  'LICENSE PAYMENT ACCEPTANCE',
+                  'AREA OVERVIEW',
                   style: LaText.label.copyWith(
                     color: LaColors.primaryAccent.withOpacity(.9),
                     letterSpacing: 1.6,
@@ -122,7 +122,7 @@ class AreaMenuHeader extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    '$totalCount รายการ',
+                    '$totalCount ล็อค',
                     style: LaText.bodyMuted.copyWith(
                       color: Colors.white,
                       fontFamily: LaText.fontBold,

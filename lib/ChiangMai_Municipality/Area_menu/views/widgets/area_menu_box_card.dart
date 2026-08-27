@@ -46,22 +46,23 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   // ---------------------------------------------------------------
   // Display text — ดึงจาก Map โดยตรง
   // ---------------------------------------------------------------
+  /// แสดง "โซน · ล็อค" เช่น "UATV4 · TEST5" (หรือ "TEST5" ถ้าไม่มี zone)
   String get _leaseText {
-    final lease = widget.model['lease_number']?.toString();
-    final ln = widget.model['ln']?.toString();
-    if (lease != null && lease.isNotEmpty && ln != null && ln.isNotEmpty) {
-      return '$lease · $ln';
-    }
-    if (lease != null && lease.isNotEmpty) return lease;
-    if (ln != null && ln.isNotEmpty) return ln;
+    final zone = widget.model['zone']?.toString() ?? '';
+    final lock = widget.model['lock']?.toString() ?? '';
+    if (zone.isNotEmpty && lock.isNotEmpty) return '$zone · $lock';
+    if (lock.isNotEmpty) return lock;
+    if (zone.isNotEmpty) return zone;
     return '-';
   }
 
+  /// Status: derive จาก item (เหมือน ViewModel.computeStatusLabel)
   String get _statusText {
-    // ✅ ใช้ 'st' จาก area API เป็นหลัก (เช่น "สัญญาปัจจุบัน" / "ว่าง")
-    // ถ้า ldate น้อยกว่าวันนี้ บังคับแสดง "หมดสัญญา"
+    final requester = widget.model['requester']?.toString() ?? '';
+    final hasRequester = requester.isNotEmpty;
     final ldateRaw = widget.model['ldate']?.toString() ?? '';
-    if (ldateRaw.isNotEmpty) {
+
+    if (hasRequester && ldateRaw.isNotEmpty) {
       try {
         final ldate = DateTime.parse(ldateRaw);
         final today = DateTime.now();
@@ -71,14 +72,14 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
       } catch (_) {}
     }
 
-    final v = widget.model['st']?.toString() ??
-        widget.model['status']?.toString() ??
-        widget.model['status_label']?.toString();
-    return (v == null || v.isEmpty) ? 'ว่าง' : v;
+    if (hasRequester) return 'เช่าอยู่';
+    return 'ว่าง';
   }
 
+  /// แสดง "subzone · zone" (จาก overview API) — เก็บไว้เผื่อใช้
+  /// ignore: unused_element
   String get _zoneText {
-    final zn = widget.model['zn']?.toString() ?? '';
+    final zn = widget.model['zone']?.toString() ?? '';
     final sub = widget.model['subzone']?.toString() ?? '';
     if (sub.isNotEmpty && zn.isNotEmpty) return '$sub · $zn';
     return zn.isNotEmpty ? zn : sub;
@@ -87,18 +88,16 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   String get _endDateText {
     final ldate = widget.model['ldate']?.toString() ?? '';
     if (ldate.isEmpty) return '';
-    return formatDate(ldate, type: DateFormatType.dmy); // ✅ dd-MM-yyyy
+    return formatDate(ldate, type: DateFormatType.dmy);
   }
 
+  /// client = requester (overview API)
   String get _clientText {
-    final c = widget.model['cname']?.toString() ??
-        widget.model['scname']?.toString() ??
-        '';
+    final c = widget.model['requester']?.toString() ?? '';
     return _maskName(c);
   }
 
   /// Mask ชื่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
-  /// เช่น "นางกชกร วิชชุชัยมงคล" → "นางกชกร วิชชุชัยม***"
   String _maskName(String raw) {
     final name = raw.trim();
     if (name.isEmpty) return '';
@@ -122,28 +121,27 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
     return words.join(' ');
   }
 
+  /// เบอร์โทร (ไว้ใช้ในอนาคต ถ้ามี UI field โทร)
+  /// ignore: unused_element
   String get _phoneText {
-    final tel = widget.model['tel']?.toString() ?? '';
+    final tel = widget.model['customer_tel']?.toString() ?? '';
     if (tel.isEmpty) return '';
     return tel;
   }
 
   // ---------------------------------------------------------------
-  // Badge visibility
+  // Badge visibility (API ใหม่: เหลือแค่ request_status pill)
   // ---------------------------------------------------------------
-  bool get _showMaintenanceBadge => widget.model['needs_update'] == true;
-  bool get _showRequestBadge =>
-      widget.model['has_request'] == true ||
-      widget.model['need_review'] == true ||
-      _requestStatusText.isNotEmpty;
-  bool get _showNewAttachment => widget.model['has_new_attachment'] == true;
+  bool get _showRequestBadge {
+    final status = widget.model['status']?.toString() ?? '';
+    return status.isNotEmpty; // มี status จาก API (เช่น "under_review")
+  }
+
+  bool get _showMaintenanceBadge => false;
+  bool get _showNewAttachment => false;
 
   String get _requestStatusText {
-    final v = widget.model['request_status']?.toString() ??
-        widget.model['status']?.toString() ??
-        widget.model['status_label']?.toString() ??
-        '';
-    return v;
+    return widget.model['status']?.toString() ?? '';
   }
 
   Color get _requestStatusColor {

@@ -18,24 +18,20 @@ class AreaMenuPagination extends StatefulWidget {
 }
 
 class _AreaMenuPaginationState extends State<AreaMenuPagination> {
-  bool _expanded = false;
-
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AreaMenuViewModel>();
-    final canPrev = (vm.linksPrev?.isNotEmpty ?? false) && !vm.isLoading;
-    final canNext = (vm.linksNext?.isNotEmpty ?? false) && !vm.isLoading;
 
     return LayoutBuilder(
       builder: (context, c) {
         final isMobile = c.maxWidth < 520;
         if (!isMobile) {
-          return _buildFull(label: '${vm.currentPage} / ${vm.lastPage}');
+          return _buildFull(label: '${vm.total} ล็อค');
         }
         return _buildCollapsible(
-          label: '${vm.currentPage} / ${vm.lastPage}',
-          canPrev: canPrev,
-          canNext: canNext,
+          label: '${vm.total} ล็อค',
+          canPrev: false,
+          canNext: false,
         );
       },
     );
@@ -53,8 +49,8 @@ class _AreaMenuPaginationState extends State<AreaMenuPagination> {
         label: label,
         onPrev: null,
         onNext: null,
-        canPrev: true,
-        canNext: true,
+        canPrev: false,
+        canNext: false,
       ),
     );
   }
@@ -64,48 +60,20 @@ class _AreaMenuPaginationState extends State<AreaMenuPagination> {
     required bool canPrev,
     required bool canNext,
   }) {
-    final vm = context.read<AreaMenuViewModel>();
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.easeOutCubic,
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(LaRadius.md),
         border: Border.all(color: LaColors.border, width: 1),
       ),
-      child: Material(
-        type: MaterialType.transparency,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(LaRadius.md),
-          onTap: () => setState(() => _expanded = !_expanded),
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 220),
-            curve: Curves.easeOutCubic,
-            child: _expanded
-                ? _RowContent(
-                    label: label,
-                    onPrev: () {
-                      vm.loadPage(vm.linksPrev);
-                      setState(() => _expanded = false);
-                    },
-                    onNext: () {
-                      vm.loadPage(vm.linksNext);
-                      setState(() => _expanded = false);
-                    },
-                    canPrev: canPrev,
-                    canNext: canNext,
-                  )
-                : SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: Icon(
-                      Icons.chevron_right_rounded,
-                      size: 18,
-                      color: LaColors.textSecondary,
-                    ),
-                  ),
-          ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontFamily: LaText.fontBold,
+          fontSize: 13,
+          color: LaColors.primaryDark,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

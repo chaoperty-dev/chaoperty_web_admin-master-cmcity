@@ -21,11 +21,16 @@ import '../../viewmodels/area_menu_view_model.dart';
 class AreaMenuTable extends StatelessWidget {
   const AreaMenuTable({super.key});
 
-  // Map status label — ใช้ field 'st' จาก area API (เช่น "สัญญาปัจจุบัน")
-  // ถ้า ldate น้อยกว่าวันนี้ บังคับแสดง "หมดสัญญา"
+  // Map status label — derive จาก item (API areas/overview)
+  // - ldate < วันนี้ && requester != null → "หมดสัญญา"
+  // - requester != null → "เช่าอยู่"
+  // - requester == null → "ว่าง"
   String _statusLabel(Map<String, dynamic> m) {
+    final requester = m['requester']?.toString() ?? '';
+    final hasRequester = requester.isNotEmpty;
     final ldateRaw = m['ldate']?.toString() ?? '';
-    if (ldateRaw.isNotEmpty) {
+
+    if (hasRequester && ldateRaw.isNotEmpty) {
       try {
         final ldate = DateTime.parse(ldateRaw);
         final today = DateTime.now();
@@ -35,18 +40,15 @@ class AreaMenuTable extends StatelessWidget {
       } catch (_) {}
     }
 
-    final st = m['st']?.toString() ?? '';
-    if (st.isEmpty) return 'ว่าง';
-    return st;
+    if (hasRequester) return 'เช่าอยู่';
+    return 'ว่าง';
   }
 
-  /// Format รหัสพื้นที่: ln + ln_q (เช่น "KL1" + "ล็อค1")
+  /// Format รหัสล็อค — เก็บ helper ไว้ (ใช้ผ่าน model['lock'] ตรง ๆ ใน _dataRow)
+  /// ignore: unused_element
   String _formatLocationCode(Map<String, dynamic> m) {
-    final ln = m['ln']?.toString() ?? '';
-    final lnQ = m['ln_q']?.toString() ?? '';
-    if (ln.isEmpty && lnQ.isEmpty) return '-';
-    if (lnQ.isEmpty || lnQ == '-') return ln;
-    return '$ln-$lnQ';
+    final lock = m['lock']?.toString() ?? '';
+    return lock.isEmpty ? '-' : lock;
   }
 
   /// Mask ชื่อผู้ติดต่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
@@ -58,14 +60,12 @@ class AreaMenuTable extends StatelessWidget {
         name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
     if (words.isEmpty) return '-';
 
-    // ถ้ามีคำเดียว: mask 3 ตัวอักษรท้ายของคำนั้น
     if (words.length == 1) {
       final w = words.first;
       if (w.length <= 3) return '***';
       return '${w.substring(0, w.length - 3)}***';
     }
 
-    // ถ้ามีหลายคำ: คำสุดท้าย mask 3 ตัวอักษรท้าย คำอื่นแสดงเต็ม
     final lastIndex = words.length - 1;
     final last = words[lastIndex];
     if (last.length <= 3) {
@@ -95,8 +95,12 @@ class AreaMenuTable extends StatelessWidget {
     if (vm.requests.isEmpty) {
       return _EmptyState(
         hasFilter: vm.searchQuery.isNotEmpty ||
-            (vm.selectedZoneSub != null && vm.selectedZoneSub != 'ทั้งหมด') ||
-            (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด'),
+            (vm.selectedZoneSub.isNotEmpty &&
+                vm.selectedZoneSub != 'ทั้งหมด') ||
+            (vm.selectedZone.isNotEmpty &&
+                vm.selectedZone != 'ทั้งหมด') ||
+            vm.selectedStatus != 'ทั้งหมด' ||
+            vm.selectedRequestStatus != 'ทั้งหมด',
         onClear: vm.refresh,
       );
     }
@@ -134,10 +138,10 @@ class AreaMenuTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เลขที่สัญญา', flex: 2),
-          _HeaderCell(label: 'บริเวณ', flex: 1),
-          _HeaderCell(label: 'โซนพื้นที่', flex: 2),
-          _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
+          _HeaderCell(label: 'ล็อค', flex: 2),
+          _HeaderCell(label: 'โซน', flex: 2),
+          _HeaderCell(label: 'หมวด', flex: 2),
+          _HeaderCell(label: 'รหัสลูกค้า', flex: 2),
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
           _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
@@ -164,13 +168,13 @@ class AreaMenuTable extends StatelessWidget {
             child: Center(
                 child: _ViewButton(onTap: () => vm.onViewRequest(model))),
           ),
-          _Cell(value: (model['cid'] ?? '-').toString(), flex: 2),
-          _Cell(value: (model['sub_zonename'] ?? '-').toString(), flex: 1),
-          _Cell(value: (model['zn'] ?? '-').toString(), flex: 2),
-          _Cell(value: _formatLocationCode(model), flex: 2, isMono: true),
+          _Cell(value: (model['lock'] ?? '-').toString(), flex: 2, isMono: true),
+          _Cell(value: (model['zone'] ?? '-').toString(), flex: 2),
+          _Cell(value: (model['subzone'] ?? '-').toString(), flex: 2),
+          _Cell(value: (model['customer_no'] ?? '-').toString(), flex: 2, isMono: true),
           _Cell(
-            value: _maskName(model['cname']),
-            tooltip: model['cname']?.toString(),
+            value: _maskName(model['requester']),
+            tooltip: model['requester']?.toString(),
             flex: 3,
           ),
           _Cell(
