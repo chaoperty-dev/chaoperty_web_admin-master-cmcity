@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import 'menu_version.dart';
 import '../ChiangMai_Municipality/unity/SecurePrefs_helper.dart';
 import '../router/auth_state_notifier.dart';
 import 'app_navigation_rail.dart';
@@ -39,17 +40,31 @@ class AppShell extends StatelessWidget {
               Expanded(
                 child: Material(
                   type: MaterialType.transparency,
-                  child: child,
+                  child: _wrapWithVersionFooter(context, child),
                 ),
               ),
             ],
           );
         } else {
-          return _MobileLayout(child: child);
+          return _MobileLayout(child: _wrapWithVersionFooter(context, child));
         }
       },
     );
   }
+}
+
+/// ห่อ child ด้วย footer เวอร์ชันเมนู (เฉพาะหน้าหลักของแต่ละเมนู)
+/// ถ้า route ไม่ใช่หน้าหลัก จะคืน child ตามเดิม (ไม่แสดง footer)
+Widget _wrapWithVersionFooter(BuildContext context, Widget child) {
+  final location = GoRouterState.of(context).matchedLocation;
+  final key = menuKeyForLocation(location);
+  if (key == null) return child;
+  return Column(
+    children: [
+      Expanded(child: child),
+      MenuVersionFooter(menuKey: key),
+    ],
+  );
 }
 
 /// Layout สำหรับ Mobile — AppBar + Drawer + Content (wrap Material)
