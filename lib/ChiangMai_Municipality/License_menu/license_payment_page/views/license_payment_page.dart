@@ -1,7 +1,7 @@
 // ============================================================================
 // license_payment_page.dart
 // ============================================================================
-// Main View — "คำขอต่อสัญญา" (Tab แรก)
+// Main View — "การรับชำระ"
 //
 // ใช้งานได้ 2 รูปแบบ:
 //   ✅ LicensePaymentPage.create(...) — สร้าง + wrap Provider ให้อัตโนมัติ (แนะนำ)
@@ -115,7 +115,6 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
         );
         break;
       case LicensePaymentNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
         final title = context.read<LicensePaymentViewModel>().title;
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -127,10 +126,7 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
           ),
         );
         break;
-      case LicensePaymentNavigateDetailEvent(
-          :final paymentUuid, :final title
-        ):
-        // เปิดหน้า Detail ของ Payment detail
+      case LicensePaymentNavigateDetailEvent(:final paymentUuid, :final title):
         Navigator.of(context).push(
           MaterialPageRoute(
             builder: (_) => LicensePaymentDetailPage.create(
@@ -143,7 +139,6 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
         break;
       case LicensePaymentCreatedEvent():
       case LicensePaymentPaidEvent():
-        // แสดง snackbar success — viewmodel จะ refresh list อัตโนมัติ
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Text('ดำเนินการสำเร็จ'),
@@ -163,7 +158,6 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicensePaymentViewModel>();
     return Container(
       color: LaColors.surface,
       child: Padding(
@@ -171,16 +165,10 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LicensePaymentHeader(
-              title: vm.title,
-              subtitle:
-                  'รับชำระค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกการชำระเงิน',
-              totalCount: vm.total,
-            ),
+            const _PaymentPageHeader(),
             const SizedBox(height: LaSpace.lg),
             const LicensePaymentZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row (pagination inline)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -190,7 +178,6 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
-            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
             Expanded(
               child: SingleChildScrollView(
                 child: const LicensePaymentTable(),
@@ -199,6 +186,23 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
           ],
         ),
       ),
+    );
+  }
+}
+
+// =============================================================================
+// Header — แยกเป็น const widget เพื่อไม่ rebuild ทุก notify
+// =============================================================================
+class _PaymentPageHeader extends StatelessWidget {
+  const _PaymentPageHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<LicensePaymentViewModel>();
+    return LicensePaymentHeader(
+      title: vm.title,
+      subtitle: 'รับชำระค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกการชำระเงิน',
+      totalCount: vm.total,
     );
   }
 }

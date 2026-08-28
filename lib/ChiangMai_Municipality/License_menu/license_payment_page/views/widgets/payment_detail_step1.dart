@@ -27,8 +27,196 @@ class PaymentDetailStep1 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicensePaymentDetailViewModel>();
+    return DefaultTabController(
+      length: 2,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ─── Segmented tabs (สไตล์เดียวกับ attach_detail_step1) ───
+          const _PaymentSegmentedTabs(),
+          // ─── TabBarView: 2 แท็บ ───
+          const Expanded(
+            child: TabBarView(
+              physics: BouncingScrollPhysics(),
+              children: [
+                // Tab 1: ข้อมูลการชำระ (เนื้อหาเดิม)
+                _PaymentInfoTab(),
+                // Tab 2: ข้อมูลคำขอ
+                _RequestInfoTab(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
+// =============================================================================
+// Segmented Tabs — sliding indicator (สไตล์เดียวกับ attach_detail_step1)
+// =============================================================================
+class _PaymentSegmentedTabs extends StatelessWidget {
+  const _PaymentSegmentedTabs();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: LaSpace.md),
+      height: 44,
+      decoration: BoxDecoration(
+        color: LaColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(color: LaColors.border, width: 1),
+      ),
+      child: Builder(
+        builder: (context) {
+          final controller = DefaultTabController.of(context);
+          return AnimatedBuilder(
+            animation: controller,
+            builder: (context, _) {
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  final selectedIndex = controller.index;
+                  final tabWidth = (constraints.maxWidth - 8) / 2;
+                  return Stack(
+                    children: [
+                      // ─── Sliding indicator ───
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        top: 4,
+                        bottom: 4,
+                        left: 4 + (selectedIndex * tabWidth),
+                        width: tabWidth,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: LaColors.cardBg,
+                            borderRadius: BorderRadius.circular(LaRadius.sm),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(.06),
+                                blurRadius: 4,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // ─── Tab labels ───
+                      TabBar(
+                        controller: controller,
+                        indicator: const BoxDecoration(),
+                        indicatorSize: TabBarIndicatorSize.label,
+                        labelColor: LaColors.primaryDark,
+                        unselectedLabelColor: LaColors.textSecondary,
+                        labelStyle: LaText.body.copyWith(
+                          fontFamily: LaText.fontBold,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          height: 1.0,
+                        ),
+                        unselectedLabelStyle: LaText.body.copyWith(
+                          fontFamily: LaText.fontBold,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          height: 1.0,
+                        ),
+                        dividerColor: Colors.transparent,
+                        splashFactory: NoSplash.splashFactory,
+                        overlayColor:
+                            MaterialStateProperty.all(Colors.transparent),
+                        tabs: const [
+                          Tab(
+                            height: double.infinity,
+                            iconMargin: EdgeInsets.zero,
+                            child: _TabLabel(
+                              icon: Icons.payments_outlined,
+                              label: 'ข้อมูลการชำระ',
+                              index: 0,
+                            ),
+                          ),
+                          Tab(
+                            height: double.infinity,
+                            iconMargin: EdgeInsets.zero,
+                            child: _TabLabel(
+                              icon: Icons.info_outline_rounded,
+                              label: 'ข้อมูลคำขอ',
+                              index: 1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Tab Label — icon + label ใช้ index เพื่อเปลี่ยนสีตาม active
+// =============================================================================
+class _TabLabel extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final int index;
+  const _TabLabel({
+    required this.icon,
+    required this.label,
+    required this.index,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = DefaultTabController.of(context);
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final isActive = controller.index == index;
+        final color = isActive ? LaColors.primaryDark : LaColors.textSecondary;
+        return Center(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontFamily: LaText.fontBold,
+                    fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+                    fontSize: 13,
+                    height: 1.0,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// =============================================================================
+// Tab 1: ข้อมูลการชำระ (เนื้อหาเดิม — summary + prepayment + status + footer)
+// =============================================================================
+class _PaymentInfoTab extends StatelessWidget {
+  const _PaymentInfoTab();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<LicensePaymentDetailViewModel>();
     return SingleChildScrollView(
       padding: const EdgeInsets.all(LaSpace.lg),
       child: Center(
@@ -37,44 +225,6 @@ class PaymentDetailStep1 extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ─── Header band ───
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: LaSpace.md, vertical: LaSpace.sm),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      LaColors.primaryLight.withOpacity(.35),
-                      LaColors.primaryLight.withOpacity(.1),
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
-                  borderRadius: BorderRadius.circular(LaRadius.md),
-                  border: Border.all(color: LaColors.primary.withOpacity(.15)),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 32,
-                      height: 32,
-                      decoration: BoxDecoration(
-                        color: LaColors.primaryDark,
-                        borderRadius: BorderRadius.circular(LaRadius.sm),
-                      ),
-                      child: const Icon(Icons.receipt_long_rounded,
-                          size: 18, color: Colors.white),
-                    ),
-                    const SizedBox(width: LaSpace.sm),
-                    const Text(
-                      'ตรวจสอบรายการรับชำระ',
-                      style: LaText.h2,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: LaSpace.md),
-
               // ─── Loading / Error / Data ───
               if (vm.isLoading && vm.detail == null)
                 const _LoadingBlock()
@@ -129,6 +279,46 @@ class PaymentDetailStep1 extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Tab 2: ข้อมูลคำขอ (placeholder)
+// =============================================================================
+class _RequestInfoTab extends StatelessWidget {
+  const _RequestInfoTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(LaSpace.lg),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1400),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const SizedBox(height: LaSpace.xxl),
+              Icon(
+                Icons.construction_outlined,
+                size: 48,
+                color: LaColors.textSecondary.withOpacity(.5),
+              ),
+              const SizedBox(height: LaSpace.md),
+              Text(
+                'ข้อมูลคำขอ',
+                style: LaText.h2.copyWith(color: LaColors.textSecondary),
+              ),
+              const SizedBox(height: LaSpace.sm),
+              Text(
+                'อยู่ระหว่างพัฒนา',
+                style: LaText.bodyMuted,
               ),
             ],
           ),
