@@ -12,6 +12,7 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show immutable;
 
 import '../../../../unity/FormatPhone.dart';
 import '../../models/license_payment_attachment.dart';
@@ -40,8 +41,9 @@ class PaymentDetailStep1 extends StatelessWidget {
       child: Builder(
         builder: (context) {
           // ─── ดึง requestUuid จาก PaymentDetailViewModel (ส่งต่อให้ Tab 2) ───
-          final uuid =
-              context.watch<LicensePaymentDetailViewModel>().requestUuid;
+          final uuid = context.select<LicensePaymentDetailViewModel, String?>(
+            (v) => v.requestUuid,
+          );
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -226,79 +228,131 @@ class _TabLabel extends StatelessWidget {
 // =============================================================================
 // Tab 1: ข้อมูลการชำระ (เนื้อหาเดิม — summary + prepayment + status + footer)
 // =============================================================================
+/// Snapshot ของ VM fields ที่ _PaymentInfoTab ใช้ → ให้ Selector เทียบกับ deep equality
+@immutable
+class _PaymentInfoSnapshot {
+  final bool isLoading;
+  final PaymentDetail? detail;
+  final String? errorMessage;
+  final PrepaymentData? prepayment;
+  final RequestPaymentsResponse? payments;
+
+  const _PaymentInfoSnapshot({
+    required this.isLoading,
+    required this.detail,
+    required this.errorMessage,
+    required this.prepayment,
+    required this.payments,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _PaymentInfoSnapshot &&
+        other.isLoading == isLoading &&
+        other.errorMessage == errorMessage &&
+        identical(other.detail, detail) &&
+        identical(other.prepayment, prepayment) &&
+        identical(other.payments, payments);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        isLoading,
+        errorMessage,
+        detail,
+        prepayment,
+        payments,
+      );
+}
+
 class _PaymentInfoTab extends StatelessWidget {
   const _PaymentInfoTab();
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicensePaymentDetailViewModel>();
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(LaSpace.lg),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1400),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ─── Loading / Error / Data ───
-              if (vm.isLoading && vm.detail == null)
-                const _LoadingBlock()
-              else if (vm.errorMessage != null && vm.detail == null)
-                _ErrorBlock(message: vm.errorMessage!)
-              else if (vm.detail == null)
-                _EmptyBlock(uuid: vm.detail?.uuid)
-              else
-                _PaymentSummaryCard(detail: vm.detail!),
-
-              const SizedBox(height: LaSpace.lg),
-
-              // ─── Prepayment (การจ่ายล่วงหน้า) ───
-              if (vm.prepayment != null) ...[
-                _PrepaymentCard(
-                  prepayment: vm.prepayment!,
-                  payments: vm.payments?.data ?? const [],
-                  onProceed: (item) => _handleProceed(context, item, vm),
-                ),
-                const SizedBox(height: LaSpace.lg),
-              ],
-
-              // ─── สถานะการชำระ (จาก GET .../payments) ───
-              if (vm.payments != null) ...[
-                _PaymentStatusCard(
-                  payments: vm.payments!,
-                  details: vm.prepayment?.details ?? const [],
-                ),
-                const SizedBox(height: LaSpace.lg),
-              ],
-
-              // ─── Footer note ───
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: LaSpace.md, vertical: LaSpace.sm),
-                decoration: BoxDecoration(
-                  color: LaColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(LaRadius.sm),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.info_outline_rounded,
-                        size: 14, color: LaColors.textMuted),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                        'สำหรับตรวจสอบเบื้องต้น — รายละเอียดเพิ่มเติมจะแสดงใน Step ถัดไป',
-                        style: LaText.caption,
-                        maxLines: 2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    // ✅ Selector — rebuild เฉพาะเมื่อ fields ที่ UI ใช้เปลี่ยน
+    return Selector<LicensePaymentDetailViewModel, _PaymentInfoSnapshot>(
+      selector: (_, vm) => _PaymentInfoSnapshot(
+        isLoading: vm.isLoading,
+        detail: vm.detail,
+        errorMessage: vm.errorMessage,
+        prepayment: vm.prepayment,
+        payments: vm.payments,
       ),
+      shouldRebuild: (a, b) => a != b,
+      builder: (context, snap, _) {
+        // ใช้ context.read สำหรับ action callbacks (onProceed)
+        final vm = context.read<LicensePaymentDetailViewModel>();
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(LaSpace.lg),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ─── Loading / Error / Data ───
+                  if (snap.isLoading && snap.detail == null)
+                    const _LoadingBlock()
+                  else if (snap.errorMessage != null && snap.detail == null)
+                    _ErrorBlock(message: snap.errorMessage!)
+                  else if (snap.detail == null)
+                    _EmptyBlock(uuid: snap.detail?.uuid)
+                  else
+                    _PaymentSummaryCard(detail: snap.detail!),
+
+                  const SizedBox(height: LaSpace.lg),
+
+                  // ─── Prepayment (การจ่ายล่วงหน้า) ───
+                  if (snap.prepayment != null) ...[
+                    _PrepaymentCard(
+                      prepayment: snap.prepayment!,
+                      payments: snap.payments?.data ?? const [],
+                      onProceed: (item) => _handleProceed(context, item, vm),
+                    ),
+                    const SizedBox(height: LaSpace.lg),
+                  ],
+
+                  // ─── สถานะการชำระ (จาก GET .../payments) ───
+                  if (snap.payments != null) ...[
+                    _PaymentStatusCard(
+                      payments: snap.payments!,
+                      details: snap.prepayment?.details ?? const [],
+                    ),
+                    const SizedBox(height: LaSpace.lg),
+                  ],
+
+                  // ─── Footer note ───
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: LaSpace.md, vertical: LaSpace.sm),
+                    decoration: BoxDecoration(
+                      color: LaColors.surfaceMuted,
+                      borderRadius: BorderRadius.circular(LaRadius.sm),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.info_outline_rounded,
+                            size: 14, color: LaColors.textMuted),
+                        SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
+                            'สำหรับตรวจสอบเบื้องต้น — รายละเอียดเพิ่มเติมจะแสดงใน Step ถัดไป',
+                            style: LaText.caption,
+                            maxLines: 2,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -854,7 +908,7 @@ Future<void> _openUploadDialog(
 }
 
 // ============================================================================
-// Prepayment card — รายการจ่ายล่วงหน้า (from GET .../prepayment)
+// Prepayment card — รายการที่ต้องชำระ (from GET .../prepayment)
 // ============================================================================
 
 class _PrepaymentCard extends StatelessWidget {
@@ -867,7 +921,7 @@ class _PrepaymentCard extends StatelessWidget {
     required this.onProceed,
   });
 
-  /// สถานะของแต่ละรายการจ่ายล่วงหน้า (join กับรายการชำระ)
+  /// สถานะของแต่ละรายการที่ต้องชำระ (join กับรายการชำระ)
   /// - มี payment ที่ status=paid + amount_received → ชำระแล้ว
   /// - มี payment + มี latest_attachment           → หลักฐานแล้ว รอชืนยัน
   /// - มี payment (draft/อื่นๆ)                    → รอชำระ
@@ -902,7 +956,7 @@ class _PrepaymentCard extends StatelessWidget {
                     size: 18, color: LaColors.primaryDark),
               ),
               const SizedBox(width: LaSpace.sm),
-              Text('รายการจ่ายล่วงหน้า', style: LaText.h2),
+              Text('รายการที่ต้องชำระ', style: LaText.h2),
               if (items.isNotEmpty) ...[
                 const SizedBox(width: LaSpace.sm),
                 Container(
@@ -952,7 +1006,7 @@ class _PrepaymentCard extends StatelessWidget {
               padding: const EdgeInsets.all(LaSpace.lg),
               decoration: LaDecor.softCard(),
               child: const Center(
-                child: Text('ไม่พบรายการจ่ายล่วงหน้า', style: LaText.bodyMuted),
+                child: Text('ไม่พบรายการที่ต้องชำระ', style: LaText.bodyMuted),
               ),
             )
           else
