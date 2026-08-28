@@ -1,3 +1,4 @@
+// @dart=3.0
 part of protect;
 
 ProtectResponse _decrypt(Uint8List encryptedBytes, String password) {

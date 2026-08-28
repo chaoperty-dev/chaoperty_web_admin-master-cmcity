@@ -1,3 +1,4 @@
+// @dart=3.0
 part of protect;
 
 Uint8List _buildEncryptionInfo(encryptionInfo) {

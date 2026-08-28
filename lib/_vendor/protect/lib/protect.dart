@@ -1,3 +1,10 @@
+// @dart=3.0
+// 🔧 Force language version 3.0 across library + all part files.
+// Flutter's package_config.json can pin this fork to languageVersion 2.16
+// (stale entry from a previous pub get); without an explicit override here
+// Dart infers two different language versions for the library and its parts
+// and fails with "The language version override has to be the same in the
+// library and its part(s)".
 library protect;
 
 import 'dart:collection';

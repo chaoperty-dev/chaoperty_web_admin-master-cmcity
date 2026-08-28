@@ -1,3 +1,4 @@
+// @dart=3.0
 part of protect;
 
 void prepBlob(_PROTECTBlob blob, int pos) => blob.l = pos;
