@@ -18,68 +18,119 @@ const double kLicenseMenuMobileBreakpoint = 900;
 bool _isLicenseListMobile(BuildContext context) =>
     MediaQuery.of(context).size.width < kLicenseMenuMobileBreakpoint;
 
+/// State tuple for LicenseAnnounceTable's outer Selector — only the fields
+/// that affect the row list itself. Rebuilds the table only when isLoading
+/// or the filtered list reference changes (not on every VM notify).
+@immutable
+class _TableState {
+  final bool isLoading;
+  final List<LicenseAnnounceItem> filtered;
+  const _TableState({required this.isLoading, required this.filtered});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _TableState &&
+          isLoading == other.isLoading &&
+          identical(filtered, other.filtered);
+
+  @override
+  int get hashCode => Object.hash(isLoading, identityHashCode(filtered));
+}
+
+/// Smaller tuple for the empty-state branch — reads search/zone so a
+/// typing change there doesn't rebuild the whole table.
+@immutable
+class _EmptyStateState {
+  final bool hasFilter;
+  const _EmptyStateState({required this.hasFilter});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _EmptyStateState && hasFilter == other.hasFilter;
+
+  @override
+  int get hashCode => hasFilter.hashCode;
+}
+
 class LicenseAnnounceTable extends StatelessWidget {
   const LicenseAnnounceTable({super.key});
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAnnounceViewModel>();
-
-    if (vm.isLoading && vm.items.isEmpty) {
-      return const _LoadingState();
-    }
-    if (vm.filtered.isEmpty) {
-      return _EmptyState(
-        hasFilter: vm.searchQuery.isNotEmpty || vm.selectedZoneSer != null,
-        onRefresh: vm.refresh,
-      );
-    }
-
-    // ─── Mobile (card layout) ───
-    if (_isLicenseListMobile(context)) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (vm.isLoading)
-            const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: LrColors.surfaceMuted,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(LrColors.primary),
-            ),
-          for (int i = 0; i < vm.filtered.length; i++) ...[
-            _AnnounceCard(
-              index: i,
-              item: vm.filtered[i],
-              onTap: () => vm.onView(vm.filtered[i].announcementUuid),
-            ),
-            if (i < vm.filtered.length - 1)
-              const SizedBox(height: LrSpace.sm),
-          ],
-        ],
-      );
-    }
-
-    return Container(
-      decoration: LrDecor.card(),
-      clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Header row (sticky ด้านบน)
-          _headerRow(),
-          const Divider(height: 1, color: LrColors.border),
-          // Rows — outer SingleChildScrollView (จาก page wrapper) จัดการ scroll
-          if (vm.isLoading)
-            const LinearProgressIndicator(
-              minHeight: 2,
-              backgroundColor: LrColors.surfaceMuted,
-              valueColor:
-                  AlwaysStoppedAnimation<Color>(LrColors.primary),
-            ),
-          for (int i = 0; i < vm.filtered.length; i++)
-            _dataRow(context, vm, vm.filtered[i], i),
-        ],
+    // ✅ Selector — เฉพาะ isLoading + filtered เปลี่ยนเท่านั้นที่ rebuild table
+    //    searchQuery / selectedZoneSer rebuild เฉพาะ empty-state branch
+    return Selector<LicenseAnnounceViewModel, _TableState>(
+      selector: (_, vm) => _TableState(
+        isLoading: vm.isLoading,
+        filtered: vm.filtered,
       ),
+      builder: (context, state, _) {
+        final vm = context.read<LicenseAnnounceViewModel>();
+        if (state.isLoading && state.filtered.isEmpty) {
+          return const _LoadingState();
+        }
+        if (state.filtered.isEmpty) {
+          // Empty state ต้องอ่าน searchQuery/selectedZoneSer ด้วย — ใช้ Consumer เฉพาะ branch
+          return Selector<LicenseAnnounceViewModel, _EmptyStateState>(
+            selector: (_, vm) => _EmptyStateState(
+              hasFilter: vm.searchQuery.isNotEmpty || vm.selectedZoneSer != null,
+            ),
+            builder: (context, e, _) => _EmptyState(
+              hasFilter: e.hasFilter,
+              onRefresh: vm.refresh,
+            ),
+          );
+        }
+
+        // ─── Mobile (card layout) ───
+        if (_isLicenseListMobile(context)) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (state.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: LrColors.surfaceMuted,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(LrColors.primary),
+                ),
+              for (int i = 0; i < state.filtered.length; i++) ...[
+                _AnnounceCard(
+                  index: i,
+                  item: state.filtered[i],
+                  onTap: () => vm.onView(state.filtered[i].announcementUuid),
+                ),
+                if (i < state.filtered.length - 1)
+                  const SizedBox(height: LrSpace.sm),
+              ],
+            ],
+          );
+        }
+
+        return Container(
+          decoration: LrDecor.card(),
+          clipBehavior: Clip.antiAlias,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header row (sticky ด้านบน)
+              _headerRow(),
+              const Divider(height: 1, color: LrColors.border),
+              // Rows — outer SingleChildScrollView (จาก page wrapper) จัดการ scroll
+              if (state.isLoading)
+                const LinearProgressIndicator(
+                  minHeight: 2,
+                  backgroundColor: LrColors.surfaceMuted,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(LrColors.primary),
+                ),
+              for (int i = 0; i < state.filtered.length; i++)
+                _dataRow(context, vm, state.filtered[i], i),
+            ],
+          ),
+        );
+      },
     );
   }
 
