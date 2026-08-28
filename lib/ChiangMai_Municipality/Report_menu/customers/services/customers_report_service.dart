@@ -222,7 +222,9 @@ class CustomersReportService {
       final url = '${MyConstant().domain_v2}/admin/reports/customers/columns';
       final headers = await _buildHeaders();
       print('🔗 fetchColumns: $url');
-      final res = await _client.get(Uri.parse(url), headers: headers);
+      final res = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (res.statusCode != 200) {
         print('❌ fetchColumns status: ${res.statusCode}');
@@ -307,7 +309,9 @@ class CustomersReportService {
       final url = '${MyConstant().domain_v2}/admin/reports/customers';
       final headers = await _buildHeaders();
       print('🔗 fetchItems: $url');
-      final res = await _client.get(Uri.parse(url), headers: headers);
+      final res = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 60));
 
       if (res.statusCode != 200) {
         print('❌ fetchItems status: ${res.statusCode}');

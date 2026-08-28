@@ -166,7 +166,9 @@ class AreasReportService {
       final url = '${MyConstant().domain_v2}/admin/reports/areas/columns';
       final headers = await _buildHeaders();
       print('🔗 fetchColumns: $url');
-      final res = await _client.get(Uri.parse(url), headers: headers);
+      final res = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
       if (res.statusCode != 200) {
         return _defaultColumns();
@@ -238,7 +240,9 @@ class AreasReportService {
           '${MyConstant().domain_v2}/admin/reports/areas/overview?fields=$_overviewFields';
       final headers = await _buildHeaders();
       print('🔗 fetchOverview: $url');
-      final res = await _client.get(Uri.parse(url), headers: headers);
+      final res = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 60));
 
       if (res.statusCode != 200) {
         return const AreasReportResult();
