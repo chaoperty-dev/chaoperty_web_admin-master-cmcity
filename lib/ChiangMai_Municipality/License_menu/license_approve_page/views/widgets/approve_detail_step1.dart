@@ -7,6 +7,7 @@
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/foundation.dart' show immutable;
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -35,8 +36,10 @@ class ApproveDetailStep1 extends StatefulWidget {
 class _ApproveDetailStep1State extends State<ApproveDetailStep1> {
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseApproveDetailViewModel>();
-    final uuid = vm.requestUuid;
+    // ✅ context.select — rebuild เฉพาะตอน requestUuid เปลี่ยน
+    final uuid = context.select<LicenseApproveDetailViewModel, String?>(
+      (vm) => vm.requestUuid,
+    );
 
     return DefaultTabController(
       length: 2,
@@ -224,54 +227,116 @@ class _TabLabel extends StatelessWidget {
 // =============================================================================
 // Tab 1: ข้อมูลการอนุมัติ (เนื้อหาเดิม)
 // =============================================================================
+
+/// Snapshot ของ VM fields ที่ _ApproveInfoTab ใช้ → ให้ Selector เทียบกับ deep equality
+@immutable
+class _ApproveInfoSnapshot {
+  final bool isLoading;
+  final String? loadError;
+  final ReviewModel? currentRequest;
+  final String? requestUuid;
+  final List<ApprovalStepV2> currentSteps;
+  final bool isLoadingApproval;
+  final String? approvalError;
+
+  const _ApproveInfoSnapshot({
+    required this.isLoading,
+    required this.loadError,
+    required this.currentRequest,
+    required this.requestUuid,
+    required this.currentSteps,
+    required this.isLoadingApproval,
+    required this.approvalError,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _ApproveInfoSnapshot &&
+        other.isLoading == isLoading &&
+        other.loadError == loadError &&
+        identical(other.currentRequest, currentRequest) &&
+        other.requestUuid == requestUuid &&
+        identical(other.currentSteps, currentSteps) &&
+        other.isLoadingApproval == isLoadingApproval &&
+        other.approvalError == approvalError;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        isLoading,
+        loadError,
+        currentRequest,
+        requestUuid,
+        currentSteps,
+        isLoadingApproval,
+        approvalError,
+      );
+}
+
 class _ApproveInfoTab extends StatelessWidget {
   const _ApproveInfoTab();
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseApproveDetailViewModel>();
+    // ✅ Selector — rebuild เฉพาะเมื่อ fields ที่ UI ใช้เปลี่ยน
+    //    actingStepUuid/isActing ถูก Consumer ใน _StepCard subscribe แยก
+    return Selector<LicenseApproveDetailViewModel, _ApproveInfoSnapshot>(
+      selector: (_, vm) => _ApproveInfoSnapshot(
+        isLoading: vm.isLoading,
+        loadError: vm.loadError,
+        currentRequest: vm.currentRequest,
+        requestUuid: vm.requestUuid,
+        currentSteps: vm.currentSteps,
+        isLoadingApproval: vm.isLoadingApproval,
+        approvalError: vm.approvalError,
+      ),
+      shouldRebuild: (a, b) => a != b,
+      builder: (context, snap, _) {
+        // ใช้ context.read เพื่อ pass VM ให้ _RoundsSection (สำหรับ actions)
+        final vm = context.read<LicenseApproveDetailViewModel>();
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(LaSpace.lg),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1400),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // ─── Header band ───
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: LaSpace.md, vertical: LaSpace.sm),
-                decoration: BoxDecoration(
-                  color: LaColors.primaryLight.withOpacity(.25),
-                  borderRadius: BorderRadius.circular(LaRadius.md),
-                ),
-                child: const Row(
-                  children: [
-                    Icon(Icons.check_circle_rounded,
-                        size: 18, color: LaColors.primaryDark),
-                    SizedBox(width: 8),
-                    Text('ตรวจสอบคำขอ', style: LaText.h2),
-                  ],
-                ),
-              ),
-              const SizedBox(height: LaSpace.md),
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(LaSpace.lg),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1400),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ─── Header band ───
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: LaSpace.md, vertical: LaSpace.sm),
+                    decoration: BoxDecoration(
+                      color: LaColors.primaryLight.withOpacity(.25),
+                      borderRadius: BorderRadius.circular(LaRadius.md),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.check_circle_rounded,
+                            size: 18, color: LaColors.primaryDark),
+                        SizedBox(width: 8),
+                        Text('ตรวจสอบคำขอ', style: LaText.h2),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: LaSpace.md),
 
-              // ─── Loading / Error / Data ───
-              if (vm.isLoading)
-                const _LoadingBlock()
-              else if (vm.loadError != null)
-                _ErrorBlock(message: vm.loadError!)
-              else if (vm.currentRequest == null)
-                _EmptyBlock(uuid: vm.requestUuid)
-              else
-                _RequestSummaryCard(model: vm.currentRequest!),
+                  // ─── Loading / Error / Data ───
+                  if (snap.isLoading)
+                    const _LoadingBlock()
+                  else if (snap.loadError != null)
+                    _ErrorBlock(message: snap.loadError!)
+                  else if (snap.currentRequest == null)
+                    _EmptyBlock(uuid: snap.requestUuid)
+                  else
+                    _RequestSummaryCard(model: snap.currentRequest!),
 
-              const SizedBox(height: LaSpace.lg),
+                  const SizedBox(height: LaSpace.lg),
 
-              // ─── Section: ขั้นตอนการส่งคำร้องขออนุมัติ (read-only) ───
-              _RoundsSection(vm: vm),
+                  // ─── Section: ขั้นตอนการส่งคำร้องขออนุมัติ (read-only) ───
+                  _RoundsSection(vm: vm),
 
               const SizedBox(height: LaSpace.lg),
 
@@ -292,6 +357,8 @@ class _ApproveInfoTab extends StatelessWidget {
           ),
         ),
       ),
+    );
+      },
     );
   }
 }
