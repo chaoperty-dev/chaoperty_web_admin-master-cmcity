@@ -14,7 +14,7 @@
 // ============================================================================
 
 // ignore: avoid_web_libraries_in_flutter
-import 'dart:io' show File;
+import 'dart:io' show Directory, File;
 import 'dart:typed_data';
 
 import 'package:excel_dart/excel_dart.dart' deferred as ed show Excel;
@@ -60,18 +60,23 @@ class _IoExporter implements CustomersReportExporter {
       password: password,
     );
 
-    // 2) ✅ Build xlsx + encrypt ใน background isolate
-    final bytes = await compute(_buildExcelBytesIsolate, input);
-
-    // 3) บันทึกชื่อไฟล์
+    // 2) ตั้งชื่อไฟล์
     final ts = DateTime.now()
         .toIso8601String()
         .replaceAll(':', '-')
         .replaceAll('.', '-');
     final filename = 'customers_report_$ts.xlsx';
 
+    // 3) ✅ Build xlsx + encrypt ใน background isolate
+    //    parallel กับ getTemporaryDirectory — ทั้งสองเป็น async ops อิสระกัน
+    final results = await Future.wait([
+      compute(_buildExcelBytesIsolate, input),
+      pp.getTemporaryDirectory(),
+    ]);
+    final bytes = results[0] as List<int>;
+    final dir = results[1] as Directory;
+
     // 4) Save → temp dir
-    final dir = await pp.getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
     // ✅ Drop flush:true — saves 50-300ms on Android by skipping fsync.
     // File is in temp dir (not critical data); share dialog reads immediately.
