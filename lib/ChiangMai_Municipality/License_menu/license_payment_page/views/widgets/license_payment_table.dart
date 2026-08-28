@@ -330,12 +330,27 @@ class _PaymentCard extends StatelessWidget {
                 ],
               ),
               const Divider(height: LaSpace.sm, color: LaColors.border),
-              _CardRow(label: 'รายการ', value: moduleText),
-              _CardRow(label: 'บริเวณ', value: task.details.subzone),
-              _CardRow(label: 'โซนพื้นที่', value: task.details.zn),
-              _CardRow(label: 'รหัสพื้นที่', value: lnFallback, isMono: true),
               _CardRow(
-                  label: 'ชื่อผู้ติดต่อ', value: name),
+                  icon: Icons.assignment_outlined,
+                  label: 'รายการ',
+                  value: moduleText),
+              _CardRow(
+                  icon: Icons.place_outlined,
+                  label: 'บริเวณ',
+                  value: task.details.subzone),
+              _CardRow(
+                  icon: Icons.layers_outlined,
+                  label: 'โซนพื้นที่',
+                  value: task.details.zn),
+              _CardRow(
+                  icon: Icons.tag,
+                  label: 'รหัสพื้นที่',
+                  value: lnFallback,
+                  isMono: true),
+              _CardRow(
+                  icon: Icons.person_outline,
+                  label: 'ชื่อผู้ติดต่อ',
+                  value: name),
               // ─── ชำระ (payment progress) — เหมือนตาราง ───
               Padding(
                 padding: const EdgeInsets.only(bottom: 2),
@@ -364,6 +379,7 @@ class _PaymentCard extends StatelessWidget {
                 ),
               ),
               _CardRow(
+                icon: Icons.fingerprint,
                 label: 'รหัสรายการ',
                 value: _shortUuid(task.uuid),
                 isMono: true,
@@ -383,11 +399,13 @@ class _PaymentCard extends StatelessWidget {
 }
 
 class _CardRow extends StatelessWidget {
+  final IconData? icon;
   final String label;
   final String value;
   final bool isMono;
   final bool muted;
   const _CardRow({
+    this.icon,
     required this.label,
     required this.value,
     this.isMono = false,
@@ -401,6 +419,10 @@ class _CardRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: LaColors.textSecondary),
+            const SizedBox(width: 6),
+          ],
           SizedBox(
             width: 80,
             child: Text(
