@@ -20,9 +20,6 @@ import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
-// import '../../../../unity/FormatPhone.dart'; // คอมเมนต์ปิดเบอร์โทร
 import '../../models/fact_check_item.dart';
 import '../theme/license_fact_check_theme.dart';
 import '../../viewmodels/license_fact_check_view_model.dart';
@@ -437,8 +434,6 @@ class _FactCheckCard extends StatelessWidget {
     final palette = StatusPalette.of(item.statusLabel);
     final moduleLabel = item.moduleNameTh.isEmpty ? '-' : item.moduleNameTh;
     final name = _maskName(item.customerName);
-    final submitted =
-        formatFactCheckDate(item.submittedAt ?? item.createdAt);
 
     return Material(
       type: MaterialType.transparency,
@@ -488,19 +483,54 @@ class _FactCheckCard extends StatelessWidget {
                 ],
               ),
               const Divider(height: LaSpace.lg, color: LaColors.border),
+              _CardRow(label: 'รายการ', value: moduleLabel),
+              _CardRow(label: 'บริเวณ', value: item.subzone),
+              _CardRow(label: 'โซนพื้นที่', value: item.zn),
+              _CardRow(label: 'รหัสพื้นที่', value: item.ln, isMono: true),
               _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
-              // _CardRow(label: 'เบอร์โทร', value: phone, isMono: true), // ปิดเบอร์โทร
-              if (item.subzone.isNotEmpty)
-                  _CardRow(label: 'บริเวณ', value: item.subzone),
-              if (item.zn.isNotEmpty)
-                  _CardRow(label: 'โซนพื้นที่', value: item.zn),
-              _CardRow(
-                  label: 'รหัสพื้นที่', value: item.ln, isMono: true),
-              _CardRow(
-                  label: 'วันที่ส่งคำร้อง', value: submitted, isMono: true),
-              _CardRow(
-                label: 'ผ่านตรวจ',
-                value: item.inspectionPassed ? 'ผ่าน' : 'รอ',
+              // ─── กำลังตรวจสอบ (review check) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'กำลังตรวจสอบ',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _ReviewCheck(review: item.inspectionReview),
+                    ),
+                  ],
+                ),
+              ),
+              // ─── ผ่านการตรวจสอบ (passed) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'ผ่านการตรวจสอบ',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _BoolCheck(value: item.inspectionPassed),
+                    ),
+                  ],
+                ),
               ),
               _CardRow(
                 label: 'รหัสรายการ',
