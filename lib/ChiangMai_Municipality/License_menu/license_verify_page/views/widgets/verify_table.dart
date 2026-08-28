@@ -17,9 +17,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
-import '../../../../unity/FormatPhone.dart';
 import '../../models/verify_attachment_item.dart';
 import '../theme/license_verify_theme.dart';
 import '../../viewmodels/license_verify_view_model.dart';
@@ -803,12 +800,6 @@ class _VerifyListCard extends StatelessWidget {
         : task.moduleCode;
     final leaseLn = task.ln.isEmpty ? '-' : task.ln;
     final name = _maskName(task.customerName);
-    final phone = _maskPhone(formatPhoneNumber(task.customerTel));
-    final endDate = formatDate(
-        task.submittedAt?.isNotEmpty == true
-            ? task.submittedAt!
-            : (task.createdAt ?? ''),
-        type: DateFormatType.dmy);
 
     return Material(
       type: MaterialType.transparency,
@@ -861,18 +852,60 @@ class _VerifyListCard extends StatelessWidget {
               const Divider(height: LaSpace.lg, color: LaColors.border),
               // ─── Row 2: รายละเอียด (label/value grid) ───
               _CardRow(label: 'ชื่อผู้ติดต่อ', value: name, flexValue: 2),
-              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
-              if (task.subzone.isNotEmpty)
-                _CardRow(label: 'บริเวณ', value: task.subzone),
-              if (task.zn.isNotEmpty)
-                _CardRow(label: 'โซนพื้นที่', value: task.zn),
+              _CardRow(label: 'บริเวณ', value: task.subzone),
+              _CardRow(label: 'โซนพื้นที่', value: task.zn),
               _CardRow(label: 'รหัสพื้นที่', value: leaseLn, isMono: true),
-              _CardRow(label: 'วันที่ส่งคำร้อง', value: endDate, isMono: true),
-              _CardRow(
-                label: 'เอกสาร',
-                value:
-                    '${task.attachmentsApproved}/${task.attachmentsTotal} (รอ ${task.attachmentsPending})',
-                isMono: true,
+              // ─── เอกสาร (attachment counters) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'เอกสาร',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 4),
+                        child: _AttachmentCounters(
+                          total: task.attachmentsTotal,
+                          pending: task.attachmentsPending,
+                          approved: task.attachmentsApproved,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // ─── ตรวจ (review all done) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'ตรวจ',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _BoolCheck(value: task.reviewAttachmentsAllDone),
+                    ),
+                  ],
+                ),
               ),
               _CardRow(
                 label: 'รหัสรายการ',
@@ -916,23 +949,6 @@ class _VerifyListCard extends StatelessWidget {
       words[lastIndex] = '${last.substring(0, last.length - 3)}***';
     }
     return words.join(' ');
-  }
-
-  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
   }
 }
 
