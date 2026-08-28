@@ -13,10 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
-// ─── ปิดคอลัมเบอร์โทรไว้ก่อน — import หยุดใช้ ───
-// import '../../../../unity/FormatPhone.dart';
 import '../../../../Model/Review_Model.dart';
 import '../theme/license_approve_theme.dart';
 import '../../viewmodels/license_approve_view_model.dart';
@@ -706,12 +702,6 @@ class _ApproveCardState extends State<_ApproveCard> {
     // ขั้นตอน: ใช้ step_name
     final stepLabel =
         (m.stepName?.isNotEmpty == true ? m.stepName : null) ?? '-';
-    // วันที่สิ้นสุด: fallback ldate → createdAt
-    final endDateRaw = (nr?.ldate?.isNotEmpty == true
-            ? nr!.ldate
-            : null) ??
-        (m.createdAt?.isNotEmpty == true ? m.createdAt : null) ??
-        '';
     final displayUuid = (m.uuid?.isNotEmpty == true ? m.uuid : m.requestUuid) ??
         '';
     return Material(
@@ -818,12 +808,13 @@ class _ApproveCardState extends State<_ApproveCard> {
               //   value: _maskPhone(formatPhoneNumber(m.client?.tel ?? '')),
               //   isMono: true,
               // ),
-              _CardRow(
-                icon: Icons.event_outlined,
-                label: 'วันที่สิ้นสุด',
-                value: formatDate(endDateRaw, type: DateFormatType.dmy),
-                isMono: true,
-              ),
+              // ─── ปิดคอลัมวันที่สิ้นสุดไว้ก่อน ───
+              // _CardRow(
+              //   icon: Icons.event_outlined,
+              //   label: 'วันที่สิ้นสุด',
+              //   value: formatDate(endDateRaw, type: DateFormatType.dmy),
+              //   isMono: true,
+              // ),
               _CardRow(
                 icon: Icons.checklist_rounded,
                 label: 'ขั้นตอน',
