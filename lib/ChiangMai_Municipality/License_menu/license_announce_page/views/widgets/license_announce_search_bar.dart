@@ -22,6 +22,23 @@ class LicenseAnnounceSearchBar extends StatefulWidget {
       _LicenseAnnounceSearchBarState();
 }
 
+/// Snapshot of LicenseAnnounceViewModel state relevant to the search bar.
+/// Granular rebuild: only fires when (searchQuery, isLoading) change.
+@immutable
+class _SearchBarState {
+  final String searchQuery;
+  final bool isLoading;
+  const _SearchBarState({required this.searchQuery, required this.isLoading});
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _SearchBarState &&
+          searchQuery == other.searchQuery &&
+          isLoading == other.isLoading;
+  @override
+  int get hashCode => Object.hash(searchQuery, isLoading);
+}
+
 class _LicenseAnnounceSearchBarState extends State<LicenseAnnounceSearchBar> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _focusNode = FocusNode();
@@ -72,9 +89,15 @@ class _LicenseAnnounceSearchBarState extends State<LicenseAnnounceSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAnnounceViewModel>();
     final hasText = _controller.text.isNotEmpty;
-    final fieldLabel = _fieldLabelFor(vm.searchQuery);
+
+    return Selector<LicenseAnnounceViewModel, _SearchBarState>(
+      selector: (_, vm) => _SearchBarState(
+        searchQuery: vm.searchQuery,
+        isLoading: vm.isLoading,
+      ),
+      builder: (context, state, _) {
+    final fieldLabel = _fieldLabelFor(state.searchQuery);
 
     return AnimatedContainer(
       duration: LrAnimations.medium,
@@ -162,7 +185,7 @@ class _LicenseAnnounceSearchBarState extends State<LicenseAnnounceSearchBar> {
               ),
             ),
           // Loading / Clear button
-          if (vm.isLoading)
+          if (state.isLoading)
             const SizedBox(
               width: 18,
               height: 18,
@@ -179,6 +202,8 @@ class _LicenseAnnounceSearchBarState extends State<LicenseAnnounceSearchBar> {
             ),
         ],
       ),
+    );
+      },
     );
   }
 
