@@ -93,8 +93,13 @@ class AreasReportColumnPicker extends StatelessWidget {
 
 /// ============================================================
 /// _AreasColumnTile — tile พร้อม drag handle + checkbox
+///
+/// ✅ StatelessWidget (ไม่ track hover)
+/// ✅ ไม่ใช้ AnimatedContainer (decoration static ตาม `selected` เท่านั้น)
+/// ✅ ไม่ใช้ MouseRegion (ไม่จำเป็นบน touch)
+/// ✅ ห่อด้วย RepaintBoundary — isolate repaints
 /// ============================================================
-class _AreasColumnTile extends StatefulWidget {
+class _AreasColumnTile extends StatelessWidget {
   final int index;
   final AreasReportColumn column;
   final bool selected;
@@ -108,47 +113,39 @@ class _AreasColumnTile extends StatefulWidget {
   });
 
   @override
-  State<_AreasColumnTile> createState() => _AreasColumnTileState();
-}
-
-class _AreasColumnTileState extends State<_AreasColumnTile> {
-  bool _hover = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: CrSpace.sm),
-      child: GestureDetector(
-        onTap: widget.onToggle,
-        child: AnimatedContainer(
-          duration: CrAnimations.fast,
-          padding: const EdgeInsets.symmetric(
-              horizontal: CrSpace.md, vertical: CrSpace.sm + 2),
-          decoration: BoxDecoration(
-            color: widget.selected
-                ? CrColors.primaryLight
-                : (_hover ? CrColors.surfaceMuted : Colors.white),
-            borderRadius: BorderRadius.circular(CrRadius.sm),
-            border: Border.all(
-              color: widget.selected ? CrColors.primary : CrColors.border,
-              width: widget.selected ? 1.4 : 1,
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: CrSpace.sm),
+        child: GestureDetector(
+          onTap: onToggle,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: CrSpace.md, vertical: CrSpace.sm + 2),
+            decoration: BoxDecoration(
+              color: selected
+                  ? CrColors.primaryLight
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(CrRadius.sm),
+              border: Border.all(
+                color: selected ? CrColors.primary : CrColors.border,
+                width: selected ? 1.4 : 1,
+              ),
+              boxShadow: selected
+                  ? [
+                      const BoxShadow(
+                        color: Color(0x140F4C81), // primary @ 8%
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
             ),
-            boxShadow: widget.selected
-                ? [
-                    BoxShadow(
-                      color: CrColors.primary.withOpacity(.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              ReorderableDragStartListener(
-                index: widget.index,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.grab,
+            child: Row(
+              children: [
+                // ✅ Drag handle ซ้าย
+                ReorderableDragStartListener(
+                  index: index,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Icon(
@@ -158,64 +155,59 @@ class _AreasColumnTileState extends State<_AreasColumnTile> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  color: widget.selected
-                      ? CrColors.primary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: widget.selected
-                        ? CrColors.primary
-                        : CrColors.borderStrong,
-                    width: 1.4,
+                const SizedBox(width: 4),
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: selected ? CrColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color:
+                          selected ? CrColors.primary : CrColors.borderStrong,
+                      width: 1.4,
+                    ),
+                  ),
+                  child: selected
+                      ? const Icon(Icons.check, size: 14, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        column.label,
+                        style: CrText.body.copyWith(
+                          fontSize: 14,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w600,
+                          color: selected
+                              ? CrColors.primaryDark
+                              : CrColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        column.field,
+                        style: CrText.caption.copyWith(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          color: CrColors.textMuted,
+                          letterSpacing: .3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                child: widget.selected
-                    ? const Icon(Icons.check,
-                        size: 14, color: Colors.white)
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.column.label,
-                      style: CrText.body.copyWith(
-                        fontSize: 14,
-                        fontWeight: widget.selected
-                            ? FontWeight.w700
-                            : FontWeight.w600,
-                        color: widget.selected
-                            ? CrColors.primaryDark
-                            : CrColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.column.field,
-                      style: CrText.caption.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        color: CrColors.textMuted,
-                        letterSpacing: .3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
