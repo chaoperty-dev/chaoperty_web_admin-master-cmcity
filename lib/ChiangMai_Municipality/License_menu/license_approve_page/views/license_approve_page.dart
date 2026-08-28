@@ -170,41 +170,49 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseApproveViewModel>();
-    return Container(
-      color: LaColors.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(LaSpace.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LicenseApproveHeader(
-              title: vm.title,
-              subtitle: 'อนุมัติคำขอใบอนุญาต — รอตรวจสอบและอนุมัติ',
-              totalCount: vm.total,
-            ),
-            const SizedBox(height: LaSpace.lg),
-            const LicenseApproveZoneFilter(),
-            const SizedBox(height: LaSpace.md),
-            // Search + Pagination row (pagination inline)
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+    // ✅ Selector — rebuild เฉพาะตอน total เปลี่ยน
+    //    title คงที่จาก config → ใช้ widget.title ตรงๆ
+    //    เดิม context.watch ทำให้ body rebuild ทุกครั้งที่ VM notify
+    return Selector<LicenseApproveViewModel, int>(
+      selector: (_, vm) => vm.total,
+      shouldRebuild: (a, b) => a != b,
+      builder: (context, total, _) {
+        return Container(
+          color: LaColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(LaSpace.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Expanded(child: LicenseApproveSearchBar()),
-                SizedBox(width: LaSpace.md),
-                LicenseApprovePagination(),
+                LicenseApproveHeader(
+                  title: widget.title,
+                  subtitle: 'อนุมัติคำขอใบอนุญาต — รอตรวจสอบและอนุมัติ',
+                  totalCount: total,
+                ),
+                const SizedBox(height: LaSpace.lg),
+                const LicenseApproveZoneFilter(),
+                const SizedBox(height: LaSpace.md),
+                // Search + Pagination row (pagination inline)
+                const Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(child: LicenseApproveSearchBar()),
+                    SizedBox(width: LaSpace.md),
+                    LicenseApprovePagination(),
+                  ],
+                ),
+                const SizedBox(height: LaSpace.lg),
+                // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
+                const Expanded(
+                  child: SingleChildScrollView(
+                    child: LicenseApproveTable(),
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: LaSpace.lg),
-            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
-            const Expanded(
-              child: SingleChildScrollView(
-                child: LicenseApproveTable(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
