@@ -22,6 +22,14 @@ import '../theme/license_payment_theme.dart';
 import '../../viewmodels/license_payment_detail_view_model.dart';
 import 'receipt_entry_stepper_dialog.dart';
 
+// ─── Cross-module: ใช้ข้อมูลคำขอจาก license_request_page (read-only) ───
+import '../../../license_attach_page/views/widgets/request_detail_zone_row.dart';
+import '../../../license_attach_page/views/widgets/request_detail_section_title.dart';
+import '../../../license_request_page/viewmodels/license_request_detail_step1_view_model.dart';
+import '../../../license_request_page/views/widgets/request_detail_person_section.dart';
+import '../../../license_request_page/views/widgets/request_detail_shop_section.dart';
+import '../../../license_request_page/views/widgets/request_detail_contract_section.dart';
+
 class PaymentDetailStep1 extends StatelessWidget {
   const PaymentDetailStep1({super.key});
 
@@ -29,24 +37,31 @@ class PaymentDetailStep1 extends StatelessWidget {
   Widget build(BuildContext context) {
     return DefaultTabController(
       length: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // ─── Segmented tabs (สไตล์เดียวกับ attach_detail_step1) ───
-          const _PaymentSegmentedTabs(),
-          // ─── TabBarView: 2 แท็บ ───
-          const Expanded(
-            child: TabBarView(
-              physics: BouncingScrollPhysics(),
-              children: [
-                // Tab 1: ข้อมูลการชำระ (เนื้อหาเดิม)
-                _PaymentInfoTab(),
-                // Tab 2: ข้อมูลคำขอ
-                _RequestInfoTab(),
-              ],
-            ),
-          ),
-        ],
+      child: Builder(
+        builder: (context) {
+          // ─── ดึง requestUuid จาก PaymentDetailViewModel (ส่งต่อให้ Tab 2) ───
+          final uuid =
+              context.watch<LicensePaymentDetailViewModel>().requestUuid;
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ─── Segmented tabs (สไตล์เดียวกับ attach_detail_step1) ───
+              const _PaymentSegmentedTabs(),
+              // ─── TabBarView: 2 แท็บ ───
+              Expanded(
+                child: TabBarView(
+                  physics: const BouncingScrollPhysics(),
+                  children: [
+                    // Tab 1: ข้อมูลการชำระ (เนื้อหาเดิม)
+                    const _PaymentInfoTab(),
+                    // Tab 2: ข้อมูลคำขอ
+                    _RequestInfoTab(requestUuid: uuid),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -291,8 +306,179 @@ class _PaymentInfoTab extends StatelessWidget {
 // =============================================================================
 // Tab 2: ข้อมูลคำขอ (placeholder)
 // =============================================================================
-class _RequestInfoTab extends StatelessWidget {
-  const _RequestInfoTab();
+// =============================================================================
+// Tab 2: ข้อมูลคำขอ — โหลดผ่าน LicenseRequestDetailStep1ViewModel
+// ใช้ widgets เดียวกับ attach_detail_step1 (read-only mode)
+// =============================================================================
+class _RequestInfoTab extends StatefulWidget {
+  /// UUID ของ Request (ส่งต่อมาจาก parent เพื่อโหลด review data)
+  final String? requestUuid;
+
+  const _RequestInfoTab({this.requestUuid});
+
+  @override
+  State<_RequestInfoTab> createState() => _RequestInfoTabState();
+}
+
+class _RequestInfoTabState extends State<_RequestInfoTab> {
+  // ★ ใช้ VM เดียวกับ license_request_page (import ข้าม module)
+  late final LicenseRequestDetailStep1ViewModel _vm;
+  bool _isLoading = true;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = LicenseRequestDetailStep1ViewModel().init();
+    _loadReviewData();
+  }
+
+  Future<void> _loadReviewData() async {
+    final uuid = widget.requestUuid?.trim();
+    if (uuid == null || uuid.isEmpty) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'ไม่พบ UUID ของคำขอ';
+        });
+      }
+      return;
+    }
+    try {
+      await _vm.loadFromUuid(uuid);
+      if (mounted) {
+        setState(() {
+          _isLoading = _vm.isLoading;
+          _errorMessage = _vm.errorMessage;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'เกิดข้อผิดพลาด: $e';
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LicenseRequestDetailStep1ViewModel>.value(
+      value: _vm,
+      child: Builder(
+        builder: (context) {
+          if (_isLoading) {
+            return const _RequestInfoLoadingState();
+          }
+          if (_errorMessage != null) {
+            return _RequestInfoErrorState(
+              message: _errorMessage!,
+              onRetry: () {
+                setState(() {
+                  _isLoading = true;
+                  _errorMessage = null;
+                });
+                _loadReviewData();
+              },
+            );
+          }
+          return const _RequestInfoBody();
+        },
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Loading state สำหรับ Tab 2 (ข้อมูลคำขอ)
+// =============================================================================
+class _RequestInfoLoadingState extends StatelessWidget {
+  const _RequestInfoLoadingState();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: LaSpace.xxl),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              width: 32,
+              height: 32,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.5,
+                valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+              ),
+            ),
+            SizedBox(height: LaSpace.md),
+            Text('กำลังโหลดข้อมูลคำขอ…', style: LaText.bodyMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Error state สำหรับ Tab 2 (ข้อมูลคำขอ)
+// =============================================================================
+class _RequestInfoErrorState extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _RequestInfoErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(LaSpace.lg),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.error_outline,
+              size: 48,
+              color: LaColors.statusRejectedFg,
+            ),
+            const SizedBox(height: LaSpace.md),
+            Text(
+              message,
+              style: LaText.body,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: LaSpace.md),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: LaColors.primary,
+                foregroundColor: LaColors.textInverse,
+              ),
+              onPressed: onRetry,
+              icon: const Icon(Icons.refresh_rounded, size: 16),
+              label: const Text('ลองอีกครั้ง'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =============================================================================
+// Body ของ Tab 2 (อยู่ใต้ Provider)
+// =============================================================================
+class _RequestInfoBody extends StatelessWidget {
+  const _RequestInfoBody();
 
   @override
   Widget build(BuildContext context) {
@@ -302,23 +488,130 @@ class _RequestInfoTab extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1400),
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const SizedBox(height: LaSpace.xxl),
-              Icon(
-                Icons.construction_outlined,
-                size: 48,
-                color: LaColors.textSecondary.withOpacity(.5),
+              // ─── Title bar ───
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: LaSpace.md, vertical: LaSpace.sm),
+                decoration: BoxDecoration(
+                  color: LaColors.primaryLight.withOpacity(.25),
+                  borderRadius: BorderRadius.circular(LaRadius.md),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(
+                      Icons.assignment_rounded,
+                      size: 18,
+                      color: LaColors.primaryDark,
+                    ),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'ข้อมูลคำขอ',
+                        style: LaText.h2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: LaSpace.md),
-              Text(
-                'ข้อมูลคำขอ',
-                style: LaText.h2.copyWith(color: LaColors.textSecondary),
+
+              // ─── Zone row (read-only) ───
+              const RequestDetailZoneRow(),
+              const SizedBox(height: LaSpace.md),
+
+              // ─── Form card (2 columns) ───
+              Container(
+                decoration: LaDecor.card(),
+                padding: const EdgeInsets.all(LaSpace.lg),
+                child: LayoutBuilder(
+                  builder: (ctx, c) {
+                    final isNarrow = c.maxWidth < 1100;
+                    if (isNarrow) {
+                      return const Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          RequestDetailSectionTitle(
+                            icon: Icons.person,
+                            title: 'ข้อมูลผู้เช่า',
+                          ),
+                          RequestDetailPersonSection(),
+                          SizedBox(height: 16),
+                          RequestDetailSectionTitle(
+                            icon: Icons.store,
+                            title: 'ข้อมูลร้านค้า',
+                          ),
+                          RequestDetailShopSection(),
+                          SizedBox(height: 16),
+                          RequestDetailSectionTitle(
+                            icon: Icons.receipt_long,
+                            title: 'ข้อมูลสัญญา',
+                          ),
+                          RequestDetailContractSection(),
+                        ],
+                      );
+                    }
+                    return const Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 5,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              RequestDetailSectionTitle(
+                                icon: Icons.person,
+                                title: 'ข้อมูลผู้เช่า',
+                              ),
+                              RequestDetailPersonSection(),
+                            ],
+                          ),
+                        ),
+                        SizedBox(width: 24),
+                        Expanded(
+                          flex: 6,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              RequestDetailSectionTitle(
+                                icon: Icons.store,
+                                title: 'ข้อมูลร้านค้า',
+                              ),
+                              RequestDetailShopSection(),
+                              SizedBox(height: 16),
+                              RequestDetailSectionTitle(
+                                icon: Icons.receipt_long,
+                                title: 'ข้อมูลสัญญา',
+                              ),
+                              RequestDetailContractSection(),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-              const SizedBox(height: LaSpace.sm),
-              Text(
-                'อยู่ระหว่างพัฒนา',
-                style: LaText.bodyMuted,
+
+              const SizedBox(height: LaSpace.md),
+              // ─── Info row ───
+              const Row(
+                children: [
+                  Icon(
+                    Icons.visibility_outlined,
+                    size: 14,
+                    color: LaColors.textMuted,
+                  ),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'โหมดดูข้อมูลอย่างเดียว ไม่สามารถแก้ไขได้',
+                      style: LaText.caption,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
