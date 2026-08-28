@@ -8,12 +8,20 @@ version: 1.0.0-local.1
 homepage: https://github.com/justkawal/protect
 
 environment:
-  sdk: ">=2.16.0 <3.0.0"
+  # 🔧 PATCHED: removed upper bound to allow Dart 3.x SDK (project uses >=3.0.5)
+  # Original was `>=2.16.0 <3.0.0` — incompatible with the app's Dart 3 toolchain
+  # and triggered "language version override has to be the same in the library and its part(s)"
+  # because the package was being compiled against Dart 3 with a Dart 2 SDK constraint.
+  sdk: ">=2.16.0 <4.0.0"
 
 dependencies:
   xml_parser: ^1.0.0
   crypto: ^3.0.1
-  aes_crypt_null_safe: ^2.0.2
+  # 🔧 PATCHED: ^2.0.2 → ^3.0.0
+  # 2.0.2 has sdk: '>=2.12.0 <3.0.0' — incompatible with Dart 3 toolchain
+  # 3.0.0+ is Dart 3 compatible. AesCrypt API (aesSetParams, aesEncrypt,
+  # aesDecrypt, AesMode.cbc) unchanged, so no call-site edits needed.
+  aes_crypt_null_safe: ^3.0.0
 
 dev_dependencies:
   flutter_lints: ^1.0.4
