@@ -17,11 +17,12 @@ environment:
 dependencies:
   xml_parser: ^1.0.0
   crypto: ^3.0.1
-  # 🔧 PATCHED: ^2.0.2 → ^3.0.0
-  # 2.0.2 has sdk: '>=2.12.0 <3.0.0' — incompatible with Dart 3 toolchain
-  # 3.0.0+ is Dart 3 compatible. AesCrypt API (aesSetParams, aesEncrypt,
-  # aesDecrypt, AesMode.cbc) unchanged, so no call-site edits needed.
-  aes_crypt_null_safe: ^3.0.0
+  # ⚠️ KEEPING ^2.0.2 (Dart 2.x SDK constraint) — the project's Dart SDK is 3.0.5,
+  # but aes_crypt_null_safe 3.x requires SDK >=3.3.0. Compilation still works because:
+  # - aes_crypt_null_safe 2.0.2 is loaded with its own languageVersion 2.12 from package_config
+  # - Our fork forces // @dart=3.0 on its own files
+  # - Dart 3.10 compiler accepts mixing language versions across packages
+  aes_crypt_null_safe: ^2.0.2
 
 dev_dependencies:
   flutter_lints: ^1.0.4
