@@ -175,20 +175,8 @@ class AreasReportService {
         return _defaultColumns();
       }
 
-      final jsonRes = json.decode(res.body);
-      if (jsonRes is! Map<String, dynamic>) {
-        return _defaultColumns();
-      }
-
-      final data = jsonRes['data'];
-      if (data is! List) {
-        return _defaultColumns();
-      }
-
-      final cols = data
-          .whereType<Map<String, dynamic>>()
-          .map((m) => AreasReportColumn.fromJson(m))
-          .toList(growable: false);
+      // ✅ Parse JSON ใน background isolate — ไม่ block UI
+      final cols = await compute(_parseAreasColumnsIsolate, res.body);
 
       _columnsCache = cols;
       _columnsCacheTime = DateTime.now();
@@ -273,6 +261,25 @@ class AreasReportService {
 // ============================================================================
 // Isolate-bound helpers
 // ============================================================================
+
+/// ✅ Top-level function — required by `compute()`
+/// รันใน background isolate → UI ไม่ค้างตอน parse JSON
+List<AreasReportColumn> _parseAreasColumnsIsolate(String body) {
+  final jsonRes = json.decode(body);
+  if (jsonRes is! Map<String, dynamic>) {
+    return AreasReportService.defaultColumns();
+  }
+
+  final data = jsonRes['data'];
+  if (data is! List) {
+    return AreasReportService.defaultColumns();
+  }
+
+  return data
+      .whereType<Map<String, dynamic>>()
+      .map((m) => AreasReportColumn.fromJson(m))
+      .toList(growable: false);
+}
 
 /// ✅ Top-level function — required by `compute()`
 /// รันใน background isolate → UI ไม่ค้างตอน parse JSON

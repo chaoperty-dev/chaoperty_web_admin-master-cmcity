@@ -232,22 +232,8 @@ class CustomersReportService {
         return _defaultColumns();
       }
 
-      final jsonRes = json.decode(res.body);
-      if (jsonRes is! Map<String, dynamic>) {
-        print('⚠️ fetchColumns body is not a Map');
-        return _defaultColumns();
-      }
-
-      final data = jsonRes['data'];
-      if (data is! List) {
-        print('⚠️ fetchColumns data is not a List');
-        return _defaultColumns();
-      }
-
-      final cols = data
-          .whereType<Map<String, dynamic>>()
-          .map((m) => CustomerReportColumn.fromJson(m))
-          .toList(growable: false);
+      // ✅ Parse JSON ใน background isolate — ไม่ block UI
+      final cols = await compute(_parseCustomersColumnsIsolate, res.body);
 
       _columnsCache = cols;
       _columnsCacheTime = DateTime.now();
@@ -386,4 +372,25 @@ CustomerReportResult _parseCustomersItemsIsolate(String body) {
       .toList(growable: false);
 
   return CustomerReportResult(total: total, items: items);
+}
+
+/// ✅ Top-level function — สำหรับ fetchColumns
+/// รันใน background isolate → UI ไม่ค้างตอน parse JSON
+List<CustomerReportColumn> _parseCustomersColumnsIsolate(String body) {
+  final jsonRes = json.decode(body);
+  if (jsonRes is! Map<String, dynamic>) {
+    print('⚠️ fetchColumns body is not a Map');
+    return CustomersReportService.defaultColumns();
+  }
+
+  final data = jsonRes['data'];
+  if (data is! List) {
+    print('⚠️ fetchColumns data is not a List');
+    return CustomersReportService.defaultColumns();
+  }
+
+  return data
+      .whereType<Map<String, dynamic>>()
+      .map((m) => CustomerReportColumn.fromJson(m))
+      .toList(growable: false);
 }
