@@ -30,11 +30,13 @@ class MenuVersions {
 class MenuVersionFooter extends StatelessWidget {
   final String menuKey;
   final EdgeInsetsGeometry padding;
+  final Color backgroundColor;
 
   const MenuVersionFooter({
     super.key,
     required this.menuKey,
-    this.padding = const EdgeInsets.only(right: 16, bottom: 10),
+    this.padding = const EdgeInsets.only(right: 12, top: 2, bottom: 4),
+    this.backgroundColor = const Color(0xFFF5F7FA),
   });
 
   @override
@@ -42,13 +44,16 @@ class MenuVersionFooter extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: padding,
+      color: backgroundColor,
       child: Align(
         alignment: Alignment.centerRight,
         child: Text(
-          'Version ${MenuVersions.of(menuKey)}',
+          'v${MenuVersions.of(menuKey)}',
           style: const TextStyle(
-            fontSize: 11,
-            color: Color(0xFF9CA3AF),
+            fontSize: 8,
+            color: Color.fromARGB(255, 181, 192, 204),
+            letterSpacing: .2,
+            height: 1.0,
           ),
         ),
       ),

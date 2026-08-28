@@ -5,6 +5,10 @@
 // - ✅ Drag & Drop reorder (ReorderableListView)
 // - ✅ Toggle check / uncheck
 // - ✅ Select all / deselect all
+//
+// ✅ ใช้ Selector — ไม่ rebuild บ่อย
+//   rebuild เฉพาะ columns / selectedCount / errorMessage เปลี่ยน
+//   ไม่ rebuild ตอน isExporting / totalItems เปลี่ยน
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -14,17 +18,103 @@ import '../../viewmodels/customers_report_view_model.dart';
 import '../../services/customers_report_service.dart';
 import '../theme/customers_report_theme.dart';
 
-// (BuildContext alias for type-inferred callbacks below)
+/// Snapshot ของ VM state ที่ picker ต้อง rebuild เมื่อเปลี่ยน
+class _PickerData {
+  final List<CustomerReportColumn> columns;
+  final int selectedCount;
+  final bool isLoadingColumns;
+  final String? errorMessage;
+
+  const _PickerData({
+    required this.columns,
+    required this.selectedCount,
+    required this.isLoadingColumns,
+    required this.errorMessage,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _PickerData &&
+        other.selectedCount == selectedCount &&
+        other.isLoadingColumns == isLoadingColumns &&
+        other.errorMessage == errorMessage &&
+        _listEq(other.columns, columns);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        selectedCount,
+        isLoadingColumns,
+        errorMessage,
+        identityHashCode(columns),
+      );
+
+  static bool _listEq(List<CustomerReportColumn> a, List<CustomerReportColumn> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].field != b[i].field) return false;
+    }
+    return true;
+  }
+}
 
 class CustomersReportColumnPicker extends StatelessWidget {
   const CustomersReportColumnPicker({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<CustomersReportViewModel>();
-    final cols = vm.columns;
+    return Selector<CustomersReportViewModel, _PickerData>(
+      selector: (_, vm) => _PickerData(
+        columns: vm.columns,
+        selectedCount: vm.selectedCount,
+        isLoadingColumns: vm.isLoadingColumns,
+        errorMessage: vm.errorMessage,
+      ),
+      shouldRebuild: (a, b) => a != b,
+      builder: (context, data, _) {
+        // ✅ Read VM (ไม่ subscribe) สำหรับ actions/callbacks
+        final vm = context.read<CustomersReportViewModel>();
+        return _PickerContent(
+          data: data,
+          onSelectAll: vm.selectAllColumns,
+          onDeselectAll: vm.deselectAllColumns,
+          onReorder: vm.reorderColumns,
+          isSelected: vm.isSelected,
+          onToggle: vm.toggleColumn,
+        );
+      },
+    );
+  }
+}
 
-    if (vm.isLoadingColumns && cols.isEmpty) {
+/// ============================================================
+/// _PickerContent — pure stateless, ไม่ผูกกับ Provider โดยตรง
+/// ใช้ props ทั้งหมด → rebuild เฉพาะตอน data เปลี่ยน
+/// ============================================================
+class _PickerContent extends StatelessWidget {
+  final _PickerData data;
+  final VoidCallback onSelectAll;
+  final VoidCallback onDeselectAll;
+  final void Function(int, int) onReorder;
+  final bool Function(String) isSelected;
+  final void Function(String) onToggle;
+
+  const _PickerContent({
+    required this.data,
+    required this.onSelectAll,
+    required this.onDeselectAll,
+    required this.onReorder,
+    required this.isSelected,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cols = data.columns;
+
+    if (data.isLoadingColumns && cols.isEmpty) {
       return Container(
         decoration: CrDecor.card(),
         padding: const EdgeInsets.symmetric(vertical: 60),
@@ -50,7 +140,7 @@ class CustomersReportColumnPicker extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 60),
         alignment: Alignment.center,
         child: Text(
-          vm.errorMessage ?? 'ไม่พบรายการ column',
+          data.errorMessage ?? 'ไม่พบรายการ column',
           style: CrText.bodyMuted,
         ),
       );
@@ -67,7 +157,7 @@ class CustomersReportColumnPicker extends StatelessWidget {
                 CrSpace.lg, CrSpace.md, CrSpace.md, CrSpace.sm),
             child: Row(
               children: [
-                Icon(Icons.checklist_rounded,
+                const Icon(Icons.checklist_rounded,
                     size: 18, color: CrColors.primary),
                 const SizedBox(width: 8),
                 Text(
@@ -76,7 +166,7 @@ class CustomersReportColumnPicker extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${vm.selectedCount} / ${cols.length}',
+                  '${data.selectedCount} / ${cols.length}',
                   style: CrText.bodyMuted.copyWith(
                     color: CrColors.primary,
                     fontSize: 13,
@@ -84,9 +174,9 @@ class CustomersReportColumnPicker extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                _MiniBtn(label: 'เลือกทั้งหมด', onTap: vm.selectAllColumns),
+                _MiniBtn(label: 'เลือกทั้งหมด', onTap: onSelectAll),
                 const SizedBox(width: 6),
-                _MiniBtn(label: 'ยกเลิก', onTap: vm.deselectAllColumns),
+                _MiniBtn(label: 'ยกเลิก', onTap: onDeselectAll),
               ],
             ),
           ),
@@ -94,23 +184,24 @@ class CustomersReportColumnPicker extends StatelessWidget {
           // ✅ ReorderableListView - รองรับ drag & drop
           Padding(
             padding: const EdgeInsets.all(CrSpace.md),
-            child: ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false, // ใช้ custom handle
-              itemCount: cols.length,
-              onReorder: vm.reorderColumns,
-              itemBuilder: (context, index) {
-                final col = cols[index];
-                return _ColumnTile(
-                  key: ValueKey('col_${col.field}'),
-                  index: index,
-                  column: col,
-                  selected: vm.isSelected(col.field),
-                  onToggle: () => vm.toggleColumn(col.field),
-                  onReorder: vm.reorderColumns,
-                );
-              },
+            child: RepaintBoundary(
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false, // ใช้ custom handle
+                itemCount: cols.length,
+                onReorder: onReorder,
+                itemBuilder: (context, index) {
+                  final col = cols[index];
+                  return _ColumnTile(
+                    key: ValueKey('col_${col.field}'),
+                    index: index,
+                    column: col,
+                    selected: isSelected(col.field),
+                    onToggle: () => onToggle(col.field),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -121,13 +212,17 @@ class CustomersReportColumnPicker extends StatelessWidget {
 
 /// ============================================================
 /// _ColumnTile — มี drag handle ซ้าย + checkbox + label
+///
+/// ✅ StatelessWidget (ไม่ track hover)
+/// ✅ ไม่ใช้ AnimatedContainer (decoration static ตาม `selected` เท่านั้น)
+/// ✅ ไม่ใช้ MouseRegion (ไม่จำเป็นบน touch)
+/// ✅ ห่อด้วย RepaintBoundary — isolate repaints
 /// ============================================================
-class _ColumnTile extends StatefulWidget {
+class _ColumnTile extends StatelessWidget {
   final int index;
   final CustomerReportColumn column;
   final bool selected;
   final VoidCallback onToggle;
-  final void Function(int, int) onReorder;
 
   const _ColumnTile({
     super.key,
@@ -135,54 +230,42 @@ class _ColumnTile extends StatefulWidget {
     required this.column,
     required this.selected,
     required this.onToggle,
-    required this.onReorder,
   });
 
   @override
-  State<_ColumnTile> createState() => _ColumnTileState();
-}
-
-class _ColumnTileState extends State<_ColumnTile> {
-  bool _hover = false;
-
-  @override
   Widget build(BuildContext context) {
-    return Padding(
-      // ✅ เพิ่ม space ด้านล่างเล็กน้อย (ReorderableListView จัด spacing เอง)
-      padding: const EdgeInsets.only(bottom: CrSpace.sm),
-      child: GestureDetector(
-        // ✅ แตะที่ tile (ไม่ใช่ drag handle) เพื่อ toggle
-        onTap: widget.onToggle,
-        child: AnimatedContainer(
-          duration: CrAnimations.fast,
-          padding: const EdgeInsets.symmetric(
-              horizontal: CrSpace.md, vertical: CrSpace.sm + 2),
-          decoration: BoxDecoration(
-            color: widget.selected
-                ? CrColors.primaryLight
-                : (_hover ? CrColors.surfaceMuted : Colors.white),
-            borderRadius: BorderRadius.circular(CrRadius.sm),
-            border: Border.all(
-              color: widget.selected ? CrColors.primary : CrColors.border,
-              width: widget.selected ? 1.4 : 1,
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: CrSpace.sm),
+        child: GestureDetector(
+          onTap: onToggle,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: CrSpace.md, vertical: CrSpace.sm + 2),
+            decoration: BoxDecoration(
+              color: selected
+                  ? CrColors.primaryLight
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(CrRadius.sm),
+              border: Border.all(
+                color: selected ? CrColors.primary : CrColors.border,
+                width: selected ? 1.4 : 1,
+              ),
+              boxShadow: selected
+                  ? [
+                      const BoxShadow(
+                        color: Color(0x140F4C81), // primary @ 8%
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      ),
+                    ]
+                  : null,
             ),
-            boxShadow: widget.selected
-                ? [
-                    BoxShadow(
-                      color: CrColors.primary.withOpacity(.08),
-                      blurRadius: 4,
-                      offset: const Offset(0, 1),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              // ✅ Drag handle ซ้าย (จุดจับ 6 จุด)
-              ReorderableDragStartListener(
-                index: widget.index,
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.grab,
+            child: Row(
+              children: [
+                // ✅ Drag handle ซ้าย
+                ReorderableDragStartListener(
+                  index: index,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Icon(
@@ -192,61 +275,59 @@ class _ColumnTileState extends State<_ColumnTile> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  color:
-                      widget.selected ? CrColors.primary : Colors.transparent,
-                  borderRadius: BorderRadius.circular(4),
-                  border: Border.all(
-                    color: widget.selected
-                        ? CrColors.primary
-                        : CrColors.borderStrong,
-                    width: 1.4,
+                const SizedBox(width: 4),
+                Container(
+                  width: 18,
+                  height: 18,
+                  decoration: BoxDecoration(
+                    color: selected ? CrColors.primary : Colors.transparent,
+                    borderRadius: BorderRadius.circular(4),
+                    border: Border.all(
+                      color:
+                          selected ? CrColors.primary : CrColors.borderStrong,
+                      width: 1.4,
+                    ),
+                  ),
+                  child: selected
+                      ? const Icon(Icons.check, size: 14, color: Colors.white)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        column.label,
+                        style: CrText.body.copyWith(
+                          fontSize: 14,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w600,
+                          color: selected
+                              ? CrColors.primaryDark
+                              : CrColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        column.field,
+                        style: CrText.caption.copyWith(
+                          fontFamily: 'monospace',
+                          fontSize: 11,
+                          color: CrColors.textMuted,
+                          letterSpacing: .3,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
                   ),
                 ),
-                child: widget.selected
-                    ? const Icon(Icons.check, size: 14, color: Colors.white)
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.column.label,
-                      style: CrText.body.copyWith(
-                        fontSize: 14,
-                        fontWeight:
-                            widget.selected ? FontWeight.w700 : FontWeight.w600,
-                        color: widget.selected
-                            ? CrColors.primaryDark
-                            : CrColors.textPrimary,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      widget.column.field,
-                      style: CrText.caption.copyWith(
-                        fontFamily: 'monospace',
-                        fontSize: 11,
-                        color: CrColors.textMuted,
-                        letterSpacing: .3,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
