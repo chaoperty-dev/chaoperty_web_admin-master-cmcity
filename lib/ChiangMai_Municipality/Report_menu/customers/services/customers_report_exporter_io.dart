@@ -101,7 +101,7 @@ class _IoExporter implements CustomersReportExporter {
 /// Input สำหรับ `_buildExcelBytesIsolate`
 /// ต้องเป็น immutable + sendable (final fields only)
 class _ExcelBuildInput {
-  final List<List<String>> colLabels;
+  final List<String> colLabels;
   final List<List<String>> rows;
   final String? password;
 

@@ -54,8 +54,9 @@ class _IoExporter implements AreasReportExporter {
     final input = _ExcelBuildInput(
       colLabels: cols.map((c) => c.label).toList(growable: false),
       rows: items
-          .map((item) =>
-              cols.map((c) => item.getBy(col.field) ?? '').toList(growable: false))
+          .map((item) => cols
+              .map((c) => item.getBy(c.field) ?? '')
+              .toList(growable: false))
           .toList(growable: false),
       password: password,
     );
@@ -101,7 +102,7 @@ class _IoExporter implements AreasReportExporter {
 /// Input สำหรับ `_buildExcelBytesIsolate`
 /// ต้องเป็น immutable + sendable (final fields only)
 class _ExcelBuildInput {
-  final List<List<String>> colLabels;
+  final List<String> colLabels;
   final List<List<String>> rows;
   final String? password;
 
