@@ -60,7 +60,9 @@ class _IoExporter implements AreasReportExporter {
     // 3) Save → temp dir
     final dir = await pp.getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
-    await file.writeAsBytes(bytes, flush: true);
+    // ✅ Drop flush:true — saves 50-300ms on Android by skipping fsync.
+    // File is in temp dir (not critical data); share dialog reads immediately.
+    await file.writeAsBytes(bytes);
 
     // 4) เปิด Share dialog
     await sp.Share.shareXFiles(
