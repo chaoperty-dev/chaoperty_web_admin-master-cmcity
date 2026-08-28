@@ -1,4 +1,8 @@
 // Service: ใช้ API v1 (/admin/announcement/*) — ต้องมี Bearer token
+//
+// ✅ JSON parse ทำใน compute() isolate (M2-ext pattern)
+//    ไม่ block UI ตอนโหลด list ยาว
+// ✅ HTTP timeout — กัน request ค้าง
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -20,12 +24,15 @@ class LicenseAnnounceService {
     try {
       final headers = await _headers();
       final url = Uri.parse('$_baseV1/admin/announcement/active');
-      final response = await http.get(url, headers: headers);
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 30));
       if (response.statusCode != 200) {
         debugPrint('fetchActive status=${response.statusCode}');
         return <LicenseAnnounceItem>[];
       }
-      return _parseActiveResponse(response.body);
+      // ✅ Parse ใน background isolate — ไม่ block UI
+      return compute(_parseActiveIsolate, response.body);
     } catch (e) {
       debugPrint('fetchActive error: $e');
       return <LicenseAnnounceItem>[];
@@ -37,49 +44,17 @@ class LicenseAnnounceService {
     try {
       final headers = await _headers();
       final url = Uri.parse('$_baseV1/admin/announcement/history');
-      final response = await http.get(url, headers: headers);
+      final response = await http
+          .get(url, headers: headers)
+          .timeout(const Duration(seconds: 60));
       if (response.statusCode != 200) {
         debugPrint('fetchHistory status=${response.statusCode}');
         return <LicenseAnnounceItem>[];
       }
-      final result = json.decode(response.body);
-      // history ห่อด้วย {data: {data: [...]}}
-      final data = result is Map ? result['data'] : null;
-      final list = (data is Map) ? data['data'] : (data is List ? data : null);
-      if (list is! List) return <LicenseAnnounceItem>[];
-      return list
-          .whereType<Map>()
-          .map((e) =>
-              AnnounceMentActiveModel.fromJson(Map<String, dynamic>.from(e)))
-          .map(LicenseAnnounceItem.fromActiveModel)
-          .toList();
+      // ✅ Parse ใน background isolate — ไม่ block UI
+      return compute(_parseHistoryIsolate, response.body);
     } catch (e) {
       debugPrint('fetchHistory error: $e');
-      return <LicenseAnnounceItem>[];
-    }
-  }
-
-  List<LicenseAnnounceItem> _parseActiveResponse(String body) {
-    try {
-      final result = json.decode(body);
-      final data = (result is Map) ? result['data'] : null;
-      if (data == null) return <LicenseAnnounceItem>[];
-      if (data is List) {
-        return data
-            .whereType<Map>()
-            .map((e) =>
-                AnnounceMentActiveModel.fromJson(Map<String, dynamic>.from(e)))
-            .map(LicenseAnnounceItem.fromActiveModel)
-            .toList();
-      }
-      if (data is Map) {
-        final m =
-            AnnounceMentActiveModel.fromJson(Map<String, dynamic>.from(data));
-        return [LicenseAnnounceItem.fromActiveModel(m)];
-      }
-      return <LicenseAnnounceItem>[];
-    } catch (e) {
-      debugPrint('_parseActiveResponse error: $e');
       return <LicenseAnnounceItem>[];
     }
   }
@@ -415,5 +390,56 @@ class LicenseAnnounceService {
       debugPrint('deleteAnnouncement error: $e');
       return false;
     }
+  }
+}
+
+// ============================================================================
+// Isolate-bound helpers (M2-ext pattern matching areas/customers reports)
+// ============================================================================
+
+/// Parse /active response — body shape:
+/// `{ "data": [ {...}, {...} ] }` หรือ `{ "data": { ... } }` (single item)
+List<LicenseAnnounceItem> _parseActiveIsolate(String body) {
+  try {
+    final result = json.decode(body);
+    final data = (result is Map) ? result['data'] : null;
+    if (data == null) return <LicenseAnnounceItem>[];
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((e) =>
+              AnnounceMentActiveModel.fromJson(Map<String, dynamic>.from(e)))
+          .map(LicenseAnnounceItem.fromActiveModel)
+          .toList(growable: false);
+    }
+    if (data is Map) {
+      final m =
+          AnnounceMentActiveModel.fromJson(Map<String, dynamic>.from(data));
+      return [LicenseAnnounceItem.fromActiveModel(m)];
+    }
+    return <LicenseAnnounceItem>[];
+  } catch (e) {
+    debugPrint('_parseActiveIsolate error: $e');
+    return <LicenseAnnounceItem>[];
+  }
+}
+
+/// Parse /history response — body shape:
+/// `{ "data": { "data": [ {...}, ... ] } }` หรือ `{ "data": [ ... ] }`
+List<LicenseAnnounceItem> _parseHistoryIsolate(String body) {
+  try {
+    final result = json.decode(body);
+    final data = result is Map ? result['data'] : null;
+    final list = (data is Map) ? data['data'] : (data is List ? data : null);
+    if (list is! List) return <LicenseAnnounceItem>[];
+    return list
+        .whereType<Map>()
+        .map((e) =>
+            AnnounceMentActiveModel.fromJson(Map<String, dynamic>.from(e)))
+        .map(LicenseAnnounceItem.fromActiveModel)
+        .toList(growable: false);
+  } catch (e) {
+    debugPrint('_parseHistoryIsolate error: $e');
+    return <LicenseAnnounceItem>[];
   }
 }
