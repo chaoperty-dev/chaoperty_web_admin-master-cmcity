@@ -12,6 +12,7 @@
 import 'dart:convert';
 
 import 'package:chaoperty/Constant/Myconstant.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:http/http.dart' as http;
 
 // ============================================================================
@@ -318,40 +319,11 @@ class CustomersReportService {
         return const CustomerReportResult(total: 0, items: []);
       }
 
-      final jsonRes = json.decode(res.body);
-      if (jsonRes is! Map<String, dynamic>) {
-        print('⚠️ fetchItems body is not a Map');
-        return const CustomerReportResult(total: 0, items: []);
-      }
-
-      final data = jsonRes['data'];
-      if (data is! Map<String, dynamic>) {
-        print('⚠️ fetchItems data is not a Map');
-        return const CustomerReportResult(total: 0, items: []);
-      }
-
-      final total = (data['total'] is num)
-          ? (data['total'] as num).toInt()
-          : int.tryParse(data['total']?.toString() ?? '') ?? 0;
-
-      final itemsRaw = data['items'];
-      if (itemsRaw is! List) {
-        _itemsCache =
-            CustomerReportResult(total: total, items: const []);
-        _itemsCacheTime = DateTime.now();
-        return _itemsCache!;
-      }
-
-      final items = itemsRaw
-          .whereType<Map<String, dynamic>>()
-          .map((m) => CustomerReportItem.fromJsonSafe(m))
-          .whereType<CustomerReportItem>()
-          .toList(growable: false);
-
-      final result = CustomerReportResult(total: total, items: items);
+      // ✅ Parse JSON ใน background isolate — ไม่ block UI
+      final result = await compute(_parseCustomersItemsIsolate, res.body);
       _itemsCache = result;
       _itemsCacheTime = DateTime.now();
-      print('✅ fetchItems parsed: ${items.length} items (total=$total)');
+      print('✅ fetchItems parsed: ${result.items.length} items (total=${result.total})');
       return result;
     } catch (e, st) {
       print('❌ fetchItems error: $e\n$st');
@@ -377,4 +349,41 @@ class CustomersReportService {
       'Authorization': 'Bearer $token',
     };
   }
+}
+
+// ============================================================================
+// Isolate-bound helpers
+// ============================================================================
+
+/// ✅ Top-level function — required by `compute()`
+/// รันใน background isolate → UI ไม่ค้างตอน parse JSON
+CustomerReportResult _parseCustomersItemsIsolate(String body) {
+  final jsonRes = json.decode(body);
+  if (jsonRes is! Map<String, dynamic>) {
+    print('⚠️ fetchItems body is not a Map');
+    return const CustomerReportResult(total: 0, items: []);
+  }
+
+  final data = jsonRes['data'];
+  if (data is! Map<String, dynamic>) {
+    print('⚠️ fetchItems data is not a Map');
+    return const CustomerReportResult(total: 0, items: []);
+  }
+
+  final total = (data['total'] is num)
+      ? (data['total'] as num).toInt()
+      : int.tryParse(data['total']?.toString() ?? '') ?? 0;
+
+  final itemsRaw = data['items'];
+  if (itemsRaw is! List) {
+    return CustomerReportResult(total: total, items: const []);
+  }
+
+  final items = itemsRaw
+      .whereType<Map<String, dynamic>>()
+      .map((m) => CustomerReportItem.fromJsonSafe(m))
+      .whereType<CustomerReportItem>()
+      .toList(growable: false);
+
+  return CustomerReportResult(total: total, items: items);
 }

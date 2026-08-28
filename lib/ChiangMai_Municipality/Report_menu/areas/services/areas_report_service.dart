@@ -13,6 +13,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:chaoperty/Constant/Myconstant.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:http/http.dart' as http;
 
 // ============================================================================
@@ -248,45 +249,11 @@ class AreasReportService {
         return const AreasReportResult();
       }
 
-      final jsonRes = json.decode(res.body);
-      if (jsonRes is! Map<String, dynamic>) {
-        return const AreasReportResult();
-      }
-
-      final data = jsonRes['data'];
-      if (data is! Map<String, dynamic>) {
-        return const AreasReportResult();
-      }
-
-      final itemsRaw = data['items'];
-      if (itemsRaw is! List) {
-        return const AreasReportResult();
-      }
-
-      final items = itemsRaw
-          .whereType<Map<String, dynamic>>()
-          .map((m) => AreasReportItem.fromJsonSafe(m))
-          .whereType<AreasReportItem>()
-          .toList(growable: false);
-
-      final result = AreasReportResult(
-        date: data['date']?.toString(),
-        announcementUuid: data['announcement_uuid']?.toString(),
-        totalArea: (data['total_area'] is num)
-            ? (data['total_area'] as num).toInt()
-            : null,
-        totalLeased: (data['total_leased'] is num)
-            ? (data['total_leased'] as num).toInt()
-            : null,
-        totalVacant: (data['total_vacant'] is num)
-            ? (data['total_vacant'] as num).toInt()
-            : null,
-        items: items,
-      );
-
+      // ✅ Parse JSON ใน background isolate — ไม่ block UI
+      final result = await compute(_parseAreasOverviewIsolate, res.body);
       _itemsCache = result;
       _itemsCacheTime = DateTime.now();
-      print('✅ fetchOverview parsed: ${items.length} items');
+      print('✅ fetchOverview parsed: ${result.items.length} items');
       return result;
     } catch (e) {
       print('❌ fetchOverview error: $e');
@@ -301,4 +268,48 @@ class AreasReportService {
       'Authorization': 'Bearer $token',
     };
   }
+}
+
+// ============================================================================
+// Isolate-bound helpers
+// ============================================================================
+
+/// ✅ Top-level function — required by `compute()`
+/// รันใน background isolate → UI ไม่ค้างตอน parse JSON
+AreasReportResult _parseAreasOverviewIsolate(String body) {
+  final jsonRes = json.decode(body);
+  if (jsonRes is! Map<String, dynamic>) {
+    return const AreasReportResult();
+  }
+
+  final data = jsonRes['data'];
+  if (data is! Map<String, dynamic>) {
+    return const AreasReportResult();
+  }
+
+  final itemsRaw = data['items'];
+  if (itemsRaw is! List) {
+    return const AreasReportResult();
+  }
+
+  final items = itemsRaw
+      .whereType<Map<String, dynamic>>()
+      .map((m) => AreasReportItem.fromJsonSafe(m))
+      .whereType<AreasReportItem>()
+      .toList(growable: false);
+
+  return AreasReportResult(
+    date: data['date']?.toString(),
+    announcementUuid: data['announcement_uuid']?.toString(),
+    totalArea: (data['total_area'] is num)
+        ? (data['total_area'] as num).toInt()
+        : null,
+    totalLeased: (data['total_leased'] is num)
+        ? (data['total_leased'] as num).toInt()
+        : null,
+    totalVacant: (data['total_vacant'] is num)
+        ? (data['total_vacant'] as num).toInt()
+        : null,
+    items: items,
+  );
 }
