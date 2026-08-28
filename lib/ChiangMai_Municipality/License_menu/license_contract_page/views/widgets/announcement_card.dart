@@ -16,8 +16,11 @@ class AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseContractViewModel>();
-    final hasAnnouncement = vm.announcementMessage?.trim().isNotEmpty ?? false;
+    final announcementMessage =
+        context.select<LicenseContractViewModel, String?>(
+      (vm) => vm.announcementMessage,
+    );
+    final hasAnnouncement = announcementMessage?.trim().isNotEmpty ?? false;
 
     return AnimatedContainer(
       duration: LcAnimations.medium,
@@ -117,7 +120,7 @@ class AnnouncementCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   hasAnnouncement
-                      ? vm.announcementMessage!
+                      ? announcementMessage!
                       : 'ไม่พบประกาศในขณะนี้',
                   maxLines: 3,
                   overflow: TextOverflow.ellipsis,
