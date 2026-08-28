@@ -18,6 +18,7 @@ import '../customers/views/theme/customers_report_theme.dart';
 import '../customers/views/widgets/customers_report_password_dialog.dart';
 import 'views/widgets/areas_report_header.dart';
 import 'views/widgets/areas_report_column_picker.dart';
+import 'views/widgets/areas_report_preview.dart';
 
 class AreasReportPage extends StatelessWidget {
   final String title;
@@ -118,6 +119,8 @@ class _AreasReportPageBody extends StatelessWidget {
                     const SizedBox(height: CrSpace.md),
                     _ErrorBanner(message: state.errorMessage!),
                   ],
+                  const SizedBox(height: CrSpace.lg),
+                  const AreasReportPreview(),
                   const SizedBox(height: CrSpace.lg),
                   const _InfoBanner(),
                 ],
