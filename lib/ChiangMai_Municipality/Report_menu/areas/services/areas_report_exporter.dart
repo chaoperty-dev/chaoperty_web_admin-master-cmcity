@@ -21,6 +21,11 @@ abstract class AreasReportExporter {
     required List<AreasReportItem> items,
     String? password,
   });
+
+  /// ✅ Preload deferred libraries ตอนเปิดหน้า (fire-and-forget)
+  /// ลด first-export cost 3-5s → 0
+  /// no-op ถ้า impl ไม่มี deferred libs (เช่น web)
+  Future<void> preload() async {}
 }
 
 /// สร้าง exporter ตาม platform (compile-time resolution)

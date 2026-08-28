@@ -83,6 +83,11 @@ class CustomersReportViewModel extends ChangeNotifier {
     // ✅ Fire-and-forget — ไม่ block render ครั้งแรก
     // หน้าโชว์ tile ทันที, total count จะ update ทีหลังเมื่อ API ตอบ
     unawaited(preloadItems());
+
+    // ✅ Preload deferred libs ตอนเปิดหน้า — ลด first-export cost 3-5s
+    // พอ user กด export, libs พร้อมแล้ว → export เหลือ ~1-2s
+    _exporter ??= buildExporter();
+    unawaited(_exporter!.preload());
   }
 
   void _initDefaultColumns() {

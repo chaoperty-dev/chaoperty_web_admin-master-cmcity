@@ -30,6 +30,12 @@ import 'customers_report_service.dart';
 class _IoExporter implements CustomersReportExporter {
   bool _libsLoaded = false;
 
+  @override
+  Future<void> preload() async {
+    // ✅ Fire-and-forget ตอน VM init — ลด first-export cost 3-5s
+    await _ensureLibs();
+  }
+
   Future<void> _ensureLibs() async {
     if (_libsLoaded) return;
     // ✅ Parallel load — saves ~100-300ms on first export

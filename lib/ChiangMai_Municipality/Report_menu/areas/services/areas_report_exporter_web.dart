@@ -22,6 +22,12 @@ import 'areas_report_service.dart';
 class _WebExporter implements AreasReportExporter {
   bool _libsLoaded = false;
 
+  @override
+  Future<void> preload() async {
+    // ✅ Fire-and-forget ตอน VM init — ลด first-export cost
+    await _ensureLibs();
+  }
+
   Future<void> _ensureLibs() async {
     if (_libsLoaded) return;
     await ed.loadLibrary();
