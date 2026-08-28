@@ -183,8 +183,8 @@ class AreasReportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1) โหลด overview (force refresh)
-      final result = await _service.fetchOverview(forceRefresh: true);
+      // 1) โหลด overview (ใช้ cache ถ้ายังสด — ไม่ force refresh เพื่อลด network round-trip)
+      final result = await _service.fetchOverview();
       _totalArea = result.totalArea ?? 0;
       _totalLeased = result.totalLeased ?? 0;
       _totalVacant = result.totalVacant ?? 0;

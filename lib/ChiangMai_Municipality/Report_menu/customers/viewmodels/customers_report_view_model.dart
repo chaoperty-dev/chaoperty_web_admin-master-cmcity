@@ -180,8 +180,8 @@ class CustomersReportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // 1) โหลด items (force refresh)
-      final result = await _service.fetchItems(forceRefresh: true);
+      // 1) โหลด items (ใช้ cache ถ้ายังสด — ไม่ force refresh เพื่อลด network round-trip)
+      final result = await _service.fetchItems();
       _totalItems = result.total;
 
       // 2) Lazy create exporter (ครั้งแรกจะ load heavy packages)
