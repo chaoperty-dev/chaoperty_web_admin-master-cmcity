@@ -359,7 +359,9 @@ class _PreviewTableState extends State<_PreviewTable> {
     return SizedBox(
       height: _kViewH,
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        // ✅ stretch ให้คอลัมน์ทั้งสองได้ความสูงคงที่ (460)
+        //    ไม่งั้น data column จะ unbounded → SingleChildScrollView วินาทีนี้พัง
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ─── คอลัมน์เลขแถว (แช่แข็งแนวนอน) ───
           Column(
@@ -384,7 +386,7 @@ class _PreviewTableState extends State<_PreviewTable> {
           // ─── ตารางข้อมูล ───
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // หัวตาราง (A/B/C) — sync แนวนอนกับ body
                 SingleChildScrollView(
