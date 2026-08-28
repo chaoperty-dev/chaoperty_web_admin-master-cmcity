@@ -43,8 +43,12 @@ class AreaMenuViewModel extends ChangeNotifier {
   // ---------- Data ----------
   List<Map<String, dynamic>> _allItems = [];
 
-  /// Filtered list (sub-zone + zone + status + request_status + search)
-  List<Map<String, dynamic>> get requests {
+  /// ✅ Filter cache — invalidate on filter/data change (5 chained .where() was hot)
+  List<Map<String, dynamic>>? _filteredCache;
+
+  List<Map<String, dynamic>> get requests => _filteredCache ??= _computeFiltered();
+
+  List<Map<String, dynamic>> _computeFiltered() {
     Iterable<Map<String, dynamic>> out = _allItems;
 
     if (_selectedZoneSub != null &&
@@ -90,6 +94,10 @@ class AreaMenuViewModel extends ChangeNotifier {
     }
 
     return out.toList();
+  }
+
+  void _invalidateFilterCache() {
+    _filteredCache = null;
   }
 
   // ---------- Stats (จาก API) ----------
@@ -256,6 +264,7 @@ class AreaMenuViewModel extends ChangeNotifier {
       _totalLeased = result.totalLeased;
       _totalVacant = result.totalVacant;
       _reportDate = result.date;
+      _invalidateFilterCache();
       _validateSelectedZone();
     } catch (e) {
       _emitError('โหลดข้อมูลไม่สำเร็จ: $e');
@@ -279,26 +288,31 @@ class AreaMenuViewModel extends ChangeNotifier {
     _selectedZoneSub = value ?? 'ทั้งหมด';
     // เปลี่ยน sub-zone ใหม่ → reset zone เป็น 'ทั้งหมด'
     _selectedZone = 'ทั้งหมด';
+    _invalidateFilterCache();
     notifyListeners();
   }
 
   void onZoneChanged(String? value) {
     _selectedZone = value ?? 'ทั้งหมด';
+    _invalidateFilterCache();
     notifyListeners();
   }
 
   void onStatusChanged(String? value) {
     _selectedStatus = value ?? 'ทั้งหมด';
+    _invalidateFilterCache();
     notifyListeners();
   }
 
   void onRequestStatusChanged(String? value) {
     _selectedRequestStatus = value ?? 'ทั้งหมด';
+    _invalidateFilterCache();
     notifyListeners();
   }
 
   void setSearch(String value) {
     _searchQuery = value;
+    _invalidateFilterCache();
     notifyListeners();
   }
 
