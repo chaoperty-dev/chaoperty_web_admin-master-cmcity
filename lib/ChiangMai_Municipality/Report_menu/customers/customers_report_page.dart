@@ -19,6 +19,7 @@ import 'viewmodels/customers_report_view_model.dart';
 import 'views/theme/customers_report_theme.dart';
 import 'views/widgets/customers_report_header.dart';
 import 'views/widgets/customers_report_column_picker.dart';
+import 'views/widgets/customers_report_preview.dart';
 import 'views/widgets/customers_report_password_dialog.dart';
 
 class CustomersReportPage extends StatelessWidget {
@@ -113,6 +114,8 @@ class _CustomersReportPageBody extends StatelessWidget {
                     const SizedBox(height: CrSpace.md),
                     _ErrorBanner(message: state.errorMessage!),
                   ],
+                  const SizedBox(height: CrSpace.lg),
+                  const CustomersReportPreview(),
                   const SizedBox(height: CrSpace.lg),
                   const _InfoBanner(),
                 ],
