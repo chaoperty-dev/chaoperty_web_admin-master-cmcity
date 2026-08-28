@@ -14,6 +14,7 @@
 // ============================================================================
 
 // ignore: avoid_web_libraries_in_flutter
+import 'dart:async';
 import 'dart:io' show Directory, File;
 import 'dart:typed_data';
 
@@ -71,6 +72,8 @@ class _IoExporter implements CustomersReportExporter {
           .toList(growable: false),
       password: password,
     );
+    print(
+        '⏱️ [${sw.elapsedMilliseconds}ms] serialize input done (${items.length} rows × ${cols.length} cols)');
 
     // 2) ตั้งชื่อไฟล์
     final ts = DateTime.now()
@@ -79,8 +82,7 @@ class _IoExporter implements CustomersReportExporter {
         .replaceAll('.', '-');
     final filename = 'customers_report_$ts.xlsx';
 
-    // 3) ✅ Build xlsx + encrypt ใน background isolate
-    //    parallel กับ getTemporaryDirectory — ทั้งสองเป็น async ops อิสระกัน
+    // 3) ✅ Build xlsx + encrypt ใน background isolate (parallel กับ temp dir)
     final results = await Future.wait([
       compute(_buildExcelBytesIsolate, input),
       pp.getTemporaryDirectory(),
@@ -90,18 +92,23 @@ class _IoExporter implements CustomersReportExporter {
     print(
         '⏱️ [${sw.elapsedMilliseconds}ms] xlsx built (${bytes.length} bytes) + temp dir ready');
 
-    // 4) Save → temp dir
+    // 4) ✅ Save file ใน background isolate — file I/O ไม่ block UI thread
+    //    บาง device (Android) writeAsBytes บน UI thread = freeze 100-500ms+
     final file = File('${dir.path}/$filename');
-    // ✅ Drop flush:true — saves 50-300ms on Android by skipping fsync.
-    // File is in temp dir (not critical data); share dialog reads immediately.
-    await file.writeAsBytes(bytes);
-    print('⏱️ [${sw.elapsedMilliseconds}ms] file written to ${file.path}');
+    await compute(_writeFileIsolate, _WriteFileInput(path: file.path, bytes: bytes));
+    print('⏱️ [${sw.elapsedMilliseconds}ms] file written (background isolate)');
 
-    // 5) เปิด Share dialog
-    await sp.Share.shareXFiles(
+    // 5) ✅ Fire-and-forget share dialog — คืน file path ทันที ไม่รอ share dialog
+    //    Share บน Android ใช้เวลา 2-5s เปิด system chooser → block UI ถ้า await
+    //    ให้ user เห็น snackbar "ส่งออกสำเร็จ" ทันที + share เปิดใน background
+    unawaited(sp.Share.shareXFiles(
       [sp.XFile(file.path)],
       text: 'รายงานลูกค้า ($filename)',
-    );
+    ).then((result) {
+      print('⏱️ [${sw.elapsedMilliseconds}ms] share dialog closed: $result');
+    }).catchError((e) {
+      print('⚠️ share error: $e');
+    }));
 
     sw.stop();
     print(
@@ -172,6 +179,22 @@ Future<List<int>> _buildExcelBytesIsolate(_ExcelBuildInput input) async {
   }
 
   return plainBytes;
+}
+
+/// ✅ Input สำหรับ `_writeFileIsolate` — sendable + immutable
+class _WriteFileInput {
+  final String path;
+  final List<int> bytes;
+
+  const _WriteFileInput({required this.path, required this.bytes});
+}
+
+/// ✅ Top-level function — required by `compute()`
+/// Write file ใน background isolate เพื่อไม่ให้ UI thread block
+/// บาง Android device file I/O ใช้เวลา 100-500ms+ บน UI thread
+Future<void> _writeFileIsolate(_WriteFileInput input) async {
+  final file = File(input.path);
+  await file.writeAsBytes(input.bytes);
 }
 
 CustomersReportExporter createExporter() => _IoExporter();
