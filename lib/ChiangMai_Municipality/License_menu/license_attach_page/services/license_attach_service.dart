@@ -3,6 +3,9 @@
 // ============================================================================
 // Service — โหลดข้อมูล "คำขอต่อสัญญา" (status แรก) จาก API
 // ใช้ read_GC_Reviews() + HTTP ตรงสำหรับ zones/subzones
+//
+// ✅ listAttachTasks JSON parse → compute() isolate (M2-ext pattern)
+//    ลด UI jank ตอน parse list 50 รายการ
 // ============================================================================
 
 import 'dart:convert';
@@ -11,6 +14,7 @@ import 'package:chaoperty/Constant/Myconstant.dart';
 import 'package:chaoperty/Constant/api_cache.dart';
 import 'package:chaoperty/Model/GetSubZone_Model.dart';
 import 'package:chaoperty/Model/GetZone_Model.dart';
+import 'package:flutter/foundation.dart' show compute;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -210,40 +214,11 @@ class LicenseAttachService {
         throw Exception('โหลดรายการไม่สำเร็จ (status: ${res.statusCode})');
       }
 
-      final body = json.decode(res.body) as Map<String, dynamic>;
-      final dataRaw = body['data'];
-      final data = dataRaw is List
-          ? dataRaw
-              .whereType<Map<String, dynamic>>()
-              .map(AttachTask.fromJson)
-              .toList()
-          : <AttachTask>[];
-
-      final meta = body['meta'] is Map
-          ? Map<String, dynamic>.from(body['meta'] as Map)
-          : <String, dynamic>{};
-      final links = body['links'] is Map
-          ? Map<String, dynamic>.from(body['links'] as Map)
-          : <String, dynamic>{};
-
-      return AttachTasksResponse(
-        data: data,
-        currentPage: int.tryParse('${meta['current_page'] ?? 1}') ?? 1,
-        lastPage: int.tryParse('${meta['last_page'] ?? 1}') ?? 1,
-        perPage: int.tryParse('${meta['per_page'] ?? perPage}') ?? perPage,
-        total: int.tryParse('${meta['total'] ?? data.length}') ?? data.length,
-        linksFirst: (links['first'] ?? '').toString().isEmpty
-            ? null
-            : links['first'].toString(),
-        linksLast: (links['last'] ?? '').toString().isEmpty
-            ? null
-            : links['last'].toString(),
-        linksPrev: (links['prev'] ?? '').toString().isEmpty
-            ? null
-            : links['prev'].toString(),
-        linksNext: (links['next'] ?? '').toString().isEmpty
-            ? null
-            : links['next'].toString(),
+      // ✅ Parse JSON + build response ใน background isolate
+      //    per_page=50 list ยาว → parse เป็น bottleneck บน UI isolate
+      return compute(
+        _parseAttachTasksIsolate,
+        _ParseAttachTasksInput(body: res.body, fallbackPerPage: perPage),
       );
     } catch (e) {
       print('[listAttachTasks][ERROR] $e');
@@ -649,4 +624,61 @@ class LicenseAttachService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('renTalSer');
   }
+}
+
+// ============================================================================
+// Isolate-bound helpers (M2-ext pattern)
+// ============================================================================
+
+/// Input สำหรับ `_parseAttachTasksIsolate`
+/// ต้องเป็น immutable + sendable (final fields only)
+class _ParseAttachTasksInput {
+  final String body;
+  final int fallbackPerPage;
+
+  const _ParseAttachTasksInput({
+    required this.body,
+    required this.fallbackPerPage,
+  });
+}
+
+/// ✅ Top-level function — required by `compute()`
+/// Parse JSON + build AttachTasksResponse ใน background isolate
+AttachTasksResponse _parseAttachTasksIsolate(_ParseAttachTasksInput input) {
+  final body = json.decode(input.body) as Map<String, dynamic>;
+  final dataRaw = body['data'];
+  final data = dataRaw is List
+      ? dataRaw
+          .whereType<Map<String, dynamic>>()
+          .map(AttachTask.fromJson)
+          .toList(growable: false)
+      : <AttachTask>[];
+
+  final meta = body['meta'] is Map
+      ? Map<String, dynamic>.from(body['meta'] as Map)
+      : <String, dynamic>{};
+  final links = body['links'] is Map
+      ? Map<String, dynamic>.from(body['links'] as Map)
+      : <String, dynamic>{};
+
+  return AttachTasksResponse(
+    data: data,
+    currentPage: int.tryParse('${meta['current_page'] ?? 1}') ?? 1,
+    lastPage: int.tryParse('${meta['last_page'] ?? 1}') ?? 1,
+    perPage: int.tryParse('${meta['per_page'] ?? input.fallbackPerPage}') ??
+        input.fallbackPerPage,
+    total: int.tryParse('${meta['total'] ?? data.length}') ?? data.length,
+    linksFirst: (links['first'] ?? '').toString().isEmpty
+        ? null
+        : links['first'].toString(),
+    linksLast: (links['last'] ?? '').toString().isEmpty
+        ? null
+        : links['last'].toString(),
+    linksPrev: (links['prev'] ?? '').toString().isEmpty
+        ? null
+        : links['prev'].toString(),
+    linksNext: (links['next'] ?? '').toString().isEmpty
+        ? null
+        : links['next'].toString(),
+  );
 }
