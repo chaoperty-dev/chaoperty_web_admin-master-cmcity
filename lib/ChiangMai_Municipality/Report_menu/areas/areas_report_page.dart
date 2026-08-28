@@ -38,12 +38,16 @@ class AreasReportPage extends StatelessWidget {
 /// Snapshot — body rebuild เฉพาะเมื่อ field ที่ header/error banner ใช้เปลี่ยน
 class _BodyState {
   final int? totalArea;
+  final int? totalLeased;
+  final int? totalVacant;
   final bool isExporting;
   final String phaseLabel;
   final String? errorMessage;
 
   const _BodyState({
     required this.totalArea,
+    required this.totalLeased,
+    required this.totalVacant,
     required this.isExporting,
     required this.phaseLabel,
     required this.errorMessage,
@@ -53,13 +57,21 @@ class _BodyState {
   bool operator ==(Object other) =>
       other is _BodyState &&
       other.totalArea == totalArea &&
+      other.totalLeased == totalLeased &&
+      other.totalVacant == totalVacant &&
       other.isExporting == isExporting &&
       other.phaseLabel == phaseLabel &&
       other.errorMessage == errorMessage;
 
   @override
-  int get hashCode =>
-      Object.hash(totalArea, isExporting, phaseLabel, errorMessage);
+  int get hashCode => Object.hash(
+        totalArea,
+        totalLeased,
+        totalVacant,
+        isExporting,
+        phaseLabel,
+        errorMessage,
+      );
 }
 
 class _AreasReportPageBody extends StatelessWidget {
@@ -71,12 +83,20 @@ class _AreasReportPageBody extends StatelessWidget {
     return Selector<AreasReportViewModel, _BodyState>(
       selector: (_, vm) => _BodyState(
         totalArea: vm.totalArea,
+        totalLeased: vm.totalLeased,
+        totalVacant: vm.totalVacant,
         isExporting: vm.isExporting,
         phaseLabel: vm.phaseLabel,
         errorMessage: vm.errorMessage,
       ),
       shouldRebuild: (a, b) => a != b,
       builder: (context, state, _) {
+        // ✅ Subtitle คำนวณใน page (Snapshot เปลี่ยน → rebuild)
+        final subtitle = state.totalArea != null
+            ? 'พื้นที่ทั้งหมด ${state.totalArea} ล็อค '
+                '(ว่าง ${state.totalVacant ?? 0} / เช่าแล้ว ${state.totalLeased ?? 0})'
+            : null;
+
         return Scaffold(
           backgroundColor: CrColors.surface,
           body: SafeArea(
@@ -87,9 +107,7 @@ class _AreasReportPageBody extends StatelessWidget {
                 children: [
                   AreasReportHeader(
                     title: title,
-                    subtitle: state.totalArea != null
-                        ? 'ทั้งหมด ${state.totalArea} ล็อค'
-                        : null,
+                    subtitle: subtitle,
                     onDownload: () => _onDownload(context),
                     isExporting: state.isExporting,
                     phaseLabel: state.phaseLabel,

@@ -5,9 +5,7 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../../viewmodels/areas_report_view_model.dart';
 import '../../../customers/views/theme/customers_report_theme.dart';
 
 class AreasReportHeader extends StatelessWidget {
@@ -28,11 +26,7 @@ class AreasReportHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreasReportViewModel>();
-    final subtitleText = subtitle ??
-        (vm.totalArea != null
-            ? 'พื้นที่ทั้งหมด ${vm.totalArea} ล็อค (ว่าง ${vm.totalVacant ?? 0} / เช่าแล้ว ${vm.totalLeased ?? 0})'
-            : null);
+    // ✅ Pure props — no VM access. Page passes subtitle already.
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
@@ -78,10 +72,10 @@ class AreasReportHeader extends StatelessWidget {
                     fontSize: 20,
                   ),
                 ),
-                if (subtitleText != null) ...[
+                if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(
-                    subtitleText,
+                    subtitle!,
                     style: CrText.caption.copyWith(
                       color: Colors.white.withOpacity(.65),
                     ),
