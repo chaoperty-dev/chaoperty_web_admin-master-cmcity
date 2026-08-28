@@ -86,9 +86,9 @@ class _LicensefactcheckDetailPageBodyState
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicensefactcheckDetailViewModel>();
-    final step = vm.currentDetailStep;
-    final total = vm.totalDetailSteps;
+    final step = context.select<LicensefactcheckDetailViewModel, int>(
+        (vm) => vm.currentDetailStep);
+    const total = LicensefactcheckDetailViewModel.detailTotalSteps;
     final subtitle = step == 1 ? 'ตรวจสอบข้อเท็จจริง' : 'สรุปผลการตรวจสอบ';
 
     return Scaffold(
@@ -117,7 +117,10 @@ class _LicensefactcheckDetailPageBodyState
               readOnly: false,
               currentStep: step,
               totalSteps: total,
-              onNext: step < total ? vm.nextDetailStep : null,
+              onNext: step < total
+                  ? () =>
+                        context.read<LicensefactcheckDetailViewModel>().nextDetailStep()
+                  : null,
               onSave: () {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -132,7 +135,9 @@ class _LicensefactcheckDetailPageBodyState
               },
               onCancel: () {
                 if (step > 1) {
-                  vm.previousDetailStep();
+                  context
+                      .read<LicensefactcheckDetailViewModel>()
+                      .previousDetailStep();
                 } else {
                   if (Navigator.of(context).canPop()) {
                     Navigator.of(context).pop();
