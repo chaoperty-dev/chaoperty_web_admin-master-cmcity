@@ -1408,11 +1408,10 @@ packages:
   protect:
     dependency: "direct main"
     description:
-      name: protect
-      sha256: "8ee84aa188731de92ddd0b8510cc950b8996b5488bb96caeaa19f089490c89cb"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
+      path: "lib/_vendor/protect"
+      relative: true
+    source: path
+    version: "1.0.0-local.1"
   provider:
     dependency: "direct main"
     description:

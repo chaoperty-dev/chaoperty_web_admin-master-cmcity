@@ -162,6 +162,12 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^2.0.0
 
+# 🔧 Local fork of package:protect — spinCount 100000 → 10000 (encrypt ~3s instead of ~30s on web).
+# See lib/_vendor/protect/README.md for details and compatibility notes.
+dependency_overrides:
+  protect:
+    path: lib/_vendor/protect
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 

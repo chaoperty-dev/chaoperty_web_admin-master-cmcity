@@ -1,0 +1,19 @@
+name: protect
+description: Protect encrypts/decrypt your excel files with password.
+# 🔧 LOCAL FORK — see lib/_vendor/protect/README.md
+# - spinCount reduced from 100000 → 10000 (Office Open XML PBKDF2 iterations)
+# - Reason: pure-Dart SHA-512 in JS = ~30s for 9KB on web (compute() no help)
+# - 10K iterations: ~3s on web, format-compatible with Excel password-protected xlsx
+version: 1.0.0-local.1
+homepage: https://github.com/justkawal/protect
+
+environment:
+  sdk: ">=2.16.0 <3.0.0"
+
+dependencies:
+  xml_parser: ^1.0.0
+  crypto: ^3.0.1
+  aes_crypt_null_safe: ^2.0.2
+
+dev_dependencies:
+  flutter_lints: ^1.0.4
