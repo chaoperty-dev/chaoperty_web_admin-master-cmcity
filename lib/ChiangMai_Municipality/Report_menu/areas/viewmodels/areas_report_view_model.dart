@@ -31,10 +31,10 @@ class AreasReportViewModel extends ChangeNotifier {
 
   // ---------- State ----------
   List<AreasReportColumn> _columns = [];
+  List<AreasReportColumn>? _sortedCache;
+  List<AreasReportColumn> get columns => _sortedCache ??= _computeSorted();
 
-  List<AreasReportColumn> get columns => _getSortedColumns();
-
-  List<AreasReportColumn> _getSortedColumns() {
+  List<AreasReportColumn> _computeSorted() {
     if (_fieldOrder.isEmpty) return _columns;
     final byField = {for (final c in _columns) c.field: c};
     final out = <AreasReportColumn>[];
@@ -46,6 +46,10 @@ class AreasReportViewModel extends ChangeNotifier {
       if (!_fieldOrder.contains(c.field)) out.add(c);
     }
     return out;
+  }
+
+  void _invalidateSortCache() {
+    _sortedCache = null;
   }
 
   List<String> _fieldOrder = [];
@@ -105,6 +109,7 @@ class AreasReportViewModel extends ChangeNotifier {
           .where((f) => _columns.any((c) => c.field == f))
           .toSet();
     }
+    _invalidateSortCache();
   }
 
   /// ✅ ใช้ default columns (TH labels) — ไม่ต้องเรียก API
@@ -121,6 +126,7 @@ class AreasReportViewModel extends ChangeNotifier {
     if (newIndex > oldIndex) newIndex -= 1;
     final field = _fieldOrder.removeAt(oldIndex);
     _fieldOrder.insert(newIndex, field);
+    _invalidateSortCache();
     notifyListeners();
   }
 

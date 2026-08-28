@@ -1,7 +1,14 @@
 // ============================================================================
 // areas_report_column_picker.dart
 // ============================================================================
-// Checklist + Drag & Drop reorder (pattern เดียวกับ customers)
+// Checklist สำหรับเลือก columns ที่จะ export
+// - ✅ Drag & Drop reorder (ReorderableListView)
+// - ✅ Toggle check / uncheck
+// - ✅ Select all / deselect all
+//
+// ✅ ใช้ Selector — ไม่ rebuild บ่อย
+//   rebuild เฉพาะ columns / selectedCount / errorMessage เปลี่ยน
+//   ไม่ rebuild ตอน isExporting / totalArea เปลี่ยน
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -11,13 +18,96 @@ import '../../viewmodels/areas_report_view_model.dart';
 import '../../services/areas_report_service.dart';
 import '../../../customers/views/theme/customers_report_theme.dart';
 
+/// Snapshot ของ VM state ที่ picker ต้อง rebuild เมื่อเปลี่ยน
+class _PickerData {
+  final List<AreasReportColumn> columns;
+  final int selectedCount;
+  final String? errorMessage;
+
+  const _PickerData({
+    required this.columns,
+    required this.selectedCount,
+    required this.errorMessage,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _PickerData &&
+        other.selectedCount == selectedCount &&
+        other.errorMessage == errorMessage &&
+        _listEq(other.columns, columns);
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        selectedCount,
+        errorMessage,
+        identityHashCode(columns),
+      );
+
+  static bool _listEq(List<AreasReportColumn> a, List<AreasReportColumn> b) {
+    if (identical(a, b)) return true;
+    if (a.length != b.length) return false;
+    for (int i = 0; i < a.length; i++) {
+      if (a[i].field != b[i].field) return false;
+    }
+    return true;
+  }
+}
+
 class AreasReportColumnPicker extends StatelessWidget {
   const AreasReportColumnPicker({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreasReportViewModel>();
-    final cols = vm.columns;
+    return Selector<AreasReportViewModel, _PickerData>(
+      selector: (_, vm) => _PickerData(
+        columns: vm.columns,
+        selectedCount: vm.selectedCount,
+        errorMessage: vm.errorMessage,
+      ),
+      shouldRebuild: (a, b) => a != b,
+      builder: (context, data, _) {
+        // ✅ Read VM (ไม่ subscribe) สำหรับ actions/callbacks
+        final vm = context.read<AreasReportViewModel>();
+        return _PickerContent(
+          data: data,
+          onSelectAll: vm.selectAllColumns,
+          onDeselectAll: vm.deselectAllColumns,
+          onReorder: vm.reorderColumns,
+          isSelected: vm.isSelected,
+          onToggle: vm.toggleColumn,
+        );
+      },
+    );
+  }
+}
+
+/// ============================================================
+/// _PickerContent — pure stateless, ไม่ผูกกับ Provider โดยตรง
+/// ใช้ props ทั้งหมด → rebuild เฉพาะตอน data เปลี่ยน
+/// ============================================================
+class _PickerContent extends StatelessWidget {
+  final _PickerData data;
+  final VoidCallback onSelectAll;
+  final VoidCallback onDeselectAll;
+  final void Function(int, int) onReorder;
+  final bool Function(String) isSelected;
+  final void Function(String) onToggle;
+
+  const _PickerContent({
+    required this.data,
+    required this.onSelectAll,
+    required this.onDeselectAll,
+    required this.onReorder,
+    required this.isSelected,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cols = data.columns;
 
     if (cols.isEmpty) {
       return Container(
@@ -25,7 +115,7 @@ class AreasReportColumnPicker extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 60),
         alignment: Alignment.center,
         child: Text(
-          vm.errorMessage ?? 'ไม่พบรายการ column',
+          data.errorMessage ?? 'ไม่พบรายการ column',
           style: CrText.bodyMuted,
         ),
       );
@@ -36,12 +126,13 @@ class AreasReportColumnPicker extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Header bar
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 CrSpace.lg, CrSpace.md, CrSpace.md, CrSpace.sm),
             child: Row(
               children: [
-                Icon(Icons.checklist_rounded,
+                const Icon(Icons.checklist_rounded,
                     size: 18, color: CrColors.primary),
                 const SizedBox(width: 8),
                 Text(
@@ -50,7 +141,7 @@ class AreasReportColumnPicker extends StatelessWidget {
                 ),
                 const Spacer(),
                 Text(
-                  '${vm.selectedCount} / ${cols.length}',
+                  '${data.selectedCount} / ${cols.length}',
                   style: CrText.bodyMuted.copyWith(
                     color: CrColors.primary,
                     fontSize: 13,
@@ -58,31 +149,34 @@ class AreasReportColumnPicker extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                _MiniBtn(label: 'เลือกทั้งหมด', onTap: vm.selectAllColumns),
+                _MiniBtn(label: 'เลือกทั้งหมด', onTap: onSelectAll),
                 const SizedBox(width: 6),
-                _MiniBtn(label: 'ยกเลิก', onTap: vm.deselectAllColumns),
+                _MiniBtn(label: 'ยกเลิก', onTap: onDeselectAll),
               ],
             ),
           ),
           const Divider(height: 1, color: CrColors.border),
+          // ✅ ReorderableListView - รองรับ drag & drop
           Padding(
             padding: const EdgeInsets.all(CrSpace.md),
-            child: ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              buildDefaultDragHandles: false,
-              itemCount: cols.length,
-              onReorder: vm.reorderColumns,
-              itemBuilder: (context, index) {
-                final col = cols[index];
-                return _AreasColumnTile(
-                  key: ValueKey('area_col_${col.field}'),
-                  index: index,
-                  column: col,
-                  selected: vm.isSelected(col.field),
-                  onToggle: () => vm.toggleColumn(col.field),
-                );
-              },
+            child: RepaintBoundary(
+              child: ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                buildDefaultDragHandles: false, // ใช้ custom handle
+                itemCount: cols.length,
+                onReorder: onReorder,
+                itemBuilder: (context, index) {
+                  final col = cols[index];
+                  return _AreasColumnTile(
+                    key: ValueKey('area_col_${col.field}'),
+                    index: index,
+                    column: col,
+                    selected: isSelected(col.field),
+                    onToggle: () => onToggle(col.field),
+                  );
+                },
+              ),
             ),
           ),
         ],
@@ -92,7 +186,7 @@ class AreasReportColumnPicker extends StatelessWidget {
 }
 
 /// ============================================================
-/// _AreasColumnTile — tile พร้อม drag handle + checkbox
+/// _AreasColumnTile — tile พร้อม drag handle ซ้าย + checkbox + label
 ///
 /// ✅ StatelessWidget (ไม่ track hover)
 /// ✅ ไม่ใช้ AnimatedContainer (decoration static ตาม `selected` เท่านั้น)
