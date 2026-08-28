@@ -1,22 +1,18 @@
 // ============================================================================
 // areas_report_view_model.dart
 // ============================================================================
-// ViewModel — จัดการ state + export logic สำหรับ "รายงานพื้นที่เช่า"
-// - โหลด columns (hard-coded TH) — ไม่ต้อง fetch API
-// - โหลด /areas/overview — ได้ items
-// - เลือก columns + drag & drop reorder + export xlsx
+// ViewModel — state + delegate export ไปยัง platform-specific exporter
+//
+// ✅ LIGHTWEIGHT: ไม่ import excel_dart / protect / share_plus / path_provider
+// ✅ Heavy packages ถูก load ผ่าน exporter (deferred) — เฉพาะตอนกด export
+// ✅ ไม่มี dart:html / dart:io (แก้บั๊ก conflict บน mobile build)
 // ============================================================================
 
 import 'dart:async';
-// ignore: avoid_web_libraries_in_flutter
-import 'dart:html' as html;
-import 'dart:io' show File;
 
-import 'package:excel_dart/excel_dart.dart' as ed;
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:share_plus/share_plus.dart';
 
+import '../services/areas_report_exporter.dart';
 import '../services/areas_report_service.dart';
 
 class AreasReportViewModel extends ChangeNotifier {
@@ -27,6 +23,10 @@ class AreasReportViewModel extends ChangeNotifier {
   }
 
   final AreasReportService _service;
+
+  /// ✅ Lazy — สร้าง exporter ตอนกด export ครั้งแรก
+  /// ทำให้หน้านี้เปิดเร็ว (ไม่ load heavy deps ตอน init)
+  AreasReportExporter? _exporter;
 
   // ---------- State ----------
   List<AreasReportColumn> _columns = [];
@@ -74,7 +74,9 @@ class AreasReportViewModel extends ChangeNotifier {
   Future<void> _init() async {
     _initDefaultColumns();
     notifyListeners();
-    await preloadOverview();
+    // ✅ Fire-and-forget — ไม่ block render ครั้งแรก
+    // หน้าโชว์ tile ทันที, total count จะ update ทีหลังเมื่อ API ตอบ
+    unawaited(preloadOverview());
   }
 
   /// ✅ Initial columns แบบ hard-coded (TH labels)
@@ -165,9 +167,10 @@ class AreasReportViewModel extends ChangeNotifier {
   }
 
   // ===============================================================
-  // Export to Excel (.xlsx)
+  // Export — delegate ให้ platform-specific exporter
   // ===============================================================
-  Future<String?> exportToExcel() async {
+  /// คืน path/url ของไฟล์ที่ export สำเร็จ (null = ล้มเหลว)
+  Future<String?> exportToExcel({String? password}) async {
     if (_isExporting) return null;
     if (_selectedFields.isEmpty) {
       _errorMessage = 'กรุณาเลือกอย่างน้อย 1 column';
@@ -180,35 +183,26 @@ class AreasReportViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final result =
-          await _service.fetchOverview(forceRefresh: true);
-      final items = result.items;
+      // 1) โหลด overview (force refresh)
+      final result = await _service.fetchOverview(forceRefresh: true);
       _totalArea = result.totalArea ?? 0;
       _totalLeased = result.totalLeased ?? 0;
       _totalVacant = result.totalVacant ?? 0;
 
-      final cols = selectedColumnsList;
-      final bytes = _buildExcelBytes(cols, items);
+      // 2) Lazy create exporter (ครั้งแรกจะ load heavy packages)
+      _exporter ??= buildExporter();
 
-      final ts = DateTime.now()
-          .toIso8601String()
-          .replaceAll(':', '-')
-          .replaceAll('.', '-');
-      final filename = 'areas_report_$ts.xlsx';
+      // 3) ส่งให้ platform-specific exporter
+      final saved = await _exporter!.export(
+        cols: selectedColumnsList,
+        items: result.items,
+        password: password,
+      );
 
-      String? savedPath;
-      if (kIsWeb) {
-        savedPath = _webDownload(bytes, filename);
-      } else {
-        savedPath = await _nativeSaveAndShare(bytes, filename);
-      }
-
-      print('✅ xlsx saved: $savedPath (${bytes.length} bytes, ${items.length} rows)');
-
-      _lastExportPath = savedPath;
+      _lastExportPath = saved;
       _isExporting = false;
       notifyListeners();
-      return savedPath;
+      return saved;
     } catch (e, st) {
       print('❌ exportToExcel error: $e\n$st');
       _errorMessage = 'Export ล้มเหลว: $e';
@@ -216,60 +210,6 @@ class AreasReportViewModel extends ChangeNotifier {
       notifyListeners();
       return null;
     }
-  }
-
-  /// Web-only: trigger download
-  /// ignore: avoid_web_libraries_in_flutter
-  String _webDownload(List<int> bytes, String filename) {
-    // ignore: avoid_web_libraries_in_flutter
-    final blob = html.Blob(
-      [bytes],
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    );
-    final url = html.Url.createObjectUrlFromBlob(blob);
-    final anchor = html.AnchorElement(href: url)
-      ..download = filename
-      ..style.display = 'none';
-    html.document.body?.append(anchor);
-    anchor.click();
-    anchor.remove();
-    Future.delayed(const Duration(seconds: 30), () {
-      html.Url.revokeObjectUrl(url);
-    });
-    return 'web://download/$filename';
-  }
-
-  /// Mobile/Desktop: save + share
-  Future<String> _nativeSaveAndShare(
-      List<int> bytes, String filename) async {
-    final dir = await getTemporaryDirectory();
-    final file = File('${dir.path}/$filename');
-    await file.writeAsBytes(bytes, flush: true);
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      text: 'รายงานพื้นที่เช่า ($filename)',
-    );
-    return file.path;
-  }
-
-  /// ✅ สร้าง bytes ของ .xlsx (native Excel)
-  List<int> _buildExcelBytes(
-    List<AreasReportColumn> cols,
-    List<AreasReportItem> items,
-  ) {
-    final excel = ed.Excel.createExcel();
-    excel.rename('Sheet1', 'Areas');
-    final sheet = excel['Areas'];
-    sheet.appendRow(cols.map((c) => c.label).toList());
-    for (final item in items) {
-      final row = <String>[];
-      for (final col in cols) {
-        final v = item.getBy(col.field) ?? '';
-        row.add(v);
-      }
-      sheet.appendRow(row);
-    }
-    return excel.encode()!;
   }
 
   void clearError() {

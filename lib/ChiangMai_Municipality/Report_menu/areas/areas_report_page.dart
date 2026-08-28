@@ -11,6 +11,7 @@ import 'package:provider/provider.dart';
 
 import 'viewmodels/areas_report_view_model.dart';
 import '../customers/views/theme/customers_report_theme.dart';
+import '../customers/views/widgets/customers_report_password_dialog.dart';
 import 'views/widgets/areas_report_header.dart';
 import 'views/widgets/areas_report_column_picker.dart';
 
@@ -51,26 +52,7 @@ class _AreasReportPageBody extends StatelessWidget {
                 subtitle: vm.totalArea != null
                     ? 'ทั้งหมด ${vm.totalArea} ล็อค'
                     : null,
-                onDownload: () async {
-                  final messenger = ScaffoldMessenger.of(context);
-                  final err = await vm.exportToExcel();
-                  if (err == null) {
-                    messenger.showSnackBar(
-                      const SnackBar(
-                        content: Text('Export ล้มเหลว'),
-                        behavior: SnackBarBehavior.floating,
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  } else {
-                    messenger.showSnackBar(
-                      SnackBar(
-                        content: Text('ส่งออกสำเร็จ: $err'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
-                  }
-                },
+                onDownload: () => _onDownload(context),
                 isExporting: vm.isExporting,
               ),
               const SizedBox(height: CrSpace.lg),
@@ -132,5 +114,37 @@ class _AreasReportPageBody extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Future<void> _onDownload(BuildContext context) async {
+    final vm = context.read<AreasReportViewModel>();
+    final messenger = ScaffoldMessenger.of(context);
+
+    final result = await CustomersReportPasswordDialog.show(context);
+    if (result is PasswordCancel) return;
+
+    final password = switch (result) {
+      PasswordNoPassword() => null,
+      PasswordWithValue(:final password) => password,
+      _ => null,
+    };
+
+    final saved = await vm.exportToExcel(password: password);
+    if (saved == null) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text('Export ล้มเหลว'),
+          behavior: SnackBarBehavior.floating,
+          backgroundColor: Colors.red,
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text('ส่งออกสำเร็จ: $saved'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 }
