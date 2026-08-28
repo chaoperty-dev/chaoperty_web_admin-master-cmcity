@@ -48,7 +48,13 @@ class _IoExporter implements CustomersReportExporter {
     required List<CustomerReportItem> items,
     String? password,
   }) async {
+    // ⏱️ Timing — debug/UX: ดูเวลาแต่ละ phase ของ export
+    final sw = Stopwatch()..start();
+    print(
+        '📊 [export] start: cols=${cols.length} items=${items.length} password=${password != null ? 'yes' : 'no'}');
+
     await _ensureLibs();
+    print('⏱️ [${sw.elapsedMilliseconds}ms] libs loaded');
 
     // 1) ✅ Serialize input → ส่งไป isolate
     final input = _ExcelBuildInput(
@@ -75,12 +81,15 @@ class _IoExporter implements CustomersReportExporter {
     ]);
     final bytes = results[0] as List<int>;
     final dir = results[1] as Directory;
+    print(
+        '⏱️ [${sw.elapsedMilliseconds}ms] xlsx built (${bytes.length} bytes) + temp dir ready');
 
     // 4) Save → temp dir
     final file = File('${dir.path}/$filename');
     // ✅ Drop flush:true — saves 50-300ms on Android by skipping fsync.
     // File is in temp dir (not critical data); share dialog reads immediately.
     await file.writeAsBytes(bytes);
+    print('⏱️ [${sw.elapsedMilliseconds}ms] file written to ${file.path}');
 
     // 5) เปิด Share dialog
     await sp.Share.shareXFiles(
@@ -88,8 +97,9 @@ class _IoExporter implements CustomersReportExporter {
       text: 'รายงานลูกค้า ($filename)',
     );
 
+    sw.stop();
     print(
-        '✅ CSV saved: ${file.path} (${bytes.length} bytes, ${items.length} rows)');
+        '✅ [export] done in ${sw.elapsedMilliseconds}ms (${(sw.elapsedMilliseconds / 1000).toStringAsFixed(2)}s) — ${bytes.length} bytes, ${items.length} rows, ${cols.length} cols');
     return file.path;
   }
 }
