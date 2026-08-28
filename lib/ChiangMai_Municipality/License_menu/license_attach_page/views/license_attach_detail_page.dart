@@ -84,9 +84,20 @@ class _LicenseAttachDetailPageBodyState
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAttachDetailViewModel>();
-    final step = vm.currentDetailStep;
-    final total = vm.totalDetailSteps;
+    // ✅ context.select — rebuild เฉพาะตอน field ที่ใช้จริงเปลี่ยน
+    //    เดิม context.watch ทำให้ทั้งหน้า rebuild ทุกครั้งที่ VM notify
+    //    (loadChecklist, updateRemark, upload/delete ไฟล์, submit ฯลฯ)
+    //    requestUuid เป็น final field → ใช้ read (ไม่ reactive)
+    final vm = context.read<LicenseAttachDetailViewModel>();
+    final step = context.select<LicenseAttachDetailViewModel, int>(
+      (v) => v.currentDetailStep,
+    );
+    final total = context.select<LicenseAttachDetailViewModel, int>(
+      (v) => v.totalDetailSteps,
+    );
+    final canSave = context.select<LicenseAttachDetailViewModel, bool>(
+      (v) => v.shouldShowSaveButton && !v.isLocked,
+    );
     final subtitle = step == 1 ? 'เลือกเอกสารที่จะแนบ' : 'สรุปการแนบเอกสาร';
 
     return Scaffold(
@@ -115,9 +126,7 @@ class _LicenseAttachDetailPageBodyState
               readOnly: false,
               currentStep: step,
               totalSteps: total,
-              showSaveButton: step == 1
-                  ? true
-                  : (vm.shouldShowSaveButton && !vm.isLocked),
+              showSaveButton: step == 1 ? true : canSave,
               onNext: step < total
                   ? () {
                       // ignore: avoid_print
