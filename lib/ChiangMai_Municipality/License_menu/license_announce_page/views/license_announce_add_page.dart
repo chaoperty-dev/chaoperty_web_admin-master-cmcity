@@ -581,8 +581,9 @@ class _ZonePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAnnounceViewModel>();
-    final allZones = vm.zones;
+    final allZones = context.select<LicenseAnnounceViewModel, List<LicenseAnnounceZone>>(
+      (_, vm) => vm.zones,
+    );
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
