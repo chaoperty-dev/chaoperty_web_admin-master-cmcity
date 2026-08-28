@@ -18,9 +18,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart' as fd;
-// import '../../../../unity/FormatPhone.dart'; // คอมเมนต์ปิดเบอร์โทรออก
 import '../../models/license_submit_approval_detail_model.dart';
 import '../theme/license_submit_approval_theme.dart';
 import '../../viewmodels/license_submit_approval_view_model.dart';
@@ -868,23 +865,63 @@ class _SubmitApprovalCardState extends State<_SubmitApprovalCard> {
               //   value: _maskPhone(formatPhoneNumber(d.client?.tel ?? '')),
               //   isMono: true,
               // ), // คอมเมนต์ปิดเบอร์โทร
-              _CardRow(
-                icon: Icons.event_outlined,
-                label: 'วันที่สิ้นสุด',
-                value: fd.formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
-                isMono: true,
+              // _CardRow(
+              //   icon: Icons.event_outlined,
+              //   label: 'วันที่สิ้นสุด',
+              //   value: fd.formatDate(nr?.ldate ?? '', type: DateFormatType.dmy),
+              //   isMono: true,
+              // ), // คอมเมนต์ปิดวันที่สิ้นสุด
+              // ─── อนุมัติ (approval pending) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'อนุมัติ',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _BoolCheck(value: d.approvalPending),
+                    ),
+                  ],
+                ),
               ),
-              _CardRow(
-                icon: null, // ไม่มี icon (เคยมี hourglass_top_rounded)
-                label: 'ขั้นตอนรอ',
-                value: d.pendingStepCount > 0
-                    ? '${d.pendingStepCount} รายการ'
-                    : '-',
-                muted: d.pendingStepCount == 0,
+              // ─── ขั้นตอนรอ (pending step badge) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'ขั้นตอนรอ',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 4),
+                        child: _PendingStepBadge(count: d.pendingStepCount),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               _CardRow(
                 icon: Icons.fingerprint,
-                label: 'รหัสรา�การ',
+                label: 'รหัสรายการ',
                 value: _shortUuid(d.uuid),
                 isMono: true,
                 muted: true,
