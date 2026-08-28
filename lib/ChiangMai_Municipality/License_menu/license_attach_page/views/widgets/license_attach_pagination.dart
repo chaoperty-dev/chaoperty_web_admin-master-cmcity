@@ -23,22 +23,31 @@ class _LicenseAttachPaginationState extends State<LicenseAttachPagination> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAttachViewModel>();
-    final canPrev = (vm.linksPrev?.isNotEmpty ?? false) && !vm.isLoading;
-    final canNext = (vm.linksNext?.isNotEmpty ?? false) && !vm.isLoading;
+    // ✅ context.select — rebuild เฉพาะตอนค่าที่ใช้จริงเปลี่ยน
+    //    เดิม context.watch ทำให้ pagination rebuild ทุกครั้งที่ VM notify
+    //    (search query, zone filter, table sort ฯลฯ)
+    final canPrev = context.select<LicenseAttachViewModel, bool>(
+      (v) => (v.linksPrev?.isNotEmpty ?? false) && !v.isLoading,
+    );
+    final canNext = context.select<LicenseAttachViewModel, bool>(
+      (v) => (v.linksNext?.isNotEmpty ?? false) && !v.isLoading,
+    );
+    final label = context.select<LicenseAttachViewModel, String>(
+      (v) => '${v.currentPage} / ${v.lastPage}',
+    );
 
     return LayoutBuilder(
       builder: (context, c) {
         final isMobile = c.maxWidth < 520;
         if (!isMobile) {
           return _buildFull(
-            label: '${vm.currentPage} / ${vm.lastPage}',
+            label: label,
             canPrev: canPrev,
             canNext: canNext,
           );
         }
         return _buildCollapsible(
-          label: '${vm.currentPage} / ${vm.lastPage}',
+          label: label,
           canPrev: canPrev,
           canNext: canNext,
         );
