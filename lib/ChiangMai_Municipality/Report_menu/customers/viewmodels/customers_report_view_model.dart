@@ -14,6 +14,7 @@ import 'package:flutter/foundation.dart';
 
 import '../services/customers_report_exporter.dart';
 import '../services/customers_report_service.dart';
+import '../../_shared/export_phase.dart';
 
 class CustomersReportViewModel extends ChangeNotifier {
   CustomersReportViewModel({
@@ -63,6 +64,11 @@ class CustomersReportViewModel extends ChangeNotifier {
 
   bool _isExporting = false;
   bool get isExporting => _isExporting;
+
+  // ✅ ExportPhase — UX: แสดง progress message ตรง phase จริง
+  ExportPhase _phase = ExportPhase.idle;
+  ExportPhase get phase => _phase;
+  String get phaseLabel => _phase.label;
 
   String? _lastExportPath;
   String? get lastExportPath => _lastExportPath;
@@ -176,6 +182,7 @@ class CustomersReportViewModel extends ChangeNotifier {
     }
 
     _isExporting = true;
+    _phase = ExportPhase.loadingData;
     _errorMessage = null;
     notifyListeners();
 
@@ -184,10 +191,14 @@ class CustomersReportViewModel extends ChangeNotifier {
       final result = await _service.fetchItems();
       _totalItems = result.total;
 
-      // 2) Lazy create exporter (ครั้งแรกจะ load heavy packages)
+      // 2) ✅ Phase เปลี่ยน → สร้างไฟล์
+      _phase = ExportPhase.buildingFile;
+      notifyListeners();
+
+      // 3) Lazy create exporter (ครั้งแรกจะ load heavy packages)
       _exporter ??= buildExporter();
 
-      // 3) ส่งให้ platform-specific exporter
+      // 4) ส่งให้ platform-specific exporter (build xlsx + encrypt + save + share)
       final saved = await _exporter!.export(
         cols: selectedColumnsList,
         items: result.items,
@@ -196,12 +207,23 @@ class CustomersReportViewModel extends ChangeNotifier {
 
       _lastExportPath = saved;
       _isExporting = false;
+      _phase = ExportPhase.done;
       notifyListeners();
+
+      // ✅ Auto-reset กลับ idle หลัง 1.5s — ให้ผู้ใช้เห็น "เสร็จ" สั้น ๆ
+      Future.delayed(const Duration(milliseconds: 1500), () {
+        if (_phase == ExportPhase.done) {
+          _phase = ExportPhase.idle;
+          notifyListeners();
+        }
+      });
+
       return saved;
     } catch (e, st) {
       print('❌ exportToExcel error: $e\n$st');
       _errorMessage = 'Export ล้มเหลว: $e';
       _isExporting = false;
+      _phase = ExportPhase.error;
       notifyListeners();
       return null;
     }

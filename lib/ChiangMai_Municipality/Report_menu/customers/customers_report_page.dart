@@ -42,12 +42,14 @@ class _BodyState {
   final int totalItems;
   final int selectedCount;
   final bool isExporting;
+  final String phaseLabel;
   final String? errorMessage;
 
   const _BodyState({
     required this.totalItems,
     required this.selectedCount,
     required this.isExporting,
+    required this.phaseLabel,
     required this.errorMessage,
   });
 
@@ -57,11 +59,17 @@ class _BodyState {
       other.totalItems == totalItems &&
       other.selectedCount == selectedCount &&
       other.isExporting == isExporting &&
+      other.phaseLabel == phaseLabel &&
       other.errorMessage == errorMessage;
 
   @override
-  int get hashCode =>
-      Object.hash(totalItems, selectedCount, isExporting, errorMessage);
+  int get hashCode => Object.hash(
+        totalItems,
+        selectedCount,
+        isExporting,
+        phaseLabel,
+        errorMessage,
+      );
 }
 
 class _CustomersReportPageBody extends StatelessWidget {
@@ -75,6 +83,7 @@ class _CustomersReportPageBody extends StatelessWidget {
         totalItems: vm.totalItems,
         selectedCount: vm.selectedCount,
         isExporting: vm.isExporting,
+        phaseLabel: vm.phaseLabel,
         errorMessage: vm.errorMessage,
       ),
       shouldRebuild: (a, b) => a != b,
@@ -96,6 +105,7 @@ class _CustomersReportPageBody extends StatelessWidget {
                     selectedCount: state.selectedCount,
                     onDownload: () => _onDownload(context),
                     isExporting: state.isExporting,
+                    phaseLabel: state.phaseLabel,
                   ),
                   const SizedBox(height: CrSpace.lg),
                   const CustomersReportColumnPicker(),

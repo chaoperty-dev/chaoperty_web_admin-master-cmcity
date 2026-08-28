@@ -15,6 +15,7 @@ class CustomersReportHeader extends StatelessWidget {
   final int? selectedCount;
   final VoidCallback onDownload;
   final bool isExporting;
+  final String? phaseLabel;
 
   const CustomersReportHeader({
     super.key,
@@ -24,6 +25,7 @@ class CustomersReportHeader extends StatelessWidget {
     this.selectedCount,
     required this.onDownload,
     required this.isExporting,
+    this.phaseLabel,
   });
 
   @override
@@ -92,6 +94,7 @@ class CustomersReportHeader extends StatelessWidget {
           _DownloadButton(
             onPressed: onDownload,
             isLoading: isExporting,
+            phaseLabel: phaseLabel,
           ),
         ],
       ),
@@ -102,9 +105,11 @@ class CustomersReportHeader extends StatelessWidget {
 class _DownloadButton extends StatefulWidget {
   final VoidCallback onPressed;
   final bool isLoading;
+  final String? phaseLabel;
   const _DownloadButton({
     required this.onPressed,
     required this.isLoading,
+    this.phaseLabel,
   });
 
   @override
@@ -161,7 +166,9 @@ class _DownloadButtonState extends State<_DownloadButton> {
               ),
               const SizedBox(width: 8),
               Text(
-                widget.isLoading ? 'กำลังส่งออก...' : 'ดาวน์โหลด Excel',
+                widget.isLoading
+                    ? (widget.phaseLabel ?? 'กำลังส่งออก...')
+                    : 'ดาวน์โหลด Excel',
                 style: const TextStyle(
                   fontFamily: CrText.fontBold,
                   fontSize: 13,

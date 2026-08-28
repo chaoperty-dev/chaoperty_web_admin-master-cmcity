@@ -39,11 +39,13 @@ class AreasReportPage extends StatelessWidget {
 class _BodyState {
   final int? totalArea;
   final bool isExporting;
+  final String phaseLabel;
   final String? errorMessage;
 
   const _BodyState({
     required this.totalArea,
     required this.isExporting,
+    required this.phaseLabel,
     required this.errorMessage,
   });
 
@@ -52,11 +54,12 @@ class _BodyState {
       other is _BodyState &&
       other.totalArea == totalArea &&
       other.isExporting == isExporting &&
+      other.phaseLabel == phaseLabel &&
       other.errorMessage == errorMessage;
 
   @override
   int get hashCode =>
-      Object.hash(totalArea, isExporting, errorMessage);
+      Object.hash(totalArea, isExporting, phaseLabel, errorMessage);
 }
 
 class _AreasReportPageBody extends StatelessWidget {
@@ -69,6 +72,7 @@ class _AreasReportPageBody extends StatelessWidget {
       selector: (_, vm) => _BodyState(
         totalArea: vm.totalArea,
         isExporting: vm.isExporting,
+        phaseLabel: vm.phaseLabel,
         errorMessage: vm.errorMessage,
       ),
       shouldRebuild: (a, b) => a != b,
@@ -88,6 +92,7 @@ class _AreasReportPageBody extends StatelessWidget {
                         : null,
                     onDownload: () => _onDownload(context),
                     isExporting: state.isExporting,
+                    phaseLabel: state.phaseLabel,
                   ),
                   const SizedBox(height: CrSpace.lg),
                   const AreasReportColumnPicker(),
