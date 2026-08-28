@@ -16,7 +16,17 @@ class RequestDetailZoneRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseRequestDetailStep1ViewModel>();
+    // ✅ context.select — rebuild เฉพาะตอน 3 field นี้เปลี่ยน
+    //    เดิม context.watch ทำให้ zone row rebuild ทุกครั้งที่ step1 VM notify
+    final subZone = context.select<LicenseRequestDetailStep1ViewModel, String?>(
+      (v) => v.selectedSubZone,
+    );
+    final zn = context.select<LicenseRequestDetailStep1ViewModel, String?>(
+      (v) => v.selectedZn,
+    );
+    final ln = context.select<LicenseRequestDetailStep1ViewModel, String?>(
+      (v) => v.selectedLn,
+    );
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -33,7 +43,7 @@ class RequestDetailZoneRow extends StatelessWidget {
                 child: _DisplayField(
                   icon: Icons.layers_outlined,
                   label: 'โซนพื้นที่เช่า',
-                  value: vm.selectedSubZone ?? '-',
+                  value: subZone ?? '-',
                 ),
               ),
               const SizedBox(width: 12),
@@ -41,7 +51,7 @@ class RequestDetailZoneRow extends StatelessWidget {
                 child: _DisplayField(
                   icon: Icons.place_outlined,
                   label: 'โซน',
-                  value: vm.selectedZn ?? '-',
+                  value: zn ?? '-',
                 ),
               ),
             ],
@@ -51,7 +61,7 @@ class RequestDetailZoneRow extends StatelessWidget {
           _DisplayField(
             icon: Icons.numbers_rounded,
             label: 'รหัสพื้นที่',
-            value: vm.selectedLn ?? '-',
+            value: ln ?? '-',
           ),
         ],
       ),
