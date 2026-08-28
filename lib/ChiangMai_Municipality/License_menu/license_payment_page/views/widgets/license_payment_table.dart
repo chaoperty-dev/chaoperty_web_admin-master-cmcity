@@ -13,9 +13,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart' as fd;
-import '../../../../unity/FormatPhone.dart';
 import '../../models/payment_task_model.dart';
 import '../theme/license_payment_theme.dart';
 import '../../viewmodels/license_payment_view_model.dart';
@@ -280,31 +277,13 @@ class _PaymentCard extends StatelessWidget {
     return words.join(' ');
   }
 
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
-  }
-
   @override
   Widget build(BuildContext context) {
     final palette = StatusPalette.of(task.statusLabel);
     final moduleText =
         task.module.nameTh.isNotEmpty ? task.module.nameTh : task.module.code;
-    final submittedDate =
-        fd.formatDate(task.submittedAt, type: DateFormatType.dmy);
+    final lnFallback = task.details.ln.isEmpty ? task.uuid : task.details.ln;
     final name = _maskName(task.customer.cname);
-    final phone = _maskPhone(formatPhoneNumber(task.customer.tel));
 
     return Material(
       type: MaterialType.transparency,
@@ -351,13 +330,39 @@ class _PaymentCard extends StatelessWidget {
                 ],
               ),
               const Divider(height: LaSpace.sm, color: LaColors.border),
-              _CardRow(label: 'ชื่อผู้ชำระ', value: name),
-              _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
+              _CardRow(label: 'รายการ', value: moduleText),
               _CardRow(label: 'บริเวณ', value: task.details.subzone),
-              _CardRow(label: 'โซน', value: task.details.zn),
-              _CardRow(label: 'รหัสพื้นที่', value: task.details.ln),
-              _CardRow(label: 'โมดูล', value: moduleText),
-              _CardRow(label: 'วันที่ยื่น', value: submittedDate, isMono: true),
+              _CardRow(label: 'โซนพื้นที่', value: task.details.zn),
+              _CardRow(label: 'รหัสพื้นที่', value: lnFallback, isMono: true),
+              _CardRow(
+                  label: 'ชื่อผู้ติดต่อ', value: name),
+              // ─── ชำระ (payment progress) — เหมือนตาราง ───
+              Padding(
+                padding: const EdgeInsets.only(bottom: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: 110,
+                      child: Text(
+                        'ชำระ',
+                        style: LaText.caption.copyWith(
+                          color: LaColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: _PaymentProgress(
+                        paid: task.paymentsPaid,
+                        total: task.paymentsTotal,
+                        pending: task.paymentsPending,
+                        allDone: task.paymentAllDone,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               _CardRow(
                 label: 'รหัสรายการ',
                 value: _shortUuid(task.uuid),
