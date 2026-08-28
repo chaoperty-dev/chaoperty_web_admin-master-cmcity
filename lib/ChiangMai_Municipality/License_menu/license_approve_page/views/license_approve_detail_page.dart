@@ -97,55 +97,63 @@ class _LicenseApproveDetailPageBodyState
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseApproveDetailViewModel>();
-    final step = vm.currentDetailStep;
-    final total = vm.totalDetailSteps;
-    final subtitle = step == 1 ? 'ตรวจสอบคำขอ' : 'ลำดับขั้นตอนการอนุมัติ';
+    // ✅ Selector — rebuild เฉพาะตอน currentDetailStep เปลี่ยน
+    //    totalDetailSteps เป็น const → ไม่ต้อง subscribe
+    //    VM actions (next/prev) ใช้ context.read ภายใน builder
+    return Selector<LicenseApproveDetailViewModel, int>(
+      selector: (_, vm) => vm.currentDetailStep,
+      shouldRebuild: (a, b) => a != b,
+      builder: (context, step, _) {
+        final vm = context.read<LicenseApproveDetailViewModel>();
+        const total = LicenseApproveDetailViewModel.detailTotalSteps;
+        final subtitle = step == 1 ? 'ตรวจสอบคำขอ' : 'ลำดับขั้นตอนการอนุมัติ';
 
-    return Scaffold(
-      backgroundColor: LaColors.surface,
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ApproveDetailHeader(
-              title: widget.title,
-              subtitle: subtitle,
-              currentStep: step,
-              totalSteps: total,
-              onBack: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
-              },
+        return Scaffold(
+          backgroundColor: LaColors.surface,
+          body: SafeArea(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ApproveDetailHeader(
+                  title: widget.title,
+                  subtitle: subtitle,
+                  currentStep: step,
+                  totalSteps: total,
+                  onBack: () {
+                    if (Navigator.of(context).canPop()) {
+                      Navigator.of(context).pop();
+                    }
+                  },
+                ),
+                Expanded(
+                  child: step == 1
+                      ? const ApproveDetailStep1()
+                      : ApproveDetailStep2(
+                          requestUuid: widget.routeData,
+                        ),
+                ),
+                ApproveDetailFooter(
+                  // Step 2 เป็น read-only timeline → ไม่แสดงปุ่ม Save
+                  readOnly: step == total,
+                  currentStep: step,
+                  totalSteps: total,
+                  onNext: step < total ? vm.nextDetailStep : null,
+                  onSave: null,
+                  onCancel: () {
+                    if (step > 1) {
+                      vm.previousDetailStep();
+                    } else {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                    }
+                  },
+                ),
+              ],
             ),
-            Expanded(
-              child: step == 1
-                  ? const ApproveDetailStep1()
-                  : ApproveDetailStep2(
-                      requestUuid: widget.routeData,
-                    ),
-            ),
-            ApproveDetailFooter(
-              // Step 2 เป็น read-only timeline → ไม่แสดงปุ่ม Save
-              readOnly: step == total,
-              currentStep: step,
-              totalSteps: total,
-              onNext: step < total ? vm.nextDetailStep : null,
-              onSave: null,
-              onCancel: () {
-                if (step > 1) {
-                  vm.previousDetailStep();
-                } else {
-                  if (Navigator.of(context).canPop()) {
-                    Navigator.of(context).pop();
-                  }
-                }
-              },
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
