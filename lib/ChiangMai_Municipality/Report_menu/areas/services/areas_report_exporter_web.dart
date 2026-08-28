@@ -7,16 +7,19 @@
 // - protect    (deferred)
 //
 // ✅ Deferred: packages load ครั้งแรกตอนกด export (ไม่ block IDE open หรือ page init)
-// ✅ compute(): xlsx build + encrypt รันใน Web Worker isolate
-//    ลด UI freeze 1-3s ตอน build xlsx + encrypt (single-threaded JS เดิม block ทุก event)
+//
+// ⚠️ Web quirk: compute() บน web มี overhead มหาศาล (Web Worker spawn +
+//    deferred lib load ใน worker context = 30+ วินาที สำหรับงานเล็ก)
+//    → รัน xlsx build + encrypt บน main thread แต่ yield ระหว่าง phase
+//    → UI freeze แค่ 200-500ms ต่อ phase (ดีกว่ารอ 31s ใน Web Worker)
 // ============================================================================
 
 // ignore: avoid_web_libraries_in_flutter
+import 'dart:async';
 import 'dart:html' as html;
 import 'dart:typed_data';
 
 import 'package:excel_dart/excel_dart.dart' deferred as ed show Excel;
-import 'package:flutter/foundation.dart' show compute;
 import 'package:protect/protect.dart' deferred as p show Protect;
 
 import 'areas_report_exporter.dart';
@@ -52,30 +55,33 @@ class _WebExporter implements AreasReportExporter {
     await _ensureLibs();
     print('⏱️ [${sw.elapsedMilliseconds}ms] libs loaded');
 
-    // 1) ✅ Build xlsx + encrypt ใน Web Worker isolate (compute)
-    //    เดิม build บน UI thread = freeze ทุก event 1-3s ตอน xlsx build + AES
-    final input = _WebExcelBuildInput(
-      sheetName: 'Areas',
-      colLabels: cols.map((c) => c.label).toList(growable: false),
-      rows: items
-          .map((item) => cols
-              .map((c) => item.getBy(c.field) ?? '')
-              .toList(growable: false))
-          .toList(growable: false),
-      password: password,
-    );
-    final bytes = await compute(_buildExcelBytesWebIsolate, input);
-    print(
-        '⏱️ [${sw.elapsedMilliseconds}ms] xlsx built (${bytes.length} bytes) in Web Worker');
+    // ✅ Yield — ให้ browser render frame ก่อนเริ่ม build
+    await Future<void>.delayed(Duration.zero);
 
-    // 2) ตั้งชื่อไฟล์
+    // 1) Build xlsx (main thread — compute() บน web overhead สูง)
+    final plainBytes = _buildExcelBytes(cols, items);
+    print('⏱️ [${sw.elapsedMilliseconds}ms] xlsx built (${plainBytes.length} bytes)');
+
+    // ✅ Yield — ให้ browser render frame ก่อน encrypt
+    await Future<void>.delayed(Duration.zero);
+
+    // 2) Encrypt ถ้ามี password
+    final Uint8List bytes;
+    if (password != null && password.isNotEmpty) {
+      bytes = _encryptBytes(plainBytes, password);
+      print('⏱️ [${sw.elapsedMilliseconds}ms] encrypted');
+    } else {
+      bytes = plainBytes;
+    }
+
+    // 3) ตั้งชื่อไฟล์
     final ts = DateTime.now()
         .toIso8601String()
         .replaceAll(':', '-')
         .replaceAll('.', '-');
     final filename = 'areas_report_$ts.xlsx';
 
-    // 3) Trigger browser download ผ่าน Blob + anchor (DOM access — ต้องบน main thread)
+    // 4) Trigger browser download ผ่าน Blob + anchor (DOM access — ต้องบน main thread)
     final blob = html.Blob(
       [bytes],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -99,58 +105,33 @@ class _WebExporter implements AreasReportExporter {
         '✅ [web export] done in ${sw.elapsedMilliseconds}ms (${(sw.elapsedMilliseconds / 1000).toStringAsFixed(2)}s) — ${bytes.length} bytes, ${items.length} rows, ${cols.length} cols');
     return 'web://download/$filename';
   }
-}
 
-// ============================================================================
-// Isolate-bound helpers (Web Worker)
-// ============================================================================
+  /// Build xlsx บน main thread (compute() บน web overhead สูงกว่างานเอง)
+  Uint8List _buildExcelBytes(
+    List<AreasReportColumn> cols,
+    List<AreasReportItem> items,
+  ) {
+    final excel = ed.Excel.createExcel();
+    excel.rename('Sheet1', 'Areas');
+    final sheet = excel['Areas'];
 
-/// ✅ Input สำหรับ `_buildExcelBytesWebIsolate`
-/// ต้องเป็น immutable + sendable (final fields only)
-class _WebExcelBuildInput {
-  final String sheetName;
-  final List<String> colLabels;
-  final List<List<String>> rows;
-  final String? password;
+    sheet.appendRow(cols.map((c) => c.label).toList());
 
-  const _WebExcelBuildInput({
-    required this.sheetName,
-    required this.colLabels,
-    required this.rows,
-    required this.password,
-  });
-}
+    for (final item in items) {
+      final row = <String>[];
+      for (final col in cols) {
+        row.add(item.getBy(col.field) ?? '');
+      }
+      sheet.appendRow(row);
+    }
 
-/// ✅ Top-level function — required by `compute()`
-/// รันใน Web Worker isolate → UI ไม่ค้างตอน build/encrypt
-/// Single-threaded JS เดิม block ทุก event ขณะ build xlsx + encrypt
-Future<Uint8List> _buildExcelBytesWebIsolate(_WebExcelBuildInput input) async {
-  await ed.loadLibrary();
-
-  // 1) Build xlsx
-  final excel = ed.Excel.createExcel();
-  excel.rename('Sheet1', input.sheetName);
-  final sheet = excel[input.sheetName];
-
-  // Header
-  sheet.appendRow(input.colLabels);
-
-  // Data rows
-  for (final row in input.rows) {
-    sheet.appendRow(row);
+    return Uint8List.fromList(excel.encode()!);
   }
 
-  final plainBytes = excel.encode()!;
-
-  // 2) Encrypt ด้วย AES (package:protect) — optional
-  final password = input.password;
-  if (password != null && password.isNotEmpty) {
-    await p.loadLibrary();
+  /// Encrypt ด้วย AES (package:protect)
+  Uint8List _encryptBytes(Uint8List plainBytes, String password) {
     try {
-      final resp = p.Protect.encryptUint8List(
-        Uint8List.fromList(plainBytes),
-        password,
-      );
+      final resp = p.Protect.encryptUint8List(plainBytes, password);
       if (!resp.isDataValid) {
         throw Exception('protect.encrypt returned invalid data');
       }
@@ -158,13 +139,11 @@ Future<Uint8List> _buildExcelBytesWebIsolate(_WebExcelBuildInput input) async {
           '🔐 Excel encrypted with password (${plainBytes.length} → ${resp.processedBytes?.length} bytes)');
       return resp.processedBytes != null
           ? Uint8List.fromList(resp.processedBytes!)
-          : Uint8List.fromList(plainBytes);
+          : plainBytes;
     } catch (e) {
       throw Exception('Encryption failed: $e');
     }
   }
-
-  return Uint8List.fromList(plainBytes);
 }
 
 AreasReportExporter createExporter() => _WebExporter();
