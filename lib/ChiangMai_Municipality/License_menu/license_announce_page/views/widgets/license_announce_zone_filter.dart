@@ -22,6 +22,50 @@ class LicenseAnnounceZoneFilter extends StatefulWidget {
       _LicenseAnnounceZoneFilterState();
 }
 
+/// Snapshot of LicenseAnnounceViewModel state relevant to the zone filter.
+/// Granular rebuild: only fires when the filter UI's actual inputs change —
+/// not on loading / searchQuery / filtered list notifications.
+@immutable
+class _ZoneFilterState {
+  final String? selectedZoneSub;
+  final String? selectedZone;
+  final String selectedSort;
+  final String selectedSortDir;
+  final List<dynamic> subzoneModels;
+  final List<dynamic> zoneModels;
+  final bool readOnly;
+  const _ZoneFilterState({
+    required this.selectedZoneSub,
+    required this.selectedZone,
+    required this.selectedSort,
+    required this.selectedSortDir,
+    required this.subzoneModels,
+    required this.zoneModels,
+    required this.readOnly,
+  });
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _ZoneFilterState &&
+          selectedZoneSub == other.selectedZoneSub &&
+          selectedZone == other.selectedZone &&
+          selectedSort == other.selectedSort &&
+          selectedSortDir == other.selectedSortDir &&
+          identical(subzoneModels, other.subzoneModels) &&
+          identical(zoneModels, other.zoneModels) &&
+          readOnly == other.readOnly;
+  @override
+  int get hashCode => Object.hash(
+        selectedZoneSub,
+        selectedZone,
+        selectedSort,
+        selectedSortDir,
+        identityHashCode(subzoneModels),
+        identityHashCode(zoneModels),
+        readOnly,
+      );
+}
+
 class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
@@ -36,7 +80,18 @@ class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAnnounceViewModel>();
+    return Selector<LicenseAnnounceViewModel, _ZoneFilterState>(
+      selector: (_, vm) => _ZoneFilterState(
+        selectedZoneSub: vm.selectedZoneSub,
+        selectedZone: vm.selectedZone,
+        selectedSort: vm.selectedSort,
+        selectedSortDir: vm.selectedSortDir,
+        subzoneModels: vm.subzoneModels,
+        zoneModels: vm.zoneModels,
+        readOnly: vm.readOnly,
+      ),
+      builder: (context, state, _) {
+    final vm = context.read<LicenseAnnounceViewModel>();
     return Container(
       padding: const EdgeInsets.all(LrSpace.md),
       decoration: LrDecor.card(),
@@ -47,32 +102,32 @@ class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    _subZoneSection(vm),
+                    _subZoneSection(vm, state),
                     const SizedBox(height: LrSpace.md),
-                    _zoneSection(vm),
+                    _zoneSection(vm, state),
                     const SizedBox(height: LrSpace.md),
                     Align(
                       alignment: Alignment.centerLeft,
-                      child: _sortSection(vm),
+                      child: _sortSection(vm, state),
                     ),
                   ],
                 )
               : Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(flex: 4, child: _subZoneSection(vm)),
+                    Expanded(flex: 4, child: _subZoneSection(vm, state)),
                     _divider(),
-                    Expanded(flex: 5, child: _zoneSection(vm)),
+                    Expanded(flex: 5, child: _zoneSection(vm, state)),
                     _divider(),
                     const SizedBox(width: LrSpace.sm),
-                    _sortSection(vm),
+                    _sortSection(vm, state),
                   ],
                 );
           if (c.maxWidth >= 700) return body;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _toggleHeader(vm),
+              _toggleHeader(vm, state),
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
                 secondChild: Padding(
@@ -90,14 +145,16 @@ class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
         },
       ),
     );
+      },
+    );
   }
 
-  Widget _toggleHeader(LicenseAnnounceViewModel vm) {
-    final hasFilter = (vm.selectedZoneSub != null &&
-            vm.selectedZoneSub != 'ทั้งหมด') ||
-        (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
-        vm.selectedSort != 'created_at' ||
-        vm.selectedSortDir != 'desc';
+  Widget _toggleHeader(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
+    final hasFilter = (state.selectedZoneSub != null &&
+            state.selectedZoneSub != 'ทั้งหมด') ||
+        (state.selectedZone != null && state.selectedZone != 'ทั้งหมด') ||
+        state.selectedSort != 'created_at' ||
+        state.selectedSortDir != 'desc';
     return InkWell(
       onTap: () => setState(() => _collapsed = !_collapsed),
       borderRadius: BorderRadius.circular(LrRadius.sm),
@@ -153,28 +210,28 @@ class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
         color: LrColors.border,
       );
 
-  Widget _subZoneSection(LicenseAnnounceViewModel vm) {
+  Widget _subZoneSection(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
     return _FilterField(
       icon: Icons.layers_outlined,
       label: 'หมวดโซนพื้นที่',
-      child: _subZoneDropdown(vm),
+      child: _subZoneDropdown(vm, state),
     );
   }
 
-  Widget _zoneSection(LicenseAnnounceViewModel vm) {
-    final enabled = vm.selectedZoneSub != null && !vm.readOnly;
+  Widget _zoneSection(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
+    final enabled = state.selectedZoneSub != null && !state.readOnly;
     return _FilterField(
       enabled: enabled,
       icon: Icons.place_outlined,
       label: 'โซนพื้นที่',
-      child: _zoneDropdown(vm),
+      child: _zoneDropdown(vm, state),
     );
   }
 
-  Widget _sortSection(LicenseAnnounceViewModel vm) {
-    final isDesc = vm.selectedSortDir == 'desc';
+  Widget _sortSection(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
+    final isDesc = state.selectedSortDir == 'desc';
     return InkWell(
-      onTap: vm.readOnly ? null : () => _showSortMenu(vm),
+      onTap: state.readOnly ? null : () => _showSortMenu(vm, state),
       borderRadius: BorderRadius.circular(LrRadius.sm),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
@@ -209,8 +266,8 @@ class _LicenseAnnounceZoneFilterState extends State<LicenseAnnounceZoneFilter> {
     );
   }
 
-  void _showSortMenu(LicenseAnnounceViewModel vm) {
-    final isDesc = vm.selectedSortDir == 'desc';
+  void _showSortMenu(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
+    final isDesc = state.selectedSortDir == 'desc';
     showDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(.05),
@@ -437,7 +494,7 @@ class _SearchInner extends StatelessWidget {
 /// _subZoneDropdown + _zoneDropdown
 /// ─────────────────────────────────────────────────────────────────────────
 extension on _LicenseAnnounceZoneFilterState {
-  Widget _subZoneDropdown(LicenseAnnounceViewModel vm) {
+  Widget _subZoneDropdown(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
     return _DropdownShell(
       enabled: true,
       child: DropdownButton2<String>(
@@ -459,9 +516,9 @@ extension on _LicenseAnnounceZoneFilterState {
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
         hint: AutoSizeText(
-          vm.selectedZoneSub ?? 'ทั้งหมด',
+          state.selectedZoneSub ?? 'ทั้งหมด',
           style: LrText.body.copyWith(
-            color: vm.selectedZoneSub == null
+            color: state.selectedZoneSub == null
                 ? LrColors.textMuted
                 : LrColors.textPrimary,
           ),
@@ -470,8 +527,8 @@ extension on _LicenseAnnounceZoneFilterState {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        value: vm.selectedZoneSub,
-        items: vm.subzoneModels
+        value: state.selectedZoneSub,
+        items: state.subzoneModels
             .map((sub) => DropdownMenuItem<String>(
                   value: sub.zn ?? '',
                   child: Row(
@@ -501,7 +558,7 @@ extension on _LicenseAnnounceZoneFilterState {
                   ),
                 ))
             .toList(),
-        onChanged: vm.readOnly ? null : (v) => vm.onSubZoneChanged(v),
+        onChanged: state.readOnly ? null : (v) => vm.onSubZoneChanged(v),
         searchMatchFn: (item, searchValue) {
           return item.value
               .toString()
@@ -515,8 +572,8 @@ extension on _LicenseAnnounceZoneFilterState {
     );
   }
 
-  Widget _zoneDropdown(LicenseAnnounceViewModel vm) {
-    final enabled = vm.selectedZoneSub != null && !vm.readOnly;
+  Widget _zoneDropdown(LicenseAnnounceViewModel vm, _ZoneFilterState state) {
+    final enabled = state.selectedZoneSub != null && !state.readOnly;
     return _DropdownShell(
       enabled: enabled,
       child: DropdownButton2<String>(
@@ -538,9 +595,9 @@ extension on _LicenseAnnounceZoneFilterState {
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
         hint: AutoSizeText(
-          vm.selectedZone ?? 'เลือกโซน',
+          state.selectedZone ?? 'เลือกโซน',
           style: LrText.body.copyWith(
-            color: vm.selectedZone == null
+            color: state.selectedZone == null
                 ? LrColors.textMuted
                 : LrColors.textPrimary,
           ),
@@ -549,8 +606,8 @@ extension on _LicenseAnnounceZoneFilterState {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        value: vm.selectedZone,
-        items: vm.zoneModels
+        value: state.selectedZone,
+        items: state.zoneModels
             .map((zn) => DropdownMenuItem<String>(
                   value: zn.zn ?? '',
                   child: Row(
