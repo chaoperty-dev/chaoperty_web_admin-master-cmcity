@@ -55,6 +55,7 @@ class _BS extends State<_Body> {
     _sub = vm.events.listen(_onEvent);
   }
 
+
   void _onEvent(LicenseAnnounceEvent e) {
     if (!mounted) return;
     if (e is LicenseAnnounceErrorEvent) {
@@ -169,51 +170,76 @@ class _BS extends State<_Body> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAnnounceViewModel>();
-    return Container(
-      color: LrColors.surface,
-      child: Padding(
-        padding: const EdgeInsets.all(LrSpace.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            LicenseAnnounceHeader(
-              title: vm.title,
-              subtitle: 'จัดการประกาศและแจ้งเตือนผู้เช่า',
-              totalCount: vm.filtered.length,
-              onCreate: vm.onAdd,
-            ),
-            const SizedBox(height: LrSpace.lg),
-            // ─────────────────────────────────────────────────────
-            // Filter zone (Card ครอบเอง — คัดลอก 100% จาก license_request_zone_filter)
-            // ─────────────────────────────────────────────────────
-            const LicenseAnnounceZoneFilter(),
-            const SizedBox(height: LrSpace.md),
-
-            // Search + Pagination row (pagination inline)
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+    return Selector<LicenseAnnounceViewModel, _PageHeaderState>(
+      selector: (_, vm) => _PageHeaderState(
+        title: vm.title,
+        totalCount: vm.filtered.length,
+      ),
+      builder: (context, state, _) {
+        final vm = context.read<LicenseAnnounceViewModel>();
+        return Container(
+          color: LrColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(LrSpace.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const Expanded(child: LicenseAnnounceSearchBar()),
-                const SizedBox(width: LrSpace.md),
-                LicenseAnnouncePagination(
-                  current: 1,
-                  last: 1,
-                  onPrev: () {},
-                  onNext: () {},
+                LicenseAnnounceHeader(
+                  title: state.title,
+                  subtitle: 'จัดการประกาศและแจ้งเตือนผู้เช่า',
+                  totalCount: state.totalCount,
+                  onCreate: vm.onAdd,
+                ),
+                const SizedBox(height: LrSpace.lg),
+                // ─────────────────────────────────────────────────────
+                // Filter zone (Card ครอบเอง — คัดลอก 100% จาก license_request_zone_filter)
+                // ─────────────────────────────────────────────────────
+                const LicenseAnnounceZoneFilter(),
+                const SizedBox(height: LrSpace.md),
+
+                // Search + Pagination row (pagination inline)
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Expanded(child: LicenseAnnounceSearchBar()),
+                    const SizedBox(width: LrSpace.md),
+                    LicenseAnnouncePagination(
+                      current: 1,
+                      last: 1,
+                      onPrev: () {},
+                      onNext: () {},
+                    ),
+                  ],
+                ),
+                const SizedBox(height: LrSpace.lg),
+                // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
+                const Expanded(
+                  child: SingleChildScrollView(
+                    child: LicenseAnnounceTable(),
+                  ),
                 ),
               ],
             ),
-            const SizedBox(height: LrSpace.lg),
-            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
-            const Expanded(
-              child: SingleChildScrollView(
-                child: LicenseAnnounceTable(),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
+}
+
+/// Snapshot of VM state relevant to the page header — rebuilds only on title
+/// or filtered list length changes (avoids refresh on loading / search debounce).
+@immutable
+class _PageHeaderState {
+  final String title;
+  final int totalCount;
+  const _PageHeaderState({required this.title, required this.totalCount});
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _PageHeaderState &&
+          title == other.title &&
+          totalCount == other.totalCount;
+  @override
+  int get hashCode => Object.hash(title, totalCount);
 }
