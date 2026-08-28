@@ -138,8 +138,9 @@ class _Step1Body extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseAnnounceDetailStep1ViewModel>();
-    final item = vm.item;
+    final item = context.select<LicenseAnnounceDetailStep1ViewModel, dynamic>(
+      (_, vm) => vm.item,
+    );
     if (item == null) {
       return const Center(child: Text('ไม่พบข้อมูล'));
     }
