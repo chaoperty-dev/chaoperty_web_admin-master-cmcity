@@ -234,12 +234,9 @@ class _LicenseContractBody extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             HeaderBar(
-              title: vm.title,
               subtitle: vm.currentPage == 1
                   ? 'กรอกข้อมูลผู้เช่า ร้านค้า และรายละเอียดสัญญา'
                   : 'ระบุรายละเอียดค่าบริการ',
-              currentStep: vm.currentPage,
-              totalSteps: vm.totalPages,
             ),
             Expanded(
               child: _Body(

@@ -8,29 +8,33 @@
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../viewmodels/license_contract_view_model.dart';
 import '../theme/license_contract_theme.dart';
 
 class HeaderBar extends StatelessWidget {
-  final String title;
   final String? subtitle;
-  final int currentStep;
-  final int totalSteps;
   final VoidCallback? onBack;
   final List<Widget>? actions;
 
   const HeaderBar({
     super.key,
-    required this.title,
     this.subtitle,
-    this.currentStep = 1,
-    this.totalSteps = 3,
     this.onBack,
     this.actions,
   });
 
   @override
   Widget build(BuildContext context) {
+    // 1-arg selector: rebuild เฉพาะเมื่อ title/currentStep/totalSteps เปลี่ยน
+    final selected = context.select<LicenseContractViewModel, _HBData>(
+      (vm) => _HBData(
+        title: vm.title,
+        currentStep: vm.currentPage,
+        totalSteps: vm.totalPages,
+      ),
+    );
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
@@ -105,7 +109,7 @@ class HeaderBar extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'ขั้นตอนที่ $currentStep/$totalSteps',
+                        'ขั้นตอนที่ ${selected.currentStep}/${selected.totalSteps}',
                         style: LcText.caption.copyWith(
                           color: Colors.white,
                           fontFamily: LcText.fontBold,
@@ -117,7 +121,7 @@ class HeaderBar extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  title,
+                  selected.title,
                   style: LcText.h1.copyWith(
                     color: LcColors.textInverse,
                     fontSize: 18,
@@ -191,4 +195,28 @@ class _IconButtonState extends State<_IconButton> {
       ),
     );
   }
+}
+
+/// tuple สำหรับ context.select 1-arg
+class _HBData {
+  final String title;
+  final int currentStep;
+  final int totalSteps;
+  const _HBData({
+    required this.title,
+    required this.currentStep,
+    required this.totalSteps,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _HBData &&
+        other.title == title &&
+        other.currentStep == currentStep &&
+        other.totalSteps == totalSteps;
+  }
+
+  @override
+  int get hashCode => Object.hash(title, currentStep, totalSteps);
 }
