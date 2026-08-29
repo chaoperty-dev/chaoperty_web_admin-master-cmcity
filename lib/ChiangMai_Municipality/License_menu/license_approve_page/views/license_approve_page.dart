@@ -12,7 +12,7 @@
 //
 // Tab structure:
 //   Tab 1: ข้อมูลที่ต้องอนุมัติ (pending list — current behavior)
-//   Tab 2: อนุมัติรายการทั้งหมด (empty placeholder — user จะสั่งเพิ่มภายหลัง)
+//   Tab 2: อนุมัติรายการทั้งหมด (signature preview ก่อน — เนื้อหาเพิ่มทีหลัง)
 // Filter / search / pagination แชร์ state เดียวกันทั้ง 2 แท็บ
 // ============================================================================
 
@@ -26,6 +26,7 @@ import '../models/license_approve_config.dart';
 import '../models/license_approve_event.dart';
 import '../viewmodels/license_approve_view_model.dart';
 import 'theme/license_approve_theme.dart';
+import 'widgets/approve_bulk_signature_preview.dart';
 import 'widgets/license_approve_header.dart';
 import 'widgets/license_approve_pagination.dart';
 import 'widgets/license_approve_search_bar.dart';
@@ -267,8 +268,8 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
                   SingleChildScrollView(
                     child: LicenseApproveTable(),
                   ),
-                  // Tab 2: อนุมัติรายการทั้งหมด (placeholder — user จะสั่งเพิ่มทีหลัง)
-                  _ApproveBulkPlaceholder(),
+                  // Tab 2: อนุมัติรายการทั้งหมด — signature preview (self-contained)
+                  const ApproveBulkSignaturePreview(),
                 ],
               ),
             ),
@@ -284,54 +285,6 @@ class _ApproveTab {
   final String key;
   final String label;
   const _ApproveTab({required this.key, required this.label});
-}
-
-/// Placeholder สำหรับ Tab 2 "อนุมัติรายการทั้งหมด" — user จะกำหนดเนื้อหาทีหลัง
-class _ApproveBulkPlaceholder extends StatelessWidget {
-  const _ApproveBulkPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(LaRadius.lg),
-          border: Border.all(color: LaColors.border),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: LaColors.statusInfoBg,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.construction_rounded,
-                size: 40,
-                color: LaColors.statusInfoFg,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'อนุมัติรายการทั้งหมด',
-              style: LaText.h2.copyWith(color: LaColors.textPrimary),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'เนื้อหาจะถูกเพิ่มในภายหลัง',
-              style: LaText.bodyMuted.copyWith(color: LaColors.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 /// Alias สำหรับเข้ากันได้กับ API เดิม
