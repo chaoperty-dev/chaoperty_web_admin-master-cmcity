@@ -5,11 +5,12 @@
 // ไม่ delegate ไป unity/API_admin_signature.dart หรือ
 // unity/API_requests_reviewsflow.dart — เขียน HTTP calls เองทั้งหมด
 //
-// Endpoints (v1 + v3):
+// Endpoints (v1 + v2 + v3):
 //   GET  {domain_v1}/admin/know                                       → admin signature meta
 //   GET  {domain_v1}/admin/users/signatures/{uuid}/preview            → signature image bytes
 //   GET  {domain_v1}/admin/approvals/{requestUuid}/flow               → flow uuid list
 //   POST {domain_v1}/admin/approvals/{requestUuid}/flow/{flowUuid}/approve  → approve
+//   POST {domain_v2}/admin/approvals/bulk/approve                     → bulk approve (≤50/round)
 //   GET  {domain_v3}/api/preview/{path}/{requestUuid}                 → generated PDFs
 // ============================================================================
 
@@ -94,6 +95,61 @@ class LicenseLegacyApprovalService {
     } catch (_) {
       return null;
     }
+  }
+
+  // ─── V2 bulk approve (≤50 รายการต่อรอบ) ───
+  /// จำนวน step_uuids สูงสุดต่อ 1 POST (backend limit)
+  static const int maxBulkBatchSize = 50;
+
+  /// POST /api/v2/admin/approvals/bulk/approve
+  /// body: { "step_uuids": ["uuid1", ...] }  (≤ maxBulkBatchSize)
+  /// returns decoded JSON หรือ { error, status, body } ถ้า status != 200/201
+  Future<dynamic> bulkApproveSteps({
+    required List<String> stepUuids,
+  }) async {
+    if (stepUuids.isEmpty) {
+      return {'error': true, 'status': 0, 'body': 'empty step_uuids'};
+    }
+    if (stepUuids.length > maxBulkBatchSize) {
+      return {
+        'error': true,
+        'status': 0,
+        'body': 'exceeds maxBulkBatchSize (${stepUuids.length}/$maxBulkBatchSize)',
+      };
+    }
+    final headers = await MyHeaders.build();
+    final url = Uri.parse('${MyConstant().domain_v2}/admin/approvals/bulk/approve');
+    final body = json.encode({'step_uuids': stepUuids});
+    try {
+      final response = await http.post(url, headers: headers, body: body);
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        return {
+          'error': true,
+          'status': response.statusCode,
+          'body': response.body,
+        };
+      }
+      return json.decode(response.body);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// chunked variant — แบ่ง list เป็น batch ละ maxBulkBatchSize แล้วยิงทีละ batch
+  /// คืน list ของผลลัพธ์ (1 ผลลัพธ์ต่อ batch, ลำดับเดียวกับ batch)
+  Future<List<dynamic>> bulkApproveStepsChunked({
+    required List<String> stepUuids,
+  }) async {
+    if (stepUuids.isEmpty) return const [];
+    final results = <dynamic>[];
+    for (var i = 0; i < stepUuids.length; i += maxBulkBatchSize) {
+      final end = (i + maxBulkBatchSize > stepUuids.length)
+          ? stepUuids.length
+          : i + maxBulkBatchSize;
+      final batch = stepUuids.sublist(i, end);
+      results.add(await bulkApproveSteps(stepUuids: batch));
+    }
+    return results;
   }
 
   // ─── Generated PDFs ───
