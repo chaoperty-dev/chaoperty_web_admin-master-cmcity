@@ -137,7 +137,6 @@ class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseVerifyViewModel>();
     return Container(
       color: LaColors.surface,
       child: Padding(
@@ -145,11 +144,8 @@ class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            VerifyHeader(
-              title: vm.title,
-              subtitle:
-                  'ตรวจสอบหลักฐาน/เอกสารคำขออนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
-              totalCount: vm.total,
+            const VerifyHeader(
+              subtitle: 'ตรวจสอบหลักฐาน/เอกสารคำขออนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
             ),
             const SizedBox(height: LaSpace.lg),
             const VerifyZoneFilter(),
