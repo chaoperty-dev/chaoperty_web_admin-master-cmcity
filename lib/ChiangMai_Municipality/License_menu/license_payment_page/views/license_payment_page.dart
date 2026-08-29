@@ -165,7 +165,9 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const _PaymentPageHeader(),
+            const LicensePaymentHeader(
+              subtitle: 'รับชำระค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกการชำระเงิน',
+            ),
             const SizedBox(height: LaSpace.lg),
             const LicensePaymentZoneFilter(),
             const SizedBox(height: LaSpace.md),
@@ -190,22 +192,6 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
   }
 }
 
-// =============================================================================
-// Header — แยกเป็น const widget เพื่อไม่ rebuild ทุก notify
-// =============================================================================
-class _PaymentPageHeader extends StatelessWidget {
-  const _PaymentPageHeader();
-
-  @override
-  Widget build(BuildContext context) {
-    final vm = context.watch<LicensePaymentViewModel>();
-    return LicensePaymentHeader(
-      title: vm.title,
-      subtitle: 'รับชำระค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกการชำระเงิน',
-      totalCount: vm.total,
-    );
-  }
-}
 
 /// Alias สำหรับเข้ากันได้กับ API เดิม
 class LicensePaymentHost extends StatelessWidget {
