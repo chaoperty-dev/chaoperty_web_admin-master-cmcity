@@ -237,10 +237,11 @@ class _DropdownPanel extends StatelessWidget {
           ),
           const Divider(height: 1, color: CrColors.border),
           // รายการ (ติ๊ก + ลากเรียง)
-          SingleChildScrollView(
+          // ✅ กำหนดความสูงคงที่ (ไม่ shrinkWrap/ไม่ซ้อน SingleChildScrollView)
+          //    เพื่อไม่ให้เกิด RenderShrinkWrappingViewport intrinsic assertion
+          SizedBox(
+            height: (cols.length * 52.0) > 380 ? 380 : cols.length * 52.0,
             child: ReorderableListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
               buildDefaultDragHandles: false,
               itemCount: cols.length,
               onReorder: onReorder,
