@@ -34,6 +34,8 @@ class AreaMenuViewModel extends ChangeNotifier {
     // ✅ sync state จาก global ZoneSelectionStore (คงค่าที่ user เลือกไว้ข้ามหน้า)
     _selectedZoneSub = ZoneSelectionStore.instance.selectedZoneSub;
     _selectedZone = ZoneSelectionStore.instance.selectedZone;
+    _selectedRequestStatus = ZoneSelectionStore.instance.selectedRequestStatus;
+    _selectedStatus = ZoneSelectionStore.instance.selectedLeaseStatus;
     ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
   }
@@ -43,11 +45,17 @@ class AreaMenuViewModel extends ChangeNotifier {
   void _onZoneStoreChanged() {
     final newSub = _zoneStore.selectedZoneSub;
     final newZone = _zoneStore.selectedZone;
+    final newRequestStatus = _zoneStore.selectedRequestStatus;
+    final newLeaseStatus = _zoneStore.selectedLeaseStatus;
     final subChanged = _selectedZoneSub != newSub;
     final zoneChanged = _selectedZone != newZone;
-    if (!subChanged && !zoneChanged) return;
+    final reqChanged = _selectedRequestStatus != newRequestStatus;
+    final leaseChanged = _selectedStatus != newLeaseStatus;
+    if (!subChanged && !zoneChanged && !reqChanged && !leaseChanged) return;
     _selectedZoneSub = newSub;
     _selectedZone = newZone;
+    _selectedRequestStatus = newRequestStatus;
+    _selectedStatus = newLeaseStatus;
     _invalidateFilterCache();
     notifyListeners();
   }
@@ -315,15 +323,13 @@ class AreaMenuViewModel extends ChangeNotifier {
   }
 
   void onStatusChanged(String? value) {
-    _selectedStatus = value ?? 'ทั้งหมด';
-    _invalidateFilterCache();
-    notifyListeners();
+    // ✅ sync เข้า global store (legacy lease status)
+    _zoneStore.setLeaseStatus(value);
   }
 
   void onRequestStatusChanged(String? value) {
-    _selectedRequestStatus = value ?? 'ทั้งหมด';
-    _invalidateFilterCache();
-    notifyListeners();
+    // ✅ sync เข้า global store (request status)
+    _zoneStore.setRequestStatus(value);
   }
 
   void setSearch(String value) {
