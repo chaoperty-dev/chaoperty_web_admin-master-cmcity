@@ -1,22 +1,24 @@
 // ============================================================================
 // approve_bulk_signature_preview.dart
 // ============================================================================
-// Section สำหรับ Tab 2 ของหน้าอนุมัติ: แสดง "ชื่อผู้ลงนาม + ตำแหน่ง"
-// ที่ดึงมาจาก /admin/know (admin signature meta API) ผ่าน own service
+// Section สำหรับ Tab 2 ของหน้าอนุมัติ: แสดง "ลายเซ็น + ชื่อผู้ลงนาม + ตำแหน่ง"
+// ที่ดึงมาจาก /admin/know + /admin/users/signatures/{id}/preview
 //
 // - ใช้ LicenseLegacyApprovalService เดิม (own service) — ไม่ delegate unity/
-// - เน้น minimal: ชื่อ + ตำแหน่ง (user จะเพิ่มเนื้อหาทีหลัง)
+// - โหลดลายเซ็นผ่าน img_signatureUuid (own helper call) — ไม่ delegate unity/
 // - Self-contained state (initState ยิง load เอง, dispose ตัวเอง)
 // ============================================================================
 
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
+import '../../../../unity/API_admin_signature.dart';
 import '../../services/license_legacy_approval_service.dart';
 import '../theme/license_approve_theme.dart';
 
-/// แสดงชื่อผู้ลงนาม + ตำแหน่งที่ดึงจาก admin signature API
+/// แสดงลายเซ็น + ชื่อผู้ลงนาม + ตำแหน่งที่ดึงจาก admin signature API
 class ApproveBulkSignaturePreview extends StatefulWidget {
   const ApproveBulkSignaturePreview({super.key});
 
@@ -35,6 +37,9 @@ class _ApproveBulkSignaturePreviewState
 
   String? _profileName;
   String? _positionName;
+  String? _signatureUuid;
+  Uint8List? _signatureBytes;
+  bool _isLoadingImage = false;
 
   @override
   void initState() {
@@ -53,6 +58,7 @@ class _ApproveBulkSignaturePreviewState
 
     String? profileName;
     String? positionName;
+    String? signatureUuid;
 
     if (resp != null && resp.statusCode == 200) {
       try {
@@ -61,6 +67,7 @@ class _ApproveBulkSignaturePreviewState
         if (data != null) {
           profileName = data['profile'] as String?;
           positionName = data['position_name'] as String?;
+          signatureUuid = data['signature_uuid'] as String?;
         }
       } catch (_) {
         // ignore parse error
@@ -76,9 +83,32 @@ class _ApproveBulkSignaturePreviewState
     }
 
     setState(() {
-      _isLoading = false;
       _profileName = profileName;
       _positionName = positionName;
+      _signatureUuid = signatureUuid;
+    });
+
+    // โหลดรูปลายเซ็น (ไม่ block — โหลดเสร็จค่อยอัปเดต state)
+    if (signatureUuid != null && signatureUuid.isNotEmpty) {
+      _loadImage(signatureUuid);
+    } else {
+      // ไม่มี signatureUuid → ปิด loading ทันที
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _loadImage(String uuid) async {
+    setState(() => _isLoadingImage = true);
+    final imgResp = await img_signatureUuid(signatureUuid: uuid);
+    if (!mounted) return;
+    Uint8List? bytes;
+    if (imgResp != null && imgResp.statusCode == 200) {
+      bytes = imgResp.bodyBytes;
+    }
+    setState(() {
+      _signatureBytes = bytes;
+      _isLoadingImage = false;
+      _isLoading = false;
     });
   }
 
@@ -95,7 +125,7 @@ class _ApproveBulkSignaturePreviewState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _buildHeader(),
-            const SizedBox(height: LaSpace.md),
+            const SizedBox(height: LaSpace.lg),
             if (_isLoading)
               _buildLoading()
             else if (_error != null)
@@ -201,6 +231,10 @@ class _ApproveBulkSignaturePreviewState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ─── Signature image area ───
+        _buildSignatureArea(),
+        const SizedBox(height: LaSpace.lg),
+        // ─── Meta tiles ───
         _infoTile(
           icon: Icons.badge_rounded,
           label: 'ชื่อ-สกุล',
@@ -213,6 +247,57 @@ class _ApproveBulkSignaturePreviewState
           value: _positionName ?? '-',
         ),
       ],
+    );
+  }
+
+  Widget _buildSignatureArea() {
+    return Container(
+      height: 160,
+      decoration: BoxDecoration(
+        color: LaColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(color: LaColors.border),
+      ),
+      alignment: Alignment.center,
+      child: _buildSignatureContent(),
+    );
+  }
+
+  Widget _buildSignatureContent() {
+    if (_isLoadingImage) {
+      return const SizedBox(
+        width: 26,
+        height: 26,
+        child: CircularProgressIndicator(strokeWidth: 2.2),
+      );
+    }
+    if (_signatureBytes == null) {
+      return Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.draw_rounded,
+            size: 28,
+            color: LaColors.textSecondary.withOpacity(.55),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            _signatureUuid == null || (_signatureUuid?.isEmpty ?? true)
+                ? 'ไม่พบลายเซ็นของผู้ดูแล'
+                : 'โหลดลายเซ็นไม่สำเร็จ',
+            style: LaText.caption,
+          ),
+        ],
+      );
+    }
+    return Padding(
+      padding: const EdgeInsets.all(LaSpace.sm),
+      child: Image.memory(
+        _signatureBytes!,
+        fit: BoxFit.contain,
+        gaplessPlayback: true,
+        filterQuality: FilterQuality.medium,
+      ),
     );
   }
 
