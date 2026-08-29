@@ -31,11 +31,11 @@ class AreaMenuViewModel extends ChangeNotifier {
     if (routeData != null && routeData.isNotEmpty) {
       _searchQuery = routeData;
     }
-    // ✅ sync state จาก global ZoneSelectionStore (คงค่าที่ user เลือกไว้ข้ามหน้า)
-    _selectedZoneSub = ZoneSelectionStore.instance.selectedZoneSub;
-    _selectedZone = ZoneSelectionStore.instance.selectedZone;
-    _selectedRequestStatus = ZoneSelectionStore.instance.selectedRequestStatus;
-    _selectedStatus = ZoneSelectionStore.instance.selectedLeaseStatus;
+    // ✅ sync state จาก global ZoneSelectionStore (area scope)
+    _selectedZoneSub = ZoneSelectionStore.instance.areaSubZone;
+    _selectedZone = ZoneSelectionStore.instance.areaZone;
+    _selectedRequestStatus = ZoneSelectionStore.instance.areaRequestStatus;
+    _selectedStatus = ZoneSelectionStore.instance.areaLeaseStatus;
     ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
   }
@@ -43,10 +43,10 @@ class AreaMenuViewModel extends ChangeNotifier {
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
   void _onZoneStoreChanged() {
-    final newSub = _zoneStore.selectedZoneSub;
-    final newZone = _zoneStore.selectedZone;
-    final newRequestStatus = _zoneStore.selectedRequestStatus;
-    final newLeaseStatus = _zoneStore.selectedLeaseStatus;
+    final newSub = _zoneStore.areaSubZone;
+    final newZone = _zoneStore.areaZone;
+    final newRequestStatus = _zoneStore.areaRequestStatus;
+    final newLeaseStatus = _zoneStore.areaLeaseStatus;
     final subChanged = _selectedZoneSub != newSub;
     final zoneChanged = _selectedZone != newZone;
     final reqChanged = _selectedRequestStatus != newRequestStatus;
@@ -312,24 +312,24 @@ class AreaMenuViewModel extends ChangeNotifier {
   // (API จะถูกเรียกครั้งเดียวตอน loadOverview() ครั้งแรก)
   // ===============================================================
   void onSubZoneChanged(String? value) {
-    // ✅ sync เข้า global store (auto-reset zone)
-    _zoneStore.setSubZone(value);
+    // ✅ sync เข้า global store (area scope, auto-reset zone)
+    _zoneStore.setAreaSubZone(value);
     // store listener จะ sync กลับมาให้ VM ผ่าน _onZoneStoreChanged
   }
 
   void onZoneChanged(String? value) {
-    _zoneStore.setZone(value);
+    _zoneStore.setAreaZone(value);
     // store listener จะ sync กลับมาให้ VM
   }
 
   void onStatusChanged(String? value) {
-    // ✅ sync เข้า global store (legacy lease status)
-    _zoneStore.setLeaseStatus(value);
+    // ✅ sync เข้า global store (area lease status)
+    _zoneStore.setAreaLeaseStatus(value);
   }
 
   void onRequestStatusChanged(String? value) {
-    // ✅ sync เข้า global store (request status)
-    _zoneStore.setRequestStatus(value);
+    // ✅ sync เข้า global store (area request status)
+    _zoneStore.setAreaRequestStatus(value);
   }
 
   void setSearch(String value) {
