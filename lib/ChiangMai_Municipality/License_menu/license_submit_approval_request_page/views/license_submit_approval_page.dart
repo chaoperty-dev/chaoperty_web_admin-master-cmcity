@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../license_contract_page/models/license_contract_result.dart';
+import 'package:go_router/go_router.dart';
 import '../models/license_submit_approval_config.dart';
 import '../models/license_submit_approval_event.dart';
 import '../viewmodels/license_submit_approval_view_model.dart';
@@ -26,7 +27,6 @@ import 'widgets/license_submit_approval_pagination.dart';
 import 'widgets/license_submit_approval_search_bar.dart';
 import 'widgets/license_submit_approval_table.dart';
 import 'widgets/license_submit_approval_zone_filter.dart';
-import 'license_submit_approval_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -117,31 +117,25 @@ class _LicenseSubmitApprovalPageBodyState
         );
         break;
       case LicenseSubmitApprovalNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/submit-approval/<uuid>'
         final title = context.read<LicenseSubmitApprovalViewModel>().title;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicenseSubmitApprovalDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+        context.push(
+          routeData == null || routeData.isEmpty
+              ? '/submit-approval'
+              : '/submit-approval/${Uri.encodeComponent(routeData)}',
+          extra: {'title': title},
         );
         break;
       case LicenseSubmitApprovalNavigateDetailEvent(
           :final paymentUuid,
           :final title
         ):
-        // เปิดหน้า Detail ของ Payment detail
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicenseSubmitApprovalDetailPage.create(
-              routeData: paymentUuid,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/submit-approval/<uuid>'
+        context.push(
+          paymentUuid == null || paymentUuid.isEmpty
+              ? '/submit-approval'
+              : '/submit-approval/${Uri.encodeComponent(paymentUuid)}',
+          extra: {'title': title},
         );
         break;
       case LicenseSubmitApprovalCreatedEvent():

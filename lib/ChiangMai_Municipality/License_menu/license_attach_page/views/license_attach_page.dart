@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/license_attach_result.dart';
+import 'package:go_router/go_router.dart';
 import '../models/license_attach_config.dart';
 import '../models/license_attach_event.dart';
 import '../viewmodels/license_attach_view_model.dart';
@@ -26,7 +27,6 @@ import 'widgets/license_attach_pagination.dart';
 import 'widgets/license_attach_search_bar.dart';
 import 'widgets/license_attach_table.dart';
 import 'widgets/license_attach_zone_filter.dart';
-import 'license_attach_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -114,17 +114,14 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
         );
         break;
       case LicenseAttachNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/attach/<uuid>'
         final title = context.read<LicenseAttachViewModel>().title;
-        Navigator.of(context)
+        context
             .push<bool>(
-          MaterialPageRoute(
-            builder: (_) => LicenseAttachDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+          routeData == null || routeData.isEmpty
+              ? '/attach'
+              : '/attach/${Uri.encodeComponent(routeData)}',
+          extra: {'title': title},
         )
             // ✅ ถ้า detail page คืน true (เช่น บันทึกสำเร็จ) → reload list
             .then((result) {

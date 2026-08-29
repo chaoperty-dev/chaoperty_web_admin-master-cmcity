@@ -19,6 +19,7 @@ import 'package:provider/provider.dart';
 import '../../license_contract_page/models/license_contract_result.dart';
 import '../../license_contract_page/views/license_contract_page.dart';
 import 'package:chaoperty/main.dart';
+import 'package:go_router/go_router.dart';
 import '../models/license_request_config.dart';
 import '../models/license_request_event.dart';
 import '../viewmodels/license_request_view_model.dart';
@@ -28,7 +29,6 @@ import 'widgets/license_request_pagination.dart';
 import 'widgets/license_request_search_bar.dart';
 import 'widgets/license_request_table.dart';
 import 'widgets/license_request_zone_filter.dart';
-import 'license_request_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -149,17 +149,14 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
         _openCreatePopup();
         break;
       case LicenseRequestNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/contract/<uuid>'
         final title = context.read<LicenseRequestViewModel>().title;
-        Navigator.of(context)
+        context
             .push<bool>(
-          MaterialPageRoute(
-            builder: (_) => LicenseRequestDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+          routeData == null || routeData.isEmpty
+              ? '/contract'
+              : '/contract/${Uri.encodeComponent(routeData)}',
+          extra: {'title': title},
         )
             // ✅ ถ้า detail page คืน true (เช่น ยกเลิกคำขอสำเร็จ) → reload list + แสดง toast
             .then((result) {

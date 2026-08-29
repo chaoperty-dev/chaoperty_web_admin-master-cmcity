@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/license_verify_result.dart';
+import 'package:go_router/go_router.dart';
 import '../models/license_verify_config.dart';
 import '../models/license_verify_event.dart';
 import '../viewmodels/license_verify_view_model.dart';
@@ -26,7 +27,6 @@ import 'widgets/verify_pagination.dart';
 import 'widgets/verify_search_bar.dart';
 import 'widgets/verify_table.dart';
 import 'widgets/verify_zone_filter.dart';
-import 'license_verify_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -114,16 +114,13 @@ class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
         );
         break;
       case LicenseVerifyNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/verify/<uuid>'
         final title = context.read<LicenseVerifyViewModel>().title;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicenseverifyDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+        context.push(
+          routeData == null || routeData.isEmpty
+              ? '/verify'
+              : '/verify/${Uri.encodeComponent(routeData)}',
+          extra: {'title': title},
         );
         break;
     }

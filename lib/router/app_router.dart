@@ -8,11 +8,17 @@ import 'package:go_router/go_router.dart';
 import '../ChiangMai_Municipality/License_menu/license_announce_page/views/license_announce_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license_attach_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license_attach_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_payment_page/views/license_payment_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_payment_page/views/license_payment_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_request_page/views/license_request_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_request_page/views/license_request_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_submit_approval_request_page/views/license_submit_approval_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_submit_approval_request_page/views/license_submit_approval_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_verify_page/views/license_verify_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_verify_page/views/license_verify_page.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/Login_page_cmm.dart';
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/SetupPage.dart';
@@ -139,128 +145,143 @@ GoRouter buildAppRouter({
         builder: (context, state, child) => AppShell(child: child),
         routes: [
           // ใบอนุญาต (7 sub-routes)
-          // - path แบบ '/contract'  : ไม่มี data
-          // - path แบบ '/contract/:data' : data = uuid หรือ composite key
-          //   (รองรับทั้ง path param และ ?routeData= fallback เพื่อ back-compat)
+          // - path แบบ '/contract' : ไม่มี data — list page
+          // - sub-route '/contract/:data' :  detail page (push stack ตอนกด "เรียกดู")
+          // ✅ Path param — URL เปลี่ยนจริงเมื่อ push
           GoRoute(
             path: AppRoute.contract,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicenseRequestPage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.contractData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicenseRequestPage.create(routeData: rd),
-              );
-            },
+            routes: [
+              GoRoute(
+                path: ':data',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['data'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicenseRequestDetailPage.create(
+                      routeData: uuid,
+                      title: 'คำขอใบอนุญาต',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.payment,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicensePaymentPage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.paymentData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicensePaymentPage.create(routeData: rd),
-              );
-            },
+            routes: [
+              GoRoute(
+                path: ':data',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['data'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicensePaymentDetailPage.create(
+                      routeData: uuid,
+                      title: 'ชำระค่าธรรมเนียม',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.attach,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicenseAttachPage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.attachData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicenseAttachPage.create(routeData: rd),
-              );
-            },
+            routes: [
+              GoRoute(
+                path: ':data',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['data'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicenseAttachDetailPage.create(
+                      routeData: uuid,
+                      title: 'แนบเอกสารคำขอ',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.verify,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicenseVerifyPage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.verifyData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicenseVerifyPage.create(routeData: rd),
-              );
-            },
+            routes: [
+              GoRoute(
+                path: ':data',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['data'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicenseverifyDetailPage.create(
+                      routeData: uuid,
+                      title: 'ตรวจสอบเอกสารคำขอ',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.factCheck,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicensefactcheckPage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.factCheckData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicensefactcheckPage.create(routeData: rd),
-              );
-            },
+            routes: [
+              GoRoute(
+                path: ':data',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['data'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicensefactcheckDetailPage.create(
+                      routeData: uuid,
+                      title: 'ตรวจสอบข้อเท็จจริง',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.approve,
@@ -293,26 +314,29 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.submitApproval,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicenseSubmitApprovalPage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.submitApprovalData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicenseSubmitApprovalPage.create(routeData: rd),
-              );
-            },
+            routes: [
+              GoRoute(
+                path: ':data',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['data'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicenseSubmitApprovalDetailPage.create(
+                      routeData: uuid,
+                      title: 'ส่งคำร้องขออนุมัติ',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.announce,

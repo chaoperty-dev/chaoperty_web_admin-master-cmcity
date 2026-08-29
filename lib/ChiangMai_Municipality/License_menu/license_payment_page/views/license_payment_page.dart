@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../license_contract_page/models/license_contract_result.dart';
+import 'package:go_router/go_router.dart';
 import '../models/license_payment_config.dart';
 import '../models/license_payment_event.dart';
 import '../viewmodels/license_payment_view_model.dart';
@@ -26,7 +27,6 @@ import 'widgets/license_payment_pagination.dart';
 import 'widgets/license_payment_search_bar.dart';
 import 'widgets/license_payment_table.dart';
 import 'widgets/license_payment_zone_filter.dart';
-import 'license_payment_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -116,25 +116,21 @@ class _LicensePaymentPageBodyState extends State<_LicensePaymentPageBody> {
         break;
       case LicensePaymentNavigateEvent(:final routeData):
         final title = context.read<LicensePaymentViewModel>().title;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicensePaymentDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/payment/<uuid>'
+        context.push(
+          routeData == null || routeData.isEmpty
+              ? '/payment'
+              : '/payment/${Uri.encodeComponent(routeData)}',
+          extra: {'title': title},
         );
         break;
       case LicensePaymentNavigateDetailEvent(:final paymentUuid, :final title):
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicensePaymentDetailPage.create(
-              routeData: paymentUuid,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/payment/<uuid>'
+        context.push(
+          paymentUuid == null || paymentUuid.isEmpty
+              ? '/payment'
+              : '/payment/${Uri.encodeComponent(paymentUuid)}',
+          extra: {'title': title},
         );
         break;
       case LicensePaymentCreatedEvent():

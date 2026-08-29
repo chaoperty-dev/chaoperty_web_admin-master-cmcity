@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../license_contract_page/models/license_contract_result.dart';
+import 'package:go_router/go_router.dart';
 import '../models/license_fact_check_config.dart';
 import '../models/license_fact_check_event.dart';
 import '../viewmodels/license_fact_check_view_model.dart';
@@ -26,7 +27,6 @@ import 'widgets/license_fact_check_pagination.dart';
 import 'widgets/license_fact_check_search_bar.dart';
 import 'widgets/license_fact_check_table.dart';
 import 'widgets/license_fact_check_zone_filter.dart';
-import 'license_fact_check_detail_page.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -115,16 +115,13 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
         );
         break;
       case LicensefactcheckNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
+        // ✅ GoRouter push — URL เปลี่ยนเป็น '/fact-check/<uuid>'
         final title = context.read<LicensefactcheckViewModel>().title;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicensefactcheckDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
+        context.push(
+          routeData == null || routeData.isEmpty
+              ? '/fact-check'
+              : '/fact-check/${Uri.encodeComponent(routeData)}',
+          extra: {'title': title},
         );
         break;
     }
