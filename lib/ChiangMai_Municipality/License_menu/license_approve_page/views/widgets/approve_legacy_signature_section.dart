@@ -17,8 +17,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../PDF_CMM/unity_pdf_cmm/perviewpdf_pdfMultiPreview.dart';
 import '../../services/license_legacy_approval_service.dart';
+import '../../services/license_pdf_multi_preview_page.dart';
 import '../../viewmodels/license_approve_detail_view_model.dart';
 import '../theme/license_approve_theme.dart';
 
@@ -440,7 +440,7 @@ class _ApproveLegacySignatureSectionState
   void _openPdfPreview(int initialIndex, String requestUuid) {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PdfMultiPreviewPage(
+        builder: (_) => LicensePdfMultiPreviewPage(
           docs: LicenseLegacyApprovalService.previewDocs,
           initialIndex: initialIndex,
           getUrl: (key) => _service.resolvePdfUrl(
