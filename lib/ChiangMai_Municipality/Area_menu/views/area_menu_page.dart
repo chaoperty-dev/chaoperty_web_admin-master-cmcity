@@ -26,7 +26,7 @@ import 'widgets/area_menu_pagination.dart';
 import 'widgets/area_menu_search_bar.dart';
 import 'widgets/area_menu_table.dart';
 import 'widgets/area_menu_zone_filter.dart';
-import 'area_menu_detail_page.dart';
+import 'widgets/area_license_action_menu.dart';
 
 /// ═══════════════════════════════════════════════════════════════════════
 /// Public API
@@ -116,17 +116,8 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
         );
         break;
       case AreaMenuNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
-        final title = context.read<AreaMenuViewModel>().title;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => AreaMenuDetailPage.create(
-              routeData: routeData,
-              title: title,
-            ),
-            fullscreenDialog: true,
-          ),
-        );
+        // เปิด bottom sheet เลือกเมนูย่อย "ใบอนุญาต" → navigate
+        showAreaLicenseActionMenu(context, routeData: routeData ?? '');
         break;
     }
   }
@@ -162,7 +153,7 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
                 return Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Expanded(child: AreaMenuSearchBar()),
+                    const Expanded(child: AreaMenuSearchBar()),
                     const SizedBox(width: LaSpace.md),
                     const AreaMenuPagination(),
                     if (canToggle) ...[
@@ -185,8 +176,8 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
                   final useGrid = canTable ? _useGrid : true;
                   return useGrid
                       ? const AreaMenuCardGrid()
-                      : SingleChildScrollView(
-                          child: const AreaMenuTable(),
+                      : const SingleChildScrollView(
+                          child: AreaMenuTable(),
                         );
                 },
               ),
