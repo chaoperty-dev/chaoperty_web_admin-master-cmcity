@@ -21,70 +21,6 @@ import '../../viewmodels/area_menu_view_model.dart';
 class AreaMenuTable extends StatelessWidget {
   const AreaMenuTable({super.key});
 
-  // Map status label — derive จาก item (API areas/overview)
-  // - ldate < วันนี้ && requester != null → "หมดสัญญา"
-  // - requester != null → "เช่าอยู่"
-  // - requester == null → "ว่าง"
-  String _statusLabel(Map<String, dynamic> m) {
-    final requester = m['requester']?.toString() ?? '';
-    final hasRequester = requester.isNotEmpty;
-    final ldateRaw = m['ldate']?.toString() ?? '';
-
-    if (hasRequester && ldateRaw.isNotEmpty) {
-      try {
-        final ldate = DateTime.parse(ldateRaw);
-        final today = DateTime.now();
-        final end = DateTime(ldate.year, ldate.month, ldate.day);
-        final now = DateTime(today.year, today.month, today.day);
-        if (end.isBefore(now)) return 'หมดสัญญา';
-      } catch (_) {}
-    }
-
-    if (hasRequester) return 'เช่าอยู่';
-    return 'ว่าง';
-  }
-
-  /// Format รหัสล็อค — เก็บ helper ไว้ (ใช้ผ่าน model['lock'] ตรง ๆ ใน _dataRow)
-  /// ignore: unused_element
-  String _formatLocationCode(Map<String, dynamic> m) {
-    final lock = m['lock']?.toString() ?? '';
-    return lock.isEmpty ? '-' : lock;
-  }
-
-  /// Mask ชื่อผู้ติดต่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
-  /// เช่น "นางกชกร วิชชุชัยมงคล" → "นางกชกร วิชชุชัยม***"
-  String _maskName(String? raw) {
-    final name = raw?.toString().trim() ?? '';
-    if (name.isEmpty) return '-';
-    final words =
-        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '-';
-
-    if (words.length == 1) {
-      final w = words.first;
-      if (w.length <= 3) return '***';
-      return '${w.substring(0, w.length - 3)}***';
-    }
-
-    final lastIndex = words.length - 1;
-    final last = words[lastIndex];
-    if (last.length <= 3) {
-      words[lastIndex] = '***';
-    } else {
-      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
-    }
-    return words.join(' ');
-  }
-
-  String _formatEndDate(String raw) {
-    if (raw.isEmpty) return '-';
-    try {
-      return formatDate(raw, type: DateFormatType.dmy);
-    } catch (_) {
-      return raw;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AreaMenuViewModel>();
@@ -118,7 +54,12 @@ class AreaMenuTable extends StatelessWidget {
               valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
             ),
           for (int i = 0; i < vm.requests.length; i++)
-            _dataRow(context, vm, vm.requests[i], i),
+            _AreaMenuRow(
+              key: ValueKey(vm.requests[i].hashCode),
+              model: vm.requests[i],
+              index: i,
+              onView: () => vm.onViewRequest(vm.requests[i]),
+            ),
         ],
       ),
     );
@@ -149,51 +90,124 @@ class AreaMenuTable extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _dataRow(
-    BuildContext context,
-    AreaMenuViewModel vm,
-    Map<String, dynamic> model,
-    int index,
-  ) {
-    final status = _statusLabel(model);
+// ============================================================================
+// _AreaMenuRow — per-row widget
+// ============================================================================
+// เคยเป็น _dataRow() method ภายใน AreaMenuTable ที่ rebuild ทุก row เมื่อ VM notify
+// ตอนนี้แยกเป็น StatelessWidget ของตัวเอง + ใส่ ValueKey(hashCode) ที่ table body
+// → Flutter สามารถ reuse row widget เดิมเมื่อ map identity ไม่เปลี่ยน
+//   (เช่น scroll/repaint) — ไม่ทำลาย _HoverableRow state ของแต่ละ row
+// ============================================================================
+class _AreaMenuRow extends StatelessWidget {
+  final Map<String, dynamic> model;
+  final int index;
+  final VoidCallback onView;
+
+  const _AreaMenuRow({
+    super.key,
+    required this.model,
+    required this.index,
+    required this.onView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final status = statusLabel(model);
     final palette = StatusPalette.of(status);
     return _HoverableRow(
       index: index,
-      onTap: () => vm.onViewRequest(model),
+      onTap: onView,
       child: Row(
         children: [
           SizedBox(
             width: 110,
-            child: Center(
-                child: _ViewButton(onTap: () => vm.onViewRequest(model))),
+            child: Center(child: _ViewButton(onTap: onView)),
           ),
           _Cell(value: (model['lock'] ?? '-').toString(), flex: 2, isMono: true),
           _Cell(value: (model['zone'] ?? '-').toString(), flex: 2),
           _Cell(value: (model['subzone'] ?? '-').toString(), flex: 2),
           _Cell(value: (model['customer_no'] ?? '-').toString(), flex: 2, isMono: true),
           _Cell(
-            value: _maskName(model['requester']),
+            value: maskName(model['requester']),
             tooltip: model['requester']?.toString(),
             flex: 3,
           ),
           _Cell(
-              value: _formatEndDate((model['ldate'] ?? '').toString()),
+              value: formatEndDate((model['ldate'] ?? '').toString()),
               flex: 2,
               isMono: true),
           Expanded(
             flex: 2,
             child: Align(
               alignment: Alignment.centerLeft,
-              child: _StatusPill(
-                label: status,
-                palette: palette,
-              ),
+              child: _StatusPill(label: status, palette: palette),
             ),
           ),
         ],
       ),
     );
+  }
+}
+
+// ============================================================================
+// Helpers (top-level, pure)
+// ============================================================================
+// Map status label — derive จาก item (API areas/overview)
+// - ldate < วันนี้ && requester != null → "หมดสัญญา"
+// - requester != null → "เช่าอยู่"
+// - requester == null → "ว่าง"
+String statusLabel(Map<String, dynamic> m) {
+  final requester = m['requester']?.toString() ?? '';
+  final hasRequester = requester.isNotEmpty;
+  final ldateRaw = m['ldate']?.toString() ?? '';
+
+  if (hasRequester && ldateRaw.isNotEmpty) {
+    try {
+      final ldate = DateTime.parse(ldateRaw);
+      final today = DateTime.now();
+      final end = DateTime(ldate.year, ldate.month, ldate.day);
+      final now = DateTime(today.year, today.month, today.day);
+      if (end.isBefore(now)) return 'หมดสัญญา';
+    } catch (_) {}
+  }
+
+  if (hasRequester) return 'เช่าอยู่';
+  return 'ว่าง';
+}
+
+/// Mask ชื่อผู้ติดต่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
+/// เช่น "นางกชกร วิชชุชัยมงคล" → "นางกชกร วิชชุชัยม***"
+String maskName(String? raw) {
+  final name = raw?.toString().trim() ?? '';
+  if (name.isEmpty) return '-';
+  final words =
+      name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  if (words.isEmpty) return '-';
+
+  if (words.length == 1) {
+    final w = words.first;
+    if (w.length <= 3) return '***';
+    return '${w.substring(0, w.length - 3)}***';
+  }
+
+  final lastIndex = words.length - 1;
+  final last = words[lastIndex];
+  if (last.length <= 3) {
+    words[lastIndex] = '***';
+  } else {
+    words[lastIndex] = '${last.substring(0, last.length - 3)}***';
+  }
+  return words.join(' ');
+}
+
+String formatEndDate(String raw) {
+  if (raw.isEmpty) return '-';
+  try {
+    return formatDate(raw, type: DateFormatType.dmy);
+  } catch (_) {
+    return raw;
   }
 }
 
