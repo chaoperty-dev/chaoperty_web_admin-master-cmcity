@@ -147,51 +147,40 @@ class _LicenseAttachPageBodyState extends State<_LicenseAttachPageBody> {
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Selector — rebuild เฉพาะตอน total เปลี่ยน
-    //    title คงที่จาก config → ใช้ widget.title ตรงๆ ไม่ต้องใส่ snapshot
-    //    เดิม context.watch ทำให้ body rebuild ทุกครั้งที่ VM notify
-    //    (load start/end, search query, zone change, pagination, refresh ฯลฯ)
-    return Selector<LicenseAttachViewModel, int>(
-      selector: (_, vm) => vm.total,
-      shouldRebuild: (a, b) => a != b,
-      builder: (context, total, _) {
-        return Container(
-          color: LaColors.surface,
-          child: Padding(
-            padding: const EdgeInsets.all(LaSpace.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+    // ✅ Body ไม่ watch VM แล้ว — total ถูก watch ภายใน header ผ่าน context.select
+    return Container(
+      color: LaColors.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(LaSpace.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LicenseAttachHeader(
+              title: widget.title,
+              subtitle: 'แนบหลักฐานใบอนุญาต — อัปโหลดเอกสารที่เกี่ยวข้อง',
+            ),
+            const SizedBox(height: LaSpace.lg),
+            const LicenseAttachZoneFilter(),
+            const SizedBox(height: LaSpace.md),
+            // Search + Pagination row (pagination inline)
+            const Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                LicenseAttachHeader(
-                  title: widget.title,
-                  subtitle:
-                      'แนบหลักฐานใบอนุญาต — อัปโหลดเอกสารที่เกี่ยวข้อง',
-                  totalCount: total,
-                ),
-                const SizedBox(height: LaSpace.lg),
-                const LicenseAttachZoneFilter(),
-                const SizedBox(height: LaSpace.md),
-                // Search + Pagination row (pagination inline)
-                const Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(child: LicenseAttachSearchBar()),
-                    SizedBox(width: LaSpace.md),
-                    LicenseAttachPagination(),
-                  ],
-                ),
-                const SizedBox(height: LaSpace.lg),
-                // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
-                const Expanded(
-                  child: SingleChildScrollView(
-                    child: LicenseAttachTable(),
-                  ),
-                ),
+                Expanded(child: LicenseAttachSearchBar()),
+                SizedBox(width: LaSpace.md),
+                LicenseAttachPagination(),
               ],
             ),
-          ),
-        );
-      },
+            const SizedBox(height: LaSpace.lg),
+            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
+            const Expanded(
+              child: SingleChildScrollView(
+                child: LicenseAttachTable(),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

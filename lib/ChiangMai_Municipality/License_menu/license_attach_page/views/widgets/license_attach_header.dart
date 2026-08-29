@@ -5,25 +5,29 @@
 // - Eyebrow + Title + subtitle (ไม่มีปุ่ม Create)
 // - ใช้ gradient + glow แทนการใช้พื้นหลังเรียบ
 // - Responsive: wide / medium / compact (เหมือน Registration header)
+// - title มาจาก page config (static) → pass via constructor
+// - totalCount มาจาก context.select<LicenseAttachViewModel, int> → rebuild
+//   เฉพาะเมื่อ total เปลี่ยน
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../viewmodels/license_attach_view_model.dart';
 import '../theme/license_attach_theme.dart';
 
 class LicenseAttachHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
-  final int? totalCount;
   const LicenseAttachHeader({
     super.key,
     required this.title,
     this.subtitle,
-    this.totalCount,
   });
 
   @override
   Widget build(BuildContext context) {
+    final total = context.select<LicenseAttachViewModel, int>((vm) => vm.total);
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -55,16 +59,16 @@ class LicenseAttachHeader extends StatelessWidget {
             ],
           ),
           child: compact
-              ? _buildCompactLayout()
+              ? _buildCompactLayout(total, subtitle)
               : medium
-                  ? _buildMediumLayout()
-                  : _buildWideLayout(),
+                  ? _buildMediumLayout(total, subtitle)
+                  : _buildWideLayout(total, subtitle),
         );
       },
     );
   }
 
-  Widget _buildWideLayout() {
+  Widget _buildWideLayout(int totalCount, String? subtitle) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -90,18 +94,16 @@ class LicenseAttachHeader extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: _titleBlock(showEyebrow: true),
+            child: _titleBlock(subtitle, showEyebrow: true),
           ),
         ),
-        if (totalCount != null) ...[
-          _countBadge(),
-          const SizedBox(width: LaSpace.sm),
-        ],
+        _countBadge(totalCount),
+        const SizedBox(width: LaSpace.sm),
       ],
     );
   }
 
-  Widget _buildMediumLayout() {
+  Widget _buildMediumLayout(int totalCount, String? subtitle) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -127,18 +129,16 @@ class LicenseAttachHeader extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: _titleBlock(showEyebrow: false, titleSize: 18),
+            child: _titleBlock(subtitle, showEyebrow: false, titleSize: 18),
           ),
         ),
-        if (totalCount != null) ...[
-          const SizedBox(width: LaSpace.sm),
-          _countBadge(compact: true),
-        ],
+        const SizedBox(width: LaSpace.sm),
+        _countBadge(totalCount, compact: true),
       ],
     );
   }
 
-  Widget _buildCompactLayout() {
+  Widget _buildCompactLayout(int totalCount, String? subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -163,18 +163,20 @@ class LicenseAttachHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: LaSpace.sm),
-            Expanded(child: _titleBlock(showEyebrow: false, titleSize: 17)),
+            Expanded(child: _titleBlock(subtitle, showEyebrow: false, titleSize: 17)),
           ],
         ),
-        if (totalCount != null) ...[
-          const SizedBox(height: LaSpace.sm),
-          _countBadge(),
-        ],
+        const SizedBox(height: LaSpace.sm),
+        _countBadge(totalCount),
       ],
     );
   }
 
-  Widget _titleBlock({required bool showEyebrow, double titleSize = 20}) {
+  Widget _titleBlock(
+    String? subtitle, {
+    required bool showEyebrow,
+    double titleSize = 20,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -202,7 +204,7 @@ class LicenseAttachHeader extends StatelessWidget {
         if (subtitle != null) ...[
           const SizedBox(height: 2),
           Text(
-            subtitle!,
+            subtitle,
             style: LaText.caption.copyWith(
               color: Colors.white.withOpacity(.65),
             ),
@@ -214,7 +216,7 @@ class LicenseAttachHeader extends StatelessWidget {
     );
   }
 
-  Widget _countBadge({bool compact = false}) {
+  Widget _countBadge(int totalCount, {bool compact = false}) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 8 : 12,
