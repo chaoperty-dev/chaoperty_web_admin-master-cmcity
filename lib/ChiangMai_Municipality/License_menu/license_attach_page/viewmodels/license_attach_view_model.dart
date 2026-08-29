@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../unity/license_status_labels.dart';
+import '../../../unity/zone_selection_store.dart';
 import '../models/attach_request_item.dart';
 import '../models/license_attach_config.dart';
 import '../models/license_attach_event.dart';
@@ -26,11 +27,55 @@ class LicenseAttachViewModel extends ChangeNotifier {
     LicenseAttachService? service,
   })  : _config = config,
         _service = service ?? LicenseAttachService() {
+    // ✅ sync state จาก global store (license scope)
+    _selectedZoneSub = ZoneSelectionStore.instance.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseSubZone;
+    _selectedZone = ZoneSelectionStore.instance.licenseZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseZone;
+    _selectedZoneSer = '0';
+    _selectedStatus = ZoneSelectionStore.instance.licenseStatus;
+    ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
   }
 
   final LicenseAttachConfig _config;
   final LicenseAttachService _service;
+  final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
+
+  void _onZoneStoreChanged() {
+    final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseSubZone;
+    final newZone = _zoneStore.licenseZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseZone;
+    final newStatus = _zoneStore.licenseStatus;
+    final subChanged = _selectedZoneSub != newSub;
+    final zoneChanged = _selectedZone != newZone;
+    final statusChanged = _selectedStatus != newStatus;
+    if (!subChanged && !zoneChanged && !statusChanged) return;
+
+    _selectedZoneSub = newSub;
+    _selectedZone = newZone;
+    _selectedZoneSer = '0';
+    _selectedStatus = newStatus;
+
+    notifyListeners();
+
+    // resolve sub-ser + reload zones filtered
+    String? subSer;
+    if (_selectedZoneSub != null) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedZoneSub,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+      loadZones(zoneSubSer: subSer);
+    }
+    refresh();
+  }
 
   // ---------- Event channel ----------
   final StreamController<LicenseAttachEvent> _eventController =
@@ -82,11 +127,7 @@ class LicenseAttachViewModel extends ChangeNotifier {
 
   /// ผู้ใช้เลือก "สถานะ" — ถ้าเป็น "ทั้งหมด" หรือ null → ไม่ส่ง key
   Future<void> onStatusChanged(String? value) async {
-    _selectedStatus = (value == null || value.isEmpty || value == 'ทั้งหมด')
-        ? null
-        : value;
-    notifyListeners();
-    await refresh();
+    _zoneStore.setLicenseStatus(value);
   }
 
   /// แปลง _selectedStatus เป็น List<String>? สำหรับส่งให้ service
@@ -176,10 +217,26 @@ class LicenseAttachViewModel extends ChangeNotifier {
     if (_config.routeData != null && _config.routeData!.isNotEmpty) {
       _searchQuery = _config.routeData!;
     }
-    await Future.wait([
-      loadSubZones(),
-      loadZones(),
-    ]);
+    // 1) load sub-zones first (need ser lookup)
+    await loadSubZones();
+    // 2) resolve selected sub's ser from store
+    String? subSer;
+    if (_selectedZoneSub != null && _selectedZoneSub!.isNotEmpty) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedZoneSub,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+    }
+    await loadZones(zoneSubSer: subSer);
+    // 3) resolve zone ser from filtered list
+    if (_selectedZone != null && _selectedZone!.isNotEmpty) {
+      final zn = _zoneModels.firstWhere(
+        (z) => z.zn == _selectedZone,
+        orElse: () => ZoneModel(),
+      );
+      _selectedZoneSer = zn.ser;
+    }
     await refresh();
   }
 
@@ -205,46 +262,16 @@ class LicenseAttachViewModel extends ChangeNotifier {
   }
 
   /// ผู้ใช้เลือก "หมวดโซนพื้นที่" (sub-zone)
-  /// → reset "โซนพื้นที่" เป็น "ทั้งหมด"
-  /// → reload zones (filter ตาม sub_zone)
-  /// → ดึง API คำขอใหม่ (zn=null = ทั้งหมด)
+  /// → sync ไปที่ global store → จะ trigger _onZoneStoreChanged ที่จัดการ reset zone + reload
   Future<void> onSubZoneChanged(String? value) async {
     if (value == null) return;
-
-    // 1) ตั้งค่า sub-zone ที่เลือก
-    _selectedZoneSub = value;
-
-    // 2) Reset "โซนพื้นที่" กลับเป็น "ทั้งหมด"
-    _selectedZone = 'ทั้งหมด';
-    _selectedZoneSer = '0';
-
-    notifyListeners();
-
-    // 3) Reload zones ตาม sub-zone
-    final sub = _subzoneModels.firstWhere(
-      (s) => s.zn == value,
-      orElse: () => SubZoneModel(),
-    );
-    final subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-    await loadZones(zoneSubSer: subSer);
-
-    // 4) ดึง API คำขอต่อสัญญาใหม่ (zn=null = ทั้งหมด)
-    await refresh();
+    _zoneStore.setLicenseSubZone(value);
   }
 
-  /// ผู้ใช้เลือก "โซน" → reload คำขอต่อสัญญา filter ด้วย zn
+  /// ผู้ใช้เลือก "โซน" → sync ไปที่ global store → จะ trigger _onZoneStoreChanged ที่ reload
   Future<void> onZoneChanged(String? value) async {
     if (value == null) return;
-    _selectedZone = value;
-    // หา ser จาก zn
-    final zone = _zoneModels.firstWhere(
-      (z) => z.zn == value,
-      orElse: () => ZoneModel(),
-    );
-    _selectedZoneSer = zone.ser;
-    notifyListeners();
-    // ดึง API คำขอต่อสัญญา filter ด้วย zn
-    await refresh();
+    _zoneStore.setLicenseZone(value);
   }
 
   // ===============================================================
@@ -373,6 +400,7 @@ class LicenseAttachViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _zoneStore.removeListener(_onZoneStoreChanged);
     _eventController.close();
     super.dispose();
   }
