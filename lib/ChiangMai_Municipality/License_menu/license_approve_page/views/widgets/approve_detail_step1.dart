@@ -4,7 +4,11 @@
 // Step 1 — ตรวจสอบคำขอ
 // - แสดง "ข้อมูลเบื้องต้น" ของคำขอ (uuid / ชื่อลูกค้า / lease / zone / สถานะ)
 // - แสดง "ขั้นตอนการส่งคำร้องขออนุมัติ" (read-only current step card)
+// - ปุ่ม "อนุมัติ" ยิง v1 API: POST /admin/approvals/{requestUuid}/flow/{flowUuid}/approve
+// - ปุ่ม "ปฏิเสธ" ยิง v2 API: POST /v2/admin/approvals/{requestUuid}/steps/{stepUuid}/reject
 // ============================================================================
+
+import 'dart:convert';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart' show immutable;
@@ -12,6 +16,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
+import '../../../../unity/API_admin_signature.dart';
+import '../../../../unity/API_requests_reviewsflow.dart';
 import '../../../../unity/FormatPhone.dart';
 import '../../../../Model/Review_Model.dart';
 import '../theme/license_approve_theme.dart';
@@ -1169,12 +1175,20 @@ class _RoundsSection extends StatelessWidget {
   }
 }
 
-class _StepCard extends StatelessWidget {
+class _StepCard extends StatefulWidget {
   final ApprovalStepV2? step;
   const _StepCard({this.step});
 
+  @override
+  State<_StepCard> createState() => _StepCardState();
+}
+
+class _StepCardState extends State<_StepCard> {
   static const _pendingBg = LaColors.statusPendingBg;
   static const _pendingFg = LaColors.statusPendingFg;
+
+  /// true เมื่อกำลังยิง v1 approve (Post_ReviewsFlowApprove) — ใช้ disable ปุ่ม
+  bool _isApprovingV1 = false;
 
   String _short(String uuid) {
     if (uuid.isEmpty) return '-';
@@ -1184,8 +1198,8 @@ class _StepCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (step == null) return const _RoundsEmpty();
-    final s = step!;
+    if (widget.step == null) return const _RoundsEmpty();
+    final s = widget.step!;
 
     return Container(
       decoration: BoxDecoration(
@@ -1345,6 +1359,7 @@ class _StepCard extends StatelessWidget {
               builder: (ctx, vm, _) {
                 final isActing =
                     vm.isActing && vm.actingStepUuid == s.uuid;
+                final isApproveBusy = isActing || _isApprovingV1;
                 return Container(
                   decoration: const BoxDecoration(
                     color: LaColors.surfaceMuted,
@@ -1363,8 +1378,8 @@ class _StepCard extends StatelessWidget {
                           icon: Icons.check_rounded,
                           fg: Colors.white,
                           bg: LaColors.statusApprovedFg,
-                          isLoading: isActing,
-                          onTap: isActing
+                          isLoading: isApproveBusy,
+                          onTap: isApproveBusy
                               ? null
                               : () => _onApprove(ctx, vm, s),
                         ),
@@ -1376,7 +1391,7 @@ class _StepCard extends StatelessWidget {
                           icon: Icons.close_rounded,
                           fg: LaColors.statusRejectedFg,
                           bg: LaColors.statusRejectedBg,
-                          isLoading: false,
+                          isLoading: isActing,
                           onTap: isActing
                               ? null
                               : () => _onReject(ctx, vm, s),
@@ -1417,6 +1432,12 @@ class _StepCard extends StatelessWidget {
     );
   }
 
+  /// ปุ่ม "อนุมัติ" — ยิง v1 API: Post_ReviewsFlowApprove
+  /// - ดึง flowUuid จาก /admin/approvals/{requestUuid}/flow
+  /// - ดึง profileUuid + signUuid จาก /admin/know
+  /// - POST /admin/approvals/{requestUuid}/flow/{flowUuid}/approve
+  ///   body: { profile_uuid, sign_uuid, comment }
+  /// - สำเร็จแล้ว reload approval detail เพื่อ refresh step state
   Future<void> _onApprove(
     BuildContext context,
     LicenseApproveDetailViewModel vm,
@@ -1425,20 +1446,143 @@ class _StepCard extends StatelessWidget {
     final remark = await _showRemarkDialog(
       context,
       title: 'อนุมัติ',
-      hint: 'หมายเหตุ (ไม่บังคับ)',
+      hint: 'หมายเหตุ',
       accent: LaColors.statusApprovedFg,
       confirmLabel: 'อนุมัติ',
     );
     if (remark == null) return;
     if (!context.mounted) return;
-    final ok = await vm.approveStep(step: step);
+
+    final requestUuid = vm.requestUuid;
+    if (requestUuid == null || requestUuid.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ไม่พบ requestUuid'),
+          backgroundColor: LaColors.statusRejectedFg,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isApprovingV1 = true);
+
+    // แสดง loading dialog ป้องกัน user กดซ้ำ
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(
+        child: Card(
+          margin: EdgeInsets.zero,
+          child: Padding(
+            padding: EdgeInsets.all(LaSpace.xl),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                SizedBox(width: LaSpace.md),
+                Text('กำลังส่งอนุมัติ (V1)...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    bool success = false;
+    String? errorMsg;
+    String? flowUuid;
+    String? profileUuid;
+    String? signUuid;
+
+    try {
+      // 1) ดึง V1 flow uuid (ต้องใช้ทุกครั้ง — ห้าม cache เพราะ flow หมุน)
+      final flowResp = await read_GC_ReviewsFlowUuid(UuidRequest: requestUuid);
+      if (flowResp != null && flowResp.statusCode == 200) {
+        try {
+          final flowBody =
+              jsonDecode(flowResp.body) as Map<String, dynamic>;
+          final flowData = flowBody['data'];
+          if (flowData is List && flowData.isNotEmpty) {
+            final first = flowData.first as Map<String, dynamic>;
+            flowUuid = (first['flow_uuid'] ??
+                    first['triggered_approval_uuid'] ??
+                    first['uuid'])
+                as String?;
+          } else if (flowData is Map<String, dynamic>) {
+            flowUuid = (flowData['flow_uuid'] ??
+                    flowData['triggered_approval_uuid'] ??
+                    flowData['uuid'])
+                as String?;
+          }
+        } catch (_) {/* ignore parse */}
+      }
+
+      // 2) ดึง admin signature meta (profile_uuid, sign_uuid)
+      final sigResp = await read_AdminSignature();
+      if (sigResp != null && sigResp.statusCode == 200) {
+        try {
+          final sigBody =
+              jsonDecode(sigResp.body) as Map<String, dynamic>;
+          final sigData = sigBody['data'] as Map<String, dynamic>?;
+          if (sigData != null) {
+            profileUuid = sigData['profile_uuid'] as String?;
+            signUuid = sigData['signature_uuid'] as String?;
+          }
+        } catch (_) {/* ignore parse */}
+      }
+
+      // validate ก่อนยิง
+      if (flowUuid == null || flowUuid.isEmpty) {
+        errorMsg = 'ไม่พบ flow uuid สำหรับคำขอนี้';
+      } else if (profileUuid == null || profileUuid.isEmpty) {
+        errorMsg = 'ไม่พบ profile uuid ของผู้ลงนาม';
+      } else if (signUuid == null || signUuid.isEmpty) {
+        errorMsg = 'ไม่พบ signature uuid ของผู้ลงนาม';
+      } else {
+        // 3) ยิง v1 approve
+        final result = await Post_ReviewsFlowApprove(
+          requestUuid: requestUuid,
+          flowUuid: flowUuid,
+          profileUuid: profileUuid,
+          signUuid: signUuid,
+          comment: remark,
+        );
+        // result = decoded json body (null = exception/network)
+        // สำเร็จถ้า response non-null (ตามรูปแบบเดิมของ legacy cignaturepad_cmm.dart)
+        success = result != null;
+        if (!success) {
+          errorMsg = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+        }
+      }
+
+      if (success) {
+        // refresh step state (v2 detail) ให้ UI อัปเดต
+        await vm.reloadApprovalDetail();
+      }
+    } catch (e) {
+      success = false;
+      errorMsg = 'เกิดข้อผิดพลาด: $e';
+    } finally {
+      if (context.mounted) {
+        Navigator.of(context, rootNavigator: true).pop(); // ปิด loading dialog
+      }
+      if (mounted) {
+        setState(() => _isApprovingV1 = false);
+      }
+    }
+
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(ok
-            ? 'อนุมัติสำเร็จ'
-            : (vm.actionError ?? 'อนุมัติไม่สำเร็จ')),
-        backgroundColor: ok
+        content: Text(success
+            ? 'อนุมัติสำเร็จ (V1)'
+            : (errorMsg ?? 'อนุมัติไม่สำเร็จ')),
+        backgroundColor: success
             ? LaColors.statusApprovedFg
             : LaColors.statusRejectedFg,
         behavior: SnackBarBehavior.floating,
