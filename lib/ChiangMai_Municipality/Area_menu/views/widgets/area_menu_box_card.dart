@@ -7,12 +7,11 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../theme/area_menu_theme.dart';
 import '../../../unity/FormatDate.dart';
 import '../../../unity/Enum.dart';
-import '../../viewmodels/area_menu_view_model.dart';
+import 'area_license_action_menu.dart';
 
 class AreaMenuBoxCard extends StatefulWidget {
   final Map<String, dynamic> model;
@@ -24,6 +23,7 @@ class AreaMenuBoxCard extends StatefulWidget {
 
 class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   bool _hover = false;
+  final GlobalKey _anchorKey = GlobalKey();
 
   // ---------------------------------------------------------------
   // Theme helpers — ใช้ค่าจาก Map เป็นหลัก
@@ -159,6 +159,7 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
+        key: _anchorKey,
         duration: LrAnimations.fast,
         curve: Curves.easeOut,
         decoration: BoxDecoration(
@@ -181,7 +182,16 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
           type: MaterialType.transparency,
           child: InkWell(
             borderRadius: BorderRadius.circular(LaRadius.md),
-            onTap: () => context.read<AreaMenuViewModel>().onViewRequest(m),
+            onTap: () {
+              // กดที่การ์ด → popup menu ติดการ์ด (7 เมนูใบอนุญาต ยกเว้นประกาศ)
+              final key = m['key']?.toString() ??
+                  '${m['subzone'] ?? ''}|${m['zone'] ?? ''}|${m['lock'] ?? ''}';
+              showAreaLicenseActionMenuAt(
+                context: context,
+                anchorKey: _anchorKey,
+                routeData: key,
+              );
+            },
             child: Stack(
               children: [
                 // ── Main content ───────────────────────────────

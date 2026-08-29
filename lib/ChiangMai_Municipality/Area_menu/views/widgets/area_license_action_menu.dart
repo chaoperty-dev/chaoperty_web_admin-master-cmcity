@@ -1,8 +1,9 @@
 // ============================================================================
 // area_license_action_menu.dart
 // ============================================================================
-// Modal bottom sheet — เลือกเมนูย่อยของ "ใบอนุญาต" ที่จะไปจาก area card
+// Popup menu (popover) — เลือกเมนูย่อยของ "ใบอนุญาต" ที่จะไปจาก area card
 // แสดง 7 เมนู (ยกเว้น "ประกาศคำขอใบอนุญาต")
+// ใช้ showMenu ของ Flutter ผูกตำแหน่งกับการ์ดที่กด (RelativeRect)
 // แต่ละเมนู navigate ไป route ที่กำหนด พร้อม routeData = key (subzone|zone|lock)
 // ============================================================================
 
@@ -10,6 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
+import '../theme/area_menu_theme.dart';
 
 /// รายการเมนู "ใบอนุญาต" ที่ให้เลือก (ยกเว้น "ประกาศคำขอใบอนุญาต")
 class _LicenseAction {
@@ -70,174 +72,138 @@ const _licenseActions = <_LicenseAction>[
   ),
 ];
 
-/// แสดง bottom sheet เลือกเมนูย่อย "ใบอนุญาต"
+/// แสดง popup menu ติดกับการ์ดที่กด
+/// [position] = global rect ของการ์ด (จาก RenderBox)
 /// [routeData] = composite key (เช่น "subzone|zone|lock") ส่งต่อเป็น query param
-Future<void> showAreaLicenseActionMenu(
-  BuildContext context, {
+Future<void> showAreaLicenseActionMenu({
+  required BuildContext context,
+  required Rect position,
   required String routeData,
 }) {
-  return showModalBottomSheet(
+  final overlay =
+      Overlay.of(context).context.findRenderObject() as RenderBox?;
+  final overlaySize = overlay?.size ?? MediaQuery.of(context).size;
+  // ตำแหน่ง popup: ชิดขวาของการ์ด, ขยายลงล่าง — fallback ถ้าชนขอบจอ
+  final double left = position.right;
+  final double top = position.top;
+  final double maxRight = overlaySize.width - 320; // ความกว้างประมาณ popup
+  final double adjustedLeft = left > maxRight ? position.left : left;
+  final double adjustedTop =
+      top + 280 > overlaySize.height ? overlaySize.height - 300 : top;
+
+  final rect = RelativeRect.fromLTRB(
+    adjustedLeft,
+    adjustedTop,
+    overlaySize.width - position.right,
+    overlaySize.height - position.bottom,
+  );
+
+  // cache GoRouter ก่อน async เพื่อหลีกเลี่ยง use_build_context_synchronously
+  final router = GoRouter.of(context);
+
+  return showMenu<_LicenseAction>(
     context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    position: rect,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      side: BorderSide(color: Colors.grey.shade200),
     ),
-    builder: (ctx) => _AreaLicenseActionSheet(
-      routeData: routeData,
-      actions: _licenseActions,
-    ),
+    elevation: 12,
+    color: Colors.white,
+    items: _licenseActions
+        .map(
+          (a) => PopupMenuItem<_LicenseAction>(
+            value: a,
+            height: 56,
+            padding: EdgeInsets.zero,
+            child: _LicenseActionTile(action: a),
+          ),
+        )
+        .toList(),
+  ).then((selected) {
+    if (selected == null) return;
+    final uri = Uri(
+      path: selected.route,
+      queryParameters: {'routeData': routeData},
+    );
+    router.go(uri.toString());
+  });
+}
+
+/// ใช้ GlobalKey เพื่อ resolve RenderBox ของการ์ด → Rect → เรียก showAreaLicenseActionMenu
+Future<void> showAreaLicenseActionMenuAt({
+  required BuildContext context,
+  required GlobalKey anchorKey,
+  required String routeData,
+}) async {
+  final renderObject = anchorKey.currentContext?.findRenderObject();
+  if (renderObject is! RenderBox) {
+    return;
+  }
+  final globalOffset = renderObject.localToGlobal(Offset.zero);
+  final size = renderObject.size;
+  // ใช้ context ก่อน await — ไม่ข้าม async gap
+  if (!context.mounted) return;
+  await showAreaLicenseActionMenu(
+    context: context,
+    position: globalOffset & size,
+    routeData: routeData,
   );
 }
 
-class _AreaLicenseActionSheet extends StatelessWidget {
-  final String routeData;
-  final List<_LicenseAction> actions;
-  const _AreaLicenseActionSheet({
-    required this.routeData,
-    required this.actions,
-  });
+class _LicenseActionTile extends StatelessWidget {
+  final _LicenseAction action;
+  const _LicenseActionTile({required this.action});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.of(context).size.height * 0.78,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ─── Header ───
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .primary
-                              .withOpacity(.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.description_outlined,
-                          color: Theme.of(context).colorScheme.primary,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      const Expanded(
-                        child: Text(
-                          'ไปเมนูไหนในใบอนุญาต?',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'เลือกขั้นตอนที่ต้องการทำต่อสำหรับพื้นที่นี้',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primary.withOpacity(.08),
+              borderRadius: BorderRadius.circular(8),
             ),
-            const Divider(height: 1),
-            // ─── Action list ───
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                itemCount: actions.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1, indent: 64),
-                itemBuilder: (context, i) {
-                  final a = actions[i];
-                  return InkWell(
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      final uri = Uri(
-                        path: a.route,
-                        queryParameters: {'routeData': routeData},
-                      );
-                      GoRouter.of(context).go(uri.toString());
-                    },
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 36,
-                            height: 36,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .primary
-                                  .withOpacity(.08),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: Icon(
-                              a.icon,
-                              size: 18,
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  a.label,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  a.hint,
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    color: Colors.grey.shade600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.chevron_right_rounded,
-                            size: 18,
-                            color: Colors.grey.shade400,
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+            child: Icon(
+              action.icon,
+              size: 16,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: 8),
-          ],
-        ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  action.label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 1),
+                Text(
+                  action.hint,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey.shade600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
