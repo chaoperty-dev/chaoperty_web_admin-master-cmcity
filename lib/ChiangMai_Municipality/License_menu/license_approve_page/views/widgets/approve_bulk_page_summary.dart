@@ -251,27 +251,36 @@ class _PageGridSection extends StatelessWidget {
   }
 
   Widget _buildEmptyBlock() {
+    // Empty state — mirror Tab 1's _EmptyState (icons + copy ตรงกัน)
     return Container(
-      padding: const EdgeInsets.all(LaSpace.lg),
-      decoration: LaDecor.softCard(),
-      alignment: Alignment.center,
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 36,
-            color: LaColors.textSecondary.withOpacity(.55),
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: LaColors.primaryLight,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.inbox_outlined,
+              size: 36,
+              color: LaColors.primaryDark,
+            ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 16),
           const Text(
-            'ยังไม่มีข้อมูลหน้าให้แสดง',
+            'ไม่พบรายการที่ต้องอนุมัติ',
+            style: LaText.h2,
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'ลองปรับตัวกรองหรือคำค้นหาใหม่อีกครั้ง',
             style: LaText.bodyMuted,
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            'ลองรอข้อมูลโหลด หรือตรวจสอบ filter',
-            style: LaText.caption,
+            textAlign: TextAlign.center,
           ),
         ],
       ),
