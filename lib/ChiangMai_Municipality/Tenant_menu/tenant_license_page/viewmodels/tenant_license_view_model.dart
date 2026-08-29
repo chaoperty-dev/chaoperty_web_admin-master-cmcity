@@ -26,13 +26,13 @@ class TenantLicenseViewModel extends ChangeNotifier {
     TenantLicenseService? service,
   })  : _config = config,
         _service = service ?? TenantLicenseService() {
-    // ✅ sync state จาก global ZoneSelectionStore (คงค่าที่ user เลือกไว้ข้ามหน้า)
-    _selectedZoneSub = ZoneSelectionStore.instance.selectedZoneSub == 'ทั้งหมด'
+    // ✅ sync state จาก global ZoneSelectionStore (area scope — shared with Area menu)
+    _selectedZoneSub = ZoneSelectionStore.instance.areaSubZone == 'ทั้งหมด'
         ? null
-        : ZoneSelectionStore.instance.selectedZoneSub;
-    _selectedZone = ZoneSelectionStore.instance.selectedZone == 'ทั้งหมด'
+        : ZoneSelectionStore.instance.areaSubZone;
+    _selectedZone = ZoneSelectionStore.instance.areaZone == 'ทั้งหมด'
         ? null
-        : ZoneSelectionStore.instance.selectedZone;
+        : ZoneSelectionStore.instance.areaZone;
     _selectedZoneSer = '0';
     ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
@@ -41,13 +41,13 @@ class TenantLicenseViewModel extends ChangeNotifier {
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
   void _onZoneStoreChanged() {
-    final newSub = _zoneStore.selectedZoneSub == 'ทั้งหมด'
+    final newSub = _zoneStore.areaSubZone == 'ทั้งหมด'
         ? null
-        : _zoneStore.selectedZoneSub;
-    final newZone = _zoneStore.selectedZone == 'ทั้งหมด'
+        : _zoneStore.areaSubZone;
+    final newZone = _zoneStore.areaZone == 'ทั้งหมด'
         ? null
-        : _zoneStore.selectedZone;
-    final newLease = _zoneStore.selectedLeaseStatus;
+        : _zoneStore.areaZone;
+    final newLease = _zoneStore.areaLeaseStatus;
     final subChanged = _selectedZoneSub != newSub;
     final zoneChanged = _selectedZone != newZone;
     final statusChanged = _selectedStatus != newLease;
@@ -194,16 +194,16 @@ class TenantLicenseViewModel extends ChangeNotifier {
   /// → ดึง API ผู้เช่าใหม่ (zn=null = ทั้งหมด)
   Future<void> onSubZoneChanged(String? value) async {
     if (value == null) return;
-    // ✅ sync เข้า global store (auto-reset zone)
-    _zoneStore.setSubZone(value);
+    // ✅ sync เข้า global store (area scope, auto-reset zone)
+    _zoneStore.setAreaSubZone(value);
     // store listener จะ sync state กลับมา + reload zones + refresh
   }
 
   /// ผู้ใช้เลือก "โซน" → reload ผู้เช่า filter ด้วย zn
   Future<void> onZoneChanged(String? value) async {
     if (value == null) return;
-    // ✅ sync เข้า global store
-    _zoneStore.setZone(value);
+    // ✅ sync เข้า global store (area scope)
+    _zoneStore.setAreaZone(value);
     // store listener จะ sync + refresh
   }
 
@@ -272,8 +272,8 @@ class TenantLicenseViewModel extends ChangeNotifier {
 
   void onStatusChanged(String? value) {
     if (value == null) return;
-    // ✅ sync เข้า global store (lease status)
-    _zoneStore.setLeaseStatus(value);
+    // ✅ sync เข้า global store (area lease status)
+    _zoneStore.setAreaLeaseStatus(value);
     // store listener จะ sync + refresh
   }
 
