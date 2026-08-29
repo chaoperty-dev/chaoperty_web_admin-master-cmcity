@@ -20,7 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../../unity/API_admin_signature.dart';
-import '../../../Model/Review_Model.dart';
+import '../../../../Model/Review_Model.dart';
 import '../../services/license_legacy_approval_service.dart';
 import '../../viewmodels/license_approve_view_model.dart';
 import '../theme/license_approve_theme.dart';
@@ -704,9 +704,11 @@ class _RequestCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = (model.client?.scname?.isNotEmpty == true)
-        ? model.client!.scname
-        : (model.client?.cname ?? '-');
+    final scname = model.client?.scname?.trim() ?? '';
+    final cname = model.client?.cname?.trim() ?? '';
+    final name = scname.isNotEmpty
+        ? scname
+        : (cname.isNotEmpty ? cname : '-');
     final subzone = model.newRequest?.subzone ?? '-';
     final ln = model.newRequest?.ln ?? '-';
     final uuidShort = (model.uuid ?? '-').length > 8
