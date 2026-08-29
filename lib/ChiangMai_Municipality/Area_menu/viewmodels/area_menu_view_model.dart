@@ -14,6 +14,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../../unity/zone_selection_store.dart';
 import '../models/area_menu_event.dart' as evt;
 import '../services/area_menu_service.dart';
 
@@ -30,7 +31,25 @@ class AreaMenuViewModel extends ChangeNotifier {
     if (routeData != null && routeData.isNotEmpty) {
       _searchQuery = routeData;
     }
+    // ✅ sync state จาก global ZoneSelectionStore (คงค่าที่ user เลือกไว้ข้ามหน้า)
+    _selectedZoneSub = ZoneSelectionStore.instance.selectedZoneSub;
+    _selectedZone = ZoneSelectionStore.instance.selectedZone;
+    ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
+  }
+
+  final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
+
+  void _onZoneStoreChanged() {
+    final newSub = _zoneStore.selectedZoneSub;
+    final newZone = _zoneStore.selectedZone;
+    final subChanged = _selectedZoneSub != newSub;
+    final zoneChanged = _selectedZone != newZone;
+    if (!subChanged && !zoneChanged) return;
+    _selectedZoneSub = newSub;
+    _selectedZone = newZone;
+    _invalidateFilterCache();
+    notifyListeners();
   }
 
   final AreaMenuService _service;
@@ -285,17 +304,14 @@ class AreaMenuViewModel extends ChangeNotifier {
   // (API จะถูกเรียกครั้งเดียวตอน loadOverview() ครั้งแรก)
   // ===============================================================
   void onSubZoneChanged(String? value) {
-    _selectedZoneSub = value ?? 'ทั้งหมด';
-    // เปลี่ยน sub-zone ใหม่ → reset zone เป็น 'ทั้งหมด'
-    _selectedZone = 'ทั้งหมด';
-    _invalidateFilterCache();
-    notifyListeners();
+    // ✅ sync เข้า global store (auto-reset zone)
+    _zoneStore.setSubZone(value);
+    // store listener จะ sync กลับมาให้ VM ผ่าน _onZoneStoreChanged
   }
 
   void onZoneChanged(String? value) {
-    _selectedZone = value ?? 'ทั้งหมด';
-    _invalidateFilterCache();
-    notifyListeners();
+    _zoneStore.setZone(value);
+    // store listener จะ sync กลับมาให้ VM
   }
 
   void onStatusChanged(String? value) {
@@ -387,6 +403,7 @@ class AreaMenuViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _zoneStore.removeListener(_onZoneStoreChanged);
     _eventController.close();
     super.dispose();
   }
