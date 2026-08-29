@@ -231,15 +231,31 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final isWide = c.maxWidth >= 960;
-        if (isWide) {
-          return _buildWideLayout(
+        final w = c.maxWidth;
+        // breakpoints:
+        //   ≥1100 → wide row (approver 280)
+        //   ≥ 720 → mid row (approver 240)
+        //   <720  → narrow column
+        if (w >= 1100) {
+          return _buildRowLayout(
             vm: vm,
             rows: rows,
             total: total,
             validRows: validRows,
             selectedInPage: selectedInPage,
             allSelected: allSelected,
+            approverWidth: 280,
+          );
+        }
+        if (w >= 720) {
+          return _buildRowLayout(
+            vm: vm,
+            rows: rows,
+            total: total,
+            validRows: validRows,
+            selectedInPage: selectedInPage,
+            allSelected: allSelected,
+            approverWidth: 240,
           );
         }
         return _buildNarrowLayout(
@@ -254,16 +270,18 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
     );
   }
 
-  // ─── Wide (≥ 960): Row — grid ซ้าย, signature ขวา ─────────────────
-  Widget _buildWideLayout({
+  // ─── Row layout (wide/mid) — wrapped in SingleChildScrollView ─────
+  // เพื่อรองรับทุกความสูงหน้าจอ — ถ้า content สูงเกินจะ scroll ได้
+  Widget _buildRowLayout({
     required LicenseApproveViewModel vm,
     required List<ReviewModel> rows,
     required int total,
     required List<ReviewModel> validRows,
     required int selectedInPage,
     required bool allSelected,
+    required double approverWidth,
   }) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -281,7 +299,7 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
           ),
           const SizedBox(width: LaSpace.lg),
           SizedBox(
-            width: 300,
+            width: approverWidth,
             child: _ApproverCard(
               isLoading: _isLoading,
               error: _error,
@@ -295,7 +313,7 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
     );
   }
 
-  // ─── Narrow (< 960): Column — signature บน, main ล่าง ─────────────
+  // ─── Narrow (< 720): Column — signature บน, main ล่าง ────────────
   Widget _buildNarrowLayout({
     required LicenseApproveViewModel vm,
     required List<ReviewModel> rows,
@@ -494,29 +512,30 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
   Widget _buildEmptyBlock() {
     return Container(
       decoration: LaDecor.card(),
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
+      padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 60,
+            height: 60,
             decoration: const BoxDecoration(
               color: LaColors.primaryLight,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.inbox_outlined,
-              size: 36,
+              size: 30,
               color: LaColors.primaryDark,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           const Text(
             'ไม่พบรายการที่ต้องอนุมัติ',
             style: LaText.h2,
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           const Text(
             'ลองปรับตัวกรองหรือคำค้นหาใหม่อีกครั้ง',
             style: LaText.bodyMuted,
@@ -847,14 +866,14 @@ class _ApproverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(LaSpace.md),
+      padding: const EdgeInsets.all(LaSpace.sm),
       decoration: LaDecor.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         mainAxisSize: MainAxisSize.min,
         children: [
           _buildHeader(),
-          const SizedBox(height: LaSpace.sm),
+          const SizedBox(height: LaSpace.xs),
           _buildBody(),
         ],
       ),
@@ -865,17 +884,17 @@ class _ApproverCard extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 36,
-          height: 36,
+          width: 32,
+          height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: LaColors.primary.withOpacity(.15),
-            borderRadius: BorderRadius.circular(LaRadius.md),
+            borderRadius: BorderRadius.circular(LaRadius.sm),
           ),
           child: const Icon(
             Icons.verified_user_rounded,
             color: LaColors.primaryDark,
-            size: 18,
+            size: 16,
           ),
         ),
         const SizedBox(width: 8),
@@ -907,12 +926,12 @@ class _ApproverCard extends StatelessWidget {
   Widget _buildBody() {
     if (isLoading) {
       return Container(
-        height: 110,
+        height: 88,
         alignment: Alignment.center,
         decoration: LaDecor.softCard(),
         child: const SizedBox(
-          width: 26,
-          height: 26,
+          width: 22,
+          height: 22,
           child: CircularProgressIndicator(strokeWidth: 2.2),
         ),
       );
@@ -922,6 +941,7 @@ class _ApproverCard extends StatelessWidget {
     }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
         _buildSignatureArea(),
         const SizedBox(height: LaSpace.sm),
@@ -934,7 +954,7 @@ class _ApproverCard extends StatelessWidget {
 
   Widget _buildSignatureArea() {
     return Container(
-      height: 110,
+      height: 88,
       decoration: BoxDecoration(
         color: LaColors.surfaceMuted,
         borderRadius: BorderRadius.circular(LaRadius.md),
@@ -948,7 +968,7 @@ class _ApproverCard extends StatelessWidget {
   Widget _buildSignatureContent() {
     if (signatureBytes != null) {
       return Padding(
-        padding: const EdgeInsets.all(6),
+        padding: const EdgeInsets.all(4),
         child: Image.memory(
           signatureBytes!,
           fit: BoxFit.contain,
@@ -959,10 +979,11 @@ class _ApproverCard extends StatelessWidget {
     }
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
           Icons.draw_rounded,
-          size: 26,
+          size: 22,
           color: LaColors.textSecondary.withOpacity(.55),
         ),
         const SizedBox(height: 4),
@@ -973,7 +994,7 @@ class _ApproverCard extends StatelessWidget {
 
   Widget _infoRow(IconData icon, String label, String value) {
     return Container(
-      padding: const EdgeInsets.all(LaSpace.md),
+      padding: const EdgeInsets.all(LaSpace.sm),
       decoration: BoxDecoration(
         color: LaColors.surfaceMuted,
         borderRadius: BorderRadius.circular(LaRadius.md),
@@ -981,11 +1002,12 @@ class _ApproverCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 18, color: LaColors.primaryDark),
+          Icon(icon, size: 16, color: LaColors.primaryDark),
           const SizedBox(width: LaSpace.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(label, style: LaText.label),
                 const SizedBox(height: 2),
@@ -995,7 +1017,7 @@ class _ApproverCard extends StatelessWidget {
                     fontFamily: LaText.fontBold,
                     color: LaColors.textPrimary,
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
                   overflow: TextOverflow.ellipsis,
                   maxLines: 2,
