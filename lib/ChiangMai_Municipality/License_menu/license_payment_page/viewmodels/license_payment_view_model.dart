@@ -22,6 +22,7 @@ import '../models/payment_task_model.dart';
 import '../../../unity/license_status_labels.dart';
 import '../services/license_payment_detail_service.dart';
 import '../services/license_payment_service.dart';
+import '../../../unity/zone_selection_store.dart';
 
 class LicensePaymentViewModel extends ChangeNotifier {
   LicensePaymentViewModel({
@@ -32,12 +33,61 @@ class LicensePaymentViewModel extends ChangeNotifier {
   })  : _config = config,
         _paymentService = paymentService ?? LicensePaymentService(cache: cache),
         _detailService = detailService ?? LicensePaymentDetailService() {
+    // ✅ sync state จาก global store (license scope)
+    _selectedZoneSub = ZoneSelectionStore.instance.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseSubZone;
+    _selectedZone = ZoneSelectionStore.instance.licenseZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseZone;
+    _selectedZoneSer = '0';
+    _selectedStatus = ZoneSelectionStore.instance.licenseStatus;
+    ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
   }
 
   final LicensePaymentConfig _config;
   final LicensePaymentService _paymentService;
   final LicensePaymentDetailService _detailService;
+  final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
+
+  void _onZoneStoreChanged() {
+    final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseSubZone;
+    final newZone = _zoneStore.licenseZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseZone;
+    final newStatus = _zoneStore.licenseStatus;
+    final subChanged = _selectedZoneSub != newSub;
+    final zoneChanged = _selectedZone != newZone;
+    final statusChanged = _selectedStatus != newStatus;
+    if (!subChanged && !zoneChanged && !statusChanged) return;
+
+    _selectedZoneSub = newSub;
+    _selectedZone = newZone;
+    _selectedZoneSer = '0';
+    _selectedStatus = newStatus;
+
+    // recompute subSer from sub-zone
+    _selectedZoneSubSer = null;
+    if (_selectedZoneSub != null && _selectedZoneSub!.isNotEmpty) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedZoneSub,
+        orElse: () => SubZoneModel(),
+      );
+      _selectedZoneSubSer =
+          (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+    }
+
+    notifyListeners();
+
+    // resolve sub-ser + reload zones filtered
+    if (_selectedZoneSub != null) {
+      _loadZones(zoneSubSer: _selectedZoneSubSer);
+    }
+    refresh();
+  }
 
   // ---------- Event channel ----------
   final StreamController<LicensePaymentEvent> _eventController =
@@ -100,11 +150,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
 
   /// ผู้ใช้เลือก "สถานะ" — ถ้าเป็น "ทั้งหมด" หรือ null → ไม่ส่ง key
   Future<void> onStatusChanged(String? value) async {
-    _selectedStatus = (value == null || value.isEmpty || value == 'ทั้งหมด')
-        ? null
-        : value;
-    notifyListeners();
-    await refresh();
+    _zoneStore.setLicenseStatus(value);
   }
 
   /// แปลง _selectedStatus เป็น List<String>? สำหรับส่งให้ service
@@ -187,12 +233,22 @@ class LicensePaymentViewModel extends ChangeNotifier {
     if (_config.routeData != null && _config.routeData!.isNotEmpty) {
       _searchQuery = _config.routeData!;
     }
-    // โหลด zones/subzones + payments พร้อมกัน
-    await Future.wait([
-      _loadZones(),
-      _loadSubZones(),
-      refresh(),
-    ]);
+    // 1) load sub-zones first (need ser lookup)
+    await _loadSubZones();
+    // 2) resolve selected sub's ser from store + recompute _selectedZoneSubSer
+    String? subSer;
+    if (_selectedZoneSub != null && _selectedZoneSub!.isNotEmpty) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedZoneSub,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+    }
+    _selectedZoneSubSer = subSer;
+    // 3) load zones (filtered by sub-zone)
+    await _loadZones(zoneSubSer: subSer);
+    // 4) load payments
+    await refresh();
   }
 
   // ===============================================================
@@ -241,9 +297,9 @@ class LicensePaymentViewModel extends ChangeNotifier {
   }
 
   /// โหลด Zones (สำหรับ dropdown filter)
-  Future<void> _loadZones() async {
+  Future<void> _loadZones({String? zoneSubSer}) async {
     try {
-      _zoneModels = await _paymentService.fetchZones();
+      _zoneModels = await _paymentService.fetchZones(zoneSubSer: zoneSubSer);
     } catch (e) {
       print('LicensePaymentViewModel._loadZones error: $e');
     }
@@ -356,35 +412,12 @@ class LicensePaymentViewModel extends ChangeNotifier {
   // ===============================================================
   Future<void> onSubZoneChanged(String? value) async {
     if (value == null) return;
-    _selectedZoneSub = value;
-    _selectedZone = 'ทั้งหมด'; // reset zone เมื่อ subzone เปลี่ยน
-    _selectedZoneSer = '0';
-
-    // หา ser ของ sub_zone ที่เลือก (ใช้ filter zones)
-    final sub = _subzoneModels.firstWhere(
-      (s) => s.zn == value,
-      orElse: () => SubZoneModel(),
-    );
-    _selectedZoneSubSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-
-    notifyListeners();
-
-    // ยิง API payments ใหม่ (zn = null → ทั้งหมด หลัง reset zone)
-    await refresh();
+    _zoneStore.setLicenseSubZone(value);
   }
 
   Future<void> onZoneChanged(String? value) async {
     if (value == null) return;
-    _selectedZone = value;
-    // หา ser ของ zone ที่เลือก
-    final match = _zoneModels.firstWhere(
-      (z) => z.zn == value,
-      orElse: () => ZoneModel(),
-    );
-    _selectedZoneSer = match.ser;
-    notifyListeners();
-    // Reload payments filter ด้วย zn
-    await refresh();
+    _zoneStore.setLicenseZone(value);
   }
 
   /// ดรอปดาวน์ Zones: filter by sub_zone (sub_zone.ser == zone.sub_zone)
@@ -513,6 +546,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _zoneStore.removeListener(_onZoneStoreChanged);
     _eventController.close();
     super.dispose();
   }
