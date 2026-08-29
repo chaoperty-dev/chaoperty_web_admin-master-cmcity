@@ -10,10 +10,10 @@
 // IMPORTANT: ห้าม new LicenseApprovePage() ตรงๆ เพราะ child widgets
 // จะเรียก context.watch<LicenseApproveViewModel>() ซึ่งต้องการ Provider
 //
-// Tab structure:
-//   Tab 1: ข้อมูลที่ต้องอนุมัติ (pending list — current behavior)
-//   Tab 2: อนุมัติรายการทั้งหมด (signature preview ก่อน — เนื้อหาเพิ่มทีหลัง)
-// Filter / search / pagination แชร์ state เดียวกันทั้ง 2 แท็บ
+// Tab structure (independent — คนละ VM + คนละ search/pagination):
+//   Tab 1: ข้อมูลที่ต้องอนุมัติ (pending list — outer VM, search/pagination 1)
+//   Tab 2: อนุมัติรายการทั้งหมด (bulk grid + approve — own VM, search/pagination 2)
+// ทั้ง 2 แท็บแยก state อิสระ — เปลี่ยนแท็บ filter/search ไม่กระทบกัน
 // ============================================================================
 
 import 'dart:async';
@@ -44,7 +44,7 @@ class LicenseApprovePage extends StatefulWidget {
   final String title;
   final LicenseApproveConfig? config;
 
-  LicenseApprovePage._({
+  const LicenseApprovePage._({
     super.key,
     this.onSave,
     this.routeData,
@@ -89,8 +89,7 @@ class _LicenseApprovePageState extends State<LicenseApprovePage> {
           routeData: widget.routeData,
           serTitle: widget.serTitle,
         );
-    // สร้าง VM ครั้งเดียวใน initState — ใช้ ChangeNotifierProvider.value
-    // เพื่อให้ filter state (zone/sub-zone/status) คงอยู่ตอน rebuild
+    // สร้าง outer VM ครั้งเดียว — ใช้สำหรับ Header (total) + Tab 1 (filter/search/pagination/table)
     _vm = LicenseApproveViewModel(config: _cfg);
   }
 
@@ -107,6 +106,7 @@ class _LicenseApprovePageState extends State<LicenseApprovePage> {
       child: _LicenseApprovePageBody(
         title: widget.title,
         onSave: widget.onSave,
+        config: _cfg,
       ),
     );
   }
@@ -116,9 +116,11 @@ class _LicenseApprovePageState extends State<LicenseApprovePage> {
 class _LicenseApprovePageBody extends StatefulWidget {
   final String title;
   final ValueChanged<LicenseContractResult>? onSave;
+  final LicenseApproveConfig config;
 
   const _LicenseApprovePageBody({
     required this.title,
+    required this.config,
     this.onSave,
   });
 
@@ -146,6 +148,7 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    // ✅ Subscribe เฉพาะ outer VM (Tab 1 + Header) — Tab 2 มี VM ของตัวเอง
     final vm = context.read<LicenseApproveViewModel>();
     _sub ??= vm.events.listen(_onEvent);
   }
@@ -166,7 +169,6 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
         );
         break;
       case LicenseApproveNavigateEvent(:final routeData):
-        // เปิด full-page detail route (เต็มจอ)
         final title = context.read<LicenseApproveViewModel>().title;
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -190,7 +192,7 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
 
   @override
   Widget build(BuildContext context) {
-    // ✅ Body ไม่ watch VM แล้ว — total ถูก watch ภายใน header ผ่าน context.select
+    // ✅ Body ไม่ watch VM — total ถูก watch ภายใน header ผ่าน context.select
     return Container(
       color: LaColors.surface,
       child: Padding(
@@ -203,9 +205,7 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
               subtitle: 'อนุมัติคำขอใบอนุญาต — รอตรวจสอบและอนุมัติ',
             ),
             const SizedBox(height: LaSpace.lg),
-            const LicenseApproveZoneFilter(),
-            const SizedBox(height: LaSpace.md),
-            // ─── TabBar (2 แท็บ) — บนช่องค้นหา ───
+            // ─── TabBar (2 แท็บ) ───
             Container(
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -247,34 +247,143 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
                     .toList(),
               ),
             ),
-            const SizedBox(height: LaSpace.md),
-            // Search + Pagination row (pagination inline — shared ทั้ง 2 แท็บ)
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: LicenseApproveSearchBar()),
-                SizedBox(width: LaSpace.md),
-                LicenseApprovePagination(),
-              ],
-            ),
             const SizedBox(height: LaSpace.lg),
-            // ─── TabBarView — แต่ละแท็บมี content ของตัวเอง ───
+            // ─── TabBarView — แต่ละแท็บมี controls + VM ของตัวเอง ───
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 physics: const NeverScrollableScrollPhysics(),
-                children: const [
-                  // Tab 1: ข้อมูลที่ต้องอนุมัติ (current pending list)
-                  SingleChildScrollView(
-                    child: LicenseApproveTable(),
-                  ),
-                  // Tab 2: อนุมัติรายการทั้งหมด — page summary grid + approver card
-                  const ApproveBulkPageSummary(),
+                children: [
+                  const _ApproveTab1Content(),
+                  // Tab 2 — รับ config เดียวกัน → สร้าง VM อิสระภายใน
+                  _ApproveTab2Content(config: widget.config),
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// _ApproveTab1Content — Tab 1 (ใช้ outer VM)
+//   ZoneFilter + SearchBar + Pagination + Table
+// ─────────────────────────────────────────────────────────────────────
+class _ApproveTab1Content extends StatelessWidget {
+  const _ApproveTab1Content();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LicenseApproveZoneFilter(),
+        SizedBox(height: LaSpace.md),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(child: LicenseApproveSearchBar()),
+            SizedBox(width: LaSpace.md),
+            LicenseApprovePagination(),
+          ],
+        ),
+        SizedBox(height: LaSpace.lg),
+        Expanded(
+          child: SingleChildScrollView(child: LicenseApproveTable()),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// _ApproveTab2Content — Tab 2 (มี VM ของตัวเอง — แยก state จาก Tab 1)
+//   Own VM + ZoneFilter + SearchBar + Pagination + Bulk grid
+// ─────────────────────────────────────────────────────────────────────
+class _ApproveTab2Content extends StatefulWidget {
+  final LicenseApproveConfig config;
+  const _ApproveTab2Content({required this.config});
+
+  @override
+  State<_ApproveTab2Content> createState() => _ApproveTab2ContentState();
+}
+
+class _ApproveTab2ContentState extends State<_ApproveTab2Content> {
+  late final LicenseApproveViewModel _vm;
+  StreamSubscription<LicenseApproveEvent>? _sub;
+
+  @override
+  void initState() {
+    super.initState();
+    // ✅ สร้าง VM อิสระจาก config เดียวกับ Tab 1 — แยก state สิ้นเชิง
+    _vm = LicenseApproveViewModel(config: widget.config);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // subscribe VM events (ทำครั้งเดียว)
+    _sub ??= _vm.events.listen(_onEvent);
+  }
+
+  void _onEvent(LicenseApproveEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case LicenseApproveErrorEvent(:final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: LaColors.statusRejectedFg,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(LaRadius.md),
+            ),
+          ),
+        );
+        break;
+      case LicenseApproveNavigateEvent(:final routeData):
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => LicenseApproveDetailPage.create(
+              routeData: routeData,
+              title: _vm.title,
+            ),
+            fullscreenDialog: true,
+          ),
+        );
+        break;
+    }
+  }
+
+  @override
+  void dispose() {
+    _sub?.cancel();
+    _vm.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider<LicenseApproveViewModel>.value(
+      value: _vm,
+      child: const Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LicenseApproveZoneFilter(),
+          SizedBox(height: LaSpace.md),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(child: LicenseApproveSearchBar()),
+              SizedBox(width: LaSpace.md),
+              LicenseApprovePagination(),
+            ],
+          ),
+          SizedBox(height: LaSpace.lg),
+          Expanded(child: ApproveBulkPageSummary()),
+        ],
       ),
     );
   }
