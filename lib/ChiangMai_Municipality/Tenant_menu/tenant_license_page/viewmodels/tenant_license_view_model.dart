@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import '../../../../Model/GetTeNant_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
+import '../../../unity/zone_selection_store.dart';
 import '../models/tenant_license_config.dart';
 import '../models/tenant_license_event.dart';
 import '../services/tenant_license_service.dart';
@@ -25,7 +26,56 @@ class TenantLicenseViewModel extends ChangeNotifier {
     TenantLicenseService? service,
   })  : _config = config,
         _service = service ?? TenantLicenseService() {
+    // ✅ sync state จาก global ZoneSelectionStore (คงค่าที่ user เลือกไว้ข้ามหน้า)
+    _selectedZoneSub = ZoneSelectionStore.instance.selectedZoneSub == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.selectedZoneSub;
+    _selectedZone = ZoneSelectionStore.instance.selectedZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.selectedZone;
+    _selectedZoneSer = '0';
+    ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
+  }
+
+  final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
+
+  void _onZoneStoreChanged() {
+    final newSub = _zoneStore.selectedZoneSub == 'ทั้งหมด'
+        ? null
+        : _zoneStore.selectedZoneSub;
+    final newZone = _zoneStore.selectedZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.selectedZone;
+    final newLease = _zoneStore.selectedLeaseStatus;
+    final subChanged = _selectedZoneSub != newSub;
+    final zoneChanged = _selectedZone != newZone;
+    final statusChanged = _selectedStatus != newLease;
+    if (!subChanged && !zoneChanged && !statusChanged) return;
+
+    final needRefresh =
+        (subChanged || zoneChanged || statusChanged);
+
+    _selectedZoneSub = newSub;
+    _selectedZone = newZone;
+    _selectedZoneSer = '0';
+    _selectedStatus = newLease;
+
+    notifyListeners();
+
+    // resolve sub-ser ใหม่ (sub-zones อาจเปลี่ยน) → reload zones filtered
+    String? subSer;
+    if (_selectedZoneSub != null) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedZoneSub,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+      loadZones(zoneSubSer: subSer);
+    }
+    if (needRefresh) {
+      refresh();
+    }
   }
 
   final TenantLicenseConfig _config;
@@ -94,10 +144,26 @@ class TenantLicenseViewModel extends ChangeNotifier {
     if (_config.routeData != null && _config.routeData!.isNotEmpty) {
       _searchQuery = _config.routeData!;
     }
-    await Future.wait([
-      loadSubZones(),
-      loadZones(),
-    ]);
+    // 1) load sub-zones ก่อน (ต้อง resolve ser ของ selectedSub)
+    await loadSubZones();
+    // 2) ถ้า store มี selected sub-zone → load zones filter ตาม ser
+    String? subSer;
+    if (_selectedZoneSub != null && _selectedZoneSub!.isNotEmpty) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedZoneSub,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+    }
+    await loadZones(zoneSubSer: subSer);
+    // 3) resolve zone ser ที่เลือกไว้ (จาก zone list ที่ filter แล้ว)
+    if (_selectedZone != null && _selectedZone!.isNotEmpty) {
+      final zn = _zoneModels.firstWhere(
+        (z) => z.zn == _selectedZone,
+        orElse: () => ZoneModel(),
+      );
+      _selectedZoneSer = zn.ser;
+    }
     await refresh();
   }
 
@@ -128,34 +194,17 @@ class TenantLicenseViewModel extends ChangeNotifier {
   /// → ดึง API ผู้เช่าใหม่ (zn=null = ทั้งหมด)
   Future<void> onSubZoneChanged(String? value) async {
     if (value == null) return;
-
-    _selectedZoneSub = value;
-    _selectedZone = 'ทั้งหมด';
-    _selectedZoneSer = '0';
-
-    notifyListeners();
-
-    final sub = _subzoneModels.firstWhere(
-      (s) => s.zn == value,
-      orElse: () => SubZoneModel(),
-    );
-    final subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-    await loadZones(zoneSubSer: subSer);
-
-    await refresh();
+    // ✅ sync เข้า global store (auto-reset zone)
+    _zoneStore.setSubZone(value);
+    // store listener จะ sync state กลับมา + reload zones + refresh
   }
 
   /// ผู้ใช้เลือก "โซน" → reload ผู้เช่า filter ด้วย zn
   Future<void> onZoneChanged(String? value) async {
     if (value == null) return;
-    _selectedZone = value;
-    final zone = _zoneModels.firstWhere(
-      (z) => z.zn == value,
-      orElse: () => ZoneModel(),
-    );
-    _selectedZoneSer = zone.ser;
-    notifyListeners();
-    await refresh();
+    // ✅ sync เข้า global store
+    _zoneStore.setZone(value);
+    // store listener จะ sync + refresh
   }
 
   // ===============================================================
@@ -223,8 +272,9 @@ class TenantLicenseViewModel extends ChangeNotifier {
 
   void onStatusChanged(String? value) {
     if (value == null) return;
-    _selectedStatus = value;
-    refresh();
+    // ✅ sync เข้า global store (lease status)
+    _zoneStore.setLeaseStatus(value);
+    // store listener จะ sync + refresh
   }
 
   void loadPage(int page) {
@@ -291,6 +341,7 @@ class TenantLicenseViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _zoneStore.removeListener(_onZoneStoreChanged);
     _eventController.close();
     super.dispose();
   }
