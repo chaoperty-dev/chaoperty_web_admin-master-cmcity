@@ -1,32 +1,25 @@
 // ============================================================================
 // area_license_action_menu.dart
 // ============================================================================
-// Popup menu (speech-bubble style) — เลือกเมนูย่อยของ "ใบอนุญาต" ที่จะไปจาก area card
+// Popup menu (context-menu vibe) — เลือกเมนูย่อยของ "ใบอนุญาต" ที่จะไปจาก area card
 // แสดง 7 เมนู (ยกเว้น "ประกาศคำขอใบอนุญาต")
 //
-// ✅ Bubble shape: มีลูกศร (triangle) ชี้จาก popup ไปยังการ์ดที่กด
-//    - ถ้า popup อยู่ขวาการ์ด → ลูกศรชี้ซ้าย (อยู่ขอบซ้ายของ popup)
-//    - ถ้า popup อยู่ซ้ายการ์ด → ลูกศรชี้ขวา (อยู่ขอบขวาของ popup)
-//
-// ใช้ OverlayEntry วางเอง (ไม่ใช่ showMenu) เพื่อ control shape + arrow
-// แต่ละเมนู navigate ไป route ที่กำหนด พร้อม routeData = key (subzone|zone|lock)
+// ดีไซน์เรียบ เหมือนคลิกขวา — ไม่มี header ไม่มีสีหลักเด่น
+// ลูกศร (triangle) ชี้จาก popup ไปยังการ์ดที่กด
 // ============================================================================
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
-import '../theme/area_menu_theme.dart';
 
-/// รายการเมนู "ใบอนุญาต" ที่ให้เลือก (ยกเว้น "ประกาศคำขอใบอนุญาต")
+/// รายการเมนู "ใบอนุญาต" ที่ให้เลือก
 class _LicenseAction {
   final String label;
-  final String hint;
   final IconData icon;
   final String route;
   const _LicenseAction({
     required this.label,
-    required this.hint,
     required this.icon,
     required this.route,
   });
@@ -35,65 +28,55 @@ class _LicenseAction {
 const _licenseActions = <_LicenseAction>[
   _LicenseAction(
     label: 'คำขอใบอนุญาต',
-    hint: 'สร้าง/แก้ไขคำขอ',
     icon: Icons.edit_note_outlined,
     route: AppRoute.contract,
   ),
   _LicenseAction(
     label: 'แนบเอกสารคำขอ',
-    hint: 'อัปโหลดเอกสารประกอบ',
     icon: Icons.attach_file_outlined,
     route: AppRoute.attach,
   ),
   _LicenseAction(
     label: 'ชำระค่าธรรมเนียม',
-    hint: 'ตรวจสอบ/แจ้งชำระ',
     icon: Icons.payments_outlined,
     route: AppRoute.payment,
   ),
   _LicenseAction(
     label: 'ตรวจสอบเอกสารคำขอ',
-    hint: 'ตรวจความครบถ้วนเอกสาร',
     icon: Icons.rule_outlined,
     route: AppRoute.verify,
   ),
   _LicenseAction(
     label: 'ตรวจสอบข้อเท็จจริง',
-    hint: 'ตรวจสอบข้อมูลตามจริง',
     icon: Icons.search_outlined,
     route: AppRoute.factCheck,
   ),
   _LicenseAction(
     label: 'ส่งคำร้องขออนุมัติ',
-    hint: 'ส่งเข้าขั้นตอนอนุมัติ',
     icon: Icons.send_outlined,
     route: AppRoute.submitApproval,
   ),
   _LicenseAction(
     label: 'อนุมัติคำร้อง',
-    hint: 'พิจารณาอนุมัติขั้นสุดท้าย',
     icon: Icons.check_circle_outline,
     route: AppRoute.approve,
   ),
 ];
 
-/// ฝั่งที่ลูกศรชี้ออกจาก popup (ไปทางการ์ด)
 enum _ArrowSide { left, right, none }
 
-const double _menuWidth = 300;
-const double _itemHeight = 56;
-const double _arrowSize = 12; // ความยาวลูกศร (ด้านที่ยื่นออก)
+const double _menuWidth = 240;
+const double _itemHeight = 38;
+const double _arrowSize = 10;
 
-/// แสดง bubble popup ติดกับการ์ดที่กด พร้อมลูกศรชี้การ์ด
-/// [position] = global rect ของการ์ด (จาก RenderBox)
-/// [routeData] = composite key (เช่น "subzone|zone|lock") ส่งต่อเป็น query param
+/// แสดง context menu ติดกับการ์ดที่กด พร้อมลูกศรเล็กๆ ชี้การ์ด
 Future<void> showAreaLicenseActionMenu({
   required BuildContext context,
   required Rect position,
   required String routeData,
 }) async {
   const double menuW = _menuWidth;
-  final double menuH = _licenseActions.length * _itemHeight + 16; // padding
+  final double menuH = _licenseActions.length * _itemHeight + 8;
 
   final overlayBox =
       Overlay.of(context).context.findRenderObject() as RenderBox?;
@@ -101,41 +84,33 @@ Future<void> showAreaLicenseActionMenu({
   final double overlayWidth = overlaySize.width;
   final double overlayHeight = overlaySize.height;
 
-  // ─── X: วาง popup ขวาการ์ดก่อน / ถ้าล้น → ซ้ายการ์ด ───
+  // ─── X ───
   late double popupLeft;
   _ArrowSide arrowSide;
   if (position.right + menuW + _arrowSize <= overlayWidth) {
-    // popup อยู่ขวาการ์ด → ลูกศรชี้ซ้าย (จาก popup ไปการ์ด)
     popupLeft = position.right + _arrowSize;
     arrowSide = _ArrowSide.left;
   } else {
-    // popup อยู่ซ้ายการ์ด → ลูกศรชี้ขวา
     popupLeft = position.left - menuW - _arrowSize;
     arrowSide = _ArrowSide.right;
     if (popupLeft < 0) {
-      // การ์ดอยู่ซ้ายสุด → clamp ชิดขอบซ้ายจอ + ลูกศรอยู่ขวา
       popupLeft = 0;
       arrowSide = _ArrowSide.right;
     }
   }
 
-  // ─── Y: เริ่มที่ขอบบนการ์ด / ถ้าล้น → ดันขึ้น ───
-  late double popupTop;
-  if (position.top + menuH <= overlayHeight) {
-    popupTop = position.top;
-  } else {
-    popupTop = overlayHeight - menuH;
-    if (popupTop < 0) popupTop = 0;
+  // ─── Y: จัดให้ตรงกลางการ์ด (เหมือน right-click) ───
+  final double cardCenterY = position.top + position.height / 2;
+  double popupTop = cardCenterY - menuH / 2;
+  if (popupTop + menuH > overlayHeight) {
+    popupTop = overlayHeight - menuH - 8;
   }
+  if (popupTop < 8) popupTop = 8;
 
-  // ตำแหน่ง Y ของลูกศร (ชิดการ์ด: ใช้ top ของการ์ด + offset เล็กน้อย)
-  final double arrowY = (position.top - popupTop)
-      .clamp(16.0, menuH - 16)
-      .toDouble();
+  // arrowY ตรงกลาง popup (เพราะ popup จัดกลางการ์ดแล้ว)
+  final double arrowY = menuH / 2;
 
-  // cache GoRouter ก่อน async
   final router = GoRouter.of(context);
-
   final overlayState = Overlay.of(context, rootOverlay: false);
   late OverlayEntry entry;
   bool isOpen = true;
@@ -147,52 +122,34 @@ Future<void> showAreaLicenseActionMenu({
   }
 
   entry = OverlayEntry(
-    builder: (ctx) {
-      return Stack(
-        children: [
-          // backdrop: กดพื้นที่ว่างเพื่อปิด
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: close,
-              child: const SizedBox.expand(),
-            ),
-          ),
-          // bubble
-          Positioned(
-            left: popupLeft,
-            top: popupTop,
-            child: _BubblePopup(
-              arrowSide: arrowSide,
-              arrowY: arrowY,
-              items: _licenseActions,
-              onSelected: (action) {
-                close();
-                final uri = Uri(
-                  path: action.route,
-                  queryParameters: {'routeData': routeData},
-                );
-                router.go(uri.toString());
-              },
-            ),
-          ),
-        ],
-      );
-    },
+    builder: (ctx) => _PopupOverlay(
+      popupLeft: popupLeft,
+      popupTop: popupTop,
+      arrowSide: arrowSide,
+      arrowY: arrowY,
+      onClose: close,
+      onSelect: (action) {
+        close();
+        router.go(
+          Uri(
+            path: action.route,
+            queryParameters: {'routeData': routeData},
+          ).toString(),
+        );
+      },
+    ),
   );
   overlayState.insert(entry);
 }
 
-/// ใช้ GlobalKey เพื่อ resolve RenderBox ของการ์ด → Rect → เรียก showAreaLicenseActionMenu
+/// ใช้ GlobalKey เพื่อ resolve RenderBox ของการ์ด
 Future<void> showAreaLicenseActionMenuAt({
   required BuildContext context,
   required GlobalKey anchorKey,
   required String routeData,
 }) async {
   final renderObject = anchorKey.currentContext?.findRenderObject();
-  if (renderObject is! RenderBox) {
-    return;
-  }
+  if (renderObject is! RenderBox) return;
   final globalOffset = renderObject.localToGlobal(Offset.zero);
   final size = renderObject.size;
   if (!context.mounted) return;
@@ -203,17 +160,16 @@ Future<void> showAreaLicenseActionMenuAt({
   );
 }
 
-/// Fallback (ไม่มี anchor) — popup กลางจอ ใช้สำหรับ table row หรือ event flow ทั่วไป
+/// Fallback — popup กลางจอ (ไม่มี anchor)
 Future<void> showAreaLicenseActionMenuDefault({
   required BuildContext context,
   required String routeData,
 }) async {
   final size = MediaQuery.of(context).size;
   final double popupLeft = (size.width - _menuWidth) / 2;
-  const double popupTop = 80;
+  final double popupTop = size.height / 2 - 150;
 
   final router = GoRouter.of(context);
-
   final overlayState = Overlay.of(context, rootOverlay: false);
   late OverlayEntry entry;
   bool isOpen = true;
@@ -225,42 +181,104 @@ Future<void> showAreaLicenseActionMenuDefault({
   }
 
   entry = OverlayEntry(
-    builder: (ctx) {
-      return Stack(
-        children: [
-          Positioned.fill(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onTap: close,
-              child: const SizedBox.expand(),
-            ),
-          ),
-          Positioned(
-            left: popupLeft,
-            top: popupTop,
-            child: _BubblePopup(
-              arrowSide: _ArrowSide.none,
-              arrowY: 0,
-              items: _licenseActions,
-              onSelected: (action) {
-                close();
-                final uri = Uri(
-                  path: action.route,
-                  queryParameters: {'routeData': routeData},
-                );
-                router.go(uri.toString());
-              },
-            ),
-          ),
-        ],
-      );
-    },
+    builder: (ctx) => _PopupOverlay(
+      popupLeft: popupLeft,
+      popupTop: popupTop,
+      arrowSide: _ArrowSide.none,
+      arrowY: 0,
+      onClose: close,
+      onSelect: (action) {
+        close();
+        router.go(
+          Uri(
+            path: action.route,
+            queryParameters: {'routeData': routeData},
+          ).toString(),
+        );
+      },
+    ),
   );
   overlayState.insert(entry);
 }
 
 // ============================================================================
-// Internal — Bubble Popup (box + arrow pointing to anchor)
+// Internal — Overlay layer (backdrop + bubble + fade-in)
+// ============================================================================
+class _PopupOverlay extends StatefulWidget {
+  final double popupLeft;
+  final double popupTop;
+  final _ArrowSide arrowSide;
+  final double arrowY;
+  final VoidCallback onClose;
+  final ValueChanged<_LicenseAction> onSelect;
+
+  const _PopupOverlay({
+    required this.popupLeft,
+    required this.popupTop,
+    required this.arrowSide,
+    required this.arrowY,
+    required this.onClose,
+    required this.onSelect,
+  });
+
+  @override
+  State<_PopupOverlay> createState() => _PopupOverlayState();
+}
+
+class _PopupOverlayState extends State<_PopupOverlay>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ac;
+  late final Animation<double> _fade;
+
+  @override
+  void initState() {
+    super.initState();
+    _ac = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _fade = CurvedAnimation(parent: _ac, curve: Curves.easeOut);
+    _ac.forward();
+  }
+
+  @override
+  void dispose() {
+    _ac.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: widget.onClose,
+            child: const SizedBox.expand(),
+          ),
+        ),
+        Positioned(
+          left: widget.popupLeft,
+          top: widget.popupTop,
+          child: FadeTransition(
+            opacity: _fade,
+            child: _BubblePopup(
+              arrowSide: widget.arrowSide,
+              arrowY: widget.arrowY,
+              items: _licenseActions,
+              onSelected: widget.onSelect,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// Internal — Bubble Popup (กล่อง + ลูกศร)
 // ============================================================================
 class _BubblePopup extends StatelessWidget {
   final _ArrowSide arrowSide;
@@ -278,103 +296,143 @@ class _BubblePopup extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final arrowW = arrowSide == _ArrowSide.none ? 0.0 : _arrowSize;
+    final boxWidth = _menuWidth + arrowW;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        // ── Main box ──
-        Container(
-          width: _menuWidth,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(LaRadius.md),
-            border: Border.all(color: Colors.grey.shade200, width: 1),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(.10),
-                blurRadius: 16,
-                offset: const Offset(0, 4),
-              ),
-              BoxShadow(
-                color: Colors.black.withOpacity(.04),
-                blurRadius: 4,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (int i = 0; i < items.length; i++) ...[
-                if (i > 0)
-                  Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Colors.grey.shade100,
-                    indent: 12,
-                    endIndent: 12,
+    return SizedBox(
+      width: boxWidth,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Padding(
+            padding: arrowSide == _ArrowSide.left
+                ? EdgeInsets.only(left: arrowW)
+                : arrowSide == _ArrowSide.right
+                    ? EdgeInsets.only(right: arrowW)
+                    : EdgeInsets.zero,
+            child: Container(
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFFFFF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.12),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
                   ),
-                InkWell(
-                  onTap: () => onSelected(items[i]),
-                  borderRadius: i == 0
-                      ? const BorderRadius.vertical(top: Radius.circular(LaRadius.md - 1))
-                      : i == items.length - 1
-                          ? const BorderRadius.vertical(bottom: Radius.circular(LaRadius.md - 1))
-                          : BorderRadius.zero,
-                  child: SizedBox(
-                    height: _itemHeight,
-                    child: _LicenseActionTile(action: items[i]),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.04),
+                    blurRadius: 2,
+                    offset: const Offset(0, 1),
                   ),
-                ),
-              ],
-            ],
-          ),
-        ),
-
-        // ── Arrow (ลูกศร) ──
-        if (arrowSide == _ArrowSide.left)
-          Positioned(
-            left: -arrowW,
-            top: arrowY - arrowW,
-            child: CustomPaint(
-              size: const Size(_arrowSize, _arrowSize * 2),
-              painter: _ArrowPainter(
-                pointingLeft: true,
-                color: Colors.white,
-                borderColor: Colors.grey.shade200,
+                ],
               ),
-            ),
-          )
-        else if (arrowSide == _ArrowSide.right)
-          Positioned(
-            right: -arrowW,
-            top: arrowY - arrowW,
-            child: CustomPaint(
-              size: const Size(_arrowSize, _arrowSize * 2),
-              painter: _ArrowPainter(
-                pointingLeft: false,
-                color: Colors.white,
-                borderColor: Colors.grey.shade200,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // ── รายการเมนู (เรียบ เหมือน context menu) ──
+                  for (int i = 0; i < items.length; i++)
+                    _MenuItem(
+                      action: items[i],
+                      onTap: () => onSelected(items[i]),
+                    ),
+                ],
               ),
             ),
           ),
-      ],
+          // ── ลูกศรเล็กๆ ──
+          if (arrowSide == _ArrowSide.left)
+            Positioned(
+              left: 0,
+              top: arrowY - _arrowSize,
+              child: CustomPaint(
+                size: Size(_arrowSize + 0.5, _arrowSize * 2),
+                painter: _ArrowPainter(pointingLeft: true),
+              ),
+            )
+          else if (arrowSide == _ArrowSide.right)
+            Positioned(
+              right: 0,
+              top: arrowY - _arrowSize,
+              child: CustomPaint(
+                size: Size(_arrowSize + 0.5, _arrowSize * 2),
+                painter: _ArrowPainter(pointingLeft: false),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
 
 // ============================================================================
-// Internal — Arrow (ลูกศรชี้ออกจาก popup ไปทางการ์ด)
+// Internal — Menu Item (native context-menu vibe)
+// ============================================================================
+class _MenuItem extends StatefulWidget {
+  final _LicenseAction action;
+  final VoidCallback onTap;
+  const _MenuItem({required this.action, required this.onTap});
+
+  @override
+  State<_MenuItem> createState() => _MenuItemState();
+}
+
+class _MenuItemState extends State<_MenuItem> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Colors.grey.shade700;
+    final hoverBg = const Color(0xFFF4F4F5);
+    final hoverFg = const Color(0xFF111827);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 80),
+          curve: Curves.linear,
+          height: _itemHeight,
+          color: _hover ? hoverBg : Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Icon(
+                widget.action.icon,
+                size: 15,
+                color: _hover ? hoverFg : base,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.action.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _hover ? hoverFg : base,
+                    fontWeight: FontWeight.w400,
+                    height: 1.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Internal — Arrow Painter (ลูกศรเล็กบาง)
 // ============================================================================
 class _ArrowPainter extends CustomPainter {
   final bool pointingLeft;
-  final Color color;
-  final Color borderColor;
-  _ArrowPainter({
-    required this.pointingLeft,
-    required this.color,
-    required this.borderColor,
-  });
+  _ArrowPainter({required this.pointingLeft});
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -382,103 +440,42 @@ class _ArrowPainter extends CustomPainter {
     final h = size.height;
     final path = Path();
     if (pointingLeft) {
-      // ลูกศรชี้ซ้าย: ยอดแหลมอยู่ซ้าย
       path.moveTo(0, h / 2);
-      path.lineTo(w, 0);
-      path.lineTo(w, h);
+      path.lineTo(w, 1);
+      path.lineTo(w, h - 1);
       path.close();
     } else {
-      // ลูกศรชี้ขวา: ยอดแหลมอยู่ขวา
       path.moveTo(w, h / 2);
-      path.lineTo(0, 0);
-      path.lineTo(0, h);
+      path.lineTo(0, 1);
+      path.lineTo(0, h - 1);
       path.close();
     }
 
-    // fill ก่อน → ขอบทับ
-    canvas.drawPath(path, Paint()..color = color);
-    // วาดเส้นขอบเฉพาะด้านที่ติด box (ขวาเมื่อ left, ซ้ายเมื่อ right)
-    final borderPaint = Paint()
-      ..color = borderColor
+    // shadow ใต้ลูกศร (เบาๆ ให้กลมกลืนกับ box)
+    canvas.drawShadow(path, Colors.black.withOpacity(.10), 3, true);
+
+    // fill ขาว
+    canvas.drawPath(path, Paint()..color = Colors.white);
+
+    // เส้นขอบเฉพาะด้านที่ติด box
+    final stroke = Paint()
+      ..color = const Color(0xFFE4E4E7)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1;
     if (pointingLeft) {
       final edge = Path()
-        ..moveTo(w, 0)
-        ..lineTo(w, h);
-      canvas.drawPath(edge, borderPaint);
+        ..moveTo(w, 1)
+        ..lineTo(w, h - 1);
+      canvas.drawPath(edge, stroke);
     } else {
       final edge = Path()
-        ..moveTo(0, 0)
-        ..lineTo(0, h);
-      canvas.drawPath(edge, borderPaint);
+        ..moveTo(0, 1)
+        ..lineTo(0, h - 1);
+      canvas.drawPath(edge, stroke);
     }
   }
 
   @override
   bool shouldRepaint(covariant _ArrowPainter old) =>
-      old.pointingLeft != pointingLeft ||
-      old.color != color ||
-      old.borderColor != borderColor;
-}
-
-// ============================================================================
-// Internal — Tile (icon + label + hint) ต่อ 1 item
-// ============================================================================
-class _LicenseActionTile extends StatelessWidget {
-  final _LicenseAction action;
-  const _LicenseActionTile({required this.action});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            width: 32,
-            height: 32,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primary.withOpacity(.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              action.icon,
-              size: 16,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  action.label,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  action.hint,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey.shade600,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+      old.pointingLeft != pointingLeft;
 }
