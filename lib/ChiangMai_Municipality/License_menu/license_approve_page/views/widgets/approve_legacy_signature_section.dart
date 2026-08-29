@@ -17,9 +17,8 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/API_admin_signature.dart';
-import '../../../../../Constant/Myconstant.dart';
 import '../../../../PDF_CMM/unity_pdf_cmm/perviewpdf_pdfMultiPreview.dart';
+import '../../services/license_legacy_approval_service.dart';
 import '../../viewmodels/license_approve_detail_view_model.dart';
 import '../theme/license_approve_theme.dart';
 
@@ -35,6 +34,9 @@ class ApproveLegacySignatureSection extends StatefulWidget {
 
 class _ApproveLegacySignatureSectionState
     extends State<ApproveLegacySignatureSection> {
+  // ─── Service (own) ───
+  final LicenseLegacyApprovalService _service = LicenseLegacyApprovalService();
+
   // ─── Loading state ───
   bool _isLoadingImage = false; // GET signatures/{uuid}/preview
 
@@ -48,36 +50,6 @@ class _ApproveLegacySignatureSectionState
 
   // ─── Signature image bytes (จาก .../signatures/{uuid}/preview) ───
   Uint8List? _signatureBytes;
-
-  // ─── เอกสารประกอบ 3 อัน (hardcoded เหมือน cignaturepad_cmm.dart:201-216) ───
-  static const List<Map<String, String>> _docs = [
-    {'ser': '1', 'key': 'GeneratePDF_1', 'title': 'คำร้องต่อใบอนุญาต'},
-    {
-      'ser': '2',
-      'key': 'GeneratePDF_2',
-      'title': 'ใบพิจารณาคำขอต่อใบอนุญาต',
-    },
-    {
-      'ser': '3',
-      'key': 'GeneratePDF_3',
-      'title': 'ใบอนุญาต',
-    },
-  ];
-
-  /// resolve URL สำหรับ preview (เหมือน cignaturepad_cmm.dart L2186-2193)
-  String _resolvePdfUrl(String key, String requestUuid) {
-    final base = MyConstant().domain_v3;
-    switch (key) {
-      case 'GeneratePDF_1':
-        return '$base/api/preview/req-vendor-license-2/$requestUuid';
-      case 'GeneratePDF_2':
-        return '$base/api/preview/memo-vendor-license-2/$requestUuid';
-      case 'GeneratePDF_3':
-        return '$base/api/preview/vendor-license-2/$requestUuid';
-      default:
-        return '';
-    }
-  }
 
   // ─────────────────────────────────────────────────────────────────────
   // Lifecycle
@@ -93,8 +65,8 @@ class _ApproveLegacySignatureSectionState
       _loadError = null;
     });
 
-    // 1) โหลด admin meta จาก /admin/know
-    final metaResp = await read_AdminSignature();
+    // 1) โหลด admin meta จาก /admin/know (ผ่าน own service)
+    final metaResp = await _service.readAdminSignature();
     if (!mounted) return;
 
     String? profileUuid;
@@ -135,7 +107,7 @@ class _ApproveLegacySignatureSectionState
     // 2) โหลดภาพลายเซ็น (ถ้ามี signatureUuid)
     if (signatureUuid != null && signatureUuid.isNotEmpty) {
       setState(() => _isLoadingImage = true);
-      final imgResp = await img_signatureUuid(signatureUuid: signatureUuid);
+      final imgResp = await _service.loadSignatureImage(signatureUuid: signatureUuid);
       if (!mounted) return;
       if (imgResp != null && imgResp.statusCode == 200) {
         setState(() {
@@ -377,6 +349,7 @@ class _ApproveLegacySignatureSectionState
   // เอกสารประกอบ 3 อัน (PDF preview)
   // ─────────────────────────────────────────────────────────────────────
   Widget _buildPdfSection(String requestUuid) {
+    final docs = LicenseLegacyApprovalService.previewDocs;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -399,7 +372,7 @@ class _ApproveLegacySignatureSectionState
           ),
           child: Column(
             children: [
-              for (int i = 0; i < _docs.length; i++) ...[
+              for (int i = 0; i < docs.length; i++) ...[
                 if (i > 0)
                   const Divider(
                       color: LaColors.border, height: 1, indent: 12, endIndent: 12),
@@ -413,7 +386,7 @@ class _ApproveLegacySignatureSectionState
   }
 
   Widget _buildPdfRow(int index, String requestUuid) {
-    final doc = _docs[index];
+    final doc = LicenseLegacyApprovalService.previewDocs[index];
     final ser = doc['ser'] ?? '';
     final title = doc['title'] ?? '';
     return InkWell(
@@ -468,9 +441,12 @@ class _ApproveLegacySignatureSectionState
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => PdfMultiPreviewPage(
-          docs: _docs,
+          docs: LicenseLegacyApprovalService.previewDocs,
           initialIndex: initialIndex,
-          getUrl: (key) => _resolvePdfUrl(key, requestUuid),
+          getUrl: (key) => _service.resolvePdfUrl(
+            key: key,
+            requestUuid: requestUuid,
+          ),
         ),
       ),
     );

@@ -16,12 +16,11 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/API_admin_signature.dart';
-import '../../../../unity/API_requests_reviewsflow.dart';
 import '../../../../unity/FormatPhone.dart';
 import '../../../../Model/Review_Model.dart';
 import '../theme/license_approve_theme.dart';
 import '../../models/license_approve_detail_extended.dart';
+import '../../services/license_legacy_approval_service.dart';
 import '../../viewmodels/license_approve_detail_view_model.dart';
 import 'approve_legacy_signature_section.dart';
 
@@ -1187,8 +1186,12 @@ class _StepCardState extends State<_StepCard> {
   static const _pendingBg = LaColors.statusPendingBg;
   static const _pendingFg = LaColors.statusPendingFg;
 
-  /// true เมื่อกำลังยิง v1 approve (Post_ReviewsFlowApprove) — ใช้ disable ปุ่ม
+  /// true เมื่อกำลังยิง v1 approve (LicenseLegacyApprovalService.approveFlow) — ใช้ disable ปุ่ม
   bool _isApprovingV1 = false;
+
+  /// Service สำหรับ v1 approve (own implementation)
+  final LicenseLegacyApprovalService _legacyService =
+      LicenseLegacyApprovalService();
 
   String _short(String uuid) {
     if (uuid.isEmpty) return '-';
@@ -1501,7 +1504,7 @@ class _StepCardState extends State<_StepCard> {
 
     try {
       // 1) ดึง V1 flow uuid (ต้องใช้ทุกครั้ง — ห้าม cache เพราะ flow หมุน)
-      final flowResp = await read_GC_ReviewsFlowUuid(UuidRequest: requestUuid);
+      final flowResp = await _legacyService.readFlowUuid(requestUuid: requestUuid);
       if (flowResp != null && flowResp.statusCode == 200) {
         try {
           final flowBody =
@@ -1523,7 +1526,7 @@ class _StepCardState extends State<_StepCard> {
       }
 
       // 2) ดึง admin signature meta (profile_uuid, sign_uuid)
-      final sigResp = await read_AdminSignature();
+      final sigResp = await _legacyService.readAdminSignature();
       if (sigResp != null && sigResp.statusCode == 200) {
         try {
           final sigBody =
@@ -1544,8 +1547,8 @@ class _StepCardState extends State<_StepCard> {
       } else if (signUuid == null || signUuid.isEmpty) {
         errorMsg = 'ไม่พบ signature uuid ของผู้ลงนาม';
       } else {
-        // 3) ยิง v1 approve
-        final result = await Post_ReviewsFlowApprove(
+        // 3) ยิง v1 approve (ผ่าน own service)
+        final result = await _legacyService.approveFlow(
           requestUuid: requestUuid,
           flowUuid: flowUuid,
           profileUuid: profileUuid,
@@ -1553,7 +1556,6 @@ class _StepCardState extends State<_StepCard> {
           comment: remark,
         );
         // result = decoded json body (null = exception/network)
-        // สำเร็จถ้า response non-null (ตามรูปแบบเดิมของ legacy cignaturepad_cmm.dart)
         success = result != null;
         if (!success) {
           errorMsg = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
