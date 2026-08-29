@@ -26,7 +26,7 @@ import '../models/license_approve_config.dart';
 import '../models/license_approve_event.dart';
 import '../viewmodels/license_approve_view_model.dart';
 import 'theme/license_approve_theme.dart';
-import 'widgets/approve_bulk_launcher.dart';
+import 'widgets/approve_bulk_signature_preview.dart';
 import 'widgets/license_approve_header.dart';
 import 'widgets/license_approve_pagination.dart';
 import 'widgets/license_approve_search_bar.dart';
@@ -268,8 +268,8 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
                   SingleChildScrollView(
                     child: LicenseApproveTable(),
                   ),
-                  // Tab 2: อนุมัติรายการทั้งหมด — launcher → open full-page route
-                  ApproveBulkLauncher(),
+                  // Tab 2: อนุมัติรายการทั้งหมด — signature preview (เต็มความกว้าง)
+                  ApproveBulkSignaturePreview(),
                 ],
               ),
             ),

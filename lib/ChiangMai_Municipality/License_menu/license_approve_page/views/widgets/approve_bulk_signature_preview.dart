@@ -84,26 +84,25 @@ class _ApproveBulkSignaturePreviewState
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 560),
-        child: Container(
-          padding: const EdgeInsets.all(LaSpace.lg),
-          decoration: LaDecor.card(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: LaSpace.md),
-              if (_isLoading)
-                _buildLoading()
-              else if (_error != null)
-                _buildError()
-              else
-                _buildInfo(),
-            ],
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(LaSpace.lg),
+        decoration: LaDecor.card(),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildHeader(),
+            const SizedBox(height: LaSpace.md),
+            if (_isLoading)
+              _buildLoading()
+            else if (_error != null)
+              _buildError()
+            else
+              _buildInfo(),
+          ],
         ),
       ),
     );
