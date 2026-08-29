@@ -80,22 +80,48 @@ Future<void> showAreaLicenseActionMenu({
   required Rect position,
   required String routeData,
 }) {
-  final overlay =
+  const double menuW = 320;
+  const double menuH = 7 * 56.0; // 7 items × 56px ≈ 392
+
+  final overlayBox =
       Overlay.of(context).context.findRenderObject() as RenderBox?;
-  final overlaySize = overlay?.size ?? MediaQuery.of(context).size;
-  // ตำแหน่ง popup: ชิดขวาของการ์ด, ขยายลงล่าง — fallback ถ้าชนขอบจอ
-  final double left = position.right;
-  final double top = position.top;
-  final double maxRight = overlaySize.width - 320; // ความกว้างประมาณ popup
-  final double adjustedLeft = left > maxRight ? position.left : left;
-  final double adjustedTop =
-      top + 280 > overlaySize.height ? overlaySize.height - 300 : top;
+  final overlaySize = overlayBox?.size ?? MediaQuery.of(context).size;
+  final double overlayWidth = overlaySize.width;
+  final double overlayHeight = overlaySize.height;
+
+  // ─── Decide x: ถ้าพอที่จะวางขวาการ์ด → ขวา / ไม่งั้น → ซ้าย ───
+  double rectLeft, rectRight;
+  if (position.right + menuW <= overlayWidth) {
+    // popup อยู่ขวาการ์ด (เริ่มที่ขอบขวาการ์ด)
+    rectLeft = position.right;
+    rectRight = overlayWidth - (position.right + menuW);
+  } else {
+    // popup อยู่ซ้ายการ์ด (จบที่ขอบซ้ายการ์ด)
+    rectLeft = position.left - menuW;
+    rectRight = overlayWidth - position.left;
+    if (rectLeft < 0) {
+      // การ์ดอยู่ซ้ายสุด → วาง popup ชิดขอบซ้ายจอ
+      rectLeft = 0;
+      rectRight = overlayWidth - menuW;
+    }
+  }
+
+  // ─── Decide y: เริ่มที่ขอบบนการ์ด / ถ้าล้น → ดันขึ้น ───
+  double rectTop = position.top;
+  double rectBottom = overlayHeight - (position.top + menuH);
+  if (rectBottom < 0) {
+    rectTop = overlayHeight - menuH;
+    rectBottom = 0;
+    if (rectTop < 0) {
+      rectTop = 0;
+    }
+  }
 
   final rect = RelativeRect.fromLTRB(
-    adjustedLeft,
-    adjustedTop,
-    overlaySize.width - position.right,
-    overlaySize.height - position.bottom,
+    rectLeft,
+    rectTop,
+    rectRight,
+    rectBottom,
   );
 
   // cache GoRouter ก่อน async เพื่อหลีกเลี่ยง use_build_context_synchronously
