@@ -2,6 +2,7 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../unity/zone_selection_store.dart';
 import '../models/license_announce_config.dart';
 import '../models/license_announce_event.dart';
 import '../models/license_announce_item.dart';
@@ -12,10 +13,47 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
       {required LicenseAnnounceConfig config, LicenseAnnounceService? service})
       : _config = config,
         _service = service ?? LicenseAnnounceService() {
+    // ✅ sync state จาก global store (license scope) — ไม่มี status filter
+    _selectedSubZone = ZoneSelectionStore.instance.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseSubZone;
+    ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _bootstrap();
   }
   final LicenseAnnounceConfig _config;
   final LicenseAnnounceService _service;
+  final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
+
+  void _onZoneStoreChanged() {
+    final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseSubZone;
+    final newZoneName = _zoneStore.licenseZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseZone;
+    final subChanged = _selectedSubZone != newSub;
+    // resolve zone ser from store zn
+    String? newZoneSer;
+    if (newZoneName != null) {
+      final match = _zones.firstWhere(
+        (z) => z.zn == newZoneName,
+        orElse: () => const LicenseAnnounceZone(ser: '', zn: ''),
+      );
+      newZoneSer = match.ser.isEmpty ? null : match.ser;
+    }
+    final zoneChanged = _selectedZoneSer != newZoneSer;
+    if (!subChanged && !zoneChanged) return;
+
+    _selectedSubZone = newSub;
+    _selectedZoneSer = newZoneSer;
+
+    notifyListeners();
+
+    // reload zones ตาม subZone (filter ที่ fetch)
+    _loadZones();
+    // reapply filter (client-side) หลัง zoneSer เปลี่ยน
+    _applyFilter();
+  }
   final _eventController = StreamController<LicenseAnnounceEvent>.broadcast();
   Stream<LicenseAnnounceEvent> get events => _eventController.stream;
   List<LicenseAnnounceItem> _items = [];
@@ -40,11 +78,7 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
   String? get selectedSubZone => _selectedSubZone;
   String? get selectedZoneSub => _selectedSubZone;
   void onSubZoneChanged(String? value) {
-    _selectedSubZone = value;
-    _selectedZoneSer = null; // reset zone เมื่อ subZone เปลี่ยน
-    notifyListeners();
-    // reload zones ตาม subZone ใหม่
-    _loadZones();
+    _zoneStore.setLicenseSubZone(value);
   }
 
   // ---------- Sort ----------
@@ -112,7 +146,23 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint('prefs: $e');
     }
-    await Future.wait([_loadSubZones(), _loadZones(), _loadItems()]);
+    // 1) load sub-zones first (need ser lookup for zone filter)
+    await _loadSubZones();
+    // 2) load zones (filtered by selected sub-zone via _selectedSubZone field)
+    await _loadZones();
+    // 3) resolve selected zone's ser from filtered list
+    final storeZone = ZoneSelectionStore.instance.licenseZone;
+    if (storeZone != 'ทั้งหมด') {
+      final match = _zones.firstWhere(
+        (z) => z.zn == storeZone,
+        orElse: () => const LicenseAnnounceZone(ser: '', zn: ''),
+      );
+      if (match.ser.isNotEmpty) {
+        _selectedZoneSer = match.ser;
+      }
+    }
+    // 4) load items
+    await _loadItems();
   }
 
   Future<void> _loadZones() async {
@@ -140,9 +190,20 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
   Future<void> refresh() => _loadItems();
 
   void onZoneChanged(String? ser) {
-    _selectedZoneSer = ser;
-    notifyListeners();
-    _applyFilter();
+    if (ser == null) {
+      _zoneStore.setLicenseZone(null);
+      return;
+    }
+    // find zn จาก ser เพื่อ sync ไปที่ global store
+    final match = _zones.firstWhere(
+      (z) => z.ser == ser,
+      orElse: () => const LicenseAnnounceZone(ser: '', zn: ''),
+    );
+    if (match.zn.isEmpty) {
+      _zoneStore.setLicenseZone(null);
+    } else {
+      _zoneStore.setLicenseZone(match.zn);
+    }
   }
 
   void setSearch(String value) {
@@ -303,6 +364,7 @@ class LicenseAnnounceViewModel extends ChangeNotifier {
 
   @override
   void dispose() {
+    _zoneStore.removeListener(_onZoneStoreChanged);
     _eventController.close();
     super.dispose();
   }
