@@ -1,14 +1,12 @@
 // ============================================================================
 // zone_selection_store.dart
 // ============================================================================
-// Global singleton — เก็บ state ของ filter ที่ผู้ใช้เลือก
+// Global singleton — เก็บ state ของ filter ที่ผู้ใช้เลือก แยกตาม "โมดูล"
 //
-// ✅ Persist ข้าม navigation:
-//    - หมวดโซนพื้นที่ (sub-zone)
-//    - โซนพื้นที่ (zone)
-//    - สถานะ (status) — รวมทั้ง lease status (หมดสัญญา/เช่าอยู่/ว่าง) และ request status (draft/...)
+// ✅ Persist ข้าม navigation ในขอบเขตของแต่ละโมดูล:
+//    - Area/Tenant share: sub-zone + zone + leaseStatus + requestStatus
+//    - License (7 pages) share: sub-zone + zone + licenseStatus
 //
-// ✅ ใช้ร่วมกันทุกหน้าที่มี dropdown filter (Area / License / Tenant / etc.)
 // ✅ เปลี่ยน sub-zone → auto reset zone เป็น "ทั้งหมด"
 // ✅ Singleton pattern — `ZoneSelectionStore.instance`
 // ============================================================================
@@ -19,98 +17,117 @@ class ZoneSelectionStore extends ChangeNotifier {
   ZoneSelectionStore._();
   static final ZoneSelectionStore instance = ZoneSelectionStore._();
 
-  // ─── Sub-zone ───
-  String _selectedZoneSub = 'ทั้งหมด';
-  String get selectedZoneSub => _selectedZoneSub;
+  // ════════════════════════════════════════════════════════════════
+  // AREA + TENANT module (share scope)
+  // ════════════════════════════════════════════════════════════════
+  String _areaSubZone = 'ทั้งหมด';
+  String _areaZone = 'ทั้งหมด';
+  String _areaLeaseStatus = 'ทั้งหมด';
+  String _areaRequestStatus = 'ทั้งหมด';
 
-  // ─── Zone ───
-  String _selectedZone = 'ทั้งหมด';
-  String get selectedZone => _selectedZone;
+  String get areaSubZone => _areaSubZone;
+  String get areaZone => _areaZone;
+  String get areaLeaseStatus => _areaLeaseStatus;
+  String get areaRequestStatus => _areaRequestStatus;
 
-  // ─── Status (request status — Area menu "สถานะคำขอ") ───
-  String _selectedRequestStatus = 'ทั้งหมด';
-  String get selectedRequestStatus => _selectedRequestStatus;
-
-  // ─── Status (legacy lease status — "หมดสัญญา/เช่าอยู่/ว่าง") ───
-  String _selectedLeaseStatus = 'ทั้งหมด';
-  String get selectedLeaseStatus => _selectedLeaseStatus;
-
-  // ─── Status (license status — string enum เช่น 'draft'/'completed'/'rejected') ───
+  // ════════════════════════════════════════════════════════════════
+  // LICENSE module (7 pages share scope)
+  // ════════════════════════════════════════════════════════════════
+  String _licenseSubZone = 'ทั้งหมด';
+  String _licenseZone = 'ทั้งหมด';
   /// nullable — null = "ทั้งหมด"
-  String? _selectedLicenseStatus;
-  String? get selectedLicenseStatus => _selectedLicenseStatus;
+  String? _licenseStatus;
 
-  bool get isAll =>
-      _selectedZoneSub == 'ทั้งหมด' &&
-      _selectedZone == 'ทั้งหมด' &&
-      _selectedRequestStatus == 'ทั้งหมด' &&
-      _selectedLeaseStatus == 'ทั้งหมด' &&
-      (_selectedLicenseStatus == null || _selectedLicenseStatus == 'ทั้งหมด');
+  String get licenseSubZone => _licenseSubZone;
+  String get licenseZone => _licenseZone;
+  String? get licenseStatus => _licenseStatus;
 
-  /// ser ของ zone ที่เลือก ('0' = ทั้งหมด)
-  String get selectedZoneSer => '0';
+  // ════════════════════════════════════════════════════════════════
+  // Setters — AREA + TENANT
+  // ════════════════════════════════════════════════════════════════
 
-  // ===============================================================
-  // Mutators
-  // ===============================================================
-
-  /// ผู้ใช้เลือก "หมวดโซนพื้นที่"
-  /// → reset "โซนพื้นที่" กลับเป็น "ทั้งหมด" อัตโนมัติ
-  void setSubZone(String? value) {
-    final next = (value == null || value.isEmpty) ? 'ทั้งหมด' : value;
-    final subChanged = _selectedZoneSub != next;
-    final zoneNeedsReset = _selectedZone != 'ทั้งหมด';
-
+  void setAreaSubZone(String? value) {
+    final next = _norm(value);
+    final subChanged = _areaSubZone != next;
+    final zoneNeedsReset = _areaZone != 'ทั้งหมด';
     if (!subChanged && !zoneNeedsReset) return;
-
-    _selectedZoneSub = next;
-    if (zoneNeedsReset) _selectedZone = 'ทั้งหมด';
+    _areaSubZone = next;
+    if (zoneNeedsReset) _areaZone = 'ทั้งหมด';
     notifyListeners();
   }
 
-  /// ผู้ใช้เลือก "โซนพื้นที่"
-  void setZone(String? value) {
-    final next = (value == null || value.isEmpty) ? 'ทั้งหมด' : value;
-    if (_selectedZone == next) return;
-    _selectedZone = next;
+  void setAreaZone(String? value) {
+    final next = _norm(value);
+    if (_areaZone == next) return;
+    _areaZone = next;
     notifyListeners();
   }
 
-  /// ผู้ใช้เลือก "สถานะคำขอ" (Area menu — request_status pill)
-  void setRequestStatus(String? value) {
-    final next = (value == null || value.isEmpty) ? 'ทั้งหมด' : value;
-    if (_selectedRequestStatus == next) return;
-    _selectedRequestStatus = next;
+  void setAreaLeaseStatus(String? value) {
+    final next = _norm(value);
+    if (_areaLeaseStatus == next) return;
+    _areaLeaseStatus = next;
     notifyListeners();
   }
 
-  /// ผู้ใช้เลือก "สถานะ" แบบ legacy (หมดสัญญา/เช่าอยู่/ว่าง)
-  void setLeaseStatus(String? value) {
-    final next = (value == null || value.isEmpty) ? 'ทั้งหมด' : value;
-    if (_selectedLeaseStatus == next) return;
-    _selectedLeaseStatus = next;
+  void setAreaRequestStatus(String? value) {
+    final next = _norm(value);
+    if (_areaRequestStatus == next) return;
+    _areaRequestStatus = next;
     notifyListeners();
   }
 
-  /// ผู้ใช้เลือก "สถานะ" license (string enum เช่น 'draft'/'completed'/'rejected')
-  /// → "ทั้งหมด" / null = ไม่ filter
+  // ════════════════════════════════════════════════════════════════
+  // Setters — LICENSE
+  // ════════════════════════════════════════════════════════════════
+
+  void setLicenseSubZone(String? value) {
+    final next = _norm(value);
+    final subChanged = _licenseSubZone != next;
+    final zoneNeedsReset = _licenseZone != 'ทั้งหมด';
+    if (!subChanged && !zoneNeedsReset) return;
+    _licenseSubZone = next;
+    if (zoneNeedsReset) _licenseZone = 'ทั้งหมด';
+    notifyListeners();
+  }
+
+  void setLicenseZone(String? value) {
+    final next = _norm(value);
+    if (_licenseZone == next) return;
+    _licenseZone = next;
+    notifyListeners();
+  }
+
   void setLicenseStatus(String? value) {
     final next = (value == null || value.isEmpty || value == 'ทั้งหมด')
         ? null
         : value;
-    if (_selectedLicenseStatus == next) return;
-    _selectedLicenseStatus = next;
+    if (_licenseStatus == next) return;
+    _licenseStatus = next;
     notifyListeners();
   }
 
   /// Reset ทั้งหมด (logout / refresh hard)
   void reset() {
-    final was = !isAll;
-    _selectedZoneSub = 'ทั้งหมด';
-    _selectedZone = 'ทั้งหมด';
-    _selectedRequestStatus = 'ทั้งหมด';
-    _selectedLeaseStatus = 'ทั้งหมด';
-    _selectedLicenseStatus = null;
+    final was = _areaSubZone != 'ทั้งหมด' ||
+        _areaZone != 'ทั้งหมด' ||
+        _areaLeaseStatus != 'ทั้งหมด' ||
+        _areaRequestStatus != 'ทั้งหมด' ||
+        _licenseSubZone != 'ทั้งหมด' ||
+        _licenseZone != 'ทั้งหมด' ||
+        _licenseStatus != null;
+    _areaSubZone = 'ทั้งหมด';
+    _areaZone = 'ทั้งหมด';
+    _areaLeaseStatus = 'ทั้งหมด';
+    _areaRequestStatus = 'ทั้งหมด';
+    _licenseSubZone = 'ทั้งหมด';
+    _licenseZone = 'ทั้งหมด';
+    _licenseStatus = null;
     if (was) notifyListeners();
   }
+
+  // ════════════════════════════════════════════════════════════════
+  // Helper
+  // ════════════════════════════════════════════════════════════════
+  String _norm(String? v) => (v == null || v.isEmpty) ? 'ทั้งหมด' : v;
 }
