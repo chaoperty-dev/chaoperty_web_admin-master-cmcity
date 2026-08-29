@@ -130,11 +130,11 @@ Future<void> showAreaLicenseActionMenu({
       onClose: close,
       onSelect: (action) {
         close();
+        // ✅ Path-style: /contract/:data (encode เผื่อ key มี '/', '|', อื่นๆ)
         router.go(
-          Uri(
-            path: action.route,
-            queryParameters: {'routeData': routeData},
-          ).toString(),
+          routeData.isEmpty
+              ? action.route
+              : '${action.route}/${Uri.encodeComponent(routeData)}',
         );
       },
     ),
@@ -189,11 +189,11 @@ Future<void> showAreaLicenseActionMenuDefault({
       onClose: close,
       onSelect: (action) {
         close();
+        // ✅ Path-style: /contract/:data (encode เผื่อ key มี '/', '|', อื่นๆ)
         router.go(
-          Uri(
-            path: action.route,
-            queryParameters: {'routeData': routeData},
-          ).toString(),
+          routeData.isEmpty
+              ? action.route
+              : '${action.route}/${Uri.encodeComponent(routeData)}',
         );
       },
     ),

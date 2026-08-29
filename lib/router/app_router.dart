@@ -30,19 +30,28 @@ class AppRoute {
   static const String login = '/login';
   static const String setup = '/setup';
 
-  // ใบอนุญาต (Branch 0)
+  // ใบอนุญาต (Branch 0) — path param ":data" รับ uuid/composite key
   static const String contract = '/contract';
+  static const String contractData = '/contract/:data';
   static const String payment = '/payment';
+  static const String paymentData = '/payment/:data';
   static const String attach = '/attach';
+  static const String attachData = '/attach/:data';
   static const String verify = '/verify';
+  static const String verifyData = '/verify/:data';
   static const String factCheck = '/fact-check';
+  static const String factCheckData = '/fact-check/:data';
   static const String approve = '/approve';
+  static const String approveData = '/approve/:data';
   static const String submitApproval = '/submit-approval';
+  static const String submitApprovalData = '/submit-approval/:data';
   static const String announce = '/announce';
 
   // อื่นๆ
   static const String tenant = '/tenant';
+  static const String tenantData = '/tenant/:data';
   static const String area = '/area';
+  static const String areaData = '/area/:data';
   static const String registration = '/registration';
   static const String profileManage = '/profile/manage';
   static const String setting = '/setting';
@@ -128,11 +137,27 @@ GoRouter buildAppRouter({
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
         routes: [
-          // ใบอนุญาต (7 sub-routes) — รับ routeData จาก query params (เช่น ?routeData=xxx)
+          // ใบอนุญาต (7 sub-routes)
+          // - path แบบ '/contract'  : ไม่มี data
+          // - path แบบ '/contract/:data' : data = uuid หรือ composite key
+          //   (รองรับทั้ง path param และ ?routeData= fallback เพื่อ back-compat)
           GoRoute(
             path: AppRoute.contract,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicenseRequestPage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.contractData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -143,7 +168,20 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.payment,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicensePaymentPage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.paymentData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -154,7 +192,20 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.attach,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicenseAttachPage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.attachData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -165,7 +216,20 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.verify,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicenseVerifyPage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.verifyData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -176,7 +240,20 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.factCheck,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicensefactcheckPage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.factCheckData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -187,7 +264,20 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.approve,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicenseApprovePage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.approveData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -198,7 +288,20 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.submitApproval,
             pageBuilder: (context, state) {
-              final rd = state.uri.queryParameters['routeData'];
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
+              return _fadePage(
+                key: state.pageKey,
+                locationKey: state.matchedLocation,
+                child: LicenseSubmitApprovalPage.create(routeData: rd),
+              );
+            },
+          ),
+          GoRoute(
+            path: AppRoute.submitApprovalData,
+            pageBuilder: (context, state) {
+              final rd = state.pathParameters['data'] ??
+                  state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
@@ -222,13 +325,28 @@ GoRouter buildAppRouter({
               key: state.pageKey,
               locationKey: state.matchedLocation,
               child: AreaMenuPage.create(),
-              // ChaoAreaScreen(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.areaData,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: AreaMenuPage.create(),
             ),
           ),
 
           // ผู้เช่า
           GoRoute(
             path: AppRoute.tenant,
+            pageBuilder: (context, state) => _fadePage(
+              key: state.pageKey,
+              locationKey: state.matchedLocation,
+              child: TenantLicensePage.create(),
+            ),
+          ),
+          GoRoute(
+            path: AppRoute.tenantData,
             pageBuilder: (context, state) => _fadePage(
               key: state.pageKey,
               locationKey: state.matchedLocation,

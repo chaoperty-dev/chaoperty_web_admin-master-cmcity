@@ -51,7 +51,8 @@ class SidebarController extends ChangeNotifier {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  setUrlStrategy(const HashUrlStrategy());
+  // ✅ Path URL (no hash) — e.g. "/area" แทน "/#/area"
+  setUrlStrategy(PathUrlStrategy());
 
   // โหลด SidebarController ก่อน build app (เหมือนเดิม)
   final sidebarCtrl = SidebarController();
