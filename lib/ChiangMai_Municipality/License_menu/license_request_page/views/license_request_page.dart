@@ -269,7 +269,6 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseRequestViewModel>();
     return Container(
       color: LrColors.surface,
       child: Padding(
@@ -277,11 +276,8 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LicenseRequestHeader(
-              title: vm.title,
+            const LicenseRequestHeader(
               subtitle: 'จัดการคำขอต่อสัญญาเช่าและติดตามสถานะ',
-              totalCount: vm.total,
-              onCreate: vm.onCreateRequest,
             ),
             const SizedBox(height: LrSpace.lg),
             const LicenseRequestZoneFilter(),
