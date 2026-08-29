@@ -24,6 +24,7 @@ import '../models/license_contract_config.dart';
 import '../models/license_contract_event.dart';
 import '../models/license_contract_result.dart';
 import '../services/license_contract_service.dart';
+import '../../../unity/zone_selection_store.dart';
 
 class LicenseContractViewModel extends ChangeNotifier {
   LicenseContractViewModel({
@@ -31,11 +32,67 @@ class LicenseContractViewModel extends ChangeNotifier {
     LicenseContractService? service,
   })  : _config = config,
         _service = service ?? LicenseContractService() {
+    // ✅ sync state จาก global store (license scope)
+    _selectedSubZone = ZoneSelectionStore.instance.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseSubZone;
+    _selectedZn = ZoneSelectionStore.instance.licenseZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.licenseZone;
+    ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _initialize();
   }
 
   final LicenseContractConfig _config;
   final LicenseContractService _service;
+  final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
+
+  void _onZoneStoreChanged() {
+    final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseSubZone;
+    final newZone = _zoneStore.licenseZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.licenseZone;
+    final subChanged = _selectedSubZone != newSub;
+    final zoneChanged = _selectedZn != newZone;
+    if (!subChanged && !zoneChanged) return;
+
+    _selectedSubZone = newSub;
+    _selectedZn = newZone;
+    _selectedLn = null;
+    _selectedZser = null;
+    _selectedAser = null;
+    _selectedScname = null;
+    _zoneAreas = [];
+
+    notifyListeners();
+
+    // resolve sub-ser + reload zones filtered
+    String? subSer;
+    if (_selectedSubZone != null) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedSubZone,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+      loadZones(subZoneSer: subSer);
+    }
+
+    // load announcement/areas based on current zone
+    if (_selectedZn == null) {
+      _loadAnnouncement(null);
+    } else {
+      final zoneSer = _getZoneSer(_selectedZn);
+      if (zoneSer == '0' || zoneSer == null) {
+        loadAreas(null);
+        _loadAnnouncement(null);
+      } else {
+        loadAreas(zoneSer);
+        _loadAnnouncement(zoneSer);
+      }
+    }
+  }
 
   // ---------- Event channel ----------
   final StreamController<LicenseContractEvent> _eventController =
@@ -247,8 +304,33 @@ class LicenseContractViewModel extends ChangeNotifier {
       ),
     );
 
-    loadZones();
-    loadSubZones();
+    _initZonesAndAnnouncement();
+  }
+
+  Future<void> _initZonesAndAnnouncement() async {
+    // 1) load sub-zones first (need ser lookup)
+    await loadSubZones();
+    // 2) resolve selected sub's ser from store
+    String? subSer;
+    if (_selectedSubZone != null && _selectedSubZone!.isNotEmpty) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s.zn == _selectedSubZone,
+        orElse: () => SubZoneModel(),
+      );
+      subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
+    }
+    await loadZones(subZoneSer: subSer);
+    // 3) resolve zone ser + load announcement
+    if (_selectedZn != null && _selectedZn!.isNotEmpty) {
+      final zoneSer = _getZoneSer(_selectedZn);
+      if (zoneSer == '0' || zoneSer == null || zoneSer.isEmpty) {
+        await _loadAnnouncement(null);
+      } else {
+        await _loadAnnouncement(zoneSer);
+      }
+    } else {
+      await _loadAnnouncement(null);
+    }
   }
 
   String _initialOrDefault(List<String>? source, int index, String? fallback) {
@@ -305,34 +387,12 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ===============================================================
   Future<void> onSubZoneChanged(String? value) async {
     if (value == null) return;
-    _selectedSubZone = value;
-    _selectedZn = null;
-    _selectedLn = null;
-    _selectedZser = null;
-    _selectedAser = null;
-    _selectedScname = null;
-    _zoneAreas = [];
-    notifyListeners();
-    await loadZones(subZoneSer: _getSubZoneSer(value));
+    _zoneStore.setLicenseSubZone(value);
   }
 
   Future<void> onZoneChanged(String? value) async {
     if (value == null) return;
-    _selectedZn = value;
-    _selectedLn = null;
-    _selectedZser = null;
-    _selectedAser = null;
-    _selectedScname = null;
-    _zoneAreas = [];
-    notifyListeners();
-    final zoneSer = _getZoneSer(value);
-    if (zoneSer == '0' || zoneSer == null) {
-      await loadAreas(null);
-      await _loadAnnouncement(null);
-    } else {
-      await loadAreas(zoneSer);
-      await _loadAnnouncement(zoneSer);
-    }
+    _zoneStore.setLicenseZone(value);
   }
 
   Future<void> _loadAnnouncement(String? zoneSer) async {
@@ -739,6 +799,7 @@ class LicenseContractViewModel extends ChangeNotifier {
     for (final c in _controllersShopSub) {
       c.dispose();
     }
+    _zoneStore.removeListener(_onZoneStoreChanged);
     _eventController.close();
     super.dispose();
   }
