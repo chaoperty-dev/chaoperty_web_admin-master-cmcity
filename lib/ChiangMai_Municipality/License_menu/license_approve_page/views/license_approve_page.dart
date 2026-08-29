@@ -19,6 +19,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import '../../license_contract_page/models/license_contract_result.dart';
@@ -170,15 +171,23 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
         break;
       case LicenseApproveNavigateEvent(:final routeData):
         final title = context.read<LicenseApproveViewModel>().title;
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicenseApproveDetailPage.create(
-              routeData: routeData,
-              title: title,
+        // ✅ Path-style — URL เปลี่ยนเป็น /approve/<uuid>
+        if (routeData == null || routeData.isEmpty) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => LicenseApproveDetailPage.create(
+                routeData: routeData,
+                title: title,
+              ),
+              fullscreenDialog: true,
             ),
-            fullscreenDialog: true,
-          ),
-        );
+          );
+        } else {
+          context.push(
+            '/approve/${Uri.encodeComponent(routeData)}',
+            extra: {'title': title},
+          );
+        }
         break;
     }
   }
@@ -344,15 +353,23 @@ class _ApproveTab2ContentState extends State<_ApproveTab2Content> {
         );
         break;
       case LicenseApproveNavigateEvent(:final routeData):
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => LicenseApproveDetailPage.create(
-              routeData: routeData,
-              title: _vm.title,
+        // ✅ Path-style — URL เปลี่ยนเป็น /approve/<uuid>
+        if (routeData == null || routeData.isEmpty) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => LicenseApproveDetailPage.create(
+                routeData: routeData,
+                title: _vm.title,
+              ),
+              fullscreenDialog: true,
             ),
-            fullscreenDialog: true,
-          ),
-        );
+          );
+        } else {
+          context.push(
+            '/approve/${Uri.encodeComponent(routeData)}',
+            extra: {'title': _vm.title},
+          );
+        }
         break;
     }
   }

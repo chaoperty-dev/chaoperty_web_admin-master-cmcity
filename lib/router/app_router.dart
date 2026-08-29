@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../ChiangMai_Municipality/License_menu/license_announce_page/views/license_announce_page.dart';
+import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_detail_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_approve_page/views/license_approve_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_attach_page/views/license_attach_page.dart';
 import '../ChiangMai_Municipality/License_menu/license_fact_check_page/views/license_fact_check_page.dart';
@@ -264,26 +265,30 @@ GoRouter buildAppRouter({
           GoRoute(
             path: AppRoute.approve,
             pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
+              final rd = state.uri.queryParameters['routeData'];
               return _fadePage(
                 key: state.pageKey,
                 locationKey: state.matchedLocation,
                 child: LicenseApprovePage.create(routeData: rd),
               );
             },
-          ),
-          GoRoute(
-            path: AppRoute.approveData,
-            pageBuilder: (context, state) {
-              final rd = state.pathParameters['data'] ??
-                  state.uri.queryParameters['routeData'];
-              return _fadePage(
-                key: state.pageKey,
-                locationKey: state.matchedLocation,
-                child: LicenseApprovePage.create(routeData: rd),
-              );
-            },
+            routes: [
+              // /approve/:uuid — detail page (เปิดตอนกด "เรียกดู")
+              GoRoute(
+                path: ':uuid',
+                pageBuilder: (context, state) {
+                  final uuid = state.pathParameters['uuid'];
+                  return _fadePage(
+                    key: state.pageKey,
+                    locationKey: state.matchedLocation,
+                    child: LicenseApproveDetailPage.create(
+                      routeData: uuid,
+                      title: 'อนุมัติคำขอ',
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
           GoRoute(
             path: AppRoute.submitApproval,
