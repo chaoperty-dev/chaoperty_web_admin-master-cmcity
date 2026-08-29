@@ -1,7 +1,7 @@
 // ============================================================================
 // license_approve_page.dart
 // ============================================================================
-// Main View — "คำขอต่อสัญญา" (Tab แรก)
+// Main View — "อนุมัติคำขอ" (Tab หลัก: ข้อมูลที่ต้องอนุมัติ + อนุมัติรายการทั้งหมด)
 //
 // ใช้งานได้ 2 รูปแบบ:
 //   ✅ LicenseApprovePage.create(...) — สร้าง + wrap Provider ให้อัตโนมัติ (แนะนำ)
@@ -9,6 +9,11 @@
 //
 // IMPORTANT: ห้าม new LicenseApprovePage() ตรงๆ เพราะ child widgets
 // จะเรียก context.watch<LicenseApproveViewModel>() ซึ่งต้องการ Provider
+//
+// Tab structure:
+//   Tab 1: ข้อมูลที่ต้องอนุมัติ (pending list — current behavior)
+//   Tab 2: อนุมัติรายการทั้งหมด (empty placeholder — user จะสั่งเพิ่มภายหลัง)
+// Filter / search / pagination แชร์ state เดียวกันทั้ง 2 แท็บ
 // ============================================================================
 
 import 'dart:async';
@@ -121,8 +126,21 @@ class _LicenseApprovePageBody extends StatefulWidget {
       _LicenseApprovePageBodyState();
 }
 
-class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
+class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody>
+    with SingleTickerProviderStateMixin {
   StreamSubscription<LicenseApproveEvent>? _sub;
+
+  late final TabController _tabController;
+  static const _tabs = <_ApproveTab>[
+    _ApproveTab(key: 'pending', label: 'ข้อมูลที่ต้องอนุมัติ'),
+    _ApproveTab(key: 'bulk', label: 'อนุมัติรายการทั้งหมด'),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: _tabs.length, vsync: this);
+  }
 
   @override
   void didChangeDependencies() {
@@ -164,6 +182,7 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
 
   @override
   void dispose() {
+    _tabController.dispose();
     _sub?.cancel();
     super.dispose();
   }
@@ -185,7 +204,50 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
             const SizedBox(height: LaSpace.lg),
             const LicenseApproveZoneFilter(),
             const SizedBox(height: LaSpace.md),
-            // Search + Pagination row (pagination inline)
+            // ─── TabBar (2 แท็บ) — บนช่องค้นหา ───
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(LaRadius.md),
+                border: Border.all(color: LaColors.border),
+              ),
+              child: TabBar(
+                controller: _tabController,
+                labelColor: LaColors.primaryDark,
+                unselectedLabelColor: LaColors.textSecondary,
+                indicator: BoxDecoration(
+                  borderRadius: BorderRadius.circular(LaRadius.md),
+                  color: LaColors.primary.withOpacity(.10),
+                ),
+                indicatorSize: TabBarIndicatorSize.tab,
+                indicatorPadding: const EdgeInsets.all(4),
+                dividerColor: Colors.transparent,
+                labelStyle: const TextStyle(
+                  fontFamily: LaText.fontBold,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+                unselectedLabelStyle: const TextStyle(
+                  fontFamily: LaText.fontRegular,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+                tabs: _tabs
+                    .map((t) => Tab(
+                          icon: Icon(
+                            t.key == 'pending'
+                                ? Icons.fact_check_outlined
+                                : Icons.done_all_rounded,
+                            size: 18,
+                          ),
+                          text: t.label,
+                          iconMargin: const EdgeInsets.only(bottom: 4),
+                        ))
+                    .toList(),
+              ),
+            ),
+            const SizedBox(height: LaSpace.md),
+            // Search + Pagination row (pagination inline — shared ทั้ง 2 แท็บ)
             const Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -195,11 +257,75 @@ class _LicenseApprovePageBodyState extends State<_LicenseApprovePageBody> {
               ],
             ),
             const SizedBox(height: LaSpace.lg),
-            // ─── Scroll แนวตั้ง — table ปรับขนาดตาม parent ───
-            const Expanded(
-              child: SingleChildScrollView(
-                child: LicenseApproveTable(),
+            // ─── TabBarView — แต่ละแท็บมี content ของตัวเอง ───
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                physics: const NeverScrollableScrollPhysics(),
+                children: const [
+                  // Tab 1: ข้อมูลที่ต้องอนุมัติ (current pending list)
+                  SingleChildScrollView(
+                    child: LicenseApproveTable(),
+                  ),
+                  // Tab 2: อนุมัติรายการทั้งหมด (placeholder — user จะสั่งเพิ่มทีหลัง)
+                  _ApproveBulkPlaceholder(),
+                ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Tab descriptor สำหรับ approval page
+class _ApproveTab {
+  final String key;
+  final String label;
+  const _ApproveTab({required this.key, required this.label});
+}
+
+/// Placeholder สำหรับ Tab 2 "อนุมัติรายการทั้งหมด" — user จะกำหนดเนื้อหาทีหลัง
+class _ApproveBulkPlaceholder extends StatelessWidget {
+  const _ApproveBulkPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(LaRadius.lg),
+          border: Border.all(color: LaColors.border),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: LaColors.statusInfoBg,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.construction_rounded,
+                size: 40,
+                color: LaColors.statusInfoFg,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'อนุมัติรายการทั้งหมด',
+              style: LaText.h2.copyWith(color: LaColors.textPrimary),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'เนื้อหาจะถูกเพิ่มในภายหลัง',
+              style: LaText.bodyMuted.copyWith(color: LaColors.textSecondary),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
