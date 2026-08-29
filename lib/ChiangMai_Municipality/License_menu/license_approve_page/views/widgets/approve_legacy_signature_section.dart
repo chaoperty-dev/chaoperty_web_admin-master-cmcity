@@ -1,9 +1,10 @@
 // ============================================================================
 // approve_legacy_signature_section.dart
 // ============================================================================
-// Section แสดงลายเซ็นผู้อนุมัติ (read-only, โหมด V1)
+// Section แสดงลายเซ็นผู้อนุมัติ + เอกสารประกอบ 3 อัน (read-only, โหมด V1)
 // - โหลดข้อมูลลายเซ็นจาก API: GET /admin/know + GET .../signatures/{uuid}/preview
 // - แสดงภาพลายเซ็น + ชื่อ/ตำแหน่ง admin
+// - แสดง 3 PDF (คำร้อง / ใบพิจารณา / ใบอนุญาต) — กด "แสดง" เปิด PdfMultiPreviewPage
 // - ไม่มี comment box, ไม่มี confirm button, ไม่มี submit action
 //   (ตามที่ user ระบุ: "ลายเซนเอามาแสดงเลย ไม่ต้องมีการประทับอะไรทั้งนั้น")
 // - Self-contained: state/UI ทั้งหมดอยู่ในไฟล์นี้
@@ -14,11 +15,15 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../../../../unity/API_admin_signature.dart';
+import '../../../../../Constant/Myconstant.dart';
+import '../../../../PDF_CMM/unity_pdf_cmm/perviewpdf_pdfMultiPreview.dart';
+import '../../viewmodels/license_approve_detail_view_model.dart';
 import '../theme/license_approve_theme.dart';
 
-/// Section widget สำหรับแสดงลายเซ็นผู้อนุมัติ (read-only)
+/// Section widget สำหรับแสดงลายเซ็นผู้อนุมัติ + เอกสารประกอบ (read-only)
 /// วางใต้ `_RoundsSection` ในหน้า approve_detail_step1.dart
 class ApproveLegacySignatureSection extends StatefulWidget {
   const ApproveLegacySignatureSection({super.key});
@@ -43,6 +48,36 @@ class _ApproveLegacySignatureSectionState
 
   // ─── Signature image bytes (จาก .../signatures/{uuid}/preview) ───
   Uint8List? _signatureBytes;
+
+  // ─── เอกสารประกอบ 3 อัน (hardcoded เหมือน cignaturepad_cmm.dart:201-216) ───
+  static const List<Map<String, String>> _docs = [
+    {'ser': '1', 'key': 'GeneratePDF_1', 'title': 'คำร้องต่อใบอนุญาต'},
+    {
+      'ser': '2',
+      'key': 'GeneratePDF_2',
+      'title': 'ใบพิจารณาคำขอต่อใบอนุญาต',
+    },
+    {
+      'ser': '3',
+      'key': 'GeneratePDF_3',
+      'title': 'ใบอนุญาต',
+    },
+  ];
+
+  /// resolve URL สำหรับ preview (เหมือน cignaturepad_cmm.dart L2186-2193)
+  String _resolvePdfUrl(String key, String requestUuid) {
+    final base = MyConstant().domain_v3;
+    switch (key) {
+      case 'GeneratePDF_1':
+        return '$base/api/preview/req-vendor-license-2/$requestUuid';
+      case 'GeneratePDF_2':
+        return '$base/api/preview/memo-vendor-license-2/$requestUuid';
+      case 'GeneratePDF_3':
+        return '$base/api/preview/vendor-license-2/$requestUuid';
+      default:
+        return '';
+    }
+  }
 
   // ─────────────────────────────────────────────────────────────────────
   // Lifecycle
@@ -124,20 +159,30 @@ class _ApproveLegacySignatureSectionState
   // ─────────────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: LaDecor.card(),
-      padding: const EdgeInsets.all(LaSpace.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: LaSpace.md),
-          if (_loadError != null)
-            _buildErrorBanner(_loadError!)
-          else
-            _buildBody(),
-        ],
-      ),
+    return Consumer<LicenseApproveDetailViewModel>(
+      builder: (ctx, vm, _) {
+        return Container(
+          decoration: LaDecor.card(),
+          padding: const EdgeInsets.all(LaSpace.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildHeader(),
+              const SizedBox(height: LaSpace.md),
+              if (_loadError != null)
+                _buildErrorBanner(_loadError!)
+              else
+                _buildBody(),
+              if (vm.requestUuid != null && vm.requestUuid!.isNotEmpty) ...[
+                const SizedBox(height: LaSpace.lg),
+                const Divider(color: LaColors.border, height: 1),
+                const SizedBox(height: LaSpace.md),
+                _buildPdfSection(vm.requestUuid!),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -325,6 +370,109 @@ class _ApproveLegacySignatureSectionState
           ),
         ),
       ],
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // เอกสารประกอบ 3 อัน (PDF preview)
+  // ─────────────────────────────────────────────────────────────────────
+  Widget _buildPdfSection(String requestUuid) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: const [
+            Icon(Icons.description_outlined,
+                size: 16, color: LaColors.primaryDark),
+            SizedBox(width: 6),
+            Text('เอกสารประกอบ', style: LaText.h2),
+            SizedBox(width: 8),
+            Text('(3 อัน)', style: LaText.caption),
+          ],
+        ),
+        const SizedBox(height: LaSpace.sm),
+        Container(
+          decoration: BoxDecoration(
+            color: LaColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(LaRadius.md),
+            border: Border.all(color: LaColors.border),
+          ),
+          child: Column(
+            children: [
+              for (int i = 0; i < _docs.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                      color: LaColors.border, height: 1, indent: 12, endIndent: 12),
+                _buildPdfRow(i, requestUuid),
+              ],
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPdfRow(int index, String requestUuid) {
+    final doc = _docs[index];
+    final ser = doc['ser'] ?? '';
+    final title = doc['title'] ?? '';
+    return InkWell(
+      onTap: () => _openPdfPreview(index, requestUuid),
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+            horizontal: LaSpace.md, vertical: LaSpace.sm),
+        child: Row(
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: LaColors.statusRejectedBg,
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: const Icon(Icons.picture_as_pdf_rounded,
+                  size: 14, color: LaColors.statusRejectedFg),
+            ),
+            const SizedBox(width: LaSpace.sm),
+            Expanded(
+              child: Text(
+                '$ser. $title',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: LaColors.textPrimary,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            const Icon(Icons.visibility_outlined,
+                size: 16, color: LaColors.primaryDark),
+            const SizedBox(width: 4),
+            const Text(
+              'แสดง',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: LaColors.primaryDark,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openPdfPreview(int initialIndex, String requestUuid) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => PdfMultiPreviewPage(
+          docs: _docs,
+          initialIndex: initialIndex,
+          getUrl: (key) => _resolvePdfUrl(key, requestUuid),
+        ),
+      ),
     );
   }
 }
