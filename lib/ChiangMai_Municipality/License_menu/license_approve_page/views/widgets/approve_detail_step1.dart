@@ -17,6 +17,7 @@ import '../../../../Model/Review_Model.dart';
 import '../theme/license_approve_theme.dart';
 import '../../models/license_approve_detail_extended.dart';
 import '../../viewmodels/license_approve_detail_view_model.dart';
+import 'approve_legacy_signature_section.dart';
 
 // ─── Cross-module: ใช้ข้อมูลคำขอจาก license_request_page (read-only) ───
 import '../../../license_attach_page/views/widgets/request_detail_zone_row.dart';
@@ -337,6 +338,11 @@ class _ApproveInfoTab extends StatelessWidget {
 
                   // ─── Section: ขั้นตอนการส่งคำร้องขออนุมัติ (read-only) ───
                   _RoundsSection(vm: vm),
+
+                  const SizedBox(height: LaSpace.lg),
+
+                  // ─── Section: ลายเซ็นผู้อนุมัติ (read-only, โหมด V1) ───
+                  const ApproveLegacySignatureSection(),
 
               const SizedBox(height: LaSpace.lg),
 
