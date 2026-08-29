@@ -116,8 +116,11 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
         );
         break;
       case AreaMenuNavigateEvent(:final routeData):
-        // เปิด bottom sheet เลือกเมนูย่อย "ใบอนุญาต" → navigate
-        showAreaLicenseActionMenu(context, routeData: routeData ?? '');
+        // เปิด popup menu เลือกเมนูย่อย "ใบอนุญาต" (fallback สำหรับ table row)
+        showAreaLicenseActionMenuDefault(
+          context: context,
+          routeData: routeData ?? '',
+        );
         break;
     }
   }

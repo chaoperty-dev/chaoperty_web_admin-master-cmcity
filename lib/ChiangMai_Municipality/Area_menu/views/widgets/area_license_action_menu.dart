@@ -151,6 +151,52 @@ Future<void> showAreaLicenseActionMenuAt({
   );
 }
 
+/// Fallback (ไม่มี anchor) — popup กลางจอ ใช้สำหรับ table row หรือ event flow ทั่วไป
+Future<void> showAreaLicenseActionMenuDefault({
+  required BuildContext context,
+  required String routeData,
+}) async {
+  final size = MediaQuery.of(context).size;
+  // วาง popup กลางบนของหน้าจอ (เป็น fallback เมื่อไม่มี anchor)
+  final rect = RelativeRect.fromLTRB(
+    size.width / 2 - 160,
+    80,
+    size.width / 2 - 160,
+    size.height - 120,
+  );
+
+  // cache GoRouter ก่อน async
+  final router = GoRouter.of(context);
+
+  await showMenu<_LicenseAction>(
+    context: context,
+    position: rect,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      side: BorderSide(color: Colors.grey.shade200),
+    ),
+    elevation: 12,
+    color: Colors.white,
+    items: _licenseActions
+        .map(
+          (a) => PopupMenuItem<_LicenseAction>(
+            value: a,
+            height: 56,
+            padding: EdgeInsets.zero,
+            child: _LicenseActionTile(action: a),
+          ),
+        )
+        .toList(),
+  ).then((selected) {
+    if (selected == null) return;
+    final uri = Uri(
+      path: selected.route,
+      queryParameters: {'routeData': routeData},
+    );
+    router.go(uri.toString());
+  });
+}
+
 class _LicenseActionTile extends StatelessWidget {
   final _LicenseAction action;
   const _LicenseActionTile({required this.action});
