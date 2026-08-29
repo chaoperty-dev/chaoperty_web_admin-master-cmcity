@@ -124,7 +124,7 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
 
   // ─── Wide (>=960): Row — grid ซ้าย, signature ขวา ─────────────────
   Widget _buildWideLayout(int lastPage) {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -138,7 +138,7 @@ class _ApproveBulkPageSummaryState extends State<ApproveBulkPageSummary> {
           ),
           const SizedBox(width: LaSpace.lg),
           SizedBox(
-            width: 320,
+            width: 300,
             child: _ApproverCard(
               isLoading: _isLoading,
               error: _error,
@@ -300,7 +300,7 @@ class _ApproverCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(LaSpace.lg),
+      padding: const EdgeInsets.all(LaSpace.md),
       decoration: LaDecor.card(),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -322,7 +322,7 @@ class _ApproverCard extends StatelessWidget {
   Widget _buildBody() {
     if (isLoading) {
       return Container(
-        height: 140,
+        height: 110,
         alignment: Alignment.center,
         decoration: LaDecor.softCard(),
         child: const SizedBox(
@@ -339,9 +339,9 @@ class _ApproverCard extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildSignatureArea(),
-        const SizedBox(height: LaSpace.md),
-        _infoRow(Icons.badge_rounded, 'ชื่อ-สกุล', profileName ?? '-'),
         const SizedBox(height: LaSpace.sm),
+        _infoRow(Icons.badge_rounded, 'ชื่อ-สกุล', profileName ?? '-'),
+        const SizedBox(height: 6),
         _infoRow(Icons.work_outline_rounded, 'ตำแหน่ง', positionName ?? '-'),
       ],
     );
@@ -349,7 +349,7 @@ class _ApproverCard extends StatelessWidget {
 
   Widget _buildSignatureArea() {
     return Container(
-      height: 140,
+      height: 110,
       decoration: BoxDecoration(
         color: LaColors.surfaceMuted,
         borderRadius: BorderRadius.circular(LaRadius.md),
