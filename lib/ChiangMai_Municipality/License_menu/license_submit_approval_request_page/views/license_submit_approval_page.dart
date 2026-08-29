@@ -166,7 +166,6 @@ class _LicenseSubmitApprovalPageBodyState
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<LicenseSubmitApprovalViewModel>();
     return Container(
       color: LaColors.surface,
       child: Padding(
@@ -174,11 +173,9 @@ class _LicenseSubmitApprovalPageBodyState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LicenseSubmitApprovalHeader(
-              title: vm.title,
+            const LicenseSubmitApprovalHeader(
               subtitle:
                   'ส่งคำร้องขออนุมัติค่าธรรมเนียมใบอนุญาต — ตรวจสอบและบันทึกผลการอนุมัติ',
-              totalCount: vm.total,
             ),
             const SizedBox(height: LaSpace.lg),
             const LicenseSubmitApprovalZoneFilter(),

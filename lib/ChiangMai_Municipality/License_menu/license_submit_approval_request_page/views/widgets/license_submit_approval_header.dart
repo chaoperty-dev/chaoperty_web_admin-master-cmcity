@@ -5,25 +5,25 @@
 // - Eyebrow + Title + subtitle (ไม่มีปุ่ม Create)
 // - ใช้ gradient + glow แทนการใช้พื้นหลังเรียบ
 // - Responsive: wide / medium / compact (เหมือน Registration header)
+// - ใช้ context.select<LicenseSubmitApprovalViewModel, _SHeaderData> 1-arg
+//   selector เพื่อ rebuild เฉพาะเมื่อ title / total เปลี่ยน
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../viewmodels/license_submit_approval_view_model.dart';
 import '../theme/license_submit_approval_theme.dart';
 
 class LicenseSubmitApprovalHeader extends StatelessWidget {
-  final String title;
   final String? subtitle;
-  final int? totalCount;
-  const LicenseSubmitApprovalHeader({
-    super.key,
-    required this.title,
-    this.subtitle,
-    this.totalCount,
-  });
+  const LicenseSubmitApprovalHeader({super.key, this.subtitle});
 
   @override
   Widget build(BuildContext context) {
+    final selected = context.select<LicenseSubmitApprovalViewModel, _SHeaderData>(
+      (vm) => _SHeaderData(title: vm.title, total: vm.total),
+    );
     return LayoutBuilder(
       builder: (context, c) {
         final w = c.maxWidth;
@@ -55,16 +55,16 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
             ],
           ),
           child: compact
-              ? _buildCompactLayout()
+              ? _buildCompactLayout(selected, subtitle)
               : medium
-                  ? _buildMediumLayout()
-                  : _buildWideLayout(),
+                  ? _buildMediumLayout(selected, subtitle)
+                  : _buildWideLayout(selected, subtitle),
         );
       },
     );
   }
 
-  Widget _buildWideLayout() {
+  Widget _buildWideLayout(_SHeaderData data, String? subtitle) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -90,18 +90,16 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: _titleBlock(showEyebrow: true),
+            child: _titleBlock(data.title, subtitle, showEyebrow: true),
           ),
         ),
-        if (totalCount != null) ...[
-          _countBadge(),
-          const SizedBox(width: LaSpace.sm),
-        ],
+        _countBadge(data.total),
+        const SizedBox(width: LaSpace.sm),
       ],
     );
   }
 
-  Widget _buildMediumLayout() {
+  Widget _buildMediumLayout(_SHeaderData data, String? subtitle) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -127,18 +125,16 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
           child: FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: _titleBlock(showEyebrow: false, titleSize: 18),
+            child: _titleBlock(data.title, subtitle, showEyebrow: false, titleSize: 18),
           ),
         ),
-        if (totalCount != null) ...[
-          const SizedBox(width: LaSpace.sm),
-          _countBadge(compact: true),
-        ],
+        const SizedBox(width: LaSpace.sm),
+        _countBadge(data.total, compact: true),
       ],
     );
   }
 
-  Widget _buildCompactLayout() {
+  Widget _buildCompactLayout(_SHeaderData data, String? subtitle) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -163,18 +159,21 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
               ),
             ),
             const SizedBox(width: LaSpace.sm),
-            Expanded(child: _titleBlock(showEyebrow: false, titleSize: 17)),
+            Expanded(child: _titleBlock(data.title, subtitle, showEyebrow: false, titleSize: 17)),
           ],
         ),
-        if (totalCount != null) ...[
-          const SizedBox(height: LaSpace.sm),
-          _countBadge(),
-        ],
+        const SizedBox(height: LaSpace.sm),
+        _countBadge(data.total),
       ],
     );
   }
 
-  Widget _titleBlock({required bool showEyebrow, double titleSize = 20}) {
+  Widget _titleBlock(
+    String title,
+    String? subtitle, {
+    required bool showEyebrow,
+    double titleSize = 20,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -202,7 +201,7 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
         if (subtitle != null) ...[
           const SizedBox(height: 2),
           Text(
-            subtitle!,
+            subtitle,
             style: LaText.caption.copyWith(
               color: Colors.white.withOpacity(.65),
             ),
@@ -214,7 +213,7 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
     );
   }
 
-  Widget _countBadge({bool compact = false}) {
+  Widget _countBadge(int totalCount, {bool compact = false}) {
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 8 : 12,
@@ -251,4 +250,20 @@ class LicenseSubmitApprovalHeader extends StatelessWidget {
       ),
     );
   }
+}
+
+/// tuple สำหรับ context.select 1-arg
+class _SHeaderData {
+  final String title;
+  final int total;
+  const _SHeaderData({required this.title, required this.total});
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _SHeaderData && other.title == title && other.total == total;
+  }
+
+  @override
+  int get hashCode => Object.hash(title, total);
 }
