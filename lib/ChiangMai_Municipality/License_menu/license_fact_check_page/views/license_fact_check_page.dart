@@ -138,10 +138,6 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
 
   @override
   Widget build(BuildContext context) {
-    final title = context.select<LicensefactcheckViewModel, String>(
-        (vm) => vm.title);
-    final total = context.select<LicensefactcheckViewModel, int>(
-        (vm) => vm.total);
     return Container(
       color: LaColors.surface,
       child: Padding(
@@ -149,11 +145,9 @@ class _LicensefactcheckPageBodyState extends State<_LicensefactcheckPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            LicensefactcheckHeader(
-              title: title,
+            const LicensefactcheckHeader(
               subtitle:
                   'ตรวจสอบข้อเท็จจริงใบอนุญาต — ยืนยันข้อมูลก่อนอนุมัติขั้นสุดท้าย',
-              totalCount: total,
             ),
             const SizedBox(height: LaSpace.lg),
             const LicensefactcheckZoneFilter(),
