@@ -23,22 +23,22 @@ class AreaMenuTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreaMenuViewModel>();
+    // 1-arg selector: rebuild เฉพาะเมื่อ isLoading เปลี่ยน หรือ requests list ref เปลี่ยน
+    // (ไม่ rebuild ตอน filter fields — search/zone/status — เพราะ empty branch ใช้ Consumer แยก)
+    final slice = context.select<AreaMenuViewModel, _TableSlice>(
+      (vm) => _TableSlice(
+        isLoading: vm.isLoading,
+        requests: vm.requests,
+        isInitiallyLoading: vm.isLoading && vm.requests.isEmpty,
+      ),
+    );
 
-    if (vm.isLoading && vm.requests.isEmpty) {
+    if (slice.isInitiallyLoading) {
       return const _LoadingState();
     }
-    if (vm.requests.isEmpty) {
-      return _EmptyState(
-        hasFilter: vm.searchQuery.isNotEmpty ||
-            (vm.selectedZoneSub.isNotEmpty &&
-                vm.selectedZoneSub != 'ทั้งหมด') ||
-            (vm.selectedZone.isNotEmpty &&
-                vm.selectedZone != 'ทั้งหมด') ||
-            vm.selectedStatus != 'ทั้งหมด' ||
-            vm.selectedRequestStatus != 'ทั้งหมด',
-        onClear: vm.refresh,
-      );
+    if (slice.requests.isEmpty) {
+      // ✅ Empty branch scope จำกัด Consumer<VM> — filter changes rebuild แค่ตรงนี้
+      return const _AreaMenuEmptyFilter();
     }
 
     return Container(
@@ -47,18 +47,20 @@ class AreaMenuTable extends StatelessWidget {
         children: [
           _headerRow(),
           const Divider(height: 1, color: LaColors.border),
-          if (vm.isLoading)
+          if (slice.isLoading)
             const LinearProgressIndicator(
               minHeight: 2,
               backgroundColor: LaColors.surfaceMuted,
               valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
             ),
-          for (int i = 0; i < vm.requests.length; i++)
+          for (int i = 0; i < slice.requests.length; i++)
             _AreaMenuRow(
-              key: ValueKey(vm.requests[i].hashCode),
-              model: vm.requests[i],
+              key: ValueKey(slice.requests[i].hashCode),
+              model: slice.requests[i],
               index: i,
-              onView: () => vm.onViewRequest(vm.requests[i]),
+              onView: () => context.read<AreaMenuViewModel>().onViewRequest(
+                    slice.requests[i],
+                  ),
             ),
         ],
       ),
@@ -88,6 +90,52 @@ class AreaMenuTable extends StatelessWidget {
           _HeaderCell(label: 'สถานะ', flex: 2),
         ],
       ),
+    );
+  }
+}
+
+/// slice ที่ table body ต้องใช้
+class _TableSlice {
+  final bool isLoading;
+  final List<Map<String, dynamic>> requests;
+  final bool isInitiallyLoading;
+  const _TableSlice({
+    required this.isLoading,
+    required this.requests,
+    required this.isInitiallyLoading,
+  });
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is _TableSlice &&
+        other.isLoading == isLoading &&
+        other.isInitiallyLoading == isInitiallyLoading &&
+        identical(other.requests, requests); // list ref — เพียงพอสำหรับ change detection
+  }
+
+  @override
+  int get hashCode => Object.hash(isLoading, isInitiallyLoading, requests.hashCode);
+}
+
+/// Empty filter widget — scope Consumer<VM> ที่นี่เท่านั้น
+class _AreaMenuEmptyFilter extends StatelessWidget {
+  const _AreaMenuEmptyFilter();
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AreaMenuViewModel>(
+      builder: (context, vm, _) {
+        return _EmptyState(
+          hasFilter: vm.searchQuery.isNotEmpty ||
+              (vm.selectedZoneSub.isNotEmpty &&
+                  vm.selectedZoneSub != 'ทั้งหมด') ||
+              (vm.selectedZone.isNotEmpty && vm.selectedZone != 'ทั้งหมด') ||
+              vm.selectedStatus != 'ทั้งหมด' ||
+              vm.selectedRequestStatus != 'ทั้งหมด',
+          onClear: vm.refresh,
+        );
+      },
     );
   }
 }
