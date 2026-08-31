@@ -21,6 +21,7 @@ import '../../services/license_legacy_approval_service.dart';
 import '../../services/license_pdf_multi_preview_page.dart';
 import '../../viewmodels/license_approve_detail_view_model.dart';
 import '../theme/license_approve_theme.dart';
+import '../../services/license_approve_action_service.dart';
 
 /// Section widget สำหรับแสดงลายเซ็นผู้อนุมัติ + เอกสารประกอบ (read-only)
 /// วางใต้ `_RoundsSection` ในหน้า approve_detail_step1.dart
@@ -50,6 +51,11 @@ class _ApproveLegacySignatureSectionState
 
   // ─── Signature image bytes (จาก .../signatures/{uuid}/preview) ───
   Uint8List? _signatureBytes;
+
+  // ─── Approve / Reject state ───
+  bool _isActing = false;
+  String? _actionError;
+  String? _signatureUuid;
 
   // ─────────────────────────────────────────────────────────────────────
   // Lifecycle
@@ -102,12 +108,14 @@ class _ApproveLegacySignatureSectionState
       _profileUuid = profileUuid;
       _profileName = profileName;
       _positionName = positionName;
+      _signatureUuid = signatureUuid;
     });
 
     // 2) โหลดภาพลายเซ็น (ถ้ามี signatureUuid)
     if (signatureUuid != null && signatureUuid.isNotEmpty) {
       setState(() => _isLoadingImage = true);
-      final imgResp = await _service.loadSignatureImage(signatureUuid: signatureUuid);
+      final imgResp =
+          await _service.loadSignatureImage(signatureUuid: signatureUuid);
       if (!mounted) return;
       if (imgResp != null && imgResp.statusCode == 200) {
         setState(() {
@@ -150,6 +158,8 @@ class _ApproveLegacySignatureSectionState
                 const Divider(color: LaColors.border, height: 1),
                 const SizedBox(height: LaSpace.md),
                 _buildPdfSection(vm.requestUuid!),
+                const SizedBox(height: LaSpace.lg),
+                _buildActionButtons(vm.requestUuid!, vm),
               ],
             ],
           ),
@@ -247,42 +257,116 @@ class _ApproveLegacySignatureSectionState
   }
 
   Widget _buildSignatureBox() {
-    return Container(
-      width: 240,
-      height: 120,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(LaRadius.md),
-        border: Border.all(color: LaColors.border),
-      ),
-      alignment: Alignment.center,
-      child: _isLoadingImage
-          ? const SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : _signatureBytes != null
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(LaRadius.md - 1),
-                  child: Image.memory(
-                    _signatureBytes!,
-                    fit: BoxFit.contain,
-                    gaplessPlayback: true,
-                  ),
-                )
-              : Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.image_not_supported_rounded,
-                        size: 28, color: LaColors.textMuted),
-                    SizedBox(height: 4),
-                    Text(
-                      'ไม่สามารถโหลดลายเซ็นได้',
-                      style: LaText.caption,
-                    ),
-                  ],
+    final canPreview = _signatureBytes != null;
+    return InkWell(
+      onTap: canPreview ? () => _showSignaturePreview() : null,
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      child: Stack(
+        children: [
+          Container(
+            width: 240,
+            height: 120,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(LaRadius.md),
+              border: Border.all(color: LaColors.border),
+            ),
+            alignment: Alignment.center,
+            child: _isLoadingImage
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : _signatureBytes != null
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(LaRadius.md - 1),
+                        child: Image.memory(
+                          _signatureBytes!,
+                          fit: BoxFit.contain,
+                          gaplessPlayback: true,
+                        ),
+                      )
+                    : const Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.image_not_supported_rounded,
+                              size: 28, color: LaColors.textMuted),
+                          SizedBox(height: 4),
+                          Text(
+                            'ไม่สามารถโหลดลายเซ�นได้',
+                            style: LaText.caption,
+                          ),
+                        ],
+                      ),
+          ),
+          if (canPreview)
+            Positioned(
+              top: 4,
+              right: 4,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(.55),
+                  borderRadius: BorderRadius.circular(LaRadius.sm),
                 ),
+                child: const Icon(
+                  Icons.zoom_in_rounded,
+                  size: 14,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showSignaturePreview() {
+    if (_signatureBytes == null) return;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black87,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(ctx).pop(),
+              child: Center(
+                child: InteractiveViewer(
+                  minScale: 0.5,
+                  maxScale: 4.0,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(LaRadius.md),
+                    child: Container(
+                      color: Colors.white,
+                      padding: const EdgeInsets.all(LaSpace.lg),
+                      child: Image.memory(
+                        _signatureBytes!,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black.withOpacity(.55),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -375,7 +459,10 @@ class _ApproveLegacySignatureSectionState
               for (int i = 0; i < docs.length; i++) ...[
                 if (i > 0)
                   const Divider(
-                      color: LaColors.border, height: 1, indent: 12, endIndent: 12),
+                      color: LaColors.border,
+                      height: 1,
+                      indent: 12,
+                      endIndent: 12),
                 _buildPdfRow(i, requestUuid),
               ],
             ],
@@ -447,6 +534,235 @@ class _ApproveLegacySignatureSectionState
             key: key,
             requestUuid: requestUuid,
           ),
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────
+  // Action buttons — อนุมัติ / ปฏิเสธ
+  // ─────────────────────────────────────────────────────────────────────
+  Widget _buildActionButtons(
+    String requestUuid,
+    LicenseApproveDetailViewModel vm,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (_actionError != null) ...[
+          _buildErrorBanner(_actionError!),
+          const SizedBox(height: LaSpace.sm),
+        ],
+        Row(
+          children: [
+            Expanded(
+              child: _ActionButton(
+                label: 'อนุมัติ',
+                icon: Icons.check_circle_rounded,
+                fg: Colors.white,
+                bg: LaColors.statusApprovedFg,
+                isLoading: _isActing,
+                disabled:
+                    _isActing || _profileUuid == null || _signatureUuid == null,
+                onTap: () => _onApprove(requestUuid, vm),
+              ),
+            ),
+            const SizedBox(width: LaSpace.sm),
+            Expanded(
+              child: _ActionButton(
+                label: 'ปฏิเสธ',
+                icon: Icons.cancel_rounded,
+                fg: Colors.white,
+                bg: LaColors.statusRejectedFg,
+                isLoading: _isActing,
+                disabled: _isActing,
+                onTap: () => _onReject(requestUuid, vm),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Future<void> _onApprove(
+    String requestUuid,
+    LicenseApproveDetailViewModel vm,
+  ) async {
+    if (_profileUuid == null || _signatureUuid == null) {
+      setState(() => _actionError = 'ไม่พบข้อมูลลายเซ็นผู้อนุมัติ');
+      return;
+    }
+
+    // หา step ปัจจุบัน
+    final step = vm.currentStep;
+    if (step == null || step.uuid.isEmpty) {
+      setState(() => _actionError = 'ไม่พบ step ที่ต้องอนุมัติ');
+      return;
+    }
+
+    setState(() {
+      _isActing = true;
+      _actionError = null;
+    });
+
+    try {
+      final actionService = LicenseApproveActionService();
+      await actionService.approveStep(
+        requestUuid: requestUuid,
+        stepUuid: step.uuid,
+        remark: '',
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('อนุมัติคำขอเรียบร้อย'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      // refresh detail
+      await vm.reloadApprovalDetail();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _actionError = 'อนุมัติไม่สำเร็จ: $e');
+    } finally {
+      if (mounted) setState(() => _isActing = false);
+    }
+  }
+
+  Future<void> _onReject(
+    String requestUuid,
+    LicenseApproveDetailViewModel vm,
+  ) async {
+    final step = vm.currentStep;
+    if (step == null || step.uuid.isEmpty) {
+      setState(() => _actionError = 'ไม่พบ step ที่ต้องปฏิเสธ');
+      return;
+    }
+
+    final remark = await _promptRemark();
+    if (remark == null) return; // ยกเลิก
+
+    setState(() {
+      _isActing = true;
+      _actionError = null;
+    });
+
+    try {
+      final actionService = LicenseApproveActionService();
+      await actionService.rejectStep(
+        requestUuid: requestUuid,
+        stepUuid: step.uuid,
+        remark: remark,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ปฏิเสธคำขอเรียบร้อย'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      await vm.reloadApprovalDetail();
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _actionError = 'ปฏิเสธไม่สำเร็จ: $e');
+    } finally {
+      if (mounted) setState(() => _isActing = false);
+    }
+  }
+
+  Future<String?> _promptRemark() async {
+    final ctrl = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('เหตุผลในการปฏิเสธ'),
+        content: TextField(
+          controller: ctrl,
+          maxLines: 3,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'ระบุเหตุผล...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () {
+              final txt = ctrl.text.trim();
+              if (txt.isEmpty) return;
+              Navigator.of(ctx).pop(txt);
+            },
+            child: const Text('ปฏิเสธ'),
+          ),
+        ],
+      ),
+    );
+    ctrl.dispose();
+    return result;
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color fg;
+  final Color bg;
+  final bool isLoading;
+  final bool disabled;
+  final VoidCallback onTap;
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.fg,
+    required this.bg,
+    required this.isLoading,
+    required this.disabled,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final opacity = disabled ? 0.5 : 1.0;
+    return Material(
+      color: bg.withOpacity(opacity),
+      borderRadius: BorderRadius.circular(LaRadius.md),
+      child: InkWell(
+        onTap: disabled ? null : onTap,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: LaSpace.sm + 2),
+          alignment: Alignment.center,
+          child: isLoading
+              ? SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(fg),
+                  ),
+                )
+              : Row(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 16, color: fg),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: TextStyle(
+                        color: fg,
+                        fontFamily: LaText.fontBold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
     );

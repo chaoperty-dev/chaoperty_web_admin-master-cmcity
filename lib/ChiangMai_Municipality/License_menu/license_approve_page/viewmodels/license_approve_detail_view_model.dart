@@ -10,10 +10,10 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../Model/Review_Model.dart';
-import '../../../unity/API_requests_reviews.dart';
 import '../models/license_approve_detail_extended.dart';
 import '../services/license_approve_action_service.dart';
 import '../services/license_approve_detail_service.dart';
+import '../services/license_approve_review_detail_service.dart';
 
 class LicenseApproveDetailViewModel extends ChangeNotifier {
   /// Step ของหน้า detail:
@@ -48,6 +48,8 @@ class LicenseApproveDetailViewModel extends ChangeNotifier {
 
   ReviewModel? _currentRequest;
   ReviewModel? get currentRequest => _currentRequest;
+
+  final _reviewDetailService = LicenseApproveReviewDetailService();
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -112,28 +114,9 @@ class LicenseApproveDetailViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
-      final res = await read_GC_Reviews(
-        query: uuid,
-        fild: [
-          {
-            'ser': '0',
-            'st': '1',
-            'title': 'รหัสรายการ',
-            'value': 'uuid',
-          }
-        ],
-      );
-      final hit = res.data.where((m) => m.uuid == uuid).toList();
-      if (hit.isNotEmpty) {
-        _currentRequest = hit.first;
-        _loadError = null;
-      } else if (res.data.isNotEmpty) {
-        _currentRequest = res.data.first;
-        _loadError = null;
-      } else {
-        _currentRequest = null;
-        _loadError = 'ไม่พบข้อมูลคำขอ (uuid: $uuid)';
-      }
+      final model = await _reviewDetailService.fetchReviewByUuid(uuid: uuid);
+      _currentRequest = model;
+      _loadError = null;
     } catch (e) {
       _currentRequest = null;
       _loadError = 'โหลดข้อมูลไม่สำเร็จ: $e';

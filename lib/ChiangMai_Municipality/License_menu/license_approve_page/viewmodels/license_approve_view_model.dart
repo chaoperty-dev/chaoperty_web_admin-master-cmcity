@@ -327,8 +327,14 @@ class LicenseApproveViewModel extends ChangeNotifier {
   /// ผู้ใช้กดปุ่ม "สร้างคำขอ" → ให้ View เปิด popup
 
   /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → ส่ง event ให้ View เปิด full-page route
+  /// ลำดับความสำคัญของ uuid:
+  ///   1. newRequest.requestUuid (request_uuid ใน v1 namespace)
+  ///   2. requestUuid (top-level request_uuid)
+  ///   3. uuid (step_uuid — fallback)
+  /// endpoint /admin/approvals/{uuid}/review ต้องการ request_uuid (v1)
   void onViewRequest(ReviewModel model) {
     final uuid = model.newRequest?.requestUuid?.toString() ??
+        model.requestUuid?.toString() ??
         model.uuid?.toString() ??
         '';
     _eventController.add(

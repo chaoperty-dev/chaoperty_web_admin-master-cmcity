@@ -57,7 +57,7 @@ class RegistrationTable extends StatelessWidget {
                     model: paged[i],
                     maskedName:
                         _maskName(paged[i].cname ?? paged[i].sname ?? '-'),
-                    maskedTax: _maskTax(paged[i].taxno ?? '-'),
+                    maskedTax: _maskTax(_resolveTax(paged[i])),
                     maskedPhone:
                         _maskPhone(formatPhoneNumber(paged[i].tel ?? '')),
                     onView: () => vm.onViewTenant(paged[i]),
@@ -182,8 +182,8 @@ class RegistrationTable extends StatelessWidget {
             flex: 2,
           ),
           _CopyCell(
-            value: _maskTax(model.taxno ?? '-'),
-            copyValue: model.taxno ?? '',
+            value: _maskTax(_resolveTax(model)),
+            copyValue: _resolveTax(model),
             flex: 2,
             isMono: true,
           ),
@@ -210,6 +210,15 @@ class RegistrationTable extends StatelessWidget {
       ),
     );
   }
+  /// Resolve tax id — fallback taxno → tax → '-'
+  String _resolveTax(CustomerReportItem model) {
+    final taxno = (model.taxno ?? '').trim();
+    if (taxno.isNotEmpty) return taxno;
+    final tax = (model.tax ?? '').trim();
+    if (tax.isNotEmpty) return tax;
+    return '-';
+  }
+
   /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
   String _maskName(String raw) {
     final name = raw.trim();
