@@ -14,11 +14,13 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../Constant/Myconstant.dart';
+import '../../../../Model/AreaOverview_Model.dart';
 import '../../../../Model/GetArea_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../Model/AnnouncementZone_Model.dart';
 import '../../../Model/Person&Shop_Model.dart';
+import '../../../Model/Properties_Model.dart';
 import '../models/billing_models.dart';
 import '../models/license_contract_config.dart';
 import '../models/license_contract_event.dart';
@@ -354,7 +356,17 @@ class LicenseContractViewModel extends ChangeNotifier {
   }
 
   Future<void> loadAreas(String? zoneSer) async {
-    _zoneAreas = await _service.fetchAreas(zoneSer: zoneSer);
+    // ── ใช้ API ใหม่ /admin/reports/areas/overview (ทดแทน GC_areaAll.php + properties join) ──
+    try {
+      final overview =
+          await _service.fetchAreasOverview(zoneSer: zoneSer);
+      _zoneAreas = overview.items
+          .map((it) => _mapOverviewToAreaModel(it))
+          .toList();
+    } catch (e) {
+      _zoneAreas = [];
+      _emitError('โหลดข้อมูลพื้นที่เช่าไม่สำเร็จ: $e');
+    }
     notifyListeners();
   }
 
@@ -366,6 +378,78 @@ class LicenseContractViewModel extends ChangeNotifier {
       return;
     }
     await loadAreas(zoneSer);
+  }
+
+  // ── Map helper: AreaOverviewItem → AreaModel (เพื่อให้ widget layer ไม่ต้องเปลี่ยน) ──
+  // หมายเหตุ: ฟิลด์ที่ overview API ยังไม่ส่ง (stype, sdate, ldate, ln, cname, sname_q)
+  // จะถูกดึงจาก `requester` object ถ้ามี — ถ้าไม่มีจะเป็น null (widget จะซ่อนแถวนั้น)
+  AreaModel _mapOverviewToAreaModel(AreaOverviewItem item) {
+    String? _str(dynamic v) {
+      if (v == null) return null;
+      final s = v.toString();
+      return s.isEmpty ? null : s;
+    }
+
+    String? _lookup(List<String> keys) {
+      for (final k in keys) {
+        final v = item.requester?[k];
+        final s = _str(v);
+        if (s != null) return s;
+      }
+      return null;
+    }
+
+    // ── เตรียม PropertiesModel stub (ถ้ามี request) ──
+    //    เพื่อให้ area_info_card / zone_dropdown_row แสดงสถานะ "กำลังดำเนินการ/Step X"
+    List<PropertiesModel> props = const [];
+    if (item.hasRequest && item.requester != null) {
+      final stubReq = NewRequest(
+        uuid: item.requester?['uuid']?.toString() ?? item.requestUuid,
+        requestUuid: item.requestUuid,
+        zn: item.zone,
+        ln: item.lock ?? item.lockCode,
+        requestStatus: _str(item.requester?['request_status'] ??
+            item.requester?['status'] ??
+            item.status),
+        requestStep: _str(item.requester?['request_step'] ??
+            item.requester?['step']),
+        sdate: _lookup(const ['sdate', 'desired_start_date']),
+        ldate: _lookup(const ['ldate']),
+      );
+      final stubClient = Client(
+        uuid: item.customerUuid,
+        scname: _str(item.requester?['scname'] ??
+            item.requester?['client']?['scname'] ??
+            item.requester?['name']),
+      );
+      props = [PropertiesModel(newRequest: stubReq, client: stubClient)];
+    }
+
+    // ── lockStatus convention (assumption): 1 = occupied, อื่นๆ = vacant
+    //    ถ้า API ส่งค่าอื่น (เช่น 0/2) ให้ปรับตรงนี้ภายหลัง
+    final isOccupiedByLock = item.lockStatus?.toString() == '1';
+    final quantity = isOccupiedByLock ? '1' : '0';
+
+    // ── ser จาก lock_code (fallback lock) — ใช้เป็น key สำหรับ join ภายใน VM
+    final ser = item.lock ?? item.lockCode;
+
+    return AreaModel(
+      ser: ser,
+      zser: _getZoneSer(item.zone), // map zone name → zone ser จาก _zoneModels ที่โหลดไว้แล้ว
+      lncode: ser,
+      ln: _lookup(const ['ln', 'address']),
+      area: _str(item.area),
+      rent: _str(item.lockRent),
+      zn: item.zone,
+      stype: _lookup(const ['stype', 'product_type']),
+      cname: _lookup(const ['cname', 'client_name']),
+      sname: _lookup(const ['sname', 'scname']),
+      sname_q: _lookup(const ['sname_q']),
+      sdate: _lookup(const ['sdate', 'desired_start_date']),
+      ldate: _lookup(const ['ldate']),
+      quantity: quantity,
+      properties: props,
+    );
   }
 
   // ===============================================================

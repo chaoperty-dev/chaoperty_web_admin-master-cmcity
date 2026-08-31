@@ -12,6 +12,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Constant/Myconstant.dart';
 import '../../../../Constant/api_cache.dart';
+import '../../../../Model/AreaOverview_Model.dart';
 import '../../../../Model/GetArea_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
@@ -268,5 +269,58 @@ class LicenseContractService {
   Future<String?> _getRenTalSer() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('renTalSer');
+  }
+
+  // ---------- Areas Overview (NEW — ทดแทน GC_areaAll.php + properties join) ----------
+  /// โหลด "ภาพรวมพื้นที่เช่า" ทั้งหมดจาก API ใหม่:
+  ///   GET {domain_v2}/admin/reports/areas/overview?zser=<zoneSer>
+  ///
+  /// - zser = null/0/'0' → ไม่ส่ง query (ดูทั้งหมด)
+  /// - zser อื่นๆ → filter ตามโซน
+  ///
+  /// คืน AreaOverviewResponse (items[] + totals)
+  /// ถ้า response ไม่ใช่ 200 / JSON parse พัง → throw
+  Future<AreaOverviewResponse> fetchAreasOverview({String? zoneSer}) async {
+    final headers = await MyHeaders.build();
+
+    final z = (zoneSer == null || zoneSer == '0') ? '' : zoneSer;
+    final url = Uri.parse(
+      '${MyConstant().domain_v2}/admin/reports/areas/overview'
+      '${z.isEmpty ? '' : '?zser=$z'}',
+    );
+
+    // ignore: avoid_print
+    print('[fetchAreasOverview] URL = $url');
+    final http.Response response;
+    try {
+      response = await http.get(url, headers: headers);
+    } catch (e) {
+      throw Exception('ไม่สามารถเชื่อมต่อ API overview: $e');
+    }
+
+    // ignore: avoid_print
+    print(
+        '[fetchAreasOverview] status=${response.statusCode} bodyLen=${response.body.length}');
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          'โหลด Areas Overview ไม่สำเร็จ (status: ${response.statusCode})');
+    }
+
+    final Map<String, dynamic> body;
+    try {
+      body = json.decode(response.body) as Map<String, dynamic>;
+    } catch (e) {
+      throw Exception('รูปแบบ JSON ไม่ถูกต้อง: $e');
+    }
+
+    final data = body['data'];
+    if (data is! Map) {
+      throw Exception('response.data ไม่ใช่ object');
+    }
+    final Map<String, dynamic> dataMap =
+        data is Map<String, dynamic> ? data : Map<String, dynamic>.from(data);
+
+    return AreaOverviewResponse.fromJson(dataMap);
   }
 }
