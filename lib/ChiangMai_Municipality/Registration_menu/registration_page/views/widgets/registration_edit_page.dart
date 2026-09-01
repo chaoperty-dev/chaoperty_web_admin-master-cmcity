@@ -144,7 +144,7 @@ class _RegistrationEditPageBodyState extends State<_RegistrationEditPageBody> {
 
   void _prefillControllers(CustomerModel c) {
     _nameshop.text = c.scname ?? '';
-    _typeshop.text = c.type ?? '';
+    _typeshop.text = c.stype ?? '';
     _selectedType = c.type ?? '';
     _bussshop.text = c.cname ?? '';
     _bussscontact.text = c.attn ?? '';
@@ -318,6 +318,7 @@ class _RegistrationEditPageBodyState extends State<_RegistrationEditPageBody> {
       putIfNotEmpty('sname', _nameshop.text);
       putIfNotEmpty('cname', bussscontact);
       putIfNotEmpty('attn', _bussshop.text);
+      putIfNotEmpty('stype', _typeshop.text);
       putIfNotEmpty('taxno', _tax.text);
       putIfNotEmpty('tel', _tel.text);
       putIfNotEmpty('email', _email.text);

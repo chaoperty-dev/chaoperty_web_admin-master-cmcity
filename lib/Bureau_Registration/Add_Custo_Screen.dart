@@ -347,7 +347,7 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
         'sname': Status4Form_nameshop.text.trim(),
         'cname': bussscontact,
         'attn': Status4Form_bussshop.text.trim(),
-        'typeshop': Status4Form_typeshop.text.trim(),
+        'stype': Status4Form_typeshop.text.trim(),
         'taxno': Status4Form_tax.text.trim(),
         'tel': Status4Form_tel.text.trim(),
         'email': Status4Form_email.text.trim(),
