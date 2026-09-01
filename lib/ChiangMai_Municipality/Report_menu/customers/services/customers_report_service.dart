@@ -326,6 +326,83 @@ class CustomersReportService {
   }
 
   // ===============================================================
+  // GET /v1/admin/c-customers (Laravel paginated)
+  // - ใช้สำหรับเมนู "ทะเบียนผู้เช่า"
+  // - response shape: { data: [...], meta: { current_page, last_page,
+  //     per_page, total, from, to }, links: { first, last, prev, next } }
+  // - addr_2 ตอนนี้เป็น **object** ไม่ใช่ string — encode กลับเป็น JSON
+  //   string เพื่อให้ code เดิม (registration_edit_page.dart) ใช้ต่อได้
+  // ===============================================================
+  Future<List<CustomerReportItem>> fetchCCustomersAll({
+    int perPage = 50,
+    bool forceRefresh = false,
+  }) async {
+    // Cache (หน้าเดียว) — full list ขึ้นกับ TTL
+    if (!forceRefresh &&
+        _itemsCache != null &&
+        _itemsCacheTime != null) {
+      final age = DateTime.now().difference(_itemsCacheTime!);
+      if (age < _cacheTtl) {
+        return _itemsCache!.items;
+      }
+    }
+
+    try {
+      final headers = await _buildHeaders();
+      final aggregated = <CustomerReportItem>[];
+      int currentPage = 1;
+      int? lastPage;
+      int total = 0;
+
+      while (true) {
+        final url = '${MyConstant().domain_v1}/admin/c-customers'
+            '?page=$currentPage&per_page=$perPage';
+        print('🔗 fetchCCustomersAll: $url');
+        final res = await _client
+            .get(Uri.parse(url), headers: headers)
+            .timeout(const Duration(seconds: 30));
+
+        if (res.statusCode != 200) {
+          print('❌ fetchCCustomersAll status: ${res.statusCode}');
+          break;
+        }
+
+        final result =
+            await compute(_parseCCustomersPageIsolate, res.body);
+        if (result.items.isEmpty && currentPage == 1) {
+          // empty list
+          break;
+        }
+        aggregated.addAll(result.items);
+        total = result.total;
+        lastPage = result.lastPage;
+
+        print(
+            '✅ fetchCCustomersAll page $currentPage/${lastPage ?? "?"} — '
+            '+${result.items.length} (total so far: ${aggregated.length})');
+
+        if (lastPage == null || currentPage >= lastPage) break;
+        currentPage++;
+        if (currentPage > 200) {
+          // safety — กัน loop ไม่จบ
+          print('⚠️ fetchCCustomersAll: reached page guard 200, stop');
+          break;
+        }
+      }
+
+      // อัปเดต itemsCache (เก็บเป็น CustomerReportResult เดิม)
+      _itemsCache = CustomerReportResult(total: total, items: aggregated);
+      _itemsCacheTime = DateTime.now();
+      print(
+          '✅ fetchCCustomersAll done: ${aggregated.length} items (total=$total)');
+      return aggregated;
+    } catch (e, st) {
+      print('❌ fetchCCustomersAll error: $e\n$st');
+      return const <CustomerReportItem>[];
+    }
+  }
+
+  // ===============================================================
   // Headers (Bearer token)
   // ===============================================================
   Future<Map<String, String>> _buildHeaders() async {
@@ -393,4 +470,57 @@ List<CustomerReportColumn> _parseCustomersColumnsIsolate(String body) {
       .whereType<Map<String, dynamic>>()
       .map((m) => CustomerReportColumn.fromJson(m))
       .toList(growable: false);
+}
+
+/// ✅ Parse /v1/admin/c-customers page (Laravel paginated shape)
+/// - data: List of items
+/// - meta.current_page, meta.last_page, meta.per_page, meta.total
+/// - addr_2 (object) → encode กลับเป็น JSON string เพื่อ backward compat
+class _CCustomerPage {
+  final List<CustomerReportItem> items;
+  final int total;
+  final int? lastPage;
+  const _CCustomerPage({
+    required this.items,
+    required this.total,
+    this.lastPage,
+  });
+}
+
+_CCustomerPage _parseCCustomersPageIsolate(String body) {
+  final jsonRes = json.decode(body);
+  if (jsonRes is! Map<String, dynamic>) {
+    return const _CCustomerPage(items: [], total: 0, lastPage: null);
+  }
+
+  final data = jsonRes['data'];
+  if (data is! List) {
+    return const _CCustomerPage(items: [], total: 0, lastPage: null);
+  }
+
+  final items = data
+      .whereType<Map<String, dynamic>>()
+      .map((m) {
+        // normalize addr_2: object/Map → JSON string
+        final raw = m['addr_2'];
+        if (raw is Map) {
+          m = Map<String, dynamic>.from(m);
+          m['addr_2'] = json.encode(raw);
+        }
+        return CustomerReportItem.fromJsonSafe(m);
+      })
+      .whereType<CustomerReportItem>()
+      .toList(growable: false);
+
+  int? total;
+  int? lastPage;
+  final meta = jsonRes['meta'];
+  if (meta is Map) {
+    if (meta['total'] is num) total = (meta['total'] as num).toInt();
+    if (meta['last_page'] is num) {
+      lastPage = (meta['last_page'] as num).toInt();
+    }
+  }
+
+  return _CCustomerPage(items: items, total: total ?? 0, lastPage: lastPage);
 }

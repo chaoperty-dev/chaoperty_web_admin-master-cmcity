@@ -20,17 +20,18 @@ import '../../services/areas_report_service.dart';
 import '../../../customers/views/theme/customers_report_theme.dart';
 
 // ─── Excel-like constants ───
-const double _kHeaderH = 46;
-const double _kRowH = 34;
-const double _kNumW = 44;
-const double _kViewH = 460;
-const Color _kHeadFill = Color(0xFFF1F3F4);
-const Color _kGrid = Color(0xFFD0D7DE);
-const Color _kGridStrong = Color(0xFFB6BEC8);
-const Color _kZebra = Color(0xFFF8F9FA);
+const double _kHeaderH = 48;
+const double _kRowH = 36;
+const double _kNumW = 48;
+const double _kViewH = 360;
+const Color _kHeadFill = Color(0xFFF6F8FB);
+const Color _kGrid = Color(0xFFE3E8EE);
+const Color _kGridStrong = Color(0xFFCBD2DA);
+const Color _kZebra = Color(0xFFFAFBFC);
+const Color _kEmptyFill = Color(0xFFF9FAFB);
 const Color _kHeadText = Color(0xFF5F6368);
-const Color _kHeadLabel = Color(0xFF202124);
-const Color _kBodyText = Color(0xFF202124);
+const Color _kHeadLabel = Color(0xFF1F2937);
+const Color _kMutedText = Color(0xFFB8C0CC);
 
 /// Snapshot ของ state ที่ preview ต้องใช้
 class _PreviewData {
@@ -107,7 +108,7 @@ class AreasReportPreview extends StatelessWidget {
                     Text(
                       visible.isEmpty
                           ? 'ยังไม่เลือกคอลัมน์'
-                          : '${visible.length} คอลัมน์ · 10 แถว (จำลอง)',
+                          : '${visible.length} คอลัมน์ · โครงสร้างตัวอย่าง',
                       style: CrText.bodyMuted.copyWith(
                         color: CrColors.primary,
                         fontSize: 13,
@@ -128,8 +129,8 @@ class AreasReportPreview extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(
                     CrSpace.md, 0, CrSpace.md, CrSpace.md),
                 child: Text(
-                  'ข้อมูลนี้เป็นการจำลอง (mock) เพื่อดูรูปแบบก่อนส่งออก '
-                  'เมื่อกดดาวน์โหลดจะใช้ข้อมูลจริงจากระบบ',
+                  'โครงสร้างตารางตัวอย่างเท่านั้น — '
+                  'ข้อมูลจริงจะถูกส่งออกเมื่อกดดาวน์โหลด',
                   style: CrText.caption.copyWith(color: CrColors.textMuted),
                 ),
               ),
@@ -165,120 +166,9 @@ class _EmptyPreview extends StatelessWidget {
 }
 
 /// ============================================================
-/// ข้อมูลจำลอง 10 แถว (เหมือน Excel sheet)
+/// โครงสร้างตารางตัวอย่าง — ไม่แสดงข้อมูลจริง (empty placeholder)
 /// ============================================================
-const List<AreasReportItem> _mockRows = [
-  AreasReportItem(
-    subzone: 'SZ-A',
-    zone: 'โซน A',
-    lock: 'L-001',
-    requester: 'นายสมชาย ใจดี',
-    customerNo: 'C-1001',
-    customerTel: '081-234-5678',
-    sdate: '2024-01-15',
-    ldate: '2025-01-14',
-    status: 'active',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-B',
-    zone: 'โซน B',
-    lock: 'L-014',
-    requester: 'นางสาวสมหญิง รักเรียน',
-    customerNo: 'C-1002',
-    customerTel: '082-345-6789',
-    sdate: '2024-02-20',
-    ldate: '2025-02-19',
-    status: 'active',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-C',
-    zone: 'โซน C',
-    lock: 'L-027',
-    requester: 'นายวิชัย สุขสบาย',
-    customerNo: 'C-1003',
-    customerTel: '083-456-7890',
-    sdate: '2024-03-10',
-    ldate: '2025-03-09',
-    status: 'pending',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-D',
-    zone: 'โซน D',
-    lock: 'L-032',
-    requester: 'นางสุดา ภู่วงศ์',
-    customerNo: 'C-1004',
-    customerTel: '084-567-8901',
-    sdate: '2024-04-05',
-    ldate: '2025-04-04',
-    status: 'active',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-E',
-    zone: 'โซน E',
-    lock: 'L-045',
-    requester: 'นายอนันต์ คงทน',
-    customerNo: 'C-1005',
-    customerTel: '085-678-9012',
-    sdate: '2024-05-12',
-    ldate: '2025-05-11',
-    status: 'expired',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-F',
-    zone: 'โซน F',
-    lock: 'L-058',
-    requester: 'นางสาวปิยะ มานะ',
-    customerNo: 'C-1006',
-    customerTel: '086-789-0123',
-    sdate: '2024-06-18',
-    ldate: '2025-06-17',
-    status: 'active',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-G',
-    zone: 'โซน G',
-    lock: 'L-061',
-    requester: 'นายเกียรติ ชื่นชม',
-    customerNo: 'C-1007',
-    customerTel: '087-890-1234',
-    sdate: '2024-07-22',
-    ldate: '2025-07-21',
-    status: 'pending',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-H',
-    zone: 'โซน H',
-    lock: 'L-077',
-    requester: 'นางรัตนา แสงทอง',
-    customerNo: 'C-1008',
-    customerTel: '088-901-2345',
-    sdate: '2024-08-30',
-    ldate: '2025-08-29',
-    status: 'active',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-I',
-    zone: 'โซน I',
-    lock: 'L-082',
-    requester: 'นายธนู พลธนู',
-    customerNo: 'C-1009',
-    customerTel: '089-012-3456',
-    sdate: '2024-09-14',
-    ldate: '2025-09-13',
-    status: 'active',
-  ),
-  AreasReportItem(
-    subzone: 'SZ-J',
-    zone: 'โซน J',
-    lock: 'L-095',
-    requester: 'นางสาวเอื้อมพร ทองคำ',
-    customerNo: 'C-1010',
-    customerTel: '090-123-4567',
-    sdate: '2024-10-01',
-    ldate: '2025-09-30',
-    status: 'expired',
-  ),
-];
+const int _kPreviewRows = 6;
 
 String _colLetter(int index) {
   String s = '';
@@ -374,7 +264,7 @@ class _PreviewTableState extends State<_PreviewTable> {
                   physics: const NeverScrollableScrollPhysics(),
                   child: Column(
                     children: [
-                      for (int i = 0; i < _mockRows.length; i++)
+                      for (int i = 0; i < _kPreviewRows; i++)
                         _RowNumberCell(i),
                     ],
                   ),
@@ -405,10 +295,9 @@ class _PreviewTableState extends State<_PreviewTable> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (int i = 0; i < _mockRows.length; i++)
+                          for (int i = 0; i < _kPreviewRows; i++)
                             _DataRow(
                               index: i,
-                              item: _mockRows[i],
                               columns: widget.columns,
                               widths: widths,
                             ),
@@ -546,12 +435,10 @@ class _HeaderCell extends StatelessWidget {
 
 class _DataRow extends StatelessWidget {
   final int index;
-  final AreasReportItem item;
   final List<AreasReportColumn> columns;
   final Map<String, double> widths;
   const _DataRow({
     required this.index,
-    required this.item,
     required this.columns,
     required this.widths,
   });
@@ -563,26 +450,26 @@ class _DataRow extends StatelessWidget {
       children: [
         for (final c in columns)
           Container(
-            width: widths[c.field],
+            width: widths[c.field]!,
             height: _kRowH,
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: zebra ? Colors.white : _kZebra,
+              color: zebra ? _kEmptyFill : _kZebra,
               border: const Border(
                 right: BorderSide(color: _kGrid, width: 1),
                 bottom: BorderSide(color: _kGrid, width: 1),
               ),
             ),
-            child: Text(
-              item.getBy(c.field) ?? '-',
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontFamily: 'monospace',
-                color: _kBodyText,
+            child: Center(
+              child: Container(
+                width: widths[c.field]! * 0.55,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: _kMutedText.withOpacity(.35),
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
       ],

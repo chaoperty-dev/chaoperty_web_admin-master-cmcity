@@ -18,17 +18,18 @@ import '../../services/customers_report_service.dart';
 import '../theme/customers_report_theme.dart';
 
 // ─── Excel-like constants ───
-const double _kHeaderH = 46;
-const double _kRowH = 34;
-const double _kNumW = 44;
-const double _kViewH = 460;
-const Color _kHeadFill = Color(0xFFF1F3F4);
-const Color _kGrid = Color(0xFFD0D7DE);
-const Color _kGridStrong = Color(0xFFB6BEC8);
-const Color _kZebra = Color(0xFFF8F9FA);
+const double _kHeaderH = 48;
+const double _kRowH = 36;
+const double _kNumW = 48;
+const double _kViewH = 360;
+const Color _kHeadFill = Color(0xFFF6F8FB);
+const Color _kGrid = Color(0xFFE3E8EE);
+const Color _kGridStrong = Color(0xFFCBD2DA);
+const Color _kZebra = Color(0xFFFAFBFC);
+const Color _kEmptyFill = Color(0xFFF9FAFB);
 const Color _kHeadText = Color(0xFF5F6368);
-const Color _kHeadLabel = Color(0xFF202124);
-const Color _kBodyText = Color(0xFF202124);
+const Color _kHeadLabel = Color(0xFF1F2937);
+const Color _kMutedText = Color(0xFFB8C0CC);
 
 class _PreviewData {
   final List<CustomerReportColumn> columns;
@@ -100,7 +101,7 @@ class CustomersReportPreview extends StatelessWidget {
                     Text(
                       visible.isEmpty
                           ? 'ยังไม่เลือกคอลัมน์'
-                          : '${visible.length} คอลัมน์ · 10 แถว (จำลอง)',
+                          : '${visible.length} คอลัมน์ · โครงสร้างตัวอย่าง',
                       style: CrText.bodyMuted.copyWith(
                         color: CrColors.primary,
                         fontSize: 13,
@@ -121,8 +122,8 @@ class CustomersReportPreview extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(
                     CrSpace.md, 0, CrSpace.md, CrSpace.md),
                 child: Text(
-                  'ข้อมูลนี้เป็นการจำลอง (mock) เพื่อดูรูปแบบก่อนส่งออก '
-                  'เมื่อกดดาวน์โหลดจะใช้ข้อมูลจริงจากระบบ',
+                  'โครงสร้างตารางตัวอย่างเท่านั้น — '
+                  'ข้อมูลจริงจะถูกส่งออกเมื่อกดดาวน์โหลด',
                   style: CrText.caption.copyWith(color: CrColors.textMuted),
                 ),
               ),
@@ -155,240 +156,9 @@ class _EmptyPreview extends StatelessWidget {
 }
 
 /// ============================================================
-/// ข้อมูลจำลอง 10 แถว (ลูกค้า)
+/// โครงสร้างตารางตัวอย่าง — ไม่แสดงข้อมูลจริง (empty placeholder)
 /// ============================================================
-const List<CustomerReportItem> _mockRows = [
-  CustomerReportItem(
-    uuid: 'c-uuid-001',
-    custno: 'K-2001',
-    taxno: '0-1234-56789-01',
-    scname: 'ชัยวัฒน์',
-    sname: 'ชัยวัฒน์',
-    cname: 'บริษัท ชัยวัฒน์ จำกัด (มหาชน)',
-    branch: 'สาขาเชียงใหม่',
-    attn: 'นายสมชาย ใจดี',
-    addr1: '123 ถนนเจ็ดยอด',
-    addr2: 'ต.สุเทพ อ.เมือง',
-    zip: '50200',
-    tel: '053-222-333',
-    tax: '0-1234-56789-01',
-    fax: '053-222-334',
-    email: 'contact@chaiwat.co.th',
-    lineid: '@chaiwat',
-    status: 'active',
-    st: 1,
-    birth: '1980-05-12',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-002',
-    custno: 'K-2002',
-    taxno: '0-2345-67890-02',
-    scname: 'สมหญิง',
-    sname: 'สมหญิง',
-    cname: 'นางสาวสมหญิง รักเรียน',
-    branch: 'สำนักงานใหญ่',
-    attn: 'นางสาวสมหญิง รักเรียน',
-    addr1: '45 ถนนนิมมาน',
-    addr2: 'ต.สุเทพ อ.เมือง',
-    zip: '50200',
-    tel: '053-333-444',
-    tax: '0-2345-67890-02',
-    fax: '053-333-445',
-    email: 'somying@mail.com',
-    lineid: '@somying',
-    status: 'active',
-    st: 1,
-    birth: '1985-09-23',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-003',
-    custno: 'K-2003',
-    taxno: '0-3456-78901-03',
-    scname: 'วิชัย',
-    sname: 'วิชัย',
-    cname: 'นายวิชัย สุขสบาย',
-    branch: 'สาขาเชียงราย',
-    attn: 'นายวิชัย สุขสบาย',
-    addr1: '9 ถนนพหลโยธิน',
-    addr2: 'ต.เวียง อ.เมือง',
-    zip: '57000',
-    tel: '053-444-555',
-    tax: '0-3456-78901-03',
-    fax: '053-444-556',
-    email: 'wichai@mail.com',
-    lineid: '@wichai',
-    status: 'pending',
-    st: 0,
-    birth: '1978-12-01',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-004',
-    custno: 'K-2004',
-    taxno: '0-4567-89012-04',
-    scname: 'สุดา',
-    sname: 'สุดา',
-    cname: 'นางสุดา ภู่วงศ์',
-    branch: 'สาขาลำปาง',
-    attn: 'นางสุดา ภู่วงศ์',
-    addr1: '78 ถนนพหลโยธิน',
-    addr2: 'ต.สวนดอก อ.เมือง',
-    zip: '52000',
-    tel: '054-555-666',
-    tax: '0-4567-89012-04',
-    fax: '054-555-667',
-    email: 'suda@mail.com',
-    lineid: '@suda',
-    status: 'active',
-    st: 1,
-    birth: '1990-03-15',
-    national: 'ไทย',
-    religion: 'อิสลาม',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-005',
-    custno: 'K-2005',
-    taxno: '0-5678-90123-05',
-    scname: 'อนันต์',
-    sname: 'อนันต์',
-    cname: 'นายอนันต์ คงทน',
-    branch: 'สาขาแพร่',
-    attn: 'นายอนันต์ คงทน',
-    addr1: '12 ถนนยันตรกิจ',
-    addr2: 'ต.อารยา อ.เมือง',
-    zip: '54000',
-    tel: '054-666-777',
-    tax: '0-5678-90123-05',
-    fax: '054-666-778',
-    email: 'anan@mail.com',
-    lineid: '@anan',
-    status: 'expired',
-    st: 0,
-    birth: '1975-07-30',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-006',
-    custno: 'K-2006',
-    taxno: '0-6789-01234-06',
-    scname: 'ปิยะ',
-    sname: 'ปิยะ',
-    cname: 'นางสาวปิยะ มานะ',
-    branch: 'สาขาเชียงใหม่',
-    attn: 'นางสาวปิยะ มานะ',
-    addr1: '234 ถนนห้วยแก้ว',
-    addr2: 'ต.ช้างเผือก อ.เมือง',
-    zip: '50300',
-    tel: '053-777-888',
-    tax: '0-6789-01234-06',
-    fax: '053-777-889',
-    email: 'piya@mail.com',
-    lineid: '@piya',
-    status: 'active',
-    st: 1,
-    birth: '1992-11-05',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-007',
-    custno: 'K-2007',
-    taxno: '0-7890-12345-07',
-    scname: 'เกียรติ',
-    sname: 'เกียรติ',
-    cname: 'นายเกียรติ ชื่นชม',
-    branch: 'สำนักงานใหญ่',
-    attn: 'นายเกียรติ ชื่นชม',
-    addr1: '56 ถนนมหิดล',
-    addr2: 'ต.ป่าตัน อ.เมือง',
-    zip: '50100',
-    tel: '053-888-999',
-    tax: '0-7890-12345-07',
-    fax: '053-888-990',
-    email: 'kiat@mail.com',
-    lineid: '@kiat',
-    status: 'pending',
-    st: 0,
-    birth: '1983-02-18',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-008',
-    custno: 'K-2008',
-    taxno: '0-8901-23456-08',
-    scname: 'รัตนา',
-    sname: 'รัตนา',
-    cname: 'นางรัตนา แสงทอง',
-    branch: 'สาขาลำพูน',
-    attn: 'นางรัตนา แสงทอง',
-    addr1: '321 ถนนรอบเมือง',
-    addr2: 'ต.ในเมือง อ.เมือง',
-    zip: '51000',
-    tel: '054-999-000',
-    tax: '0-8901-23456-08',
-    fax: '054-999-001',
-    email: 'rattana@mail.com',
-    lineid: '@rattana',
-    status: 'active',
-    st: 1,
-    birth: '1988-06-25',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-009',
-    custno: 'K-2009',
-    taxno: '0-9012-34567-09',
-    scname: 'ธนู',
-    sname: 'ธนู',
-    cname: 'นายธนู พลธนู',
-    branch: 'สาขาเชียงราย',
-    attn: 'นายธนู พลธนู',
-    addr1: '88 ถนนเจ็ดยอด',
-    addr2: 'ต.เวียง อ.เมือง',
-    zip: '57000',
-    tel: '053-111-222',
-    tax: '0-9012-34567-09',
-    fax: '053-111-223',
-    email: 'thanu@mail.com',
-    lineid: '@thanu',
-    status: 'active',
-    st: 1,
-    birth: '1995-01-09',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-  CustomerReportItem(
-    uuid: 'c-uuid-010',
-    custno: 'K-2010',
-    taxno: '0-0123-45678-10',
-    scname: 'เอื้อมพร',
-    sname: 'เอื้อมพร',
-    cname: 'นางสาวเอื้อมพร ทองคำ',
-    branch: 'สำนักงานใหญ่',
-    attn: 'นางสาวเอื้อมพร ทองคำ',
-    addr1: '10 ถนนนิมมานเหมินท์',
-    addr2: 'ต.สุเทพ อ.เมือง',
-    zip: '50200',
-    tel: '053-222-111',
-    tax: '0-0123-45678-10',
-    fax: '053-222-112',
-    email: 'uemporn@mail.com',
-    lineid: '@uemporn',
-    status: 'expired',
-    st: 0,
-    birth: '1986-08-14',
-    national: 'ไทย',
-    religion: 'พุทธ',
-  ),
-];
+const int _kPreviewRows = 6;
 
 String _colLetter(int index) {
   String s = '';
@@ -475,7 +245,7 @@ class _PreviewTableState extends State<_PreviewTable> {
                   physics: const NeverScrollableScrollPhysics(),
                   child: Column(
                     children: [
-                      for (int i = 0; i < _mockRows.length; i++)
+                      for (int i = 0; i < _kPreviewRows; i++)
                         _RowNumberCell(i),
                     ],
                   ),
@@ -502,10 +272,9 @@ class _PreviewTableState extends State<_PreviewTable> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          for (int i = 0; i < _mockRows.length; i++)
+                          for (int i = 0; i < _kPreviewRows; i++)
                             _DataRow(
                               index: i,
-                              item: _mockRows[i],
                               columns: widget.columns,
                               widths: widths,
                             ),
@@ -646,12 +415,10 @@ class _HeaderCell extends StatelessWidget {
 
 class _DataRow extends StatelessWidget {
   final int index;
-  final CustomerReportItem item;
   final List<CustomerReportColumn> columns;
   final Map<String, double> widths;
   const _DataRow({
     required this.index,
-    required this.item,
     required this.columns,
     required this.widths,
   });
@@ -668,21 +435,21 @@ class _DataRow extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 10),
             alignment: Alignment.centerLeft,
             decoration: BoxDecoration(
-              color: zebra ? Colors.white : _kZebra,
+              color: zebra ? _kEmptyFill : _kZebra,
               border: const Border(
                 right: BorderSide(color: _kGrid, width: 1),
                 bottom: BorderSide(color: _kGrid, width: 1),
               ),
             ),
-            child: Text(
-              item.getBy(c.field) ?? '-',
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontFamily: 'monospace',
-                color: _kBodyText,
+            child: Center(
+              child: Container(
+                width: widths[c.field]! * 0.55,
+                height: 6,
+                decoration: BoxDecoration(
+                  color: _kMutedText.withOpacity(.35),
+                  borderRadius: BorderRadius.circular(3),
+                ),
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
             ),
           ),
       ],
