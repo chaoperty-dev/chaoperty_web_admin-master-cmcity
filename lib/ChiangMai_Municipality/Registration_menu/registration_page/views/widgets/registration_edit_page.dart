@@ -328,9 +328,18 @@ class _RegistrationEditPageBodyState extends State<_RegistrationEditPageBody> {
       putIfNotEmpty('addr_1', _address.trim().isEmpty ? null : _address.trim());
       putIfNotEmpty('zip', _zipcode.text);
 
-      // addr_2 เก็บ JSON parts (เหมือนเดิม)
+      // ✅ API ต้องการ addr_2 เป็น array/object ไม่ใช่ string
+      // _address2 เก็บเป็น JSON string (จาก step 2)
+      // แปลงกลับเป็น Map/Array ก่อนส่ง
       if (_address2.trim().isNotEmpty) {
-        payload['addr_2'] = _address2;
+        try {
+          final decoded = json.decode(_address2);
+          if (decoded is Map || decoded is List) {
+            payload['addr_2'] = decoded;
+          }
+        } catch (_) {
+          // ถ้า parse ไม่ได้ → ไม่ส่ง addr_2 (กัน validation fail)
+        }
       }
 
       // ─── Debug ───
