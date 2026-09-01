@@ -87,13 +87,13 @@ class SettingPage extends StatelessWidget {
 
     // รายการเมนู 6 อัน (ใช้ SetColors.menu* สำหรับสีของแต่ละเมนู)
     final menus = <_MenuItem>[
-      _MenuItem(
-        title: 'ข้อมูลการเช่า',
-        subtitle: 'ตั้งค่าข้อมูลพื้นฐานของระบบ',
-        icon: Icons.info_outline_rounded,
-        color: SetColors.menuRental,
-        route: _MenuRoute.rentalSettings,
-      ),
+      // _MenuItem(
+      //   title: 'ข้อมูลการเช่า',
+      //   subtitle: 'ตั้งค่าข้อมูลพื้นฐานของระบบ',
+      //   icon: Icons.info_outline_rounded,
+      //   color: SetColors.menuRental,
+      //   route: _MenuRoute.rentalSettings,
+      // ),
       _MenuItem(
         title: 'ตั้งค่าพื้นที่',
         subtitle: 'จัดการโซน / พื้นที่เช่า',
