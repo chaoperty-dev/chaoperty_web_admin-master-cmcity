@@ -199,10 +199,22 @@ class RegistrationService {
     }
     final url = '${MyConstant().domain_v1}/admin/c-customers/$uuid';
     final headers = await MyHeaders.build();
+    final bodyStr = json.encode(payload);
+
+    // ─── Debug ───
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    print('🟢 PUT $url');
+    print('   body = $bodyStr');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+
     final res = await _client
-        .put(Uri.parse(url),
-            headers: headers, body: json.encode(payload))
+        .put(Uri.parse(url), headers: headers, body: bodyStr)
         .timeout(const Duration(seconds: 20));
+
+    // ─── Debug response ───
+    print('🟢 response ${res.statusCode}');
+    print('   body = ${res.body}');
+    print('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
     if (res.statusCode != 200 && res.statusCode != 201) {
       final msg = _extractMessage(res.body) ??
