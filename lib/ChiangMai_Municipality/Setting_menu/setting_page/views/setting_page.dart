@@ -85,15 +85,15 @@ class SettingPage extends StatelessWidget {
     final isMobile = SetResponsive.isMobile(context);
     final crossAxisCount = isMobile ? 2 : 3;
 
-    // รายการเมนู 6 อัน (ใช้ SetColors.menu* สำหรับสีของแต่ละเมนู)
+    // รายการเมนู (ใช้ SetColors.menu* สำหรับสีของแต่ละเมนู)
     final menus = <_MenuItem>[
-      // _MenuItem(
-      //   title: 'ข้อมูลการเช่า',
-      //   subtitle: 'ตั้งค่าข้อมูลพื้นฐานของระบบ',
-      //   icon: Icons.info_outline_rounded,
-      //   color: SetColors.menuRental,
-      //   route: _MenuRoute.rentalSettings,
-      // ),
+      _MenuItem(
+        title: 'ข้อมูลการเช่า',
+        subtitle: 'ตั้งค่าข้อมูลพื้นฐานของระบบ',
+        icon: Icons.info_outline_rounded,
+        color: SetColors.menuRental,
+        route: _MenuRoute.rentalSettings,
+      ),
       _MenuItem(
         title: 'ตั้งค่าพื้นที่',
         subtitle: 'จัดการโซน / พื้นที่เช่า',
@@ -101,20 +101,20 @@ class SettingPage extends StatelessWidget {
         color: SetColors.menuArea,
         route: _MenuRoute.area,
       ),
-      _MenuItem(
-        title: 'การเช่า',
-        subtitle: 'ตั้งค่าการเช่าและค่าใช้จ่าย',
-        icon: Icons.handshake_outlined,
-        color: SetColors.menuRentalSettings,
-        route: _MenuRoute.rental,
-      ),
-      _MenuItem(
-        title: 'เอกสาร',
-        subtitle: 'จัดการเอกสาร / แบบฟอร์ม',
-        icon: Icons.description_outlined,
-        color: SetColors.menuDocument,
-        route: _MenuRoute.document,
-      ),
+      // _MenuItem(
+      //   title: 'การเช่า',
+      //   subtitle: 'ตั้งค่าการเช่าและค่าใช้จ่าย',
+      //   icon: Icons.handshake_outlined,
+      //   color: SetColors.menuRentalSettings,
+      //   route: _MenuRoute.rental,
+      // ),
+      // _MenuItem(
+      //   title: 'เอกสาร',
+      //   subtitle: 'จัดการเอกสาร / แบบฟอร์ม',
+      //   icon: Icons.description_outlined,
+      //   color: SetColors.menuDocument,
+      //   route: _MenuRoute.document,
+      // ),
       _MenuItem(
         title: 'การรับชำระ',
         subtitle: 'ตั้งค่าช่องทางการรับเงิน',
