@@ -2,8 +2,8 @@
 // registration_view_model.dart
 // ============================================================================
 // ViewModel — จัดการ state + business logic ของหน้า "ทะเบียนผู้เช่า"
-// - ตารางเมนูใช้รายงานลูกค้า (CustomerReportItem) จากรายงานผู้เช่า
-// - filter + search + pagination (client-side)
+// - ตารางเมนูใช้รายงานลูกค้า (CustomerReportItem) จาก /v1/admin/c-customers
+// - ✅ server-side pagination — fetch 1 page ต่อครั้ง (perPage=50)
 // - การแก้ไขทะเบียนยังคงใช้ CustomerModel ผ่าน detail viewmodel
 // ============================================================================
 
@@ -34,21 +34,21 @@ class RegistrationViewModel extends ChangeNotifier {
       StreamController<RegistrationEvent>.broadcast();
   Stream<RegistrationEvent> get events => _eventController.stream;
 
-  // ---------- Data (master + filtered) ----------
-  List<CustomerReportItem> _customers = [];
-  List<CustomerReportItem> _filtered = [];
-  List<CustomerReportItem> get customers => _customers;
-  List<CustomerReportItem> get filtered => _filtered;
+  // ---------- Data (current page) ----------
+  /// รายการที่ fetch มาแล้ว (current page)
+  List<CustomerReportItem> _pagedItems = [];
+  List<CustomerReportItem> get pagedItems => _pagedItems;
+  /// alias (เดิม) — table widget อาจใช้ customers/filtered/paged อยู่
+  List<CustomerReportItem> get customers => _pagedItems;
+  List<CustomerReportItem> get filtered => _pagedItems;
 
-  // ---------- Pagination ----------
+  // ---------- Pagination (server-driven) ----------
   int _currentPage = 1;
+  int _lastPage = 1;
   int _total = 0;
   int get currentPage => _currentPage;
+  int get lastPage => _lastPage;
   int get total => _total;
-  int get lastPage {
-    if (_total == 0) return 0;
-    return ((_total - 1) ~/ perPage) + 1;
-  }
 
   // ---------- UI state ----------
   bool _isLoading = false;
@@ -73,15 +73,8 @@ class RegistrationViewModel extends ChangeNotifier {
   // ---------- Pagination constants ----------
   static const int perPage = 50;
 
-  /// รายการที่จะแสดงในหน้าปัจจุบัน
-  List<CustomerReportItem> get paged {
-    if (_filtered.isEmpty) return const [];
-    final page = _currentPage < 1 ? 1 : _currentPage;
-    final start = (page - 1) * perPage;
-    if (start >= _filtered.length) return const [];
-    final end = (start + perPage).clamp(0, _filtered.length);
-    return _filtered.sublist(start, end);
-  }
+  /// alias — ให้ widget เก่าที่อ้าง .paged ใช้ได้
+  List<CustomerReportItem> get paged => _pagedItems;
 
   // ---------- Config getters ----------
   String get title => _config.title;
@@ -102,12 +95,15 @@ class RegistrationViewModel extends ChangeNotifier {
   // ===============================================================
   // Service calls
   // ===============================================================
+  /// โหลด "หน้าปัจจุบัน" ใหม่ — เรียกหลัง create/update/delete
   Future<void> refresh() async {
     _setLoading(true);
     try {
-      final list = await _service.fetchReportCustomers();
-      _customers = list;
-      _applyFilter();
+      final r = await _service.fetchReportCustomersPage(page: _currentPage);
+      _pagedItems = r.items;
+      _currentPage = r.currentPage ?? _currentPage;
+      _lastPage = r.lastPage ?? 1;
+      _total = r.total;
     } catch (e) {
       _emitError('โหลดข้อมูลไม่สำเร็จ: $e');
     } finally {
@@ -115,61 +111,37 @@ class RegistrationViewModel extends ChangeNotifier {
     }
   }
 
-  void _applyFilter() {
-    // 1) ค้นหาตามคำค้น
-    final q = _searchQuery.trim().toLowerCase();
-    if (q.isEmpty) {
-      _filtered = List<CustomerReportItem>.from(_customers);
-    } else {
-      _filtered = _customers.where((t) {
-        final fields = [
-          t.uuid,
-          t.custno,
-          t.taxno,
-          t.scname,
-          t.sname,
-          t.cname,
-          t.branch,
-          t.attn,
-          t.addr1,
-          t.addr2,
-          t.zip,
-          t.tel,
-          t.tax,
-          t.fax,
-          t.email,
-          t.lineid,
-          t.status,
-          t.birth,
-          t.national,
-          t.religion,
-        ];
-        return fields.any((f) => (f ?? '').toLowerCase().contains(q));
-      }).toList();
-    }
-
-    // 2) กรองตามสถานะ (client-side ตาม field st)
-    if (_selectedStatus != 'ทั้งหมด') {
-      _filtered = _filtered.where((t) {
-        switch (_selectedStatus) {
-          case 'ปัจจุบัน':
-            return t.st == 1;
-          case 'หมดสัญญา':
-            return t.st == 0 || t.st == 2;
-          case 'ใกล้หมดสัญญา':
-            return t.st == 3;
-          default:
-            return true;
-        }
-      }).toList();
-    }
-
-    _total = _filtered.length;
-    final last = lastPage;
-    if (_currentPage < 1) _currentPage = 1;
-    if (_currentPage > last && last > 0) _currentPage = last;
+  /// โหลด "หน้า N" ใหม่จาก server
+  Future<void> loadPage(int page) async {
+    if (page < 1 || page > _lastPage) return;
+    _currentPage = page;
+    await refresh();
   }
 
+  void nextPage() {
+    if (_currentPage < _lastPage) loadPage(_currentPage + 1);
+  }
+
+  void prevPage() {
+    if (_currentPage > 1) loadPage(_currentPage - 1);
+  }
+
+  void _applyFilter() {
+    // ✅ server-driven pagination — filter ทำบนหน้าปัจจุบัน
+    // (ถ้าต้อง filter ทั้งหมด ต้องเรียก search API แยก — ตอนนี้ยังเป็น stub)
+    _pagedItems = List<CustomerReportItem>.from(_pagedItems);
+    _total = _pagedItems.length;
+  }
+
+  void _applySearch() {
+    // เก็บไว้เป็น stub — search แบบ server ต้องเพิ่ม endpoint แยก
+  }
+
+  void _applyStatusFilter() {
+    // เก็บไว้เป็น stub — filter แบบ server ต้องเพิ่ม endpoint แยก
+  }
+
+  /// legacy filter fields ที่ widget เดิมอาจใช้ — คงไว้ไม่ให้พัง
   String? _getField(CustomerReportItem t, String field) {
     switch (field) {
       case 'uuid':
@@ -190,14 +162,12 @@ class RegistrationViewModel extends ChangeNotifier {
         return t.attn;
       case 'tel':
         return t.tel;
-      case 'tax':
-        return t.tax;
       case 'email':
         return t.email;
-      case 'lineid':
-        return t.lineid;
+      case 'tax':
+        return t.tax;
       default:
-        return t.uuid;
+        return null;
     }
   }
 
@@ -213,30 +183,22 @@ class RegistrationViewModel extends ChangeNotifier {
 
   void setSearch(String value) {
     _searchQuery = value;
-    _applyFilter();
     notifyListeners();
   }
 
   void setSearchField(String field) {
     _searchField = field;
-    _applyFilter();
     notifyListeners();
   }
 
   void onStatusChanged(String? value) {
     if (value == null) return;
     _selectedStatus = value;
-    _applyFilter();
     notifyListeners();
   }
 
   Future<void> executeSearch() async {
-    _setLoading(true);
-    try {
-      _applyFilter();
-    } finally {
-      _setLoading(false);
-    }
+    await refresh();
   }
 
   // ===============================================================
@@ -252,7 +214,7 @@ class RegistrationViewModel extends ChangeNotifier {
 
   CustomerReportItem? findTenantByKey(String key) {
     if (key.isEmpty) return null;
-    for (final t in _customers) {
+    for (final t in _pagedItems) {
       if (t.uuid?.toString() == key) return t;
       if (t.custno?.toString() == key) return t;
     }
@@ -262,18 +224,6 @@ class RegistrationViewModel extends ChangeNotifier {
   // ---------- Pagination (alias สำหรับ widget) ----------
   int get computedLastPage => lastPage;
   void goToPage(int page) => loadPage(page);
-
-  // ===============================================================
-  // Pagination
-  // ===============================================================
-  void loadPage(int page) {
-    if (page < 1 || page > lastPage) return;
-    _currentPage = page;
-    notifyListeners();
-  }
-
-  void nextPage() => loadPage(_currentPage + 1);
-  void prevPage() => loadPage(_currentPage - 1);
 
   // ===============================================================
   // Helpers

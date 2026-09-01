@@ -181,7 +181,14 @@ class CustomerReportItem {
 class CustomerReportResult {
   final int total;
   final List<CustomerReportItem> items;
-  const CustomerReportResult({required this.total, required this.items});
+  final int? currentPage;
+  final int? lastPage;
+  const CustomerReportResult({
+    required this.total,
+    required this.items,
+    this.currentPage,
+    this.lastPage,
+  });
 }
 
 // ============================================================================
@@ -326,79 +333,58 @@ class CustomersReportService {
   }
 
   // ===============================================================
-  // GET /v1/admin/c-customers (Laravel paginated)
+  // GET /v1/admin/c-customers (Laravel paginated — single page)
   // - ใช้สำหรับเมนู "ทะเบียนผู้เช่า"
   // - response shape: { data: [...], meta: { current_page, last_page,
   //     per_page, total, from, to }, links: { first, last, prev, next } }
   // - addr_2 ตอนนี้เป็น **object** ไม่ใช่ string — encode กลับเป็น JSON
   //   string เพื่อให้ code เดิม (registration_edit_page.dart) ใช้ต่อได้
+  // - ✅ server-side pagination — ดึงทีละหน้า ไม่ loop ทุกหน้า
   // ===============================================================
-  Future<List<CustomerReportItem>> fetchCCustomersAll({
+  Future<CustomerReportResult> fetchCCustomersPage({
+    int page = 1,
     int perPage = 50,
     bool forceRefresh = false,
   }) async {
-    // Cache (หน้าเดียว) — full list ขึ้นกับ TTL
-    if (!forceRefresh &&
-        _itemsCache != null &&
-        _itemsCacheTime != null) {
-      final age = DateTime.now().difference(_itemsCacheTime!);
-      if (age < _cacheTtl) {
-        return _itemsCache!.items;
-      }
-    }
-
     try {
       final headers = await _buildHeaders();
-      final aggregated = <CustomerReportItem>[];
-      int currentPage = 1;
-      int? lastPage;
-      int total = 0;
+      final url = '${MyConstant().domain_v1}/admin/c-customers'
+          '?page=$page&per_page=$perPage';
+      print('🔗 fetchCCustomersPage: $url');
+      final res = await _client
+          .get(Uri.parse(url), headers: headers)
+          .timeout(const Duration(seconds: 30));
 
-      while (true) {
-        final url = '${MyConstant().domain_v1}/admin/c-customers'
-            '?page=$currentPage&per_page=$perPage';
-        print('🔗 fetchCCustomersAll: $url');
-        final res = await _client
-            .get(Uri.parse(url), headers: headers)
-            .timeout(const Duration(seconds: 30));
-
-        if (res.statusCode != 200) {
-          print('❌ fetchCCustomersAll status: ${res.statusCode}');
-          break;
-        }
-
-        final result =
-            await compute(_parseCCustomersPageIsolate, res.body);
-        if (result.items.isEmpty && currentPage == 1) {
-          // empty list
-          break;
-        }
-        aggregated.addAll(result.items);
-        total = result.total;
-        lastPage = result.lastPage;
-
-        print(
-            '✅ fetchCCustomersAll page $currentPage/${lastPage ?? "?"} — '
-            '+${result.items.length} (total so far: ${aggregated.length})');
-
-        if (lastPage == null || currentPage >= lastPage) break;
-        currentPage++;
-        if (currentPage > 200) {
-          // safety — กัน loop ไม่จบ
-          print('⚠️ fetchCCustomersAll: reached page guard 200, stop');
-          break;
-        }
+      if (res.statusCode != 200) {
+        print('❌ fetchCCustomersPage status: ${res.statusCode}');
+        return const CustomerReportResult(total: 0, items: []);
       }
 
-      // อัปเดต itemsCache (เก็บเป็น CustomerReportResult เดิม)
-      _itemsCache = CustomerReportResult(total: total, items: aggregated);
-      _itemsCacheTime = DateTime.now();
+      final result = await compute(_parseCCustomersPageIsolate, res.body);
       print(
-          '✅ fetchCCustomersAll done: ${aggregated.length} items (total=$total)');
-      return aggregated;
+          '✅ fetchCCustomersPage page ${result.currentPage ?? page}/'
+          '${result.lastPage ?? "?"} — ${result.items.length} items '
+          '(total=${result.total})');
+
+      final cr = CustomerReportResult(
+        total: result.total,
+        items: result.items,
+        currentPage: result.currentPage,
+        lastPage: result.lastPage,
+      );
+
+      // cache เฉพาะหน้าแรก (default view)
+      if (page == 1 && !forceRefresh) {
+        _itemsCache = cr;
+        _itemsCacheTime = DateTime.now();
+      } else if (forceRefresh) {
+        _itemsCache = cr;
+        _itemsCacheTime = DateTime.now();
+      }
+      return cr;
     } catch (e, st) {
-      print('❌ fetchCCustomersAll error: $e\n$st');
-      return const <CustomerReportItem>[];
+      print('❌ fetchCCustomersPage error: $e\n$st');
+      return const CustomerReportResult(total: 0, items: []);
     }
   }
 
@@ -479,10 +465,12 @@ List<CustomerReportColumn> _parseCustomersColumnsIsolate(String body) {
 class _CCustomerPage {
   final List<CustomerReportItem> items;
   final int total;
+  final int? currentPage;
   final int? lastPage;
   const _CCustomerPage({
     required this.items,
     required this.total,
+    this.currentPage,
     this.lastPage,
   });
 }
@@ -490,12 +478,12 @@ class _CCustomerPage {
 _CCustomerPage _parseCCustomersPageIsolate(String body) {
   final jsonRes = json.decode(body);
   if (jsonRes is! Map<String, dynamic>) {
-    return const _CCustomerPage(items: [], total: 0, lastPage: null);
+    return const _CCustomerPage(items: [], total: 0);
   }
 
   final data = jsonRes['data'];
   if (data is! List) {
-    return const _CCustomerPage(items: [], total: 0, lastPage: null);
+    return const _CCustomerPage(items: [], total: 0);
   }
 
   final items = data
@@ -513,14 +501,23 @@ _CCustomerPage _parseCCustomersPageIsolate(String body) {
       .toList(growable: false);
 
   int? total;
+  int? currentPage;
   int? lastPage;
   final meta = jsonRes['meta'];
   if (meta is Map) {
     if (meta['total'] is num) total = (meta['total'] as num).toInt();
+    if (meta['current_page'] is num) {
+      currentPage = (meta['current_page'] as num).toInt();
+    }
     if (meta['last_page'] is num) {
       lastPage = (meta['last_page'] as num).toInt();
     }
   }
 
-  return _CCustomerPage(items: items, total: total ?? 0, lastPage: lastPage);
+  return _CCustomerPage(
+    items: items,
+    total: total ?? 0,
+    currentPage: currentPage,
+    lastPage: lastPage,
+  );
 }

@@ -18,6 +18,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Model/GetCustomer_Model.dart';
 import '../../../../Model/GetType_Model.dart';
+import '../../../Report_menu/customers/services/customers_report_service.dart'
+    show CustomerReportResult;
 
 class RegistrationService {
   RegistrationService({ApiCache? cache})
@@ -34,12 +36,20 @@ class RegistrationService {
   // ===============================================================
   // รายงานลูกค้า (MENU LIST) — CustomerReportItem
   // ===============================================================
-  /// โหลดรายการลูกค้าทั้งหมดจาก `/api/v1/admin/c-customers`
-  /// ใช้แสดงในตาราง "ทะเบียนผู้เช่า"
-  /// - loop ทุกหน้า (Laravel pagination) จนครบ last_page
-  /// - เก็บในแคชเดียวกับรายงาน v2 เพื่อ reuse TTL
-  Future<List<CustomerReportItem>> fetchReportCustomers() async {
-    return _report.fetchCCustomersAll();
+  /// โหลดรายการลูกค้า "ทีละหน้า" จาก `/api/v1/admin/c-customers`
+  /// ใช้แสดงในตาราง "ทะเบียนผู้เช่า" — server-side pagination
+  /// - perPage ค่าเริ่มต้น 50 ตาม Laravel paginator
+  /// - คืน CustomerReportResult { items, total, currentPage, lastPage }
+  Future<CustomerReportResult> fetchReportCustomersPage({
+    int page = 1,
+    int perPage = 50,
+    bool forceRefresh = false,
+  }) async {
+    return _report.fetchCCustomersPage(
+      page: page,
+      perPage: perPage,
+      forceRefresh: forceRefresh,
+    );
   }
 
   // ===============================================================
