@@ -95,7 +95,8 @@ class _LicenseSubmitApprovalDetailPageBodyState
     final vm = context.watch<LicenseSubmitApprovalDetailViewModel>();
     final step = vm.currentDetailStep;
     final total = vm.totalDetailSteps;
-    final subtitle = step == 1 ? 'ตรวจสอบรายส่งคำร้องขออนุมัติ' : 'บันทึกส่งคำร้องขออนุมัติ';
+    final subtitle =
+        step == 1 ? 'ตรวจสอบรายส่งคำร้องขออนุมัติ' : 'ลำดับขั้นตอนการอนุมัติ';
 
     return Scaffold(
       backgroundColor: LaColors.surface,
@@ -124,17 +125,6 @@ class _LicenseSubmitApprovalDetailPageBodyState
               currentStep: step,
               totalSteps: total,
               onNext: step < total ? vm.nextDetailStep : null,
-              onSave: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('บันทึกส่งคำร้องขออนุมัติ (placeholder)'),
-                    behavior: SnackBarBehavior.floating,
-                  ),
-                );
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
-              },
               onCancel: () {
                 if (step > 1) {
                   vm.previousDetailStep();

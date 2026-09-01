@@ -10,10 +10,8 @@
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/FormatPhone.dart';
 import '../theme/license_submit_approval_theme.dart';
 import '../../viewmodels/license_submit_approval_detail_view_model.dart';
 import '../../models/license_submit_approval_detail_model.dart';
@@ -331,9 +329,14 @@ class _SubmitApprovalInfoTab extends StatelessWidget {
 
               const SizedBox(height: LaSpace.lg),
 
-              // ─── Rounds section (UI placeholder) ───
+              // ─── Main action — เริ่มส่งการร้องขออนุมัติ (startRound API) ───
+              // ผูกกับ model.approvalPending:
+              // - false → แสดงปุ่ม (ยังไม่เคยส่ง)
+              // - true  → แสดงสถานะ "ส่งแล้ว" (เคยส่งจาก API แล้ว)
               SubmitApprovalRoundsSection(
-                  requestUuid: step1State.widget.requestUuid),
+                requestUuid: step1State.widget.requestUuid,
+                hasPendingApproval: step1State._detail!.approvalPending,
+              ),
 
               const SizedBox(height: LaSpace.lg),
 
@@ -700,7 +703,7 @@ class _RequestSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: LaSpace.lg),
 
-          // ─── Grid 2 columns ───
+          // ─── Grid 2 columns (matches approve_detail_step1.dart pattern) ───
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -708,25 +711,26 @@ class _RequestSummaryCard extends StatelessWidget {
                 child: _InfoColumn(
                   title: 'ข้อมูลคำขอ',
                   items: [
-                    _InfoItem(
-                      icon: Icons.receipt_long_rounded,
-                      label: 'เลขที่คำร้อง',
-                      value: nr?.leaseNumber,
-                    ),
-                    _InfoItem(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'วันที่ส่งคำร้อง',
-                      value: _formatDate(nr?.ldate),
-                    ),
+                    // [HIDDEN per user request] — keep commented for reference
+                    // _InfoItem(
+                    //   icon: Icons.receipt_long_rounded,
+                    //   label: 'เลขที่สัญญา',
+                    //   value: nr?.leaseNumber,
+                    // ),
+                    // _InfoItem(
+                    //   icon: Icons.calendar_today_rounded,
+                    //   label: 'วันที่สิ้นสุด',
+                    //   value: _formatDate(nr?.ldate),
+                    // ),
                     _InfoItem(
                       icon: Icons.location_on_rounded,
-                      label: 'ประเภท / โซน',
+                      label: 'บริเวณ / โซน',
                       value: _joinZones(nr),
                     ),
                     _InfoItem(
                       icon: Icons.numbers_rounded,
-                      label: 'วิธีการส่งคำร้อง',
-                      value: nr?.ln,
+                      label: 'รหัสพื้นที่',
+                      value: nr.ln,
                       mono: true,
                     ),
                   ],
@@ -740,25 +744,27 @@ class _RequestSummaryCard extends StatelessWidget {
                     _InfoItem(
                       icon: Icons.person_rounded,
                       label: 'ชื่อผู้ติดต่อ',
-                      value: client?.cname,
+                      value: client.cname,
                     ),
+                    // [HIDDEN per user request] — keep commented for reference
+                    // _InfoItem(
+                    //   icon: Icons.phone_rounded,
+                    //   label: 'เบอร์โทร',
+                    //   value: formatPhoneNumber(client?.tel ?? ''),
+                    //   mono: true,
+                    // ),
                     _InfoItem(
-                      icon: Icons.phone_rounded,
-                      label: 'เบอร์โทร',
-                      value: formatPhoneNumber(client?.tel ?? ''),
-                      mono: true,
-                    ),
-                    _InfoItem(
-                      icon: Icons.badge_rounded,
+                      icon: Icons.confirmation_number_rounded,
                       label: 'เลขประจำตัวผู้เสียภาษี',
-                      value: client?.tax,
+                      value: client.tax,
                       mono: true,
                     ),
-                    _InfoItem(
-                      icon: Icons.location_on_outlined,
-                      label: 'ที่อยู่',
-                      value: client?.addr1,
-                    ),
+                    // [HIDDEN per user request] — keep commented for reference
+                    // _InfoItem(
+                    //   icon: Icons.location_on_outlined,
+                    //   label: 'ที่อยู่',
+                    //   value: client?.addr1,
+                    // ),
                   ],
                 ),
               ),
@@ -801,15 +807,16 @@ class _RequestSummaryCard extends StatelessWidget {
     return '${uuid.substring(0, 8)}…';
   }
 
-  String? _formatDate(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    try {
-      final dt = DateTime.parse(raw);
-      return DateFormat('dd/MM/yyyy').format(dt);
-    } catch (_) {
-      return raw;
-    }
-  }
+  // [HIDDEN per user request] วันที่ส่งคำร้อง field commented out
+  // String? _formatDate(String? raw) {
+  //   if (raw == null || raw.isEmpty) return null;
+  //   try {
+  //     final dt = DateTime.parse(raw);
+  //     return DateFormat('dd/MM/yyyy').format(dt);
+  //   } catch (_) {
+  //     return raw;
+  //   }
+  // }
 
   String? _joinZones(NewRequest? nr) {
     if (nr == null) return null;

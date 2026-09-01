@@ -40,34 +40,6 @@ class RegistrationTable extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final isMobile = c.maxWidth < 700;
-        if (isMobile) {
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                if (vm.isLoading)
-                  const LinearProgressIndicator(
-                    minHeight: 2,
-                    backgroundColor: LaColors.surfaceMuted,
-                    valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
-                  ),
-                for (int i = 0; i < paged.length; i++) ...[
-                  _RegistrationCard(
-                    index: i,
-                    model: paged[i],
-                    maskedName:
-                        _maskName(paged[i].cname ?? paged[i].sname ?? '-'),
-                    maskedTax: _maskTax(_resolveTax(paged[i])),
-                    maskedPhone:
-                        _maskPhone(formatPhoneNumber(paged[i].tel ?? '')),
-                    onView: () => vm.onViewTenant(paged[i]),
-                  ),
-                  if (i < paged.length - 1) const SizedBox(height: LaSpace.sm),
-                ],
-              ],
-            ),
-          );
-        }
         return Container(
           decoration: LaDecor.card(),
           child: Column(
@@ -135,8 +107,6 @@ class RegistrationTable extends StatelessWidget {
           _HeaderCell(label: 'เลขประจำตัวผู้เสียภาษี', flex: 2),
           _HeaderCell(label: 'เบอร์โทร', flex: 2),
           _HeaderCell(label: 'อีเมล', flex: 2),
-          _HeaderCell(label: 'Line ID', flex: 2),
-          _HeaderCell(label: 'สถานะ', flex: 1),
         ],
       ),
     );
@@ -151,7 +121,6 @@ class RegistrationTable extends StatelessWidget {
     CustomerReportItem model,
     int index,
   ) {
-    final statusOn = model.st == 1;
     return _HoverableRow(
       index: index,
       onTap: () => vm.onViewTenant(model),
@@ -196,15 +165,6 @@ class RegistrationTable extends StatelessWidget {
           _Cell(
             value: model.email ?? '-',
             flex: 2,
-          ),
-          _Cell(
-            value: model.lineid ?? '-',
-            flex: 2,
-          ),
-          _Cell(
-            value: model.status ?? (statusOn ? 'ใช้งาน' : 'ยกเลิก'),
-            flex: 1,
-            muted: !statusOn,
           ),
         ],
       ),
@@ -305,13 +265,11 @@ class _Cell extends StatelessWidget {
   final String value;
   final int flex;
   final bool isMono;
-  final bool muted;
   final String? tooltip;
   const _Cell({
     required this.value,
     this.flex = 1,
     this.isMono = false,
-    this.muted = false,
     this.tooltip,
   });
 
@@ -331,7 +289,7 @@ class _Cell extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: LaText.tableCell.copyWith(
-              color: muted ? LaColors.textSecondary : LaColors.textPrimary,
+              color: LaColors.textPrimary,
               fontFamily: isMono ? 'monospace' : LaText.fontRegular,
               fontFamilyFallback: const [LaText.fontRegular],
             ),
@@ -922,149 +880,8 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ============================================================================
-// Card layout (mobile / narrow screen)
+// Card layout (mobile / narrow screen) — REMOVED (use table only)
 // ============================================================================
-class _RegistrationCard extends StatelessWidget {
-  final int index;
-  final CustomerReportItem model;
-  final String maskedName;
-  final String maskedTax;
-  final String maskedPhone;
-  final VoidCallback onView;
-  const _RegistrationCard({
-    required this.index,
-    required this.model,
-    required this.maskedName,
-    required this.maskedTax,
-    required this.maskedPhone,
-    required this.onView,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: LaDecor.card(),
-      padding: const EdgeInsets.all(LaSpace.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: LaColors.primaryLight,
-                  borderRadius: BorderRadius.circular(LaRadius.pill),
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: LaText.tableCell.copyWith(
-                    color: LaColors.primaryDark,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: LaSpace.sm),
-              Expanded(
-                child: Text(
-                  maskedName,
-                  style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if ((model.custno ?? model.uuid ?? '').isNotEmpty)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: LaColors.primaryLight.withOpacity(.4),
-                    borderRadius: BorderRadius.circular(LaRadius.pill),
-                  ),
-                  child: Text(
-                    model.custno ?? model.uuid ?? '',
-                    style: LaText.bodyMuted.copyWith(
-                      color: LaColors.primaryDark,
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      fontFamilyFallback: const [LaText.fontRegular],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const Divider(height: LaSpace.lg, color: LaColors.border),
-          _RegCardRow(label: 'เลขประจำตัวผู้เสียภาษี', value: maskedTax, isMono: true),
-          _RegCardRow(label: 'เบอร์โทร', value: maskedPhone, isMono: true),
-          _RegCardRow(label: 'ชื่อร้าน', value: model.scname ?? '-'),
-          _RegCardRow(label: 'อีเมล', value: model.email ?? '-'),
-          _RegCardRow(label: 'Line ID', value: model.lineid ?? '-'),
-          _RegCardRow(
-            label: 'สถานะ',
-            value: model.status ?? (model.st == 1 ? 'ใช้งาน' : 'ยกเลิก'),
-          ),
-          const SizedBox(height: LaSpace.sm),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _ViewButton(onTap: onView),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RegCardRow extends StatelessWidget {
-  final String label;
-  final String? value;
-  final Widget? valueWidget;
-  final bool isMono;
-  const _RegCardRow({
-    required this.label,
-    this.value,
-    this.valueWidget,
-    this.isMono = false,
-  }) : assert(value != null || valueWidget != null,
-            'Either value or valueWidget must be provided');
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: LaText.bodyMuted.copyWith(fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: valueWidget ??
-                Text(
-                  (value ?? '-').isEmpty ? '-' : value!,
-                  style: LaText.tableCell.copyWith(
-                    fontSize: 12,
-                    fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-                    fontFamilyFallback: const [LaText.fontRegular],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _RegStatusPill extends StatefulWidget {
   final bool on;
   final String onLabel;

@@ -8,6 +8,7 @@
 // ============================================================================
 
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -158,67 +159,111 @@ class _RegistrationEditPageBodyState extends State<_RegistrationEditPageBody> {
     _religion.text =
         (c.religion ?? '').trim().isEmpty ? 'พุทธ' : (c.religion ?? '');
 
-    // ที่อยู่ — ลองแยกจาก addr1 หรือใช้ค่าเดิม
-    final addr = (c.addr1 ?? '').trim();
-    if (addr.isNotEmpty) {
-      // พยายามแยก field จาก string เช่น "123/45 หมู่ 2 ถ.X ต.Y อ.Z จ.W 50000"
-      _parseAddress(addr, c.zip ?? '');
-    } else if ((c.addr2 ?? '').trim().isNotEmpty) {
-      _parseAddress(c.addr2 ?? '', c.zip ?? '');
+    // ที่อยู่ — ลอง parse addr_2 (JSON) ก่อน มี field ครบ
+    // ถ้าไม่สำเร็จ fallback ไป parse addr_1 (string เต็ม)
+    final addr2Json = _parseAddr2Json(c.addr2);
+    final addr1 = (c.addr1 ?? '').trim();
+    final hasAddr2 = addr2Json != null;
+
+    if (hasAddr2) {
+      _houseNo.text = (addr2Json['number'] ?? '').toString();
+      _moo.text = (addr2Json['moo'] ?? '').toString();
+      _soi.text = (addr2Json['soi'] ?? '').toString();
+      _street.text = (addr2Json['road'] ?? '').toString();
+      _subDistrict.text = (addr2Json['tambon'] ?? '').toString();
+      _district.text = (addr2Json['amphoe'] ?? '').toString();
+      _province.text = (addr2Json['province'] ?? '').toString();
+      _zipcode.text = (addr2Json['zip'] ?? '').toString();
     }
-    _address = addr.isNotEmpty ? addr : (c.addr2 ?? '');
+    // fallback เฉพาะ field ที่ยังว่าง
+    if (addr1.isNotEmpty) {
+      _parseAddress(addr1, c.zip ?? '');
+    }
+
+    _address = addr1.isNotEmpty ? addr1 : (c.addr2 ?? '');
   }
 
-  /// Parse address string เป็น controllers
+  /// Decode addr_2 JSON → Map หรือ null ถ้าไม่ใช่ JSON
+  Map<String, dynamic>? _parseAddr2Json(String? raw) {
+    final s = (raw ?? '').trim();
+    if (s.isEmpty) return null;
+    try {
+      final decoded = json.decode(s);
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Parse address string เป็น controllers (fallback เมื่อไม่มี addr_2 JSON)
+  /// รองรับ:
+  /// - "เลขที่ N..." / "N/..." → _houseNo
+  /// - "หมู่ N" → _moo
+  /// - "ซ.N" → _soi
+  /// - "ถ.X" → _street
+  /// - "ต.X" → _subDistrict, "อ.X" → _district, "จ.X" → _province
   void _parseAddress(String addr, String zip) {
-    // ตัวอย่าง: "123/45 หมู่ 2 ถ.นิมมานเหมินท์ ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50000"
     String s = addr;
 
-    // บ้านเลขที่ + หมู่
-    final mooMatch = RegExp(r'(?:^|\s)(?:หมู่\s*)?(\d+)(?:\s|$)').firstMatch(s);
-    // ถนน
+    // ถนน (ถ.X)
     final streetMatch =
-        RegExp(r'ถ\.([^\s]+(?:\s[^\s]+)*?)(?=\sต\.|\sอ\.|\sจ\.|\s\d{5}|$)')
+        RegExp(r'ถ\.([^\s]+(?:\s[^\s]+)*?)(?=\sซ\.|\sต\.|\sอ\.|\sจ\.|\s\d{5}|$)')
             .firstMatch(s);
+    if (streetMatch != null && _street.text.trim().isEmpty) {
+      _street.text = streetMatch.group(1)?.trim() ?? '';
+    }
+
+    // ซอย (ซ.X) — เช่น "ซ.3"
+    final soiMatch =
+        RegExp(r'ซ\.([^\s]+(?:\s[^\s]+)*?)(?=\sถ\.|\sต\.|\sอ\.|\sจ\.|\s\d{5}|$)')
+            .firstMatch(s);
+    if (soiMatch != null && _soi.text.trim().isEmpty) {
+      _soi.text = soiMatch.group(1)?.trim() ?? '';
+    }
+
     // ตำบล
     final tambonMatch =
         RegExp(r'ต\.([^\s]+(?:\s[^\s]+)*?)(?=\sอ\.|\sจ\.|\s\d{5}|$)')
             .firstMatch(s);
+    if (tambonMatch != null && _subDistrict.text.trim().isEmpty) {
+      _subDistrict.text = tambonMatch.group(1)?.trim() ?? '';
+    }
+
     // อำเภอ
     final amphoeMatch =
         RegExp(r'อ\.([^\s]+(?:\s[^\s]+)*?)(?=\sจ\.|\s\d{5}|$)').firstMatch(s);
+    if (amphoeMatch != null && _district.text.trim().isEmpty) {
+      _district.text = amphoeMatch.group(1)?.trim() ?? '';
+    }
+
     // จังหวัด
     final provinceMatch =
         RegExp(r'จ\.([^\s]+(?:\s[^\s]+)*?)(?=\s\d{5}|$)').firstMatch(s);
-
-    if (streetMatch != null) {
-      _street.text = streetMatch.group(1)?.trim() ?? '';
-    }
-    if (tambonMatch != null) {
-      _subDistrict.text = tambonMatch.group(1)?.trim() ?? '';
-    }
-    if (amphoeMatch != null) {
-      _district.text = amphoeMatch.group(1)?.trim() ?? '';
-    }
-    if (provinceMatch != null) {
+    if (provinceMatch != null && _province.text.trim().isEmpty) {
       _province.text = provinceMatch.group(1)?.trim() ?? '';
     }
-    if (zip.isNotEmpty) {
+
+    if (zip.isNotEmpty && _zipcode.text.trim().isEmpty) {
       _zipcode.text = zip;
     }
 
-    // บ้านเลขที่ (เอา string แรกสุดก่อน หมู่/ถนน)
-    final houseMatch = RegExp(r'^([^\s]+)').firstMatch(s);
-    if (houseMatch != null) {
-      final first = houseMatch.group(1) ?? '';
-      // ถ้า first เป็นตัวเลข = บ้านเลขที่
-      if (RegExp(r'^[\d/]+$').hasMatch(first)) {
-        _houseNo.text = first;
-        // หา หมู่
-        final mooSearch = RegExp(r'หมู่\s*(\d+)').firstMatch(s);
-        if (mooSearch != null) {
-          _moo.text = mooSearch.group(1) ?? '';
-        }
+    // หมู่ — "หมู่ N"
+    final mooSearch = RegExp(r'หมู่\s*(\d+)').firstMatch(s);
+    if (mooSearch != null && _moo.text.trim().isEmpty) {
+      _moo.text = mooSearch.group(1) ?? '';
+    }
+
+    // บ้านเลขที่ — รองรับ "เลขที่ N..." หรือ "N/..."
+    final houseWithPrefix = RegExp(r'เลขที่\s+([^\s]+)').firstMatch(s);
+    if (houseWithPrefix != null && _houseNo.text.trim().isEmpty) {
+      _houseNo.text = houseWithPrefix.group(1)?.trim() ?? '';
+    } else {
+      // fallback: เอา token แรกสุดที่เป็นตัวเลข/-
+      final houseMatch = RegExp(r'^([\d/\-]+)').firstMatch(s);
+      if (houseMatch != null && _houseNo.text.trim().isEmpty) {
+        _houseNo.text = houseMatch.group(1) ?? '';
       }
     }
   }

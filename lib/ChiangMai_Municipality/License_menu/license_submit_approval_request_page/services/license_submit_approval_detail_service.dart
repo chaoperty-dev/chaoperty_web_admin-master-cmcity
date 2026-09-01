@@ -14,16 +14,12 @@ import 'dart:convert';
 import 'package:chaoperty/Constant/Myconstant.dart';
 import 'package:http/http.dart' as http;
 
-import '../../license_request_page/services/license_request_service.dart';
 import '../models/license_submit_approval_detail_model.dart';
 import '../models/submit_approval_detail_extended.dart';
 import '../models/submit_approval_rounds_models.dart';
 
 class LicenseSubmitApprovalDetailService {
-  LicenseSubmitApprovalDetailService({LicenseRequestService? requestService})
-      : _requestService = requestService ?? LicenseRequestService();
-
-  final LicenseRequestService _requestService;
+  LicenseSubmitApprovalDetailService();
 
   Uri _uri(String path) => Uri.parse('${MyConstant().domain_v1}/$path');
 
@@ -36,41 +32,42 @@ class LicenseSubmitApprovalDetailService {
   }
 
   // ---------- 1. ตรวจสอบรายส่งคำร้องขออนุมัติ ----------
-  /// ใช้ v1 API `/admin/approvals` (เหมือน list) — เพราะ list โหลดจาก v1
-  /// ถ้าใช้ v2 `/v2/payments/{uuid}` UUID จะไม่ตรงกัน (v1 = review uuid, v2 = payment uuid)
+  /// ใช้ v2 list endpoint `/v2/admin/requests/tasks/approvals?uuid=...`
+  /// เพราะ v1 `/admin/approvals` ไม่มี field `approval_pending` (จำเป็นสำหรับ UI step1)
   Future<SubmitApprovalDetail> fetchSubmitApprovalDetail({required String uuid}) async {
     if (uuid.trim().isEmpty) {
       throw Exception('Payment UUID is required');
     }
 
-    final response = await _requestService.fetchRequests(
-      query: uuid,
-      perPage: 1,
-      searchField: 'uuid',
-    );
+    final headers = await MyHeaders.build();
+    final res = await http
+        .get(
+          _uriV2('v2/admin/requests/tasks/approvals?uuid=$uuid'),
+          headers: headers,
+        )
+        .timeout(const Duration(seconds: 15));
 
-    if (response.data.isEmpty) {
-      // ไม่พบข้อมูล → return empty (ให้ UI แสดง empty state)
-      return const SubmitApprovalDetail();
+    if (res.statusCode != 200) {
+      throw Exception(
+          'โหลดรายส่งคำร้องไม่สำเร็จ (status: ${res.statusCode})');
     }
 
-    final r = response.data.first;
-    return SubmitApprovalDetail(
-      uuid: r.uuid ?? '',
-      paymentNo: r.newRequest?.leaseNumber ?? '-',
-      paymentSystem: r.newRequest?.subzone ?? '-',
-      payType: r.newRequest?.zn ?? '-',
-      status: r.status ?? 'draft',
-      methodName: r.newRequest?.ln ?? '-',
-      payerName: r.client?.cname ?? '-',
-      clientTel: r.client?.tel ?? '',
-      clientTax: r.client?.tax ?? '',
-      clientAddr1: r.client?.addr1 ?? '',
-      amount: 0,
-      amountReceived: null,
-      paidAt: r.newRequest?.ldate,
-      createdAt: null,
-    );
+    final body = json.decode(res.body);
+    final data = body is Map && body['data'] is Map
+        ? Map<String, dynamic>.from(body['data'] as Map)
+        : <String, dynamic>{};
+    final items = data['data'] is List
+        ? data['data'] as List
+        : (body is Map && body['data'] is List ? body['data'] as List : null);
+
+    // รองรับทั้ง {data: {data: [...]}} และ {data: [...]} shapes
+    final list = items ?? <dynamic>[];
+    if (list.isEmpty) {
+      return const SubmitApprovalDetail();
+    }
+    final first = list.first;
+    if (first is! Map) return const SubmitApprovalDetail();
+    return SubmitApprovalDetail.fromJson(Map<String, dynamic>.from(first));
   }
 
   // ---------- 2. หลักฐาน / สรุปส่งคำร้องขออนุมัติ ----------

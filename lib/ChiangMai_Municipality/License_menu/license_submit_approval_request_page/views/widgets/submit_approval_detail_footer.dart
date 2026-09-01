@@ -1,8 +1,8 @@
 // ============================================================================
 // submit_approval_detail_footer.dart
 // ============================================================================
-// Footer bar — ปุ่ม "ย้อนกลับ" + "ถัดไป" / "บันทึก"
-// (คล้าย verify_detail_footer — ใช้ LaColors tokens ของ payment)
+// Footer bar — ปุ่ม "ย้อนกลับ" + "ถัดไป"
+// - Step 2: ไม่มีปุ่มหลัก (ไม่มี save API) — ดู timeline อย่างเดียว
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -14,12 +14,10 @@ class SubmitApprovalDetailFooter extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
   final VoidCallback? onNext;
-  final VoidCallback? onSave;
   final VoidCallback? onCancel;
 
-  /// Label ของปุ่มหลัก (เช่น "ถัดไป", "บันทึก")
+  /// Label ของปุ่มถัดไป (Step 1)
   final String? nextLabel;
-  final String? saveLabel;
 
   const SubmitApprovalDetailFooter({
     super.key,
@@ -27,15 +25,14 @@ class SubmitApprovalDetailFooter extends StatelessWidget {
     this.currentStep = 1,
     this.totalSteps = 2,
     this.onNext,
-    this.onSave,
     this.onCancel,
     this.nextLabel,
-    this.saveLabel,
   });
 
   @override
   Widget build(BuildContext context) {
     final isLast = currentStep >= totalSteps;
+    final showNext = !readOnly && !isLast;
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: LaSpace.lg, vertical: LaSpace.md),
@@ -58,7 +55,7 @@ class SubmitApprovalDetailFooter extends StatelessWidget {
             readOnly
                 ? 'โหมดดูอย่างเดียว'
                 : isLast
-                    ? 'พร้อมบันทึก'
+                    ? 'ลำดับขั้นตอนการอนุมัติ — กด "ย้อนกลับ" เพื่อกลับไปแก้ไข'
                     : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
             style: LaText.caption,
           ),
@@ -71,18 +68,13 @@ class SubmitApprovalDetailFooter extends StatelessWidget {
                 : Icons.close_rounded,
             onTap: onCancel,
           ),
-          const SizedBox(width: LaSpace.sm),
-          // ปุ่มหลัก: ถัดไป (Step 1) หรือ บันทึก (Step 2)
-          if (!readOnly)
-            isLast
-                ? _SaveButton(
-                    label: saveLabel ?? 'บันทึก',
-                    onTap: onSave,
-                  )
-                : _NextButton(
-                    label: nextLabel ?? 'ถัดไป',
-                    onTap: onNext,
-                  ),
+          if (showNext) ...[
+            const SizedBox(width: LaSpace.sm),
+            _NextButton(
+              label: nextLabel ?? 'ถัดไป',
+              onTap: onNext,
+            ),
+          ],
         ],
       ),
     );
@@ -208,74 +200,6 @@ class _NextButtonState extends State<_NextButton> {
                 Icons.arrow_forward_rounded,
                 size: 16,
                 color: LaColors.primaryDark,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// ปุ่ม "บันทึก" — gradient green style (ปุ่มหลัก)
-class _SaveButton extends StatefulWidget {
-  final VoidCallback? onTap;
-  final String label;
-  const _SaveButton({
-    required this.onTap,
-    this.label = 'บันทึก',
-  });
-
-  @override
-  State<_SaveButton> createState() => _SaveButtonState();
-}
-
-class _SaveButtonState extends State<_SaveButton> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: _hover
-                  ? [LaColors.primaryDark, LaColors.primary]
-                  : [LaColors.primary, LaColors.primaryDark],
-            ),
-            borderRadius: BorderRadius.circular(LaRadius.md),
-            boxShadow: [
-              BoxShadow(
-                color: LaColors.primary.withOpacity(_hover ? .35 : .25),
-                blurRadius: _hover ? 12 : 8,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.check_circle_rounded,
-                size: 16,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontFamily: LaText.fontBold,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                ),
               ),
             ],
           ),
