@@ -81,7 +81,6 @@ class _RegistrationPageBodyState extends State<_RegistrationPageBody> {
 
   void _onEvent(RegistrationEvent event) {
     if (!mounted) return;
-    final vm = context.read<RegistrationViewModel>();
     switch (event) {
       case RegistrationErrorEvent(:final message):
         ScaffoldMessenger.of(context).showSnackBar(

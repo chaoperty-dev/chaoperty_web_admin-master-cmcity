@@ -11,10 +11,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ChiangMai_Municipality/Registration_menu/registration_page/services/registration_service.dart';
 import '../ChiangMai_Municipality/unity/show_dialog_cmm.dart';
 import '../Constant/Myconstant.dart';
 import '../INSERT_Log/Insert_log.dart';
-import '../Model/GetCustomer_Model.dart';
 import '../Model/GetRenTal_Model.dart';
 import '../Model/GetTrans_Model.dart';
 import '../Model/GetType_Model.dart';
@@ -326,7 +326,6 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final ren = prefs.getString('renTalSer');
-      final user = prefs.getString('ser');
 
       if (ren == null || ren.isEmpty) {
         if (!mounted) return;
@@ -336,106 +335,29 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
         return;
       }
 
-      final typeText =
-          typeModels[Value_AreaSer_.clamp(0, typeModels.length - 1)]
-              .type
-              .toString()
-              .trim();
       final isPersonal = _isPersonalType;
       final bussscontact = isPersonal
           ? Status4Form_bussshop.text.trim()
           : Status4Form_bussscontact.text.trim();
 
-      final endpoint = '${MyConstant().domain}/InC_CustoAdd_Bureau.php';
-      final uri = Uri.parse(endpoint).replace(queryParameters: {
-        'isAdd': 'true',
+      // ✅ POST /v1/admin/c-customers — ใช้ RegistrationService ใหม่
+      final svc = RegistrationService();
+      final payload = <String, dynamic>{
         'ren': ren,
-      });
-
-      final body = <String, String>{
-        'ciddoc': '',
-        'qutser': '',
-        'user': user ?? '',
-        'sumdis': '',
-        'sumdisp': '',
-        'dateY': '',
-        'dateY1': '',
-        'time': '',
-        'payment1': '',
-        'payment2': '',
-        'pSer1': '',
-        'pSer2': '',
-        'sum_whta': '',
-        'bill': '',
-        'fileNameSlip': '',
-        'areaSer': isPersonal ? '1' : '2',
-        'typeModels': typeText,
+        'sname': Status4Form_nameshop.text.trim(),
+        'cname': bussscontact,
+        'attn': Status4Form_bussshop.text.trim(),
         'typeshop': Status4Form_typeshop.text.trim(),
-        'nameshop': Status4Form_nameshop.text.trim(),
-        'bussshop': Status4Form_bussshop.text.trim(),
-        'bussscontact': bussscontact,
-        'address': Status4Form_address.text.trim(),
+        'taxno': Status4Form_tax.text.trim(),
         'tel': Status4Form_tel.text.trim(),
-        'tax': Status4Form_tax.text.trim(),
         'email': Status4Form_email.text.trim(),
-        'Serbool': '',
-        'area_rent_sum': '',
-        'comment': '',
-        'zser': '',
+        'addr_1': Status4Form_address.text.trim(),
         'birth': Status4Form_birth.text.trim(),
         'national': Status4Form_national.text.trim(),
         'religion': Status4Form_religion.text.trim(),
       };
-
-      final resp =
-          await http.post(uri, body: body).timeout(const Duration(seconds: 20));
-
-      if (resp.statusCode != 200) {
-        if (!mounted) return;
-        Dialog_error(
-            context, 'บันทึกลูกค้าไม่สำเร็จ [HTTP ${resp.statusCode}]');
-        return;
-      }
-
-      dynamic decoded;
-      try {
-        decoded = jsonDecode(resp.body);
-      } catch (_) {
-        final b = resp.body.trim();
-        if (b.startsWith('"') && b.endsWith('"')) {
-          decoded = jsonDecode(jsonDecode(b));
-        } else {
-          rethrow;
-        }
-      }
-
-      List<dynamic> list = const [];
-      if (decoded == null) {
-        list = const [];
-      } else if (decoded is List) {
-        list = decoded;
-      } else if (decoded is Map && decoded['data'] is List) {
-        list = decoded['data'] as List;
-      } else if (decoded is Map) {
-        list = [decoded];
-      }
-
-      String? newCustNo;
-      for (final item in list) {
-        if (item is Map<String, dynamic>) {
-          newCustNo ??= CustomerModel.fromJson(item).custno;
-        } else if (item is Map) {
-          newCustNo ??=
-              CustomerModel.fromJson(Map<String, dynamic>.from(item)).custno;
-        }
-        if (newCustNo == null && item is Map && item['custno'] is String) {
-          newCustNo = item['custno'] as String;
-        }
-      }
-
-      if (newCustNo == null && decoded is Map && decoded['custno'] is String) {
-        newCustNo = decoded['custno'] as String;
-      }
+      final result = await svc.createCustomer(payload);
+      final newCustNo = result['custno']?.toString();
 
       final savedName = Status4Form_nameshop.text.trim();
 
@@ -467,7 +389,7 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
     } catch (e) {
       debugPrint('Save Error: $e');
       if (!mounted) return;
-      Dialog_error(context, 'เกิดข้อผิดพลาด');
+      Dialog_error(context, 'เกิดข้อผิดพลาด: $e');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

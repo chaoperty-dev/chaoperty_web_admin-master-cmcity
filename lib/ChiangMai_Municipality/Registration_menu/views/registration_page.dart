@@ -96,7 +96,6 @@ class _RegistrationPageBodyState extends State<_RegistrationPageBody> {
 
   void _onEvent(RegistrationEvent event) {
     if (!mounted) return;
-    final vm = context.read<RegistrationViewModel>();
     switch (event) {
       case RegistrationErrorEvent(:final message):
         ScaffoldMessenger.of(context).showSnackBar(
@@ -112,18 +111,20 @@ class _RegistrationPageBodyState extends State<_RegistrationPageBody> {
         break;
       case RegistrationNavigateEvent(:final routeData):
         // เปิดหน้า Detail แบบ fullscreen route
-        final customer = vm.findCustomerByUuid(routeData ?? '');
-        if (customer != null) {
+        // ✅ ส่ง uuid → หน้า Detail จะ fetch fresh จาก
+        //    GET /v1/admin/c-customers/{uuid}
+        final uuid = routeData ?? '';
+        if (uuid.isNotEmpty) {
           Navigator.of(context).push(
             MaterialPageRoute(
               fullscreenDialog: true,
-              builder: (_) => RegistrationDetailPage.create(customer: customer),
+              builder: (_) => RegistrationDetailPage.create(uuid: uuid),
             ),
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('ไม่พบข้อมูลลูกค้า (uuid: ${routeData ?? '-'})'),
+              content: Text('ไม่พบ UUID ลูกค้า'),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(RgRadius.md),

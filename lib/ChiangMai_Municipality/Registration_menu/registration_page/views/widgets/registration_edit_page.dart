@@ -11,13 +11,11 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../Constant/Myconstant.dart';
 import '../../../../../Model/GetCustomer_Model.dart';
 import '../theme/registration_theme.dart';
+import '../../services/registration_service.dart';
 import '../../viewmodels/registration_detail_view_model.dart';
 import 'registration_add_footer.dart';
 import 'registration_add_header.dart';
@@ -305,85 +303,51 @@ class _RegistrationEditPageBodyState extends State<_RegistrationEditPageBody> {
     if (_formKey.currentState?.validate() != true) return;
     setState(() => _saving = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final ren = prefs.getString('renTalSer') ?? '0';
-      final user = prefs.getString('ser') ?? '';
-
+      final uuid = _customer?.uuid ?? widget.uuid;
       final bussscontact =
           _isPersonalType ? _bussshop.text.trim() : _bussscontact.text.trim();
 
-      final endpoint = '${MyConstant().domain}/registration_add_up.php';
-      final uri = Uri.parse(endpoint).replace(queryParameters: {
-        'isAdd': 'true',
-        'isEdit': 'true',
-        'ren': ren,
-      });
+      // ✅ PUT /v1/admin/c-customers/{uuid}
+      // Partial body — ใส่เฉพาะ field ที่มีค่า (ไม่ใช่ empty)
+      final payload = <String, dynamic>{};
+      void putIfNotEmpty(String key, String? v) {
+        final t = (v ?? '').trim();
+        if (t.isNotEmpty) payload[key] = t;
+      }
 
-      final body = <String, String>{
-        'ciddoc': _customer?.cid ?? '',
-        'uuid': _customer?.uuid ?? widget.uuid,
-        'ser': _customer?.ser?.toString() ?? widget.uuid,
-        'qutser': '',
-        'user': user,
-        'sumdis': '',
-        'sumdisp': '',
-        'dateY': '',
-        'dateY1': '',
-        'time': '',
-        'payment1': '',
-        'payment2': '',
-        'pSer1': '',
-        'pSer2': '',
-        'sum_whta': '',
-        'bill': '',
-        'fileNameSlip': '',
-        'areaSer': _isPersonalType ? '1' : '2',
-        'typeModels': _selectedType,
-        'typeshop': _typeshop.text.trim(),
-        'nameshop': _nameshop.text.trim(),
-        'bussshop': _bussshop.text.trim(),
-        'bussscontact': bussscontact,
-        'address': _address.trim(),
-        'address_2': _address2,
-        'tel': _tel.text.trim(),
-        'tax': _tax.text.trim(),
-        'email': _email.text.trim(),
-        'Serbool': '',
-        'area_rent_sum': '',
-        'comment': '',
-        'zser': '',
-        'birth': _birth.text.trim(),
-        'national': _national.text.trim(),
-        'religion': _religion.text.trim(),
-        'zip': _zipcode.text.trim(),
-      };
+      putIfNotEmpty('sname', _nameshop.text);
+      putIfNotEmpty('cname', bussscontact);
+      putIfNotEmpty('attn', _bussshop.text);
+      putIfNotEmpty('taxno', _tax.text);
+      putIfNotEmpty('tel', _tel.text);
+      putIfNotEmpty('email', _email.text);
+      putIfNotEmpty('birth', _birth.text);
+      putIfNotEmpty('national', _national.text);
+      putIfNotEmpty('religion', _religion.text);
+      putIfNotEmpty('addr_1', _address.trim().isEmpty ? null : _address.trim());
+      putIfNotEmpty('zip', _zipcode.text);
 
-      // ─── Debug: print url + body + response ───
+      // addr_2 เก็บ JSON parts (เหมือนเดิม)
+      if (_address2.trim().isNotEmpty) {
+        payload['addr_2'] = _address2;
+      }
+
+      // ─── Debug ───
       debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      debugPrint('🟡 [RegistrationEditPage._onSave]');
-      debugPrint('   URL  = $uri');
-      debugPrint('   body (${body.length} keys):');
-      body.forEach((k, v) {
-        debugPrint('     $k = "$v"');
-      });
-      debugPrint('   _customer?.ser = ${_customer?.ser}');
-      debugPrint('   _customer?.uuid = ${_customer?.uuid}');
-      debugPrint('   widget.uuid = ${widget.uuid}');
-
-      final resp =
-          await http.post(uri, body: body).timeout(const Duration(seconds: 20));
-
-      debugPrint('   Response status = ${resp.statusCode}');
-      debugPrint('   Response body   = ${resp.body}');
+      debugPrint('🟡 [RegistrationEditPage._onSave] PUT partial');
+      debugPrint('   uuid   = $uuid');
+      debugPrint('   keys   = ${payload.keys.join(", ")}');
       debugPrint('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 
-      if (!mounted) return;
-
-      if (resp.statusCode != 200) {
-        _snack('บันทึกลูกค้าไม่สำเร็จ [HTTP ${resp.statusCode}]');
+      if (payload.isEmpty) {
+        _snack('ไม่มีข้อมูลเปลี่ยนแปลง');
         return;
       }
 
+      final svc = RegistrationService();
+      await svc.updateCustomer(uuid: uuid, payload: payload);
+
+      if (!mounted) return;
       _snack('บันทึกการแก้ไขสำเร็จ', success: true);
       if (widget.onSaveSuccess != null) {
         await widget.onSaveSuccess!();
@@ -391,7 +355,8 @@ class _RegistrationEditPageBodyState extends State<_RegistrationEditPageBody> {
       if (mounted) Navigator.of(context).pop();
     } catch (e) {
       debugPrint('RegistrationEditPage save error: $e');
-      _snack('เกิดข้อผิดพลาด');
+      if (!mounted) return;
+      _snack('เกิดข้อผิดพลาด: $e');
     } finally {
       if (mounted) setState(() => _saving = false);
     }

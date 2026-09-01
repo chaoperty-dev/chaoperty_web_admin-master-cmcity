@@ -28,14 +28,18 @@ class RegistrationService {
   // ใช้ service รายงานลูกค้า (read-only) สำหรับตารางเมนู
   final CustomersReportService _report = CustomersReportService();
 
+  // http client reuse
+  final http.Client _client = http.Client();
+
   // ===============================================================
   // รายงานลูกค้า (MENU LIST) — CustomerReportItem
   // ===============================================================
-  /// โหลดรายการลูกค้าจากรายงาน (domain_v2/admin/reports/customers)
+  /// โหลดรายการลูกค้าทั้งหมดจาก `/api/v1/admin/c-customers`
   /// ใช้แสดงในตาราง "ทะเบียนผู้เช่า"
+  /// - loop ทุกหน้า (Laravel pagination) จนครบ last_page
+  /// - เก็บในแคชเดียวกับรายงาน v2 เพื่อ reuse TTL
   Future<List<CustomerReportItem>> fetchReportCustomers() async {
-    final result = await _report.fetchItems();
-    return result.items;
+    return _report.fetchCCustomersAll();
   }
 
   // ===============================================================
@@ -112,5 +116,110 @@ class RegistrationService {
   Future<String> _getRenTalSer() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('renTalSer') ?? '0';
+  }
+
+  // ===============================================================
+  // CRUD — POST/PUT/DELETE /v1/admin/c-customers
+  // ใช้จาก "เพิ่มทะเบียน" (POST), "แก้ไขทะเบียน" (PUT), "ลบทะเบียน" (DELETE)
+  // - body ของ POST ใส่ field ครบ
+  // - body ของ PUT ใส่เฉพาะ field ที่ต้องการอัพเดต (partial update)
+  // - ทุก call clear แคชของ customers report เพื่อให้ list refresh ทันที
+  // ===============================================================
+
+  /// GET /v1/admin/c-customers/{uuid} — ดึงรายละเอียดลูกค้า 1 รายการ
+  /// ใช้ในหน้า Detail (read-only)
+  /// Response shape: `{ "data": { uuid, custno, sname, ... } }`
+  Future<Map<String, dynamic>?> fetchCustomerByUuid(String uuid) async {
+    if (uuid.trim().isEmpty) return null;
+    final url = '${MyConstant().domain_v1}/admin/c-customers/$uuid';
+    final headers = await MyHeaders.build();
+    final res = await _client
+        .get(Uri.parse(url), headers: headers)
+        .timeout(const Duration(seconds: 20));
+    if (res.statusCode != 200) {
+      throw Exception('โหลดรายละเอียดลูกค้าไม่สำเร็จ (HTTP ${res.statusCode})');
+    }
+    final body = json.decode(res.body);
+    if (body is Map && body['data'] is Map) {
+      return Map<String, dynamic>.from(body['data'] as Map);
+    }
+    if (body is Map) return Map<String, dynamic>.from(body);
+    return null;
+  }
+
+  String? _extractMessage(dynamic body) {
+    try {
+      final b = body is String ? json.decode(body) : body;
+      if (b is Map && b['message'] is String) return b['message'] as String;
+    } catch (_) {}
+    return null;
+  }
+
+  /// POST /v1/admin/c-customers — สร้างทะเบียนใหม่
+  /// Returns: `{"custno": "01520", "uuid": "...", ...}` (จาก data.data)
+  Future<Map<String, dynamic>> createCustomer(
+      Map<String, dynamic> payload) async {
+    final url = '${MyConstant().domain_v1}/admin/c-customers';
+    final headers = await MyHeaders.build();
+    final res = await _client
+        .post(Uri.parse(url),
+            headers: headers, body: json.encode(payload))
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      final msg = _extractMessage(res.body) ??
+          'สร้างทะเบียนไม่สำเร็จ (HTTP ${res.statusCode})';
+      throw Exception(msg);
+    }
+
+    _report.clearCache();
+    final body = json.decode(res.body);
+    if (body is Map && body['data'] is Map) {
+      return Map<String, dynamic>.from(body['data'] as Map);
+    }
+    if (body is Map) return Map<String, dynamic>.from(body);
+    return <String, dynamic>{};
+  }
+
+  /// PUT /v1/admin/c-customers/{uuid} — อัพเดต (partial — ใส่เฉพาะ field ที่เปลี่ยน)
+  Future<void> updateCustomer(
+      {required String uuid, required Map<String, dynamic> payload}) async {
+    if (uuid.trim().isEmpty) {
+      throw Exception('Customer UUID is required');
+    }
+    final url = '${MyConstant().domain_v1}/admin/c-customers/$uuid';
+    final headers = await MyHeaders.build();
+    final res = await _client
+        .put(Uri.parse(url),
+            headers: headers, body: json.encode(payload))
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200 && res.statusCode != 201) {
+      final msg = _extractMessage(res.body) ??
+          'อัพเดตทะเบียนไม่สำเร็จ (HTTP ${res.statusCode})';
+      throw Exception(msg);
+    }
+
+    _report.clearCache();
+  }
+
+  /// DELETE /v1/admin/c-customers/{uuid} — ลบทะเบียน
+  Future<void> deleteCustomer(String uuid) async {
+    if (uuid.trim().isEmpty) {
+      throw Exception('Customer UUID is required');
+    }
+    final url = '${MyConstant().domain_v1}/admin/c-customers/$uuid';
+    final headers = await MyHeaders.build();
+    final res = await _client
+        .delete(Uri.parse(url), headers: headers)
+        .timeout(const Duration(seconds: 20));
+
+    if (res.statusCode != 200 && res.statusCode != 201 && res.statusCode != 204) {
+      final msg = _extractMessage(res.body) ??
+          'ลบทะเบียนไม่สำเร็จ (HTTP ${res.statusCode})';
+      throw Exception(msg);
+    }
+
+    _report.clearCache();
   }
 }

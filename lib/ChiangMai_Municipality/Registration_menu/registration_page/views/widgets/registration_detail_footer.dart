@@ -16,6 +16,7 @@ class RegistrationDetailFooter extends StatelessWidget {
   final VoidCallback? onNext;
   final VoidCallback? onSave;
   final VoidCallback? onCancel;
+  final VoidCallback? onDelete;
 
   /// Label ของปุ่มหลัก (เช่น "ถัดไป", "บันทึก")
   final String? nextLabel;
@@ -29,6 +30,7 @@ class RegistrationDetailFooter extends StatelessWidget {
     this.onNext,
     this.onSave,
     this.onCancel,
+    this.onDelete,
     this.nextLabel,
     this.saveLabel,
   });

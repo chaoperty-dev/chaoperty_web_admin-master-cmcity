@@ -14,6 +14,7 @@ class RegistrationDetailFooter extends StatelessWidget {
   final VoidCallback? onPrev;
   final VoidCallback? onNext;
   final VoidCallback onSave;
+  final VoidCallback? onDelete;
 
   const RegistrationDetailFooter({
     super.key,
@@ -22,6 +23,7 @@ class RegistrationDetailFooter extends StatelessWidget {
     required this.onPrev,
     required this.onNext,
     required this.onSave,
+    this.onDelete,
   });
 
   @override
@@ -61,6 +63,27 @@ class RegistrationDetailFooter extends StatelessWidget {
             ),
           ),
           const Spacer(),
+
+          // ─── ลบทะเบียน (เฉพาะหน้า Detail / read-only) ───
+          if (onDelete != null) ...[
+            OutlinedButton.icon(
+              onPressed: onDelete,
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
+              label: const Text('ลบทะเบียน'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: RgColors.statusRejectedFg,
+                side: BorderSide(
+                    color: RgColors.statusRejectedFg.withOpacity(.6),
+                    width: 1),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: RgSpace.lg, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(RgRadius.md),
+                ),
+              ),
+            ),
+            const SizedBox(width: RgSpace.sm),
+          ],
 
           // ─── ถัดไป / บันทึก ───
           if (!isLast)
