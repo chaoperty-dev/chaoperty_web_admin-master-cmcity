@@ -16,8 +16,8 @@
 import 'dart:convert';
 
 import 'package:chaoperty/Constant/Myconstant.dart';
+import 'package:chaoperty/ChiangMai_Municipality/unity/area_zones_api.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 // ============================================================================
 // Internal Models
@@ -137,6 +137,7 @@ class AreaMenuService {
   DateTime? _overviewCacheTime;
   String? _overviewCacheKey;
   final Map<String, dynamic> _zoneCache = {};
+  final AreaZonesApi _zonesApi = AreaZonesApi();
 
   void clearOverviewCache() {
     _overviewCache = null;
@@ -163,17 +164,6 @@ class AreaMenuService {
       'Accept': 'application/json',
       if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
     };
-  }
-
-  /// ren จาก SharedPreferences (fallback '195') — ใช้กับ legacy zone API
-  Future<String> _getRen() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final ren = prefs.getString('ren');
-      return (ren == null || ren.isEmpty) ? '195' : ren;
-    } catch (_) {
-      return '195';
-    }
   }
 
   /// legacy zone rows → [{'ser','zn'}...] + 'ทั้งหมด' (ser='0') นำหน้า
@@ -339,68 +329,29 @@ class AreaMenuService {
   // เดิม derive จาก items — ตอนนี้ server-driven จึงโหลดแยก
   // ===============================================================
 
-  /// หมวดโซน — GC_zone_sub.php → [{'ser','zn'}...] + ทั้งหมด (ser='0')
+  /// หมวดโซน — /admin/areas/groups → [{'ser','zn'}...] + ทั้งหมด (ser='0')
   Future<List<Map<String, dynamic>>> fetchSubZones() async {
-    final ren = await _getRen();
-    final cacheKey = 'subzone_$ren';
+    final cacheKey = 'subzone';
     final cached = _zoneCache[cacheKey];
     if (cached is List) return _withAllEntry(cached);
 
-    final url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
-    try {
-      final res = await http.get(Uri.parse(url));
-      final decoded = json.decode(res.body);
-      if (decoded is! List) return _withAllEntry(const []);
-      _zoneCache[cacheKey] = decoded;
-      return _withAllEntry(decoded);
-    } catch (e) {
-      print('[Area] fetchSubZones error: $e');
-      return _withAllEntry(const []);
+    final raw = await _zonesApi.fetchGroups();
+    final list = <Map<String, dynamic>>[];
+    for (final row in raw) {
+      list.add({'ser': row.ser ?? '', 'zn': row.zn ?? ''});
     }
+    _zoneCache[cacheKey] = list;
+    return _withAllEntry(list);
   }
 
-  /// โซน — GC_zone.php → [{'ser','zn'}...] + ทั้งหมด (ser='0')
-  /// กรองตามหมวดโซน (sub_zone == subzoneSer) เหมือน license_request_service
+  /// โซน — /admin/areas/zones?group_ser=X → [{'ser','zn'}...] + ทั้งหมด (ser='0')
   Future<List<Map<String, dynamic>>> fetchZones({String? subzoneSer}) async {
-    final ren = await _getRen();
-    final cacheKey = 'zone_$ren';
-    List? raw;
-    final cached = _zoneCache[cacheKey];
-    if (cached is List) {
-      raw = cached;
-    } else {
-      final url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
-      try {
-        final res = await http.get(Uri.parse(url));
-        final decoded = json.decode(res.body);
-        if (decoded is! List) return _applyZoneFilter(const [], subzoneSer);
-        _zoneCache[cacheKey] = decoded;
-        raw = decoded;
-      } catch (e) {
-        print('[Area] fetchZones error: $e');
-        return _applyZoneFilter(const [], subzoneSer);
-      }
-    }
-    return _applyZoneFilter(raw, subzoneSer);
-  }
-
-  /// เหมือน license _applyZoneFilter — เก็บ 'ทั้งหมด' + zone ที่ sub_zone ตรง
-  List<Map<String, dynamic>> _applyZoneFilter(
-      List rawList, String? subzoneSer) {
+    final raw = await _zonesApi.fetchZones(groupSer: subzoneSer);
     final out = <Map<String, dynamic>>[
       {'ser': '0', 'zn': _allLabel},
     ];
-    for (final row in rawList) {
-      if (row is! Map) continue;
-      final ser = _asStr(row['ser']);
-      final zn = _asStr(row['zn']);
-      if (zn == null) continue;
-      if (subzoneSer != null &&
-          subzoneSer != '0' &&
-          _asStr(row['sub_zone']) != subzoneSer) {
-        continue;
-      }
-      out.add({'ser': ser ?? '', 'zn': zn});
+    for (final row in raw) {
+      out.add({'ser': row.ser ?? '', 'zn': row.zn ?? ''});
     }
     out.sort((a, b) {
       if (a['zn'] == _allLabel) return -1;

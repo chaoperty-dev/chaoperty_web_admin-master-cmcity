@@ -7,6 +7,7 @@
 // ============================================================================// ignore_for_file: invalid_assignment
 import 'dart:convert';
 
+import 'package:chaoperty/ChiangMai_Municipality/unity/area_zones_api.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -21,35 +22,28 @@ import '../../../Model/Properties_Model.dart';
 import '../unity/API_announcement.dart';
 import '../unity/API_properties.dart';
 
+
 class LicenseContractService {
   LicenseContractService({ApiCache? cache})
       : _cache = cache ?? ApiCache(ttl: const Duration(seconds: 60));
 
   final ApiCache _cache;
+  final AreaZonesApi _zonesApi = AreaZonesApi();
 
-  // ---------- Zones ----------
+  // ---------- Zones (v2 — /admin/areas/groups + /admin/areas/zones) ----------
   Future<List<ZoneModel>> fetchZones({String? subZoneSer}) async {
-    final ren = await _getRenTalSer();
-    final cacheKey = 'license_contract_zone_${ren}_$subZoneSer';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) return _applyZoneFilter(cached, subZoneSer);
-    }
-
-    final url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
-    try {
-      final response = await http.get(Uri.parse(url));
-      final result = jsonDecode(response.body);
-      if (result == null || result is! List) return <ZoneModel>[];
-      _cache.set(cacheKey, result);
-      return _applyZoneFilter(result, subZoneSer);
-    } catch (e) {
-      return <ZoneModel>[];
-    }
+    final api = _zonesApi;
+    final raw = await api.fetchZones(groupSer: subZoneSer);
+    return _mapZones(raw);
   }
 
-  List<ZoneModel> _applyZoneFilter(List<dynamic> rawList, String? subZoneSer) {
+  // ---------- SubZones (v2 — /admin/areas/groups) ----------
+  Future<List<SubZoneModel>> fetchSubZones() async {
+    final raw = await _zonesApi.fetchGroups();
+    return _mapSubZones(raw);
+  }
+
+  List<ZoneModel> _mapZones(List<dynamic> rawList) {
     final defaultZone = ZoneModel.fromJson({
       'ser': '0',
       'rser': '0',
@@ -58,47 +52,22 @@ class LicenseContractService {
       'img': '0',
       'data_update': '0',
     });
-
     final zones = <ZoneModel>[defaultZone];
-    for (final map in rawList) {
-      final zone = ZoneModel.fromJson(map);
-      if (subZoneSer == null ||
-          subZoneSer == '0' ||
-          zone.sub_zone == subZoneSer) {
-        zones.add(zone);
-      }
+    for (final row in rawList) {
+      if (row is! AreaZone) continue;
+      zones.add(ZoneModel.fromJson({
+        'ser': row.ser ?? '0',
+        'rser': row.ser ?? '0',
+        'zn': row.zn ?? '',
+        'qty': '${row.qty ?? 0}',
+        'img': '0',
+        'data_update': '0',
+      }));
     }
-
-    zones.sort((a, b) {
-      if (a.zn == 'ทั้งหมด') return -1;
-      if (b.zn == 'ทั้งหมด') return 1;
-      return (a.zn ?? '').compareTo(b.zn ?? '');
-    });
     return zones;
   }
 
-  // ---------- SubZones ----------
-  Future<List<SubZoneModel>> fetchSubZones() async {
-    final ren = await _getRenTalSer();
-    final cacheKey = 'license_contract_subzone_$ren';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) return _buildSubZoneList(cached);
-    }
-
-    final url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
-    try {
-      final response = await http.get(Uri.parse(url));
-      final result = json.decode(response.body);
-      _cache.set(cacheKey, result);
-      return _buildSubZoneList(result);
-    } catch (e) {
-      return _buildSubZoneList(<dynamic>[]);
-    }
-  }
-
-  List<SubZoneModel> _buildSubZoneList(List<dynamic> rawList) {
+  List<SubZoneModel> _mapSubZones(List<dynamic> rawList) {
     final defaultMap = <String, dynamic>{
       'ser': '0',
       'rser': '0',
@@ -108,8 +77,16 @@ class LicenseContractService {
       'data_update': '0',
     };
     final subs = <SubZoneModel>[SubZoneModel.fromJson(defaultMap)];
-    for (final map in rawList) {
-      subs.add(SubZoneModel.fromJson(map));
+    for (final row in rawList) {
+      if (row is! AreaZone) continue;
+      subs.add(SubZoneModel.fromJson({
+        'ser': row.ser ?? '0',
+        'rser': row.ser ?? '0',
+        'zn': row.zn ?? '',
+        'qty': '${row.qty ?? 0}',
+        'img': '0',
+        'data_update': '0',
+      }));
     }
     return subs;
   }
@@ -271,9 +248,9 @@ class LicenseContractService {
     return prefs.getString('renTalSer');
   }
 
-  // ---------- Areas Overview (NEW — ทดแทน GC_areaAll.php + properties join) ----------
-  /// โหลด "ภาพรวมพื้นที่เช่า" ทั้งหมดจาก API ใหม่:
-  ///   GET {domain_v2}/admin/reports/areas/overview?zser=<zoneSer>
+  // ---------- Areas Overview (API ใหม่ — มี aser, status EN key) ----------
+  /// โหลด "ภาพรวมพื้นที่เช่า" ทั้งหมด:
+  ///   GET {domain_v2}/admin/areas/overview?zser=<zoneSer>&sort_by=lock&sort_dir=asc&page=1
   ///
   /// - zser = null/0/'0' → ไม่ส่ง query (ดูทั้งหมด)
   /// - zser อื่นๆ → filter ตามโซน
@@ -284,9 +261,9 @@ class LicenseContractService {
     final headers = await MyHeaders.build();
 
     final z = (zoneSer == null || zoneSer == '0') ? '' : zoneSer;
+    final qs = z.isEmpty ? '' : '?zser=$z&sort_by=lock&sort_dir=asc&page=1';
     final url = Uri.parse(
-      '${MyConstant().domain_v2}/admin/reports/areas/overview'
-      '${z.isEmpty ? '' : '?zser=$z'}',
+      '${MyConstant().domain_v2}/admin/areas/overview$qs',
     );
 
     // ignore: avoid_print

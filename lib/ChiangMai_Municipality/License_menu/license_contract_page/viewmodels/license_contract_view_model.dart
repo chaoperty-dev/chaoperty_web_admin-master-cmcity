@@ -381,8 +381,8 @@ class LicenseContractViewModel extends ChangeNotifier {
   }
 
   // ── Map helper: AreaOverviewItem → AreaModel (เพื่อให้ widget layer ไม่ต้องเปลี่ยน) ──
-  // หมายเหตุ: ฟิลด์ที่ overview API ยังไม่ส่ง (stype, sdate, ldate, ln, cname, sname_q)
-  // จะถูกดึงจาก `requester` object ถ้ามี — ถ้าไม่มีจะเป็น null (widget จะซ่อนแถวนั้น)
+  // รองรับ API ใหม่ (/admin/areas/overview): aser, requester=string, status=EN key
+  // fallback: API เก่า (requester=object, lockCode, area, rent)
   AreaModel _mapOverviewToAreaModel(AreaOverviewItem item) {
     String? _str(dynamic v) {
       if (v == null) return null;
@@ -390,63 +390,63 @@ class LicenseContractViewModel extends ChangeNotifier {
       return s.isEmpty ? null : s;
     }
 
-    String? _lookup(List<String> keys) {
+    String? lookupObj(List<String> keys) {
+      // lookup จาก requester object (API เก่า)
+      final obj = item.requesterMap;
+      if (obj == null) return null;
       for (final k in keys) {
-        final v = item.requester?[k];
-        final s = _str(v);
+        final s = _str(obj[k]);
         if (s != null) return s;
       }
       return null;
     }
 
+    // ── ser จาก aser (API ใหม่ — id จริง) fallback lockCode ──
+    final ser = item.aser ?? item.lock ?? item.lockCode ?? '';
+
+    // ── requester name ──
+    final requesterName =
+        item.requesterName ?? lookupObj(const ['name', 'scname']);
+
     // ── เตรียม PropertiesModel stub (ถ้ามี request) ──
     //    เพื่อให้ area_info_card / zone_dropdown_row แสดงสถานะ "กำลังดำเนินการ/Step X"
     List<PropertiesModel> props = const [];
-    if (item.hasRequest && item.requester != null) {
+    if (item.hasRequest) {
       final stubReq = NewRequest(
-        uuid: item.requester?['uuid']?.toString() ?? item.requestUuid,
+        uuid: lookupObj(const ['uuid']) ?? item.requestUuid,
         requestUuid: item.requestUuid,
         zn: item.zone,
         ln: item.lock ?? item.lockCode,
-        requestStatus: _str(item.requester?['request_status'] ??
-            item.requester?['status'] ??
-            item.status),
-        requestStep: _str(item.requester?['request_step'] ??
-            item.requester?['step']),
-        sdate: _lookup(const ['sdate', 'desired_start_date']),
-        ldate: _lookup(const ['ldate']),
+        requestStatus: item.status ?? lookupObj(const ['request_status', 'status']),
+        requestStep: lookupObj(const ['request_step', 'step']),
+        sdate: item.sdate ?? lookupObj(const ['sdate', 'desired_start_date']),
+        ldate: item.ldate ?? lookupObj(const ['ldate']),
       );
       final stubClient = Client(
         uuid: item.customerUuid,
-        scname: _str(item.requester?['scname'] ??
-            item.requester?['client']?['scname'] ??
-            item.requester?['name']),
+        scname: lookupObj(const ['scname', 'client', 'name']),
       );
       props = [PropertiesModel(newRequest: stubReq, client: stubClient)];
     }
 
-    // ── align กับ area page logic: occupied iff hasRequest (requester มีค่า)
-    //    เพื่อให้ dropdown / area_info_card / box_card แสดงสถานะตรงกัน
+    // ── align กับ area page logic: occupied iff hasRequest ──
     final hasRequester = item.hasRequest;
     final quantity = hasRequester ? '1' : '0';
 
-    // ── ser จาก lock_code (fallback lock) — ใช้เป็น key สำหรับ join ภายใน VM
-    final ser = item.lock ?? item.lockCode;
-
     return AreaModel(
       ser: ser,
-      zser: _getZoneSer(item.zone), // map zone name → zone ser จาก _zoneModels ที่โหลดไว้แล้ว
-      lncode: ser,
-      ln: _lookup(const ['ln', 'address']),
+      zser: item.zser ?? _getZoneSer(item.zone),
+      lncode: item.lncode,
+      ln: lookupObj(const ['ln', 'address']),
       area: _str(item.area),
       rent: _str(item.lockRent),
       zn: item.zone,
-      stype: _lookup(const ['stype', 'product_type']),
-      cname: _lookup(const ['cname', 'client_name']),
-      sname: _lookup(const ['sname', 'scname']),
-      sname_q: _lookup(const ['sname_q']),
-      sdate: _lookup(const ['sdate', 'desired_start_date']),
-      ldate: _lookup(const ['ldate']),
+      stype: lookupObj(const ['stype', 'product_type']),
+      cname: requesterName ?? lookupObj(const ['cname', 'client_name']),
+      sname: requesterName ?? lookupObj(const ['sname', 'scname']),
+      sname_q: lookupObj(const ['sname_q']),
+      sdate: item.sdate ?? lookupObj(const ['sdate', 'desired_start_date']),
+      ldate: item.ldate ?? lookupObj(const ['ldate']),
       quantity: quantity,
       properties: props,
     );

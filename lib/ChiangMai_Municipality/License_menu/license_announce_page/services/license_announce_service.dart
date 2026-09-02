@@ -8,11 +8,12 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../../../../Constant/Myconstant.dart';
 import '../../../Model/AnnounceMentActive_Model.dart';
+import '../../../unity/area_zones_api.dart';
 import '../models/license_announce_item.dart';
 
 class LicenseAnnounceService {
   String get _baseV1 => MyConstant().domain_v1;
-  String get _baseLegacy => MyConstant().domain;
+  final AreaZonesApi _zonesApi = AreaZonesApi();
 
   Future<Map<String, String>> _headers() async => MyHeaders.build();
 
@@ -155,35 +156,21 @@ class LicenseAnnounceService {
   }
 
   // ------------------------------------------------------------------
-  // Zones (legacy endpoint)
+  // Zones (v2 — /admin/areas/groups + /admin/areas/zones)
   // ------------------------------------------------------------------
   /// โหลดรายการ "โซน" (zones) — รองรับ filter ตาม subZone
   Future<List<LicenseAnnounceZone>> fetchZones(String rser,
       {String? zoneSubSer}) async {
-    final url = '$_baseLegacy/GC_zone.php?isAdd=true&ren=$rser';
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return _buildZoneList(<dynamic>[]);
-      final result = json.decode(response.body);
-      final list = (result is List) ? result : <dynamic>[];
-      // filter ตาม sub_zone ถ้ามี (ไม่ใช่ null/'0')
-      final filtered = <dynamic>[];
-      final sub = zoneSubSer;
-      for (final raw in list) {
-        if (raw is! Map) continue;
-        final m = Map<String, dynamic>.from(raw);
-        if (sub == null || sub == '0' || (m['sub_zone']?.toString() == sub)) {
-          filtered.add(m);
-        }
-      }
-      return _buildZoneList(filtered);
+      final raw = await _zonesApi.fetchZones(groupSer: zoneSubSer);
+      return _mapZones(raw);
     } catch (e) {
       debugPrint('fetchZones error: $e');
-      return _buildZoneList(<dynamic>[]);
+      return _mapZones(const []);
     }
   }
 
-  List<LicenseAnnounceZone> _buildZoneList(List<dynamic> rawList) {
+  List<LicenseAnnounceZone> _mapZones(List<dynamic> rawList) {
     final defaultZone = LicenseAnnounceZone.fromJson(<String, dynamic>{
       'ser': '0',
       'rser': '0',
@@ -194,51 +181,46 @@ class LicenseAnnounceService {
       'sub_zone': '0',
     });
     final zones = <LicenseAnnounceZone>[defaultZone];
-    for (final map in rawList) {
-      if (map is Map) {
-        zones.add(LicenseAnnounceZone.fromJson(Map<String, dynamic>.from(map)));
-      }
+    for (final row in rawList) {
+      if (row is! AreaZone) continue;
+      zones.add(LicenseAnnounceZone.fromJson(<String, dynamic>{
+        'ser': row.ser ?? '0',
+        'zn': row.zn ?? '',
+        'rser': row.ser ?? '0',
+        'qty': '${row.qty ?? 0}',
+        'sub_zone': '0',
+      }));
     }
-    zones.sort((a, b) {
-      if (a.zn == 'ทั้งหมด') return -1;
-      if (b.zn == 'ทั้งหมด') return 1;
-      return a.zn.compareTo(b.zn);
-    });
     return zones;
   }
 
-  /// โหลดรายการ "หมวดโซนพื้นที่" (subzones) — GC_zone_sub.php
+  /// โหลดรายการ "หมวดโซนพื้นที่" (subzones)
   Future<List<LicenseAnnounceSubZone>> fetchSubZones(String rser) async {
-    final url = '$_baseLegacy/GC_zone_sub.php?isAdd=true&ren=$rser';
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return _buildSubZoneList(<dynamic>[]);
-      final result = json.decode(response.body);
-      final list = (result is List) ? result : <dynamic>[];
-      return _buildSubZoneList(list);
+      final raw = await _zonesApi.fetchGroups();
+      return _mapSubZones(raw);
     } catch (e) {
       debugPrint('fetchSubZones error: $e');
-      return _buildSubZoneList(<dynamic>[]);
+      return _mapSubZones(const []);
     }
   }
 
-  List<LicenseAnnounceSubZone> _buildSubZoneList(List<dynamic> rawList) {
+  List<LicenseAnnounceSubZone> _mapSubZones(List<dynamic> rawList) {
     final defaultMap = <String, dynamic>{
       'ser': '0',
       'rser': '0',
       'zn': 'ทั้งหมด',
-      'qty': '0',
-      'img': '0',
-      'data_update': '0',
     };
     final subs = <LicenseAnnounceSubZone>[
       LicenseAnnounceSubZone.fromJson(defaultMap),
     ];
-    for (final map in rawList) {
-      if (map is Map) {
-        subs.add(
-            LicenseAnnounceSubZone.fromJson(Map<String, dynamic>.from(map)));
-      }
+    for (final row in rawList) {
+      if (row is! AreaZone) continue;
+      subs.add(LicenseAnnounceSubZone.fromJson(<String, dynamic>{
+        'ser': row.ser ?? '0',
+        'zn': row.zn ?? '',
+        'rser': row.ser ?? '0',
+      }));
     }
     return subs;
   }
