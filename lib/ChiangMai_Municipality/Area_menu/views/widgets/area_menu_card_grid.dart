@@ -68,8 +68,14 @@ class AreaMenuCardGrid extends StatelessWidget {
             ),
             itemBuilder: (context, i) {
               final row = vm.requests[i];
-              // ✅ key เสถียรต่อ row — กัน State reuse แล้ว _anchorKey ผูก row ผิด
-              final rowKey = (row['aser'] ?? row['key'] ?? '$i').toString();
+              // ✅ key เสถียรต่อ row — composite จาก subzone|zone|lock|aser
+              //    (ห้าม fallback เป็น $i เด็ดขาด — index เปลี่ยนตอน scroll → State reuse → _anchorKey ผูก row ผิด)
+              final rowKey = [
+                row['aser'] ?? '',
+                row['subzone'] ?? '',
+                row['zone'] ?? '',
+                row['lock'] ?? '',
+              ].join('|');
               return AreaMenuBoxCard(
                 key: ValueKey('areacard:$rowKey'),
                 model: row,
