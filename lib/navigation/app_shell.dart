@@ -423,9 +423,7 @@ class _MobileDrawerState extends State<_MobileDrawer> {
       final groupActive = _isGroupActive(item);
       final expanded = _expandedGroups[item.label] ?? item.expandedByDefault;
 
-      if (groupActive && !expanded) {
-        _expandedGroups[item.label] = true;
-      }
+      // sub-menu เริ่มหุบ — ไม่ auto-expand เมื่อ active
 
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

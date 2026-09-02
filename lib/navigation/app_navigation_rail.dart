@@ -206,12 +206,7 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
           );
         }
 
-        // ขยายกลุ่มอัตโนมัติเมื่อมี child ถูกเลือก
-        for (final item in menu.items.where((i) => i.isGroup)) {
-          if (_isGroupActive(item)) {
-            _expandedGroups[item.label] = true;
-          }
-        }
+        // sub-menu เริ่มหุบ — ไม่ auto-expand เมื่อ active
 
         return Container(
           width: _kWidth,
