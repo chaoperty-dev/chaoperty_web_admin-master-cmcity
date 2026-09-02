@@ -1,16 +1,85 @@
 // ============================================================================
 // area_card_callout.dart
 // ============================================================================
-// Callout bubble — แสดงเหนือ block "พื้นที่เช่า" เมื่อกด
-// - มี label (ชื่อ zone/subzone + lock) + ปุ่มลูกศรขวา `>`
+// Callout bubble — แสดง "เมนูใบอนุญาต" เหนือ block "พื้นที่เช่า" เมื่อกด
+// - แสดงรายการเมนู (filter ตามสิทธิ์ user เหมือน left-side menu)
 // - ลูกศรด้านล่างชี้ block (flip ด้านบนถ้าที่บนไม่พอ)
-// - กด bubble / ปุ่ม > → เปิด action menu 7 ตัว (เดิม)
+// - กด item → navigate (path-style พร้อม routeData)
 // - กด backdrop → ปิด
 // ============================================================================
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
-import 'area_license_action_menu.dart';
+import '../../../../router/app_router.dart';
+import '../../../List_CMM/Register_CMM/AuthService.dart';
+
+class _LicenseAction {
+  final String label;
+  final IconData icon;
+  final String route;
+  final String permission;
+  const _LicenseAction({
+    required this.label,
+    required this.icon,
+    required this.route,
+    required this.permission,
+  });
+}
+
+const _licenseActions = <_LicenseAction>[
+  _LicenseAction(
+    label: 'คำขอใบอนุญาต',
+    icon: Icons.edit_note_outlined,
+    route: AppRoute.contract,
+    permission: 'LICENSE_REQUEST',
+  ),
+  _LicenseAction(
+    label: 'แนบเอกสารคำขอ',
+    icon: Icons.attach_file_outlined,
+    route: AppRoute.attach,
+    permission: 'REQUEST_DOCUMENT_ATTACHMENT',
+  ),
+  _LicenseAction(
+    label: 'ชำระค่าธรรมเนียม',
+    icon: Icons.payments_outlined,
+    route: AppRoute.payment,
+    permission: 'FEE_PAYMENT',
+  ),
+  _LicenseAction(
+    label: 'ตรวจสอบเอกสารคำขอ',
+    icon: Icons.rule_outlined,
+    route: AppRoute.verify,
+    permission: 'REQUEST_DOCUMENT_REVIEW',
+  ),
+  _LicenseAction(
+    label: 'ตรวจสอบข้อเท็จจริง',
+    icon: Icons.search_outlined,
+    route: AppRoute.factCheck,
+    permission: 'FACT_VERIFICATION',
+  ),
+  _LicenseAction(
+    label: 'ส่งคำร้องขออนุมัติ',
+    icon: Icons.send_outlined,
+    route: AppRoute.submitApproval,
+    permission: 'SUBMIT_APPROVAL_REQUEST',
+  ),
+  _LicenseAction(
+    label: 'อนุมัติคำร้อง',
+    icon: Icons.check_circle_outline,
+    route: AppRoute.approve,
+    permission: 'APPROVE_REQUEST',
+  ),
+];
+
+/// ดึงรายการเมนูที่ user มีสิทธิ์ใช้งาน
+Future<List<_LicenseAction>> _allowedActions() async {
+  final allowed = (await AuthService.getMenuPermissions()).toSet();
+  if (allowed.isEmpty) return const [];
+  return _licenseActions
+      .where((a) => allowed.contains(a.permission))
+      .toList(growable: false);
+}
 
 Future<void> showAreaCardCalloutAt({
   required BuildContext context,
@@ -24,7 +93,6 @@ Future<void> showAreaCardCalloutAt({
   await showAreaCardCallout(
     context: context,
     anchorRect: rect,
-    anchorKey: anchorKey,
     model: model,
   );
 }
@@ -32,12 +100,27 @@ Future<void> showAreaCardCalloutAt({
 Future<void> showAreaCardCallout({
   required BuildContext context,
   required Rect anchorRect,
-  required GlobalKey anchorKey,
   required Map<String, dynamic> model,
 }) async {
-  const double bubbleW = 280;
-  const double bubbleH = 72;
+  final items = await _allowedActions();
+  if (!context.mounted) return;
+  if (items.isEmpty) {
+    // ไม่มีสิทธิ์ใช้งานเมนูเลย
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    messenger?.showSnackBar(
+      const SnackBar(
+        content: Text('คุณไม่มีสิทธิ์เข้าถึงเมนูใบอนุญาต'),
+        behavior: SnackBarBehavior.floating,
+        duration: Duration(seconds: 2),
+      ),
+    );
+    return;
+  }
+
+  const double bubbleW = 240;
+  const double itemH = 38;
   const double gap = 8;
+  final double bubbleH = items.length * itemH + 8;
 
   final overlayBox =
       Overlay.of(context).context.findRenderObject() as RenderBox?;
@@ -62,6 +145,10 @@ Future<void> showAreaCardCallout({
   if (arrowX < 16) arrowX = 16;
   if (arrowX > bubbleW - 16) arrowX = bubbleW - 16;
 
+  final router = GoRouter.of(context);
+  final routeData = model['key']?.toString() ??
+      '${model['subzone'] ?? ''}|${model['zone'] ?? ''}|${model['lock'] ?? ''}';
+
   final overlayState = Overlay.of(context, rootOverlay: false);
   late OverlayEntry entry;
   bool isOpen = true;
@@ -72,9 +159,6 @@ Future<void> showAreaCardCallout({
     entry.remove();
   }
 
-  final routeKey = model['key']?.toString() ??
-      '${model['subzone'] ?? ''}|${model['zone'] ?? ''}|${model['lock'] ?? ''}';
-
   entry = OverlayEntry(
     builder: (ctx) => _CalloutOverlay(
       left: left,
@@ -82,17 +166,15 @@ Future<void> showAreaCardCallout({
       bubbleW: bubbleW,
       arrowX: arrowX,
       flipDown: flipDown,
-      model: model,
+      items: items,
       onClose: close,
-      onOpenMenu: () {
+      onSelect: (action) {
         close();
-        if (ctx.mounted) {
-          showAreaLicenseActionMenuAt(
-            context: ctx,
-            anchorKey: anchorKey,
-            routeData: routeKey,
-          );
-        }
+        router.go(
+          routeData.isEmpty
+              ? action.route
+              : '${action.route}/${Uri.encodeComponent(routeData)}',
+        );
       },
     ),
   );
@@ -105,9 +187,9 @@ class _CalloutOverlay extends StatefulWidget {
   final double bubbleW;
   final double arrowX;
   final bool flipDown;
-  final Map<String, dynamic> model;
+  final List<_LicenseAction> items;
   final VoidCallback onClose;
-  final VoidCallback onOpenMenu;
+  final ValueChanged<_LicenseAction> onSelect;
 
   const _CalloutOverlay({
     required this.left,
@@ -115,9 +197,9 @@ class _CalloutOverlay extends StatefulWidget {
     required this.bubbleW,
     required this.arrowX,
     required this.flipDown,
-    required this.model,
+    required this.items,
     required this.onClose,
-    required this.onOpenMenu,
+    required this.onSelect,
   });
 
   @override
@@ -167,8 +249,8 @@ class _CalloutOverlayState extends State<_CalloutOverlay>
               width: widget.bubbleW,
               arrowX: widget.arrowX,
               flipDown: widget.flipDown,
-              model: widget.model,
-              onTap: widget.onOpenMenu,
+              items: widget.items,
+              onSelect: widget.onSelect,
             ),
           ),
         ),
@@ -177,113 +259,59 @@ class _CalloutOverlayState extends State<_CalloutOverlay>
   }
 }
 
+// ============================================================================
+// Bubble — กล่องเมนู 7 ตัว + ลูกศรชี้ block
+// ============================================================================
 class _CalloutBubble extends StatelessWidget {
   final double width;
   final double arrowX;
   final bool flipDown;
-  final Map<String, dynamic> model;
-  final VoidCallback onTap;
+  final List<_LicenseAction> items;
+  final ValueChanged<_LicenseAction> onSelect;
 
   const _CalloutBubble({
     required this.width,
     required this.arrowX,
     required this.flipDown,
-    required this.model,
-    required this.onTap,
+    required this.items,
+    required this.onSelect,
   });
-
-  String _titleText() {
-    final lease = (model['lock'] ?? '').toString();
-    final zone = (model['zone'] ?? '').toString();
-    if (lease.isEmpty && zone.isEmpty) return 'พื้นที่เช่า';
-    if (lease.isEmpty) return zone;
-    return lease;
-  }
-
-  String _subtitleText() {
-    final sub = (model['subzone'] ?? '').toString();
-    final zone = (model['zone'] ?? '').toString();
-    if (sub.isNotEmpty && zone.isNotEmpty) return '$sub · $zone';
-    if (zone.isNotEmpty) return zone;
-    if (sub.isNotEmpty) return sub;
-    return '';
-  }
 
   @override
   Widget build(BuildContext context) {
     const double arrowSize = 10;
-    final title = _titleText();
-    final subtitle = _subtitleText();
     return SizedBox(
       width: width,
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Material(
-            color: const Color(0xFFFFFFFF),
-            shape: RoundedRectangleBorder(
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFFFFF),
               borderRadius: BorderRadius.circular(10),
-              side: const BorderSide(color: Color(0xFFE4E4E7), width: 1),
-            ),
-            elevation: 6,
-            shadowColor: Colors.black.withValues(alpha: .15),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(10),
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(14, 10, 6, 10),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'เช่าอู่: $title',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF111827),
-                              height: 1.2,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (subtitle.isNotEmpty) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              '($subtitle...)',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.grey.shade600,
-                                height: 1.2,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    Container(
-                      width: 32,
-                      height: 32,
-                      alignment: Alignment.center,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFFF4F4F5),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.chevron_right_rounded,
-                        size: 20,
-                        color: Color(0xFF374151),
-                      ),
-                    ),
-                  ],
+              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .12),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
                 ),
-              ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: .04),
+                  blurRadius: 2,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (int i = 0; i < items.length; i++)
+                  _CalloutItem(
+                    action: items[i],
+                    onTap: () => onSelect(items[i]),
+                  ),
+              ],
             ),
           ),
           Positioned(
@@ -296,6 +324,64 @@ class _CalloutBubble extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _CalloutItem extends StatefulWidget {
+  final _LicenseAction action;
+  final VoidCallback onTap;
+  const _CalloutItem({required this.action, required this.onTap});
+
+  @override
+  State<_CalloutItem> createState() => _CalloutItemState();
+}
+
+class _CalloutItemState extends State<_CalloutItem> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final base = Colors.grey.shade700;
+    final hoverBg = const Color(0xFFF4F4F5);
+    final hoverFg = const Color(0xFF111827);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 80),
+          height: 38,
+          color: _hover ? hoverBg : Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              Icon(
+                widget.action.icon,
+                size: 15,
+                color: _hover ? hoverFg : base,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  widget.action.label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: _hover ? hoverFg : base,
+                    fontWeight: FontWeight.w400,
+                    height: 1.2,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
