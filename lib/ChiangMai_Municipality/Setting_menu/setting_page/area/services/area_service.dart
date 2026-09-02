@@ -18,12 +18,37 @@ import '../models/area_type_model.dart';
 import '../models/area_zone_model.dart';
 import '../../../../unity/area_zones_api.dart';
 
+class AreaLocksResult {
+  final List<AreaAreaModel> data;
+  final int currentPage;
+  final int lastPage;
+  final int perPage;
+  final int total;
+
+  const AreaLocksResult({
+    required this.data,
+    required this.currentPage,
+    required this.lastPage,
+    required this.perPage,
+    required this.total,
+  });
+
+  factory AreaLocksResult.empty() => const AreaLocksResult(
+        data: [],
+        currentPage: 1,
+        lastPage: 1,
+        perPage: 15,
+        total: 0,
+      );
+}
+
 class AreaService {
   AreaService();
 
   final AreaZonesApi _zonesApi = AreaZonesApi();
 
   String get _base => MyConstant().domain;
+  String get _baseV2 => MyConstant().domain_v2;
 
   // ───────────── Zones ─────────────
 
@@ -66,158 +91,193 @@ class AreaService {
     );
   }
 
-  /// เพิ่มโซนใหม่ (GET ตาม API เดิม: InC_zone_setring.php)
+  /// เพิ่มโซนใหม่ (v2: `POST /admin/areas/zones`)
+  /// - ต้องระบุ group_ser (หมวดโซน) ที่จะใส่โซนใหม่ลงไป
   Future<bool> addZone({
     required String rser,
     required String zn,
+    String? groupSer,
+    int qty = 0,
+    int status = 1,
   }) async {
-    final url = '$_base/InC_zone_setring.php?isAdd=true&ren=$rser&zonename=$zn';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return false;
-      final body = response.body;
-      final result = body.isNotEmpty ? json.decode(body) : null;
-      return result.toString() == 'true';
-    } catch (e) {
-      debugPrint('AreaService.addZone error: $e');
-      return false;
+    final gs = groupSer ?? rser;
+    final ok = await _zonesApi.addZone(
+      groupSer: gs,
+      zn: zn,
+      qty: qty,
+      status: status,
+    );
+    if (ok) {
+      _zonesApi.clearCache();
     }
+    return ok;
   }
 
-  /// ลบโซน (GET ตาม API เดิม: DeC_Zone.php)
+  /// เพิ่มหมวดโซน (v2: `POST /admin/areas/groups`)
+  Future<bool> addGroup({
+    required String zn,
+    int qty = 0,
+    int pri = 0,
+    int renPri = 0,
+  }) async {
+    final ok = await _zonesApi.addGroup(
+      zn: zn,
+      qty: qty,
+      pri: pri,
+      renPri: renPri,
+    );
+    if (ok) {
+      _zonesApi.clearCache();
+    }
+    return ok;
+  }
+
+  /// ลบโซน (v2: `DELETE /admin/areas/zones/{zoneSer}`)
   Future<bool> deleteZone({
     required String rser,
     required String zoneSer,
   }) async {
-    final url = '$_base/DeC_Zone.php?isAdd=true&ren=$rser&zonename=$zoneSer';
+    final ok = await _zonesApi.deleteZone(ser: zoneSer);
+    if (ok) {
+      _zonesApi.clearCache();
+    }
+    return ok;
+  }
+
+  /// ลบหมวดโซน (v2: `DELETE /admin/areas/groups/{ser}`)
+  Future<bool> deleteGroup({required String ser}) async {
+    final ok = await _zonesApi.deleteGroup(ser: ser);
+    if (ok) {
+      _zonesApi.clearCache();
+    }
+    return ok;
+  }
+
+  // ───────────── Areas (v2: /admin/areas/locks) ─────────────
+
+  /// โหลด Area (v2) — `GET /admin/areas/locks?per_page=&page=&zone_ser=&st=&q=`
+  /// - ใช้ Bearer token จาก AuthTokenStore
+  /// - คืนทั้ง data + meta (pagination)
+  Future<AreaLocksResult> fetchLocks({
+    int perPage = 200,
+    int page = 1,
+    String zoneSer = '',
+    String st = '',
+    String q = '',
+  }) async {
+    final query = <String, String>{
+      'per_page': '$perPage',
+      'page': '$page',
+    };
+    if (zoneSer.isNotEmpty && zoneSer != '0') {
+      query['zone_ser'] = zoneSer;
+    }
+    if (st.isNotEmpty) query['st'] = st;
+    if (q.isNotEmpty) query['q'] = q;
+
+    final uri = Uri.parse(
+      '$_baseV2/admin/areas/locks',
+    ).replace(queryParameters: query);
+
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return false;
-      final body = response.body;
-      final result = body.isNotEmpty ? json.decode(body) : null;
-      return result.toString() == 'true';
+      final headers = await MyHeaders.build();
+      final response = await http.get(uri, headers: headers);
+      if (response.statusCode != 200) {
+        debugPrint('AreaService.fetchLocks http=${response.statusCode}');
+        return AreaLocksResult.empty();
+      }
+      final body = json.decode(response.body);
+      if (body is! Map<String, dynamic>) return AreaLocksResult.empty();
+
+      final dataRaw = body['data'];
+      final metaRaw = body['meta'];
+      final list = (dataRaw is List)
+          ? dataRaw
+              .whereType<Map>()
+              .map((e) => AreaAreaModel.fromJson(e.cast<String, dynamic>()))
+              .toList()
+          : <AreaAreaModel>[];
+
+      int asInt(dynamic v) => v is num ? v.toInt() : int.tryParse('$v') ?? 0;
+      final meta = (metaRaw is Map)
+          ? metaRaw.cast<String, dynamic>()
+          : const <String, dynamic>{};
+
+      return AreaLocksResult(
+        data: list,
+        currentPage: asInt(meta['current_page'] ?? page),
+        lastPage: asInt(meta['last_page'] ?? 1),
+        perPage: asInt(meta['per_page'] ?? perPage),
+        total: asInt(meta['total'] ?? list.length),
+      );
     } catch (e) {
-      debugPrint('AreaService.deleteZone error: $e');
-      return false;
+      debugPrint('AreaService.fetchLocks error: $e');
+      return AreaLocksResult.empty();
     }
   }
 
-  // ───────────── Areas ─────────────
-
-  /// โหลด Area (ถ้า zoneSer == '0' หรือว่าง จะดึงทั้งหมด)
-  Future<List<AreaAreaModel>> fetchAreas({
-    required String rser,
+  /// เพิ่ม Area ใหม่ (v2: `POST /admin/areas/locks`)
+  /// body ตาม API: `{zone_ser, lncode, ln, area, rent}`
+  Future<bool> addLock({
     required String zoneSer,
-  }) async {
-    final useAll = zoneSer.isEmpty || zoneSer == '0';
-    final url = useAll
-        ? '$_base/GC_areaAll.php?isAdd=true&ren=$rser'
-        : '$_base/GC_areaAll.php?isAdd=true&ren=$rser&zone=$zoneSer';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return <AreaAreaModel>[];
-      final result = json.decode(response.body);
-      if (result is! List) return <AreaAreaModel>[];
-      return result
-          .whereType<Map<String, dynamic>>()
-          .map(AreaAreaModel.fromJson)
-          .toList();
-    } catch (e) {
-      debugPrint('AreaService.fetchAreas error: $e');
-      return <AreaAreaModel>[];
-    }
-  }
-
-  /// เพิ่ม Area ใหม่ (POST ตาม API เดิม: InC_area_setring.php)
-  Future<bool> addArea({
-    required String rser,
-    required String zone,
+    required String lncode,
     required String ln,
-    required String sname,
     required String area,
     required String rent,
-    required String rentMaket,
-    required String sw,
-    required String typeId,
   }) async {
-    final url = '$_base/InC_area_setring.php?isAdd=true&ren=$rser';
+    final uri = Uri.parse('$_baseV2/admin/areas/locks');
     try {
+      final headers = await MyHeaders.build();
       final response = await http.post(
-        Uri.parse(url),
-        body: {
-          'zonename': zone,
-          'area_ser': ln,
-          'area_name': sname,
-          'area_qty': area,
-          'area_pri': rent,
-          'areamarket_pri': rentMaket,
-          'sw': sw,
-          'typeser': typeId,
-        },
+        uri,
+        headers: headers,
+        body: json.encode({
+          'zone_ser': int.tryParse(zoneSer) ?? zoneSer,
+          'lncode': lncode,
+          'ln': ln,
+          'area': num.tryParse(area) ?? area,
+          'rent': num.tryParse(rent) ?? rent,
+        }),
       );
-      if (response.statusCode != 200) return false;
-      final body = response.body;
-      final result = body.isNotEmpty ? json.decode(body) : null;
-      return result.toString() == 'true';
+      return response.statusCode == 200;
     } catch (e) {
-      debugPrint('AreaService.addArea error: $e');
+      debugPrint('AreaService.addLock error: $e');
       return false;
     }
   }
 
-  /// แก้ไข Area (POST ตาม API เดิม: UpC_area_setring.php — ส่ง ser ของ area ที่จะแก้)
-  Future<bool> updateArea({
-    required String rser,
-    required String ser,
-    required String zone,
-    required String ln,
-    required String sname,
-    required String area,
-    required String rent,
-    required String rentMaket,
-    required String sw,
-    required String typeId,
-  }) async {
-    final url = '$_base/InC_area_setring.php?isAdd=true&ren=$rser';
+  /// ลบ Area (v2: `DELETE /admin/areas/locks/{ser}`)
+  Future<bool> deleteLock({required String ser}) async {
+    final uri = Uri.parse('$_baseV2/admin/areas/locks/$ser');
     try {
-      final response = await http.post(
-        Uri.parse(url),
-        body: {
-          'ser': ser,
-          'zonename': zone,
-          'area_ser': ln,
-          'area_name': sname,
-          'area_qty': area,
-          'area_pri': rent,
-          'areamarket_pri': rentMaket,
-          'sw': sw,
-          'typeser': typeId,
-        },
-      );
-      if (response.statusCode != 200) return false;
-      final body = response.body;
-      final result = body.isNotEmpty ? json.decode(body) : null;
-      return result.toString() == 'true';
+      final headers = await MyHeaders.build();
+      final request = http.Request('DELETE', uri);
+      request.headers.addAll(headers);
+      final streamed = await request.send();
+      return streamed.statusCode == 200;
     } catch (e) {
-      debugPrint('AreaService.updateArea error: $e');
+      debugPrint('AreaService.deleteLock error: $e');
       return false;
     }
   }
 
-  /// ลบ Area (GET ตาม API เดิม: DeC_area.php)
-  Future<bool> deleteArea({
-    required String rser,
+  /// แก้ไข Area (v2: `PUT /admin/areas/locks/{ser}`)
+  /// body: `{rent, st}` (partial)
+  Future<bool> updateLock({
     required String ser,
+    String? rent,
+    int? st,
   }) async {
-    final url = '$_base/DeC_area.php?isAdd=true&ren=$rser&vser=$ser';
+    final uri = Uri.parse('$_baseV2/admin/areas/locks/$ser');
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return false;
-      final body = response.body;
-      final result = body.isNotEmpty ? json.decode(body) : null;
-      return result.toString() == 'true';
+      final headers = await MyHeaders.build();
+      final body = <String, dynamic>{};
+      if (rent != null) body['rent'] = num.tryParse(rent) ?? rent;
+      if (st != null) body['st'] = st;
+      final response = await http.put(uri, headers: headers, body: json.encode(body));
+      return response.statusCode == 200;
     } catch (e) {
-      debugPrint('AreaService.deleteArea error: $e');
+      debugPrint('AreaService.updateLock error: $e');
       return false;
     }
   }

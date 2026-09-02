@@ -92,7 +92,7 @@ class AreaAreaModel {
       area: (json['area'] ?? '').toString(),
       rent: (json['rent'] ?? '0').toString(),
       rentMaket: (json['rent_maket'] ?? json['rentMaket'] ?? '0').toString(),
-      zone: (json['zone'] ?? json['zser'] ?? '0').toString(),
+      zone: (json['zone'] ?? json['zone_ser'] ?? json['zser'] ?? '0').toString(),
       zn: (json['zn'] ?? '').toString(),
       typeId:
           (json['type_id'] ?? json['typeId'] ?? json['tser'] ?? '').toString(),
@@ -100,7 +100,6 @@ class AreaAreaModel {
               json['typeName'] ??
               json['tn'] ??
               json['tname'] ??
-              json['stype'] ??
               '')
           .toString(),
       rser: (json['rser'] ?? '0').toString(),

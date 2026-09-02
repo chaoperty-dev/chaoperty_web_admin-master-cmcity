@@ -152,12 +152,14 @@ class AreaViewModel extends ChangeNotifier {
     if ((_rser ?? '').isEmpty) return;
     _isLoading = true;
     notifyListeners();
-    final results = await Future.wait([
-      _service.fetchAreas(rser: _rser!, zoneSer: _selectedZoneSer ?? '0'),
-      _service.fetchAreaCount(_rser!),
-    ]);
-    _areas = results[0] as List<AreaAreaModel>;
-    _areaCount = results[1] as int;
+    // v2: list + count ใน request เดียว (meta.total)
+    final result = await _service.fetchLocks(
+      perPage: 200,
+      zoneSer: _selectedZoneSer ?? '0',
+      q: _searchQuery,
+    );
+    _areas = result.data;
+    _areaCount = result.total;
     _applyFilter();
     _isLoading = false;
     notifyListeners();
@@ -298,20 +300,17 @@ class AreaViewModel extends ChangeNotifier {
       _emit(const AreaErrorEvent('ไม่พบ rser'));
       return false;
     }
-    final ok = await _service.addArea(
-      rser: _rser!,
-      zone: zone,
+    // v2: รับเฉพาะ {zone_ser, lncode, ln, area, rent}
+    final ok = await _service.addLock(
+      zoneSer: zone,
+      lncode: lncode,
       ln: ln,
-      sname: sname,
       area: area,
       rent: rent,
-      rentMaket: rentMaket,
-      sw: sw,
-      typeId: typeId,
     );
     if (ok) {
       _emit(const AreaSuccessEvent('เพิ่ม Area สำเร็จ'));
-  
+
       await _loadAreasAndCount();
     } else {
       _emit(const AreaErrorEvent('เพิ่ม Area ล้มเหลว'));
@@ -319,7 +318,7 @@ class AreaViewModel extends ChangeNotifier {
     return ok;
   }
 
-  /// แก้ไข Area — แก้ได้แค่ รหัสพื้นที่, ชื่อพื้นที่, ขนาดพื้นที่, ค่าบริการหลัก
+  /// แก้ไข Area — v2 รับเฉพาะ `{rent, st}` ในตอนนี้
   Future<bool> updateArea({
     required String ser,
     required String ln,
@@ -336,21 +335,13 @@ class AreaViewModel extends ChangeNotifier {
       _emit(const AreaErrorEvent('ไม่พบ rser'));
       return false;
     }
-    final ok = await _service.updateArea(
-      rser: _rser!,
+    final ok = await _service.updateLock(
       ser: ser,
-      zone: zone,
-      ln: ln,
-      sname: sname,
-      area: area,
       rent: rent,
-      rentMaket: rentMaket ?? '0',
-      sw: sw ?? '0',
-      typeId: typeId,
     );
     if (ok) {
       _emit(const AreaSuccessEvent('แก้ไข Area สำเร็จ'));
-     
+
       await _loadAreasAndCount();
     } else {
       _emit(const AreaErrorEvent('แก้ไข Area ล้มเหลว'));
@@ -363,7 +354,7 @@ class AreaViewModel extends ChangeNotifier {
       _emit(const AreaErrorEvent('ไม่พบ rser'));
       return false;
     }
-    final ok = await _service.deleteArea(rser: _rser!, ser: area.ser);
+    final ok = await _service.deleteLock(ser: area.ser);
     if (ok) {
       _emit(const AreaSuccessEvent('ลบ Area สำเร็จ'));
 
