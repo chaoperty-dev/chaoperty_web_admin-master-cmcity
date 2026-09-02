@@ -67,7 +67,13 @@ class AreaMenuCardGrid extends StatelessWidget {
               childAspectRatio: ratio,
             ),
             itemBuilder: (context, i) {
-              return AreaMenuBoxCard(model: vm.requests[i]);
+              final row = vm.requests[i];
+              // ✅ key เสถียรต่อ row — กัน State reuse แล้ว _anchorKey ผูก row ผิด
+              final rowKey = (row['aser'] ?? row['key'] ?? '$i').toString();
+              return AreaMenuBoxCard(
+                key: ValueKey('areacard:$rowKey'),
+                model: row,
+              );
             },
           );
         },
