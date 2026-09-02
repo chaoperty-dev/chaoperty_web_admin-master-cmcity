@@ -13,7 +13,7 @@ import '../../../unity/FormatDate.dart';
 import '../../../unity/Enum.dart';
 import '../../viewmodels/area_menu_view_model.dart'
     show AreaMenuViewModel;
-import 'area_card_callout.dart';
+import 'area_license_action_menu.dart';
 
 class AreaMenuBoxCard extends StatefulWidget {
   final Map<String, dynamic> model;
@@ -168,11 +168,13 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
           child: InkWell(
             borderRadius: BorderRadius.circular(LaRadius.md),
             onTap: () {
-              // กดที่การ์ด → callout bubble เหนือ block; ใน bubble กด → action menu 7 เมนู
-              showAreaCardCalloutAt(
+              // กดที่การ์ด → เปิด action menu ทันที (filter ตามสิทธิ์ user)
+              final key = m['key']?.toString() ??
+                  '${m['subzone'] ?? ''}|${m['zone'] ?? ''}|${m['lock'] ?? ''}';
+              showAreaLicenseActionMenuAt(
                 context: context,
                 anchorKey: _anchorKey,
-                model: m,
+                routeData: key,
               );
             },
             child: Stack(
