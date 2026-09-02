@@ -706,29 +706,60 @@ class _PaymentSummaryCard extends StatelessWidget {
           const SizedBox(height: LaSpace.lg),
 
           // ─── แสดงแค่ 4 ฟิลด์: เลขที่สัญญา / วันที่สิ้นสุด / บริเวณ / รหัสพื้นที่ ───
-          _InfoColumn(
-            title: 'ข้อมูลส่วนบุคคล',
-            items: [
-              _InfoItem(
-                icon: Icons.receipt_long_rounded,
-                label: 'เลขที่สัญญา',
-                value: d.paymentNo,
+          // ─── Layout 2 คอลัมน์ (2 แถว × 2 ฟิลด์) ───
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'ข้อมูลส่วนบุคคล'.toUpperCase(),
+                style: LaText.label.copyWith(
+                  color: LaColors.primaryDark,
+                  letterSpacing: 1.2,
+                ),
               ),
-              _InfoItem(
-                icon: Icons.calendar_today_rounded,
-                label: 'วันที่สิ้นสุด',
-                value: _formatDate(d.paidAt),
-              ),
-              _InfoItem(
-                icon: Icons.location_on_rounded,
-                label: 'บริเวณ / โซน',
-                value: d.payType,
-              ),
-              _InfoItem(
-                icon: Icons.numbers_rounded,
-                label: 'รหัสพื้นที่',
-                value: d.methodName,
-                mono: true,
+              const SizedBox(height: LaSpace.sm),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _InfoItem(
+                          icon: Icons.receipt_long_rounded,
+                          label: 'เลขที่สัญญา',
+                          value: d.paymentNo,
+                        ),
+                        const SizedBox(height: LaSpace.sm),
+                        _InfoItem(
+                          icon: Icons.location_on_rounded,
+                          label: 'บริเวณ / โซน',
+                          value: d.payType,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: LaSpace.lg),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        _InfoItem(
+                          icon: Icons.calendar_today_rounded,
+                          label: 'วันที่สิ้นสุด',
+                          value: _formatDate(d.paidAt),
+                        ),
+                        const SizedBox(height: LaSpace.sm),
+                        _InfoItem(
+                          icon: Icons.numbers_rounded,
+                          label: 'รหัสพื้นที่',
+                          value: d.methodName,
+                          mono: true,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
