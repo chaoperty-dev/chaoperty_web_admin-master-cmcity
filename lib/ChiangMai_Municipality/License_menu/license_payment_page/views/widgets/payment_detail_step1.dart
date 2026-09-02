@@ -705,62 +705,46 @@ class _PaymentSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: LaSpace.lg),
 
-          // ─── แสดง 4 ฟิลด์: ชื่อ / เลขบัตร / บริเวณ/โซน / รหัสพื้นที่ ───
-          // ─── Layout 2 คอลัมน์ (2 แถว × 2 ฟิลด์) เหมือน approve page ───
-          Column(
+          // ─── Layout 2 คอลัมน์ (section แยก) เหมือน approve page ───
+          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'ข้อมูลส่วนบุคคล'.toUpperCase(),
-                style: LaText.label.copyWith(
-                  color: LaColors.primaryDark,
-                  letterSpacing: 1.2,
+              Expanded(
+                child: _InfoColumn(
+                  title: 'ข้อมูลส่วนบุคคล',
+                  items: [
+                    _InfoItem(
+                      icon: Icons.location_on_rounded,
+                      label: 'บริเวณ / โซน',
+                      value: d.payType,
+                    ),
+                    _InfoItem(
+                      icon: Icons.numbers_rounded,
+                      label: 'รหัสพื้นที่',
+                      value: d.methodName,
+                      mono: true,
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: LaSpace.sm),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _InfoItem(
-                          icon: Icons.person_rounded,
-                          label: 'ชื่อ',
-                          value: d.payerName,
-                        ),
-                        const SizedBox(height: LaSpace.sm),
-                        _InfoItem(
-                          icon: Icons.location_on_rounded,
-                          label: 'บริเวณ / โซน',
-                          value: d.payType,
-                        ),
-                      ],
+              const SizedBox(width: LaSpace.lg),
+              Expanded(
+                child: _InfoColumn(
+                  title: 'ข้อมูลลูกค้า',
+                  items: [
+                    _InfoItem(
+                      icon: Icons.person_rounded,
+                      label: 'ชื่อ',
+                      value: d.payerName,
                     ),
-                  ),
-                  const SizedBox(width: LaSpace.lg),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        _InfoItem(
-                          icon: Icons.confirmation_number_rounded,
-                          label: 'เลขบัตร',
-                          value: d.clientTax,
-                          mono: true,
-                        ),
-                        const SizedBox(height: LaSpace.sm),
-                        _InfoItem(
-                          icon: Icons.numbers_rounded,
-                          label: 'รหัสพื้นที่',
-                          value: d.methodName,
-                          mono: true,
-                        ),
-                      ],
+                    _InfoItem(
+                      icon: Icons.confirmation_number_rounded,
+                      label: 'เลขบัตร',
+                      value: d.clientTax,
+                      mono: true,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
