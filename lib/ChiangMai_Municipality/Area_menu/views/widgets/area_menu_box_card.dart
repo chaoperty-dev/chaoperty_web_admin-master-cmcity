@@ -15,6 +15,7 @@ import '../../viewmodels/area_menu_view_model.dart'
     show AreaMenuViewModel;
 import 'area_license_action_menu.dart';
 import 'area_card_callout.dart';
+import 'area_card_active_state.dart';
 
 class AreaMenuBoxCard extends StatefulWidget {
   final Map<String, dynamic> model;
@@ -27,6 +28,16 @@ class AreaMenuBoxCard extends StatefulWidget {
 class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   bool _hover = false;
   final GlobalKey _anchorKey = GlobalKey();
+  late final String _cardKey = AreaCardActiveState.keyOf(widget.model);
+
+  @override
+  void dispose() {
+    // clear state เมื่อ card ถูกทำลาย (กันค้าง)
+    if (AreaCardActiveState.instance.value == _cardKey) {
+      AreaCardActiveState.clear();
+    }
+    super.dispose();
+  }
 
   // ---------------------------------------------------------------
   // Theme helpers — ใช้ค่าจาก Map เป็นหลัก
@@ -38,7 +49,8 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
     return _palette.bg;
   }
 
-  Color _border() {
+  Color _border(bool isActive) {
+    if (isActive) return _palette.fg;
     return _hover ? _palette.fg : LaColors.border;
   }
 
@@ -140,42 +152,52 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
   Widget build(BuildContext context) {
     final m = widget.model;
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: AnimatedContainer(
-        key: _anchorKey,
-        duration: LrAnimations.fast,
-        curve: Curves.easeOut,
-        decoration: BoxDecoration(
-          color: _bg(),
-          borderRadius: BorderRadius.circular(LaRadius.md),
-          border: Border.all(
-            color: _border(),
-            width: _hover ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_hover ? .12 : .04),
-              blurRadius: _hover ? 16 : 8,
-              offset: Offset(0, _hover ? 5 : 2),
+    return ValueListenableBuilder<String?>(
+      valueListenable: AreaCardActiveState.instance,
+      builder: (context, activeKey, _) {
+        final isActive = activeKey == _cardKey;
+        return MouseRegion(
+          cursor: SystemMouseCursors.click,
+          onEnter: (_) => setState(() => _hover = true),
+          onExit: (_) => setState(() => _hover = false),
+          child: AnimatedContainer(
+            key: _anchorKey,
+            duration: LrAnimations.fast,
+            curve: Curves.easeOut,
+            margin: isActive
+                ? const EdgeInsets.all(-4)
+                : EdgeInsets.zero,
+            decoration: BoxDecoration(
+              color: _bg(),
+              borderRadius: BorderRadius.circular(LaRadius.md),
+              border: Border.all(
+                color: _border(isActive),
+                width: isActive ? 2 : (_hover ? 1.5 : 1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black
+                      .withOpacity(isActive ? .22 : (_hover ? .12 : .04)),
+                  blurRadius: isActive ? 24 : (_hover ? 16 : 8),
+                  offset: Offset(0, isActive ? 10 : (_hover ? 5 : 2)),
+                ),
+              ],
             ),
-          ],
-        ),
-        clipBehavior: Clip.hardEdge,
-        child: Material(
-          type: MaterialType.transparency,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(LaRadius.md),
-            onTap: () {
-              // กด block → callout bubble เหนือ block; ใน bubble กด → action menu 7 เมนู
-              showAreaCardCalloutAt(
-                context: context,
-                anchorKey: _anchorKey,
-                model: m,
-              );
-            },
+            clipBehavior: Clip.hardEdge,
+            child: Material(
+              type: MaterialType.transparency,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(LaRadius.md),
+                onTap: () {
+                  // mark active ก่อนเปิด callout
+                  AreaCardActiveState.activate(_cardKey);
+                  // กด block → callout bubble เหนือ block; ใน bubble กด → action menu 7 เมนู
+                  showAreaCardCalloutAt(
+                    context: context,
+                    anchorKey: _anchorKey,
+                    model: m,
+                  );
+                },
             child: Stack(
               children: [
                 // ── Main content ───────────────────────────────
@@ -370,7 +392,9 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
           ),
         ),
       ),
-    );
+      );
+    },
+  );
   }
 }
 

@@ -13,6 +13,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
 import '../../../List_CMM/Register_CMM/AuthService.dart';
+import 'area_card_active_state.dart';
 
 class _LicenseAction {
   final String label;
@@ -161,6 +162,7 @@ Future<void> showAreaCardCallout({
   void close() {
     if (!isOpen) return;
     isOpen = false;
+    AreaCardActiveState.clear();
     entry.remove();
   }
 
