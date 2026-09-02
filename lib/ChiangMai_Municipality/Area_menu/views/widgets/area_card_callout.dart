@@ -291,9 +291,10 @@ class _CalloutBubble extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Container(
+            clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               color: Colors.transparent,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: .12),
