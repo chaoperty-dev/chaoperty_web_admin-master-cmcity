@@ -12,16 +12,19 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../router/app_router.dart';
+import '../../../List_CMM/Register_CMM/AuthService.dart';
 
 /// รายการเมนู "ใบอนุญาต" ที่ให้เลือก
 class _LicenseAction {
   final String label;
   final IconData icon;
   final String route;
+  final String permission;
   const _LicenseAction({
     required this.label,
     required this.icon,
     required this.route,
+    required this.permission,
   });
 }
 
@@ -30,38 +33,67 @@ const _licenseActions = <_LicenseAction>[
     label: 'คำขอใบอนุญาต',
     icon: Icons.edit_note_outlined,
     route: AppRoute.contract,
+    permission: 'LICENSE_REQUEST',
   ),
   _LicenseAction(
     label: 'แนบเอกสารคำขอ',
     icon: Icons.attach_file_outlined,
     route: AppRoute.attach,
+    permission: 'REQUEST_DOCUMENT_ATTACHMENT',
   ),
   _LicenseAction(
     label: 'ชำระค่าธรรมเนียม',
     icon: Icons.payments_outlined,
     route: AppRoute.payment,
+    permission: 'FEE_PAYMENT',
   ),
   _LicenseAction(
     label: 'ตรวจสอบเอกสารคำขอ',
     icon: Icons.rule_outlined,
     route: AppRoute.verify,
+    permission: 'REQUEST_DOCUMENT_REVIEW',
   ),
   _LicenseAction(
     label: 'ตรวจสอบข้อเท็จจริง',
     icon: Icons.search_outlined,
     route: AppRoute.factCheck,
+    permission: 'FACT_VERIFICATION',
   ),
   _LicenseAction(
     label: 'ส่งคำร้องขออนุมัติ',
     icon: Icons.send_outlined,
     route: AppRoute.submitApproval,
+    permission: 'SUBMIT_APPROVAL_REQUEST',
   ),
   _LicenseAction(
     label: 'อนุมัติคำร้อง',
     icon: Icons.check_circle_outline,
     route: AppRoute.approve,
+    permission: 'APPROVE_REQUEST',
   ),
 ];
+
+/// ดึงรายการเมนูที่ user มีสิทธิ์ใช้งาน (กรองตาม allowed permissions)
+Future<List<_LicenseAction>> _allowedActions() async {
+  final allowed = (await AuthService.getMenuPermissions()).toSet();
+  if (allowed.isEmpty) return const [];
+  return _licenseActions
+      .where((a) => allowed.contains(a.permission))
+      .toList(growable: false);
+}
+
+/// แสดง toast เตือนเมื่อ user ไม่มีสิทธิ์ใช้งานเมนูใบอนุญาตเลย
+Future<void> _showNoPermissionToast(BuildContext context) async {
+  final messenger = ScaffoldMessenger.maybeOf(context);
+  if (messenger == null) return;
+  messenger.showSnackBar(
+    const SnackBar(
+      content: Text('คุณไม่มีสิทธิ์เข้าถึงเมนูใบอนุญาต'),
+      behavior: SnackBarBehavior.floating,
+      duration: Duration(seconds: 2),
+    ),
+  );
+}
 
 enum _ArrowSide { left, right, none }
 
@@ -75,8 +107,16 @@ Future<void> showAreaLicenseActionMenu({
   required Rect position,
   required String routeData,
 }) async {
+  final allowed = await _allowedActions();
+  if (!context.mounted) return;
+  if (allowed.isEmpty) {
+    // ไม่มีสิทธิ์ใช้งานเมนูใบอนุญาตเลย
+    await _showNoPermissionToast(context);
+    return;
+  }
+
   const double menuW = _menuWidth;
-  final double menuH = _licenseActions.length * _itemHeight + 8;
+  final double menuH = allowed.length * _itemHeight + 8;
 
   final overlayBox =
       Overlay.of(context).context.findRenderObject() as RenderBox?;
@@ -127,6 +167,7 @@ Future<void> showAreaLicenseActionMenu({
       popupTop: popupTop,
       arrowSide: arrowSide,
       arrowY: arrowY,
+      items: allowed,
       onClose: close,
       onSelect: (action) {
         close();
@@ -165,6 +206,13 @@ Future<void> showAreaLicenseActionMenuDefault({
   required BuildContext context,
   required String routeData,
 }) async {
+  final allowed = await _allowedActions();
+  if (!context.mounted) return;
+  if (allowed.isEmpty) {
+    await _showNoPermissionToast(context);
+    return;
+  }
+
   final size = MediaQuery.of(context).size;
   final double popupLeft = (size.width - _menuWidth) / 2;
   final double popupTop = size.height / 2 - 150;
@@ -186,6 +234,7 @@ Future<void> showAreaLicenseActionMenuDefault({
       popupTop: popupTop,
       arrowSide: _ArrowSide.none,
       arrowY: 0,
+      items: allowed,
       onClose: close,
       onSelect: (action) {
         close();
@@ -209,6 +258,7 @@ class _PopupOverlay extends StatefulWidget {
   final double popupTop;
   final _ArrowSide arrowSide;
   final double arrowY;
+  final List<_LicenseAction> items;
   final VoidCallback onClose;
   final ValueChanged<_LicenseAction> onSelect;
 
@@ -217,6 +267,7 @@ class _PopupOverlay extends StatefulWidget {
     required this.popupTop,
     required this.arrowSide,
     required this.arrowY,
+    required this.items,
     required this.onClose,
     required this.onSelect,
   });
@@ -267,7 +318,7 @@ class _PopupOverlayState extends State<_PopupOverlay>
             child: _BubblePopup(
               arrowSide: widget.arrowSide,
               arrowY: widget.arrowY,
-              items: _licenseActions,
+              items: widget.items,
               onSelected: widget.onSelect,
             ),
           ),
