@@ -164,9 +164,7 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
             key: _anchorKey,
             duration: LrAnimations.fast,
             curve: Curves.easeOut,
-            margin: isActive
-                ? const EdgeInsets.all(-4)
-                : EdgeInsets.zero,
+            margin: EdgeInsets.zero,
             decoration: BoxDecoration(
               color: _bg(),
               borderRadius: BorderRadius.circular(LaRadius.md),
