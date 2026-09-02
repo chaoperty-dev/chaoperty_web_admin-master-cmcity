@@ -3,9 +3,8 @@
 // ============================================================================
 // Service — โหลดข้อมูล "ผู้เช่า" จาก API
 // ใช้ API เดียวกับ PeopleChao_Screen:
-//   - GC_tenantAll.php  (zone=0 หรือ zone=null = ทั้งหมด)
-//   - GC_tenant.php     (filter ตาม zone)
-//   - GC_zone.php / GC_zone_sub.php สำหรับ zones/subzones
+//   - GC_tenantAll_V2.php  (zone=0 หรือ zone=null = ทั้งหมด)
+//   - zones via AreaZonesApi (lib/ChiangMai_Municipality/unity/area_zones_api.dart)
 // ============================================================================
 
 import 'dart:convert';
@@ -16,14 +15,16 @@ import 'package:chaoperty/Constant/global_http.dart';
 import 'package:chaoperty/Model/GetSubZone_Model.dart';
 import 'package:chaoperty/Model/GetTeNant_Model.dart';
 import 'package:chaoperty/Model/GetZone_Model.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../../unity/area_zones_api.dart';
 
 class TenantLicenseService {
   TenantLicenseService({ApiCache? cache})
       : _cache = cache ?? ApiCache(ttl: const Duration(seconds: 60));
 
   final ApiCache _cache;
+  final AreaZonesApi _zonesApi = AreaZonesApi();
 
   // ---------- Tenants ----------
   /// โหลดรายการ "ผู้เช่า" ตาม zone ที่เลือก
@@ -35,7 +36,8 @@ class TenantLicenseService {
     String? zone,
     String? status,
   }) async {
-    final rawRen = await _getRenTalSer();
+    final prefs = await SharedPreferences.getInstance();
+    final rawRen = prefs.getString('renTalSer');
     // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
     final ren =
         (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
@@ -97,49 +99,21 @@ class TenantLicenseService {
   // ---------- Zones ----------
   /// โหลดรายการ "โซน" (zones) — default คือทั้งหมด
   Future<List<ZoneModel>> fetchZones({String? zoneSubSer}) async {
-    final rawRen = await _getRenTalSer();
-    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
-    final ren =
-        (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
-    final cacheKey = 'tenant_license_zone_${ren}_$zoneSubSer';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) {
-        return _applyZoneFilter(cached, zoneSubSer);
-      }
-    }
-
-    final url = '${MyConstant().domain}/GC_zone.php?isAdd=true&ren=$ren';
-    try {
-      final response = await http.get(Uri.parse(url));
-      final result = jsonDecode(response.body);
-      if (result == null || result is! List) return <ZoneModel>[];
-      _cache.set(cacheKey, result);
-      return _applyZoneFilter(result, zoneSubSer);
-    } catch (e) {
-      print('TenantLicenseService.fetchZones error: $e');
-      return <ZoneModel>[];
-    }
-  }
-
-  List<ZoneModel> _applyZoneFilter(List<dynamic> rawList, String? zoneSubSer) {
+    final raw = await _zonesApi.fetchZones(groupSer: zoneSubSer);
     final defaultZone = ZoneModel.fromJson({
-      'ser': '0',
-      'rser': '0',
-      'zn': 'ทั้งหมด',
-      'qty': '0',
-      'img': '0',
-      'data_update': '0',
+      'ser': '0', 'rser': '0', 'zn': 'ทั้งหมด', 'qty': '0', 'img': '0', 'data_update': '0',
     });
     final zones = <ZoneModel>[defaultZone];
-    for (final map in rawList) {
-      final zone = ZoneModel.fromJson(map);
-      if (zoneSubSer == null ||
-          zoneSubSer == '0' ||
-          zone.sub_zone == zoneSubSer) {
-        zones.add(zone);
-      }
+    for (final row in raw) {
+      if (row is! AreaZone) continue;
+      zones.add(ZoneModel.fromJson({
+        'ser': row.ser ?? '0',
+        'rser': row.ser ?? '0',
+        'zn': row.zn ?? '',
+        'qty': '${row.qty ?? 0}',
+        'img': '0',
+        'data_update': '0',
+      }));
     }
     zones.sort((a, b) {
       if (a.zn == 'ทั้งหมด') return -1;
@@ -152,48 +126,22 @@ class TenantLicenseService {
   // ---------- SubZones ----------
   /// โหลดรายการ "โซนพื้นที่เช่า" (subzones) — default คือทั้งหมด
   Future<List<SubZoneModel>> fetchSubZones() async {
-    final rawRen = await _getRenTalSer();
-    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
-    final ren =
-        (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
-    final cacheKey = 'tenant_license_subzone_$ren';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) return _buildSubZoneList(cached);
-    }
-
-    final url = '${MyConstant().domain}/GC_zone_sub.php?isAdd=true&ren=$ren';
-    try {
-      final response = await http.get(Uri.parse(url));
-      final result = json.decode(response.body);
-      _cache.set(cacheKey, result);
-      return _buildSubZoneList(result);
-    } catch (e) {
-      print('TenantLicenseService.fetchSubZones error: $e');
-      return _buildSubZoneList(<dynamic>[]);
-    }
-  }
-
-  List<SubZoneModel> _buildSubZoneList(List<dynamic> rawList) {
+    final raw = await _zonesApi.fetchGroups();
     final defaultMap = <String, dynamic>{
-      'ser': '0',
-      'rser': '0',
-      'zn': 'ทั้งหมด',
-      'qty': '0',
-      'img': '0',
-      'data_update': '0',
+      'ser': '0', 'rser': '0', 'zn': 'ทั้งหมด', 'qty': '0', 'img': '0', 'data_update': '0',
     };
     final subs = <SubZoneModel>[SubZoneModel.fromJson(defaultMap)];
-    for (final map in rawList) {
-      subs.add(SubZoneModel.fromJson(map));
+    for (final row in raw) {
+      if (row is! AreaZone) continue;
+      subs.add(SubZoneModel.fromJson({
+        'ser': row.ser ?? '0',
+        'rser': row.ser ?? '0',
+        'zn': row.zn ?? '',
+        'qty': '${row.qty ?? 0}',
+        'img': '0',
+        'data_update': '0',
+      }));
     }
     return subs;
-  }
-
-  // ---------- Helpers ----------
-  Future<String?> _getRenTalSer() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('renTalSer');
   }
 }

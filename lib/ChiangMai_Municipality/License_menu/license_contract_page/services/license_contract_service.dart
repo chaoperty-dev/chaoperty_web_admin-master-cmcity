@@ -31,9 +31,9 @@ class LicenseContractService {
   final AreaZonesApi _zonesApi = AreaZonesApi();
 
   // ---------- Zones (v2 — /admin/areas/groups + /admin/areas/zones) ----------
-  Future<List<ZoneModel>> fetchZones({String? subZoneSer}) async {
+  Future<List<ZoneModel>> fetchZones({String? zoneSubSer}) async {
     final api = _zonesApi;
-    final raw = await api.fetchZones(groupSer: subZoneSer);
+    final raw = await api.fetchZones(groupSer: zoneSubSer);
     return _mapZones(raw);
   }
 

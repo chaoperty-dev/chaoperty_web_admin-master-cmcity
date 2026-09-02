@@ -16,9 +16,12 @@ import '../models/area_area_model.dart';
 import '../models/area_count_model.dart';
 import '../models/area_type_model.dart';
 import '../models/area_zone_model.dart';
+import '../../../../unity/area_zones_api.dart';
 
 class AreaService {
   AreaService();
+
+  final AreaZonesApi _zonesApi = AreaZonesApi();
 
   String get _base => MyConstant().domain;
 
@@ -26,17 +29,20 @@ class AreaService {
 
   /// โหลดรายการโซนทั้งหมด
   Future<List<AreaZoneModel>> fetchZones(String rser) async {
-    final url = '$_base/GC_zone.php?isAdd=true&ren=$rser';
     try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return <AreaZoneModel>[];
-      final result = json.decode(response.body);
-      if (result is! List) return <AreaZoneModel>[];
-      final zones = result
-          .whereType<Map<String, dynamic>>()
-          .map(AreaZoneModel.fromJson)
-          .toList();
-      // 'ทั้งหมด' ขึ้นก่อน, ที่เหลือเรียงตามชื่อ
+      final raw = await _zonesApi.fetchGroups();
+      final zones = <AreaZoneModel>[];
+      for (final row in raw) {
+        if (row is! AreaZone) continue;
+        zones.add(AreaZoneModel.fromJson({
+          'ser': row.ser ?? '0',
+          'rser': row.ser ?? '0',
+          'zn': row.zn ?? '',
+          'qty': '${row.qty ?? 0}',
+          'img': '0',
+          'data_update': '',
+        }));
+      }
       zones.sort((a, b) {
         if (a.zn == 'ทั้งหมด') return -1;
         if (b.zn == 'ทั้งหมด') return 1;

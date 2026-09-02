@@ -25,10 +25,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chaoperty/Constant/Myconstant.dart';
 import '../models/rental_general_models.dart';
 
+import '../../../../unity/area_zones_api.dart';
+
 class RentalGeneralService {
   String _domain;
   RentalGeneralService({String? domain})
       : _domain = domain ?? MyConstant().domain;
+
+  final AreaZonesApi _zonesApi = AreaZonesApi();
 
   void setDomain(String domain) {
     _domain = domain;
@@ -160,20 +164,8 @@ class RentalGeneralService {
     if (!hasDomain) {
       return const ErrorRentalGeneral('ยังไม่ได้ตั้งค่า domain');
     }
-    final ren = await _getRen();
-    final uri = Uri.parse(
-      '$_domain/GC_zone.php?isAdd=true&ren=$ren',
-    );
     try {
-      final resp = await http.get(uri).timeout(const Duration(seconds: 30));
-      if (resp.statusCode != 200) {
-        return ErrorRentalGeneral('HTTP ${resp.statusCode}');
-      }
-      final decoded = json.decode(resp.body);
-      if (decoded is! List) {
-        return const ErrorRentalGeneral('รูปแบบข้อมูลไม่ถูกต้อง');
-      }
-
+      final raw = await _zonesApi.fetchGroups();
       final zones = <ZoneImageModel>[];
 
       // row 0: โลโก้ (placeholder)
@@ -195,10 +187,16 @@ class RentalGeneralService {
         dataUpdate: '',
       ));
       // rows จาก API
-      for (final raw in decoded) {
-        if (raw is Map<String, dynamic>) {
-          zones.add(ZoneImageModel.fromJson(raw));
-        }
+      for (final row in raw) {
+        if (row is! AreaZone) continue;
+        zones.add(ZoneImageModel(
+          ser: row.ser ?? '0',
+          rser: row.ser ?? '0',
+          zn: row.zn ?? '',
+          qty: '${row.qty ?? 0}',
+          img: '0',
+          dataUpdate: '',
+        ));
       }
 
       // sort: โลโก้ → แผนผัง → อื่นๆ

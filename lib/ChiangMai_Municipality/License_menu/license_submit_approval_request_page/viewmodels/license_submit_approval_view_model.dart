@@ -10,7 +10,6 @@
 
 import 'dart:async';
 
-import 'package:chaoperty/Constant/api_cache.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../Model/GetSubZone_Model.dart';
@@ -30,10 +29,9 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
     LicenseSubmitApprovalService? paymentService,
     LicenseSubmitApprovalDetailService? detailService,
     LicenseRequestService? requestService,
-    ApiCache? cache,
   })  : _config = config,
         _paymentService =
-            paymentService ?? LicenseSubmitApprovalService(cache: cache),
+            paymentService ?? LicenseSubmitApprovalService(),
         _detailService = detailService ?? LicenseSubmitApprovalDetailService(),
         _requestService = requestService ?? LicenseRequestService() {
     // ✅ sync state จาก global store (license scope)

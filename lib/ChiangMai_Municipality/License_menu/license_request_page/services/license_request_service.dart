@@ -370,8 +370,8 @@ class LicenseRequestService {
 
   // ---------- Zones (v2 — ใช้ AreaZonesApi helper, self-caching 1 นาที) ----------
   /// โหลดรายการ "โซน" (zones) — default คือทั้งหมด
-  Future<List<ZoneModel>> fetchZones({String? subZoneSer}) async {
-    final raw = await _zonesApi.fetchZones(groupSer: subZoneSer);
+  Future<List<ZoneModel>> fetchZones({String? zoneSubSer}) async {
+    final raw = await _zonesApi.fetchZones(groupSer: zoneSubSer);
     final defaultZone = ZoneModel.fromJson({
       'ser': '0',
       'rser': '0',

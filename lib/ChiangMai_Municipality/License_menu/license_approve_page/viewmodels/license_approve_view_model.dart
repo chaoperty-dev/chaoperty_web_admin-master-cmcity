@@ -178,12 +178,14 @@ class LicenseApproveViewModel extends ChangeNotifier {
   }
 
   Future<void> loadZones({String? zoneSubSer}) async {
+
     try {
       _zoneModels = await _service.fetchZones(zoneSubSer: zoneSubSer);
       notifyListeners();
     } catch (e) {
       print('loadZones error: $e');
     }
+    
   }
 
   /// ผู้ใช้เลือก "หมวดโซนพื้นที่" (sub-zone)

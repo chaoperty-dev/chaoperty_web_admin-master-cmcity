@@ -78,7 +78,7 @@ class LicenseContractViewModel extends ChangeNotifier {
         orElse: () => SubZoneModel(),
       );
       subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-      loadZones(subZoneSer: subSer);
+      loadZones(zoneSubSer: subSer);
     }
 
     // load announcement/areas based on current zone
@@ -321,7 +321,7 @@ class LicenseContractViewModel extends ChangeNotifier {
       );
       subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
     }
-    await loadZones(subZoneSer: subSer);
+    await loadZones(zoneSubSer: subSer);
     // 3) resolve zone ser + load announcement
     if (_selectedZn != null && _selectedZn!.isNotEmpty) {
       final zoneSer = _getZoneSer(_selectedZn);
@@ -343,8 +343,8 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ===============================================================
   // Service calls
   // ===============================================================
-  Future<void> loadZones({String? subZoneSer}) async {
-    final zones = await _service.fetchZones(subZoneSer: subZoneSer);
+  Future<void> loadZones({String? zoneSubSer}) async {
+    final zones = await _service.fetchZones(zoneSubSer: zoneSubSer);
     _zoneModels = zones;
     notifyListeners();
   }

@@ -10,7 +10,6 @@
 
 import 'dart:async';
 
-import 'package:chaoperty/Constant/api_cache.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../../../Model/GetSubZone_Model.dart';
@@ -29,9 +28,8 @@ class LicensePaymentViewModel extends ChangeNotifier {
     required LicensePaymentConfig config,
     LicensePaymentService? paymentService,
     LicensePaymentDetailService? detailService,
-    ApiCache? cache,
   })  : _config = config,
-        _paymentService = paymentService ?? LicensePaymentService(cache: cache),
+        _paymentService = paymentService ?? LicensePaymentService(),
         _detailService = detailService ?? LicensePaymentDetailService() {
     // ✅ sync state จาก global store (license scope)
     _selectedZoneSub = ZoneSelectionStore.instance.licenseSubZone == 'ทั้งหมด'
