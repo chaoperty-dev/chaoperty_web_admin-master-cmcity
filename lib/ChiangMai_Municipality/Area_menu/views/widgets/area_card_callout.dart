@@ -292,9 +292,8 @@ class _CalloutBubble extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: .88),
+              color: Colors.transparent,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withValues(alpha: .12),
