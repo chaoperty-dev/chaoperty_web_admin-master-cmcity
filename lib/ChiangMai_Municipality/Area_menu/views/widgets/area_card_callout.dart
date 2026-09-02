@@ -292,7 +292,7 @@ class _CalloutBubble extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-              color: const Color(0xFFFFFFFF),
+              color: Colors.white.withValues(alpha: .88),
               borderRadius: BorderRadius.circular(10),
               border: Border.all(color: const Color(0xFFE4E4E7), width: 1),
               boxShadow: [
@@ -379,6 +379,8 @@ class _CalloutItemState extends State<_CalloutItem> {
                     color: _hover ? hoverFg : base,
                     fontWeight: FontWeight.w400,
                     height: 1.2,
+                    decoration: TextDecoration.none,
+                    decorationThickness: 0,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
