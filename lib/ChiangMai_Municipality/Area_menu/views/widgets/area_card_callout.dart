@@ -123,25 +123,30 @@ Future<void> showAreaCardCallout({
   final double bubbleH = items.length * itemH + 8;
 
   final overlayBox =
-      Overlay.of(context).context.findRenderObject() as RenderBox?;
-  final overlayHeight =
-      overlayBox?.size.height ?? MediaQuery.of(context).size.height;
-  final overlayWidth =
-      overlayBox?.size.width ?? MediaQuery.of(context).size.width;
+      Overlay.of(context, rootOverlay: true).context.findRenderObject() as RenderBox?;
+  final overlayHeight = overlayBox?.size.height ?? MediaQuery.of(context).size.height;
+  final overlayWidth = overlayBox?.size.width ?? MediaQuery.of(context).size.width;
+  // ✅ transform anchor จาก screen coords → overlay-local coords
+  final overlayOrigin = overlayBox?.localToGlobal(Offset.zero) ?? Offset.zero;
 
-  // X: จัดกลาง block (clamp)
-  double left = anchorRect.left + (anchorRect.width - bubbleW) / 2;
+  // X: จัดกลาง block (clamp) — anchorRect มาเป็น screen coords แล้ว
+  double left = anchorRect.left - overlayOrigin.dx
+      + (anchorRect.width - bubbleW) / 2;
   if (left + bubbleW > overlayWidth - 8) left = overlayWidth - bubbleW - 8;
   if (left < 8) left = 8;
 
   // Y: bubble เหนือ block → ถ้าไม่พอย้ายใต้ block
-  double top = anchorRect.top - bubbleH - gap - 6;
+  double top = anchorRect.top - overlayOrigin.dy - bubbleH - gap - 6;
   final bool flipDown = top < 8;
-  if (flipDown) top = anchorRect.bottom + gap + 6;
+  if (flipDown) {
+    top = anchorRect.bottom - overlayOrigin.dy + gap + 6;
+  }
   if (top + bubbleH > overlayHeight - 8) top = overlayHeight - bubbleH - 8;
 
-  // arrow X = กลาง block
-  double arrowX = (anchorRect.left + anchorRect.width / 2) - left;
+  // arrow X = กลาง block (relative to bubble left)
+  double arrowX = (anchorRect.left + anchorRect.width / 2) -
+      overlayOrigin.dx -
+      left;
   if (arrowX < 16) arrowX = 16;
   if (arrowX > bubbleW - 16) arrowX = bubbleW - 16;
 
@@ -149,7 +154,7 @@ Future<void> showAreaCardCallout({
   final routeData = model['key']?.toString() ??
       '${model['subzone'] ?? ''}|${model['zone'] ?? ''}|${model['lock'] ?? ''}';
 
-  final overlayState = Overlay.of(context, rootOverlay: false);
+  final overlayState = Overlay.of(context, rootOverlay: true);
   late OverlayEntry entry;
   bool isOpen = true;
 
