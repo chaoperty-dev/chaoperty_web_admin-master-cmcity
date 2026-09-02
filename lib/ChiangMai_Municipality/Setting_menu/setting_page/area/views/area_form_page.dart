@@ -1,10 +1,15 @@
 // ============================================================================
 // area_form_page.dart
 // ============================================================================
-// Full-page form สำหรับเพิ่ม Area (ไม่ใช้ popup — เปิดเต็มจอแบบ license_payment)
-// - Step 1: กรอกข้อมูล (ln, sn, sname, sw, lncode, area, rent, rent_maket, zone, type)
+// Full-page form — เพิ่ม/แก้ไข "Area" (lock) ผ่าน v2 API
+// - Step 1: กรอกข้อมูล
 // - Step 2: ตรวจสอบ + บันทึก
-// รับ AreaViewModel จาก caller โดยตรง (push ผ่าน MaterialPageRoute ตัด scope)
+//
+// ✅ v2 signature:
+//    add    → {zone_ser, lncode, ln, area, rent}
+//    edit   → {rent} (partial)
+//
+// ✅ Zone dropdown reads from vm.zonesOfGroup (cascading จาก group filter)
 // ============================================================================
 
 import 'package:flutter/material.dart';
@@ -12,6 +17,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../models/area_area_model.dart';
+import '../models/area_zone_model.dart';
 import '../viewmodels/area_detail_step_view_model.dart';
 import '../viewmodels/area_view_model.dart';
 import 'theme/area_theme.dart';
@@ -68,16 +74,11 @@ class _AreaFormPageState extends State<AreaFormPage> {
 
   // ─── Field controllers ───
   final _ln = TextEditingController();
-  final _sn = TextEditingController();
-  final _sname = TextEditingController();
-  final _sw = TextEditingController();
   final _lncode = TextEditingController();
   final _area = TextEditingController();
   final _rent = TextEditingController();
-  final _rentMaket = TextEditingController();
 
-  String? _zone;
-  String? _typeId;
+  String? _zoneSer;
   bool _submitting = false;
 
   @override
@@ -86,30 +87,24 @@ class _AreaFormPageState extends State<AreaFormPage> {
     if (widget.mode == AreaFormMode.edit && widget.initial != null) {
       final a = widget.initial!;
       _ln.text = a.ln;
-      _sn.text = a.sn;
-      _sname.text = a.sname;
-      _sw.text = a.sw;
       _lncode.text = a.lncode;
       _area.text = a.area;
       _rent.text = a.rent;
-      _rentMaket.text = a.rentMaket;
-      _zone = a.zone.isEmpty || a.zone == '0' ? null : a.zone;
-      _typeId = a.typeId.isEmpty ? null : a.typeId;
+      _zoneSer = a.zone.isEmpty || a.zone == '0' ? null : a.zone;
     } else {
       _rent.text = '0';
-      _rentMaket.text = '0';
-      // ใช้ preselectedZoneSer ถ้ามี
-      _zone = widget.preselectedZoneSer;
+      _zoneSer = widget.preselectedZoneSer;
     }
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // ถ้า create mode + zones โหลดเสร็จแล้ว → resolve _zone
-    if (widget.mode == AreaFormMode.create && (_zone == null || _zone == '0')) {
-      final vm = _vm;
-      final zoneOptions = vm.zones.where((z) => z.zn != 'ทั้งหมด').toList();
+    // ถ้า create mode + zone ยังไม่ได้เลือก → resolve จาก vm.zonesOfGroup
+    if (widget.mode == AreaFormMode.create &&
+        (_zoneSer == null || _zoneSer == '0')) {
+      final zoneOptions =
+          _vm.zones.where((z) => z.ser.isNotEmpty && z.ser != '0').toList();
       final pre = widget.preselectedZoneSer;
       String? resolved;
       if (pre != null &&
@@ -117,12 +112,13 @@ class _AreaFormPageState extends State<AreaFormPage> {
           pre != '0' &&
           zoneOptions.any((z) => z.ser == pre)) {
         resolved = pre;
-      } else if (zoneOptions.isNotEmpty && zoneOptions.first.ser != '0') {
+      } else if (zoneOptions.isNotEmpty) {
         resolved = zoneOptions.first.ser;
       }
-      if (resolved != null && resolved != _zone) {
-        // synchronous update ผ่าน setState ภายใน frame ถัดไป
-        _zone = resolved;
+      if (resolved != null && resolved != _zoneSer) {
+        setState(() {
+          _zoneSer = resolved;
+        });
       }
     }
   }
@@ -130,53 +126,41 @@ class _AreaFormPageState extends State<AreaFormPage> {
   @override
   void dispose() {
     _ln.dispose();
-    _sn.dispose();
-    _sname.dispose();
-    _sw.dispose();
     _lncode.dispose();
     _area.dispose();
     _rent.dispose();
-    _rentMaket.dispose();
     super.dispose();
   }
 
   Future<void> _onSave() async {
-    // validate step 1
     if (!_formKey.currentState!.validate()) return;
     final vm = _vm;
-    // ถ้าไม่มี zone เลย → fallback ไปโซนแรกที่มี หรือ "0"
-    final zones = vm.zones.where((z) => z.zn != 'ทั้งหมด').toList();
-    final fallbackZone = (_zone != null && _zone!.isNotEmpty && _zone != '0')
-        ? _zone!
-        : (zones.isNotEmpty ? zones.first.ser : '0');
+
+    final zones =
+        vm.zones.where((z) => z.ser.isNotEmpty && z.ser != '0').toList();
+    final fallbackZone = (_zoneSer != null &&
+            _zoneSer!.isNotEmpty &&
+            _zoneSer != '0')
+        ? _zoneSer!
+        : (zones.isNotEmpty ? zones.first.ser : '');
+
+    if (fallbackZone.isEmpty) {
+      _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
+      return;
+    }
 
     setState(() => _submitting = true);
     final ok = widget.mode == AreaFormMode.edit
         ? await vm.updateArea(
             ser: widget.initial!.ser,
-            ln: _ln.text.trim(),
-            sname: _sname.text.trim(),
-            area: _area.text.trim(),
             rent: _rent.text.trim().isEmpty ? '0' : _rent.text.trim(),
-            zone: fallbackZone,
-            typeId: _typeId ?? '',
-            lncode: _lncode.text.trim(),
-            sw: _sw.text.trim(),
-            rentMaket:
-                _rentMaket.text.trim().isEmpty ? '0' : _rentMaket.text.trim(),
           )
         : await vm.addArea(
             ln: _ln.text.trim(),
-            sn: _sn.text.trim(),
-            sname: _sname.text.trim(),
-            sw: _sw.text.trim(),
             lncode: _lncode.text.trim(),
             area: _area.text.trim(),
             rent: _rent.text.trim().isEmpty ? '0' : _rent.text.trim(),
-            rentMaket:
-                _rentMaket.text.trim().isEmpty ? '0' : _rentMaket.text.trim(),
             zone: fallbackZone,
-            typeId: _typeId ?? '',
           );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -338,8 +322,11 @@ class _AreaFormPageState extends State<AreaFormPage> {
                     ),
                     const SizedBox(width: AeaSpace.sm),
                     Expanded(
-                      child:
-                          _field(_sname, 'ชื่อ Area (sname)', required: true),
+                      child: _field(
+                        _lncode,
+                        'รหัสพื้นที่ (lncode)',
+                        required: widget.mode == AreaFormMode.create,
+                      ),
                     ),
                   ],
                 ),
@@ -350,12 +337,24 @@ class _AreaFormPageState extends State<AreaFormPage> {
                   number: true,
                 ),
                 const SizedBox(height: AeaSpace.md),
+                _sectionHeader('โซน', Icons.place_outlined),
+                const SizedBox(height: AeaSpace.sm),
+                _ZoneDropdown(
+                  zones: _vm.zones,
+                  value: _zoneSer,
+                  enabled: widget.mode == AreaFormMode.create,
+                  onChanged: widget.mode == AreaFormMode.create
+                      ? (v) => setState(() => _zoneSer = v)
+                      : null,
+                ),
+                const SizedBox(height: AeaSpace.md),
                 _sectionHeader('ค่าบริการ', Icons.payments_outlined),
                 const SizedBox(height: AeaSpace.sm),
                 _field(
                   _rent,
-                  'ค่าบริการหลัก (ต่องวด)',
+                  'ค่าเช่า (บาท/งวด)',
                   number: true,
+                  required: true,
                 ),
                 const SizedBox(height: AeaSpace.lg),
                 const Row(
@@ -407,15 +406,15 @@ class _AreaFormPageState extends State<AreaFormPage> {
                       ),
                     ),
                     const SizedBox(width: AeaSpace.sm),
-                    Text('ตรวจสอบข้อมูล Area', style: AeaText.h2),
+                    const Text('ตรวจสอบข้อมูล Area', style: AeaText.h2),
                   ],
                 ),
                 const SizedBox(height: AeaSpace.lg),
                 _reviewRow('รหัสพื้นที่ (ln)', _ln.text),
-                _reviewRow('รหัสพื้นที่ (ln)', _ln.text),
-                _reviewRow('ชื่อ Area', _sname.text),
+                _reviewRow('รหัสพื้นที่ (lncode)', _lncode.text),
                 _reviewRow('ขนาดพื้นที่ (ตร.ม.)', _area.text),
-                _reviewRow('ค่าบริการหลัก (ต่องวด)', _rent.text),
+                _reviewRow('โซน', _zoneName(_zoneSer)),
+                _reviewRow('ค่าเช่า (บาท/งวด)', _rent.text),
               ],
             ),
           ),
@@ -424,8 +423,12 @@ class _AreaFormPageState extends State<AreaFormPage> {
     );
   }
 
-  // unused helpers removed — _zoneName/_typeName no longer needed
-  // since the form no longer shows โซน/ประเภท dropdowns
+  String _zoneName(String? ser) {
+    if (ser == null || ser.isEmpty || ser == '0') return '-';
+    final match =
+        _vm.zones.where((z) => z.ser == ser).map((z) => z.zn).firstOrNull;
+    return match ?? ser;
+  }
 
   Widget _reviewRow(String label, String value) {
     return Padding(
@@ -572,11 +575,87 @@ class _AreaFormPageState extends State<AreaFormPage> {
   }
 }
 
+// ============================================================================
+// Zone dropdown (read from vm.zonesOfGroup)
+// ============================================================================
+class _ZoneDropdown extends StatelessWidget {
+  final List<AreaZoneModel> zones;
+  final String? value;
+  final bool enabled;
+  final ValueChanged<String?>? onChanged;
+
+  const _ZoneDropdown({
+    required this.zones,
+    required this.value,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final items = zones
+        .where((z) => z.ser.isNotEmpty && z.ser != '0')
+        .map((z) => DropdownMenuItem<String>(
+              value: z.ser,
+              child: Text(
+                z.zn.isEmpty ? z.ser : z.zn,
+                style: AeaText.body,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ))
+        .toList();
+
+    if (items.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
+        decoration: BoxDecoration(
+          color: AeaColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(AeaRadius.sm),
+          border: Border.all(color: AeaColors.border),
+        ),
+        child: Row(
+          children: const [
+            Icon(Icons.info_outline_rounded,
+                size: 16, color: AeaColors.textMuted),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'ยังไม่มีโซน — กรุณาเลือกหมวดและเพิ่มโซนก่อน',
+                style: AeaText.bodyMuted,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: enabled ? Colors.white : AeaColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(AeaRadius.sm),
+        border: Border.all(color: AeaColors.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: items.any((it) => it.value == value) ? value : null,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AeaColors.textSecondary,
+          ),
+          items: items,
+          onChanged: enabled ? onChanged : null,
+        ),
+      ),
+    );
+  }
+}
+
 class _StepBadge extends StatelessWidget {
   final int step;
   final int total;
   const _StepBadge({required this.step, required this.total});
-
   @override
   Widget build(BuildContext context) {
     return Container(

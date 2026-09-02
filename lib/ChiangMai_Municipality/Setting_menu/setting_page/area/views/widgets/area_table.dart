@@ -19,7 +19,8 @@ import '../../viewmodels/area_view_model.dart';
 
 class AreaTable extends StatelessWidget {
   final void Function(AreaAreaModel area)? onEdit;
-  const AreaTable({super.key, this.onEdit});
+  final void Function(AreaAreaModel area)? onDelete;
+  const AreaTable({super.key, this.onEdit, this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -49,11 +50,13 @@ class AreaTable extends StatelessWidget {
           _AreaListTable(
             rows: rows,
             onEdit: onEdit,
+            onDelete: onDelete,
           )
         else
           _AreaGrid(
             rows: rows,
             onEdit: onEdit,
+            onDelete: onDelete,
           ),
       ],
     );
@@ -63,7 +66,12 @@ class AreaTable extends StatelessWidget {
 class _AreaListTable extends StatelessWidget {
   final List<AreaAreaModel> rows;
   final void Function(AreaAreaModel area)? onEdit;
-  const _AreaListTable({required this.rows, required this.onEdit});
+  final void Function(AreaAreaModel area)? onDelete;
+  const _AreaListTable({
+    required this.rows,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -74,7 +82,7 @@ class _AreaListTable extends StatelessWidget {
           _headerRow(),
           const Divider(height: 1, color: AeaColors.border),
           for (int i = 0; i < rows.length; i++)
-            _dataRow(context, rows[i], i, onEdit),
+            _dataRow(context, rows[i], i, onEdit, onDelete),
         ],
       ),
     );
@@ -96,7 +104,7 @@ class _AreaListTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: '', flex: 0, width: 110),
+          _HeaderCell(label: 'จัดการ', flex: 0, width: 120),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 3),
           _HeaderCell(label: 'ชื่อพื้นที่', flex: 2),
@@ -116,6 +124,7 @@ class _AreaListTable extends StatelessWidget {
     AreaAreaModel a,
     int index,
     void Function(AreaAreaModel)? onEditCb,
+    void Function(AreaAreaModel)? onDeleteCb,
   ) {
     final status = _deriveStatus(a);
     final palette = status.palette;
@@ -126,13 +135,33 @@ class _AreaListTable extends StatelessWidget {
       },
       child: Row(
         children: [
-          // Action — fixed width 110 (เหมือน verify_table)
+          // Action — fixed width 120 (edit + delete icons)
           SizedBox(
-            width: 110,
+            width: 120,
             child: Center(
-              child: _ViewButton(onTap: () {
-                if (onEditCb != null) onEditCb(a);
-              }),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _RowIconBtn(
+                    icon: Icons.edit_outlined,
+                    color: AeaColors.primary,
+                    tooltip: 'แก้ไข',
+                    onTap: () {
+                      if (onEditCb != null) onEditCb(a);
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  _RowIconBtn(
+                    icon: Icons.delete_outline_rounded,
+                    color: AeaColors.statusRejectedFg,
+                    tooltip: 'ลบ',
+                    onTap: () {
+                      if (onDeleteCb != null) onDeleteCb(a);
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           _Cell(value: a.zn, flex: 2, muted: true),
@@ -416,13 +445,77 @@ class _ViewButtonState extends State<_ViewButton> {
 }
 
 // ============================================================================
+// Row icon button (edit/delete inline)
+// ============================================================================
+class _RowIconBtn extends StatefulWidget {
+  final IconData icon;
+  final Color color;
+  final String tooltip;
+  final VoidCallback onTap;
+  const _RowIconBtn({
+    required this.icon,
+    required this.color,
+    required this.tooltip,
+    required this.onTap,
+  });
+  @override
+  State<_RowIconBtn> createState() => _RowIconBtnState();
+}
+
+class _RowIconBtnState extends State<_RowIconBtn> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Tooltip(
+        message: widget.tooltip,
+        waitDuration: const Duration(milliseconds: 300),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: AeaAnimations.fast,
+            width: 30,
+            height: 30,
+            decoration: BoxDecoration(
+              color: _hover
+                  ? widget.color.withOpacity(.10)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AeaRadius.sm),
+              border: Border.all(
+                color: _hover
+                    ? widget.color.withOpacity(.45)
+                    : AeaColors.border,
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              widget.icon,
+              size: 15,
+              color: _hover ? widget.color : AeaColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
 // Card widget (Grid view)
 // ============================================================================
 
 class _AreaGrid extends StatelessWidget {
   final List<AreaAreaModel> rows;
   final void Function(AreaAreaModel area)? onEdit;
-  const _AreaGrid({required this.rows, required this.onEdit});
+  final void Function(AreaAreaModel area)? onDelete;
+  const _AreaGrid({
+    required this.rows,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -448,6 +541,9 @@ class _AreaGrid extends StatelessWidget {
             onEdit: () {
               if (onEdit != null) onEdit!(rows[i]);
             },
+            onDelete: () {
+              if (onDelete != null) onDelete!(rows[i]);
+            },
           ),
         );
       },
@@ -458,7 +554,12 @@ class _AreaGrid extends StatelessWidget {
 class _AreaCard extends StatefulWidget {
   final AreaAreaModel area;
   final VoidCallback onEdit;
-  const _AreaCard({required this.area, required this.onEdit});
+  final VoidCallback onDelete;
+  const _AreaCard({
+    required this.area,
+    required this.onEdit,
+    required this.onDelete,
+  });
 
   @override
   State<_AreaCard> createState() => _AreaCardState();
@@ -610,10 +711,15 @@ class _AreaCardState extends State<_AreaCard> {
                 ],
               ),
               const SizedBox(height: AeaSpace.sm),
-              // ── Edit button ──
-              SizedBox(
-                width: double.infinity,
-                child: _EditButton(onTap: widget.onEdit),
+              // ── Action row: edit + delete ──
+              Row(
+                children: [
+                  Expanded(
+                    child: _EditButton(onTap: widget.onEdit),
+                  ),
+                  const SizedBox(width: AeaSpace.sm),
+                  _DeleteIconBtn(onTap: widget.onDelete),
+                ],
               ),
             ],
           ),
@@ -719,6 +825,60 @@ class _EditButtonState extends State<_EditButton> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// Delete icon button (used inside card view)
+// ============================================================================
+class _DeleteIconBtn extends StatefulWidget {
+  final VoidCallback onTap;
+  const _DeleteIconBtn({required this.onTap});
+
+  @override
+  State<_DeleteIconBtn> createState() => _DeleteIconBtnState();
+}
+
+class _DeleteIconBtnState extends State<_DeleteIconBtn> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Tooltip(
+        message: 'ลบพื้นที่',
+        waitDuration: const Duration(milliseconds: 300),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: AeaAnimations.fast,
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: _hover
+                  ? AeaColors.statusRejectedFg.withOpacity(.10)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(AeaRadius.sm),
+              border: Border.all(
+                color: _hover
+                    ? AeaColors.statusRejectedFg.withOpacity(.45)
+                    : AeaColors.border,
+                width: 1,
+              ),
+            ),
+            child: Icon(
+              Icons.delete_outline_rounded,
+              size: 16,
+              color: _hover
+                  ? AeaColors.statusRejectedFg
+                  : AeaColors.textSecondary,
+            ),
           ),
         ),
       ),

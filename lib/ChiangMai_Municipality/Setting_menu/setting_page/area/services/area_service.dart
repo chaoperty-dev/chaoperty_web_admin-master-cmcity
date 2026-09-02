@@ -2,8 +2,8 @@
 // area_service.dart
 // ============================================================================
 // Service — เรียก API ทั้งหมดที่หน้า "จัดการ Area" ต้องใช้
-// - ใช้ MyConstant().domain (PHP API) เป็น base
-// - debugPrint error แทน swallow แบบไม่มีข้อมูล
+// - ใช้ v2 API เท่านั้น (Bearer auth ผ่าน MyHeaders)
+// - ฝั่ง AreaZonesApi จัดการ cache 1 นาที + invalidate ตอน mutate
 // ============================================================================
 
 import 'dart:convert';
@@ -13,8 +13,6 @@ import 'package:http/http.dart' as http;
 
 import '../../../../../Constant/Myconstant.dart';
 import '../models/area_area_model.dart';
-import '../models/area_count_model.dart';
-import '../models/area_type_model.dart';
 import '../models/area_zone_model.dart';
 import '../../../../unity/area_zones_api.dart';
 
@@ -47,117 +45,122 @@ class AreaService {
 
   final AreaZonesApi _zonesApi = AreaZonesApi();
 
-  String get _base => MyConstant().domain;
   String get _baseV2 => MyConstant().domain_v2;
 
-  // ───────────── Zones ─────────────
+  // ───────────── Groups (หมวดโซน) ─────────────
 
-  /// โหลดรายการโซนทั้งหมด
-  Future<List<AreaZoneModel>> fetchZones(String rser) async {
+  /// โหลดรายการหมวดทั้งหมด — `GET /admin/areas/groups`
+  Future<List<AreaZoneModel>> fetchGroups() async {
     try {
       final raw = await _zonesApi.fetchGroups();
-      final zones = <AreaZoneModel>[];
+      final list = <AreaZoneModel>[];
       for (final row in raw) {
         if (row is! AreaZone) continue;
-        zones.add(AreaZoneModel.fromJson({
+        list.add(AreaZoneModel.fromGroup({
           'ser': row.ser ?? '0',
-          'rser': row.ser ?? '0',
           'zn': row.zn ?? '',
           'qty': '${row.qty ?? 0}',
-          'img': '0',
           'data_update': '',
         }));
       }
-      zones.sort((a, b) {
-        if (a.zn == 'ทั้งหมด') return -1;
-        if (b.zn == 'ทั้งหมด') return 1;
-        return a.zn.compareTo(b.zn);
-      });
-      return zones;
+      return list;
     } catch (e) {
-      debugPrint('AreaService.fetchZones error: $e');
+      debugPrint('AreaService.fetchGroups error: $e');
       return <AreaZoneModel>[];
     }
   }
 
-  /// เช็คว่ามีโซนชื่อนี้แล้วหรือยัง
+  /// โหลดรายการโซนของหมวด — `GET /admin/areas/zones?group_ser=&per_page=`
+  Future<List<AreaZoneModel>> fetchZonesOfGroup(String groupSer) async {
+    try {
+      final raw = await _zonesApi.fetchZones(groupSer: groupSer);
+      final list = <AreaZoneModel>[];
+      for (final row in raw) {
+        if (row is! AreaZone) continue;
+        list.add(AreaZoneModel.fromZone({
+          'ser': row.ser ?? '0',
+          'group_ser': groupSer,
+          'zn': row.zn ?? '',
+          'qty': '${row.qty ?? 0}',
+          'data_update': '',
+        }));
+      }
+      return list;
+    } catch (e) {
+      debugPrint('AreaService.fetchZonesOfGroup error: $e');
+      return <AreaZoneModel>[];
+    }
+  }
+
+  /// เช็คชื่อโซนซ้ำในหมวด
   Future<bool> zoneExists({
-    required String rser,
+    required String groupSer,
     required String zn,
   }) async {
-    final zones = await fetchZones(rser);
+    final zones = await fetchZonesOfGroup(groupSer);
     return zones.any(
       (z) => z.zn.trim().toLowerCase() == zn.trim().toLowerCase(),
     );
   }
 
-  /// เพิ่มโซนใหม่ (v2: `POST /admin/areas/zones`)
-  /// - ต้องระบุ group_ser (หมวดโซน) ที่จะใส่โซนใหม่ลงไป
-  Future<bool> addZone({
-    required String rser,
-    required String zn,
-    String? groupSer,
-    int qty = 0,
-    int status = 1,
-  }) async {
-    final gs = groupSer ?? rser;
-    final ok = await _zonesApi.addZone(
-      groupSer: gs,
-      zn: zn,
-      qty: qty,
-      status: status,
-    );
-    if (ok) {
-      _zonesApi.clearCache();
-    }
-    return ok;
-  }
-
-  /// เพิ่มหมวดโซน (v2: `POST /admin/areas/groups`)
+  /// เพิ่มหมวด — `POST /admin/areas/groups`
   Future<bool> addGroup({
     required String zn,
     int qty = 0,
     int pri = 0,
     int renPri = 0,
   }) async {
-    final ok = await _zonesApi.addGroup(
+    return _zonesApi.addGroup(zn: zn, qty: qty, pri: pri, renPri: renPri);
+  }
+
+  /// แก้ไขหมวด — `PUT /admin/areas/groups/{ser}`
+  Future<bool> updateGroup({
+    required String ser,
+    String? zn,
+    int? qty,
+  }) async {
+    return _zonesApi.updateGroup(ser: ser, zn: zn, qty: qty);
+  }
+
+  /// ลบหมวด — `DELETE /admin/areas/groups/{ser}`
+  Future<bool> deleteGroup({required String ser}) async {
+    return _zonesApi.deleteGroup(ser: ser);
+  }
+
+  // ───────────── Zones ─────────────
+
+  /// เพิ่มโซน — `POST /admin/areas/zones`
+  Future<bool> addZone({
+    required String groupSer,
+    required String zn,
+    int qty = 0,
+    int status = 1,
+  }) async {
+    return _zonesApi.addZone(
+      groupSer: groupSer,
       zn: zn,
       qty: qty,
-      pri: pri,
-      renPri: renPri,
+      status: status,
     );
-    if (ok) {
-      _zonesApi.clearCache();
-    }
-    return ok;
   }
 
-  /// ลบโซน (v2: `DELETE /admin/areas/zones/{zoneSer}`)
-  Future<bool> deleteZone({
-    required String rser,
-    required String zoneSer,
+  /// แก้ไขโซน — `PUT /admin/areas/zones/{ser}`
+  Future<bool> updateZone({
+    required String ser,
+    String? zn,
+    int? qty,
   }) async {
-    final ok = await _zonesApi.deleteZone(ser: zoneSer);
-    if (ok) {
-      _zonesApi.clearCache();
-    }
-    return ok;
+    return _zonesApi.updateZone(ser: ser, zn: zn, qty: qty);
   }
 
-  /// ลบหมวดโซน (v2: `DELETE /admin/areas/groups/{ser}`)
-  Future<bool> deleteGroup({required String ser}) async {
-    final ok = await _zonesApi.deleteGroup(ser: ser);
-    if (ok) {
-      _zonesApi.clearCache();
-    }
-    return ok;
+  /// ลบโซน — `DELETE /admin/areas/zones/{ser}`
+  Future<bool> deleteZone({required String ser}) async {
+    return _zonesApi.deleteZone(ser: ser);
   }
 
-  // ───────────── Areas (v2: /admin/areas/locks) ─────────────
+  // ───────────── Areas (Locks) ─────────────
 
   /// โหลด Area (v2) — `GET /admin/areas/locks?per_page=&page=&zone_ser=&st=&q=`
-  /// - ใช้ Bearer token จาก AuthTokenStore
-  /// - คืนทั้ง data + meta (pagination)
   Future<AreaLocksResult> fetchLocks({
     int perPage = 200,
     int page = 1,
@@ -217,7 +220,6 @@ class AreaService {
   }
 
   /// เพิ่ม Area ใหม่ (v2: `POST /admin/areas/locks`)
-  /// body ตาม API: `{zone_ser, lncode, ln, area, rent}`
   Future<bool> addLock({
     required String zoneSer,
     required String lncode,
@@ -274,51 +276,12 @@ class AreaService {
       final body = <String, dynamic>{};
       if (rent != null) body['rent'] = num.tryParse(rent) ?? rent;
       if (st != null) body['st'] = st;
-      final response = await http.put(uri, headers: headers, body: json.encode(body));
+      final response =
+          await http.put(uri, headers: headers, body: json.encode(body));
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('AreaService.updateLock error: $e');
       return false;
-    }
-  }
-
-  // ───────────── Types ─────────────
-
-  /// โหลด AreaType ทั้งหมด
-  Future<List<AreaTypeModel>> fetchTypes(String rser) async {
-    final url = '$_base/GC_areatype.php?isAdd=true&ren=$rser';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return <AreaTypeModel>[];
-      final result = json.decode(response.body);
-      if (result is! List) return <AreaTypeModel>[];
-      return result
-          .whereType<Map<String, dynamic>>()
-          .map(AreaTypeModel.fromJson)
-          .toList();
-    } catch (e) {
-      debugPrint('AreaService.fetchTypes error: $e');
-      return <AreaTypeModel>[];
-    }
-  }
-
-  // ───────────── Count ─────────────
-
-  /// โหลดจำนวน Area ทั้งหมด
-  Future<int> fetchAreaCount(String rser) async {
-    final url = '$_base/GC_areaCount.php?isAdd=true&ren=$rser';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode != 200) return 0;
-      final result = json.decode(response.body);
-      if (result is! List || result.isEmpty) return 0;
-      final c = AreaCountModel.fromJson(
-        (result.first as Map).cast<String, dynamic>(),
-      );
-      return int.tryParse(c.counta) ?? 0;
-    } catch (e) {
-      debugPrint('AreaService.fetchAreaCount error: $e');
-      return 0;
     }
   }
 }

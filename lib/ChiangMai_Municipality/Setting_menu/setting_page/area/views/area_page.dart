@@ -1,15 +1,13 @@
 // ============================================================================
 // area_page.dart
 // ============================================================================
-// Main View — "จัดการ Area" (หน้าใหม่ใน setting_page)
-// สไตล์ license_payment — header + zone filter + search + pagination + table
+// Main View — "ตั้งค่าพื้นที่เช่า"
+// สไตล์ license_payment — header + zone/group filter + search + pagination + table
 //
-// ใช้งานได้ 2 รูปแบบ:
-//   ✅ AreaPage.create(...) — สร้าง + wrap Provider ให้อัตโนมัติ
-//   ✅ AreaHost(...)       — alias
-//
-// IMPORTANT: ห้าม new AreaPage() ตรงๆ เพราะ child widgets
-// จะเรียก context.watch<AreaViewModel>() ซึ่งต้องการ Provider
+// ✅ รองรับ CRUD ครบ:
+//    - หมวด (group): add/edit/delete
+//    - โซน (zone): add/edit/delete
+//    - พื้นที่ (area/lock): add/edit/delete
 // ============================================================================
 
 import 'dart:async';
@@ -20,10 +18,12 @@ import 'package:provider/provider.dart';
 import '../models/area_area_model.dart';
 import '../models/area_config.dart';
 import '../models/area_event.dart';
+import '../models/area_zone_model.dart';
 import '../services/area_service.dart';
 import '../viewmodels/area_view_model.dart';
 import 'area_form_page.dart';
-import 'area_zone_page.dart';
+import 'area_group_form_page.dart';
+import 'area_zone_form_page.dart';
 import 'theme/area_theme.dart';
 import 'widgets/area_header.dart';
 import 'widgets/area_pagination.dart';
@@ -37,7 +37,7 @@ import 'widgets/area_zone_filter.dart';
 class AreaPage extends StatefulWidget {
   const AreaPage._({super.key});
 
-  /// Factory สร้าง Page พร้อม Provider (ใช้ใน setting_page)
+  /// Factory สร้าง Page พร้อม Provider
   static Widget create({
     Key? key,
     String? routeData,
@@ -65,7 +65,6 @@ class _AreaPageState extends State<AreaPage> {
   }
 }
 
-/// Body จริง — ต้องอยู่ใต้ Provider เสมอ
 class _AreaPageBody extends StatefulWidget {
   const _AreaPageBody();
 
@@ -118,41 +117,51 @@ class _AreaPageBodyState extends State<_AreaPageBody> {
           viewModel: vm,
           mode: area == null ? AreaFormMode.create : AreaFormMode.edit,
           initial: area,
-          preselectedZoneSer: vm.selectedZoneSer,
         ),
       ),
     );
   }
 
-  Future<void> _openAddZonePage() async {
+  Future<void> _openAddGroupPage() async {
     final vm = context.read<AreaViewModel>();
     await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => AreaZonePage.create(viewModel: vm),
+        builder: (_) => AreaGroupFormPage.create(viewModel: vm),
       ),
     );
   }
 
-  Future<void> _confirmDeleteZone(String? zoneSer) async {
+  Future<void> _openEditGroupPage() async {
     final vm = context.read<AreaViewModel>();
-    if (zoneSer == null || zoneSer == '0') {
-      _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
-      return;
-    }
-    final zoneName = vm.selectedZoneName ?? '';
+    final g = vm.selectedGroup;
+    if (g == null || g.ser.isEmpty || g.ser == '0') return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) =>
+            AreaGroupFormPage.create(viewModel: vm, initial: g),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteGroup() async {
+    final vm = context.read<AreaViewModel>();
+    final g = vm.selectedGroup;
+    if (g == null || g.ser.isEmpty || g.ser == '0') return;
     final ok = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('ยืนยันการลบโซน'),
-        content: Text('ต้องการลบโซน "$zoneName" หรือไม่?'),
+        title: const Text('ยืนยันการลบหมวด'),
+        content: Text('ต้องการลบหมวด "${g.zn}" หรือไม่?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('ยกเลิก'),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            style:
+                ElevatedButton.styleFrom(backgroundColor: Colors.red),
             onPressed: () => Navigator.of(context).pop(true),
             child: const Text('ยืนยัน'),
           ),
@@ -160,7 +169,103 @@ class _AreaPageBodyState extends State<_AreaPageBody> {
       ),
     );
     if (ok == true) {
-      await vm.deleteZone(zoneSer: zoneSer, zoneName: zoneName);
+      await vm.deleteGroup(ser: g.ser, name: g.zn);
+    }
+  }
+
+  Future<void> _openAddZonePage() async {
+    final vm = context.read<AreaViewModel>();
+    final gs = vm.selectedGroupSer;
+    if (gs == null || gs == '0') {
+      _showSnack('กรุณาเลือกหมวดก่อน', AeaColors.statusRejectedFg);
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => AreaZoneFormPage.create(
+          viewModel: vm,
+          groupSer: gs,
+          groupName: vm.selectedGroupName,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openEditZonePage() async {
+    final vm = context.read<AreaViewModel>();
+    final z = vm.selectedZone;
+    if (z == null || z.ser.isEmpty) return;
+    final gs = vm.selectedGroupSer ?? '';
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        fullscreenDialog: true,
+        builder: (_) => AreaZoneFormPage.create(
+          viewModel: vm,
+          groupSer: gs,
+          groupName: vm.selectedGroupName,
+          initial: z,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmDeleteZone() async {
+    final vm = context.read<AreaViewModel>();
+    final z = vm.selectedZone;
+    if (z == null || z.ser.isEmpty) {
+      _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
+      return;
+    }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ยืนยันการลบโซน'),
+        content: Text('ต้องการลบโซน "${z.zn}" หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            style:
+                ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('ยืนยัน'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await vm.deleteZone(ser: z.ser, name: z.zn);
+    }
+  }
+
+  Future<void> _confirmDeleteArea(AreaAreaModel area) async {
+    final vm = context.read<AreaViewModel>();
+    final label =
+        area.lncode.isNotEmpty ? area.lncode : area.ln;
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('ยืนยันการลบพื้นที่'),
+        content: Text('ต้องการลบ "$label" หรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          ElevatedButton(
+            style:
+                ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('ยืนยัน'),
+          ),
+        ],
+      ),
+    );
+    if (ok == true) {
+      await vm.deleteArea(area);
     }
   }
 
@@ -173,15 +278,12 @@ class _AreaPageBodyState extends State<_AreaPageBody> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AreaViewModel>();
-    final canDeleteZone =
-        vm.selectedZoneSer != null && vm.selectedZoneSer != '0';
 
     return Container(
       color: AeaColors.surface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // ── Top section — มี padding ซ้าย/ขวา (AeaSpace.lg) ──
           Padding(
             padding: const EdgeInsets.fromLTRB(
                 AeaSpace.lg, AeaSpace.lg, AeaSpace.lg, 0),
@@ -190,7 +292,7 @@ class _AreaPageBodyState extends State<_AreaPageBody> {
               children: [
                 AreaHeader(
                   title: vm.title,
-                  subtitle: 'จัดการโซน และรายการ พื้นที่เช่า',
+                  subtitle: 'จัดการหมวด โซน และรายการพื้นที่เช่า',
                   totalCount: vm.areaCount,
                   actionLabel: 'สร้างพื้นที่เช่า',
                   actionIcon: Icons.add_rounded,
@@ -203,11 +305,16 @@ class _AreaPageBodyState extends State<_AreaPageBody> {
                 ),
                 const SizedBox(height: AeaSpace.lg),
                 AreaZoneFilter(
+                  // group
+                  onAddGroup: _openAddGroupPage,
+                  onEditGroup: _openEditGroupPage,
+                  onDeleteGroup: _confirmDeleteGroup,
+                  // zone
                   onAddZone: _openAddZonePage,
-                  onDeleteZone: canDeleteZone ? _confirmDeleteZone : (s) {},
+                  onEditZone: _openEditZonePage,
+                  onDeleteZone: _confirmDeleteZone,
                 ),
                 const SizedBox(height: AeaSpace.md),
-                // Search + View toggle + Pagination row
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -225,13 +332,13 @@ class _AreaPageBodyState extends State<_AreaPageBody> {
               ],
             ),
           ),
-          // ── Table — มี padding ซ้าย/ขวา (AeaSpace.lg) ──
           Expanded(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: AeaSpace.lg),
               child: SingleChildScrollView(
                 child: AreaTable(
                   onEdit: (area) => _openAddAreaPage(area: area),
+                  onDelete: _confirmDeleteArea,
                 ),
               ),
             ),

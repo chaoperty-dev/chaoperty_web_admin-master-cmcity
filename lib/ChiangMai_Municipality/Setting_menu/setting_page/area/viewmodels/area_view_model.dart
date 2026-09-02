@@ -1,22 +1,19 @@
 // ============================================================================
 // area_view_model.dart
 // ============================================================================
-// ViewModel — จัดการ state + business logic ของหน้า "จัดการ Area"
-// - เรียก Service โหลด zones / areas / types / count
+// ViewModel — จัดการ state + business logic ของหน้า "ตั้งค่าพื้นที่เช่า"
+// - โหลด groups / zones-of-group / locks จาก v2 API
 // - แจ้ง View ผ่าน Stream<AreaEvent>
-// - CRUD ใช้ direct call (ไม่ผ่าน popup event — ใช้ full-page route)
+// - CRUD ครบทั้ง group / zone / lock (area)
 // ============================================================================
 
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../../../INSERT_Log/Insert_log.dart';
 import '../models/area_area_model.dart';
 import '../models/area_config.dart';
 import '../models/area_event.dart';
-import '../models/area_type_model.dart';
 import '../models/area_zone_model.dart';
 import '../services/area_service.dart';
 
@@ -40,36 +37,51 @@ class AreaViewModel extends ChangeNotifier {
       StreamController<AreaEvent>.broadcast();
   Stream<AreaEvent> get events => _eventController.stream;
 
-  // ---------- Data ----------
-  List<AreaZoneModel> _zones = [];
-  List<AreaZoneModel> get zones => _zones;
+  // ---------- Data: groups (หมวด) ----------
+  List<AreaZoneModel> _groups = [];
+  List<AreaZoneModel> get groups => _groups;
 
+  String? _selectedGroupSer;
+  String? _selectedGroupName;
+  String? get selectedGroupSer => _selectedGroupSer;
+  String? get selectedGroupName => _selectedGroupName;
+
+  /// หมวดที่เลือกอยู่ (null = ยังโหลดไม่เสร็จ)
+  AreaZoneModel? get selectedGroup {
+    if (_selectedGroupSer == null) return null;
+    return _groups.firstWhere(
+      (g) => g.ser == _selectedGroupSer,
+      orElse: () => const AreaZoneModel(ser: '', rser: '', zn: ''),
+    );
+  }
+
+  // ---------- Data: zones (โซนของหมวดที่เลือก) ----------
+  List<AreaZoneModel> _zonesOfGroup = [];
+  List<AreaZoneModel> get zones => _zonesOfGroup;
+
+  String? _selectedZoneSer;
+  String? _selectedZoneName;
+  String? get selectedZoneSer => _selectedZoneSer;
+  String? get selectedZoneName => _selectedZoneName;
+
+  /// โซนที่เลือกอยู่ (null = ไม่ได้เลือก หรือ "ทั้งหมด")
+  AreaZoneModel? get selectedZone {
+    if (_selectedZoneSer == null) return null;
+    return _zonesOfGroup.firstWhere(
+      (z) => z.ser == _selectedZoneSer,
+      orElse: () => const AreaZoneModel(ser: '', rser: '', zn: ''),
+    );
+  }
+
+  // ---------- Data: areas (locks) ----------
   List<AreaAreaModel> _areas = [];
   List<AreaAreaModel> get areas => _areas;
 
   List<AreaAreaModel> _filtered = [];
   List<AreaAreaModel> get filtered => _filtered;
 
-  List<AreaTypeModel> _types = [];
-  List<AreaTypeModel> get types => _types;
-
   int _areaCount = 0;
   int get areaCount => _areaCount;
-
-  // ---------- Selection ----------
-  String? _selectedZoneSer;
-  String? _selectedZoneName;
-  String? get selectedZoneSer => _selectedZoneSer;
-  String? get selectedZoneName => _selectedZoneName;
-
-  String? _selectedTypeId;
-  String? get selectedTypeId => _selectedTypeId;
-
-  // ---------- Rental / User ----------
-  String? _rser;
-  String? _serUser;
-  String? get rser => _rser;
-  String? get serUser => _serUser;
 
   // ---------- UI state ----------
   bool _isLoading = false;
@@ -87,7 +99,7 @@ class AreaViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ---------- Pagination (client-side) ----------
+  // ---------- Pagination (client-side over locks list) ----------
   int _currentPage = 1;
   final int _pageSize = 50;
   int get currentPage => _currentPage;
@@ -106,56 +118,51 @@ class AreaViewModel extends ChangeNotifier {
   // Init
   // ===============================================================
   Future<void> _bootstrap() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      _rser = prefs.getString('renTalSer') ?? '';
-      _serUser = prefs.getString('ser') ?? '';
-    } catch (e) {
-      debugPrint('AreaViewModel._bootstrap prefs error: $e');
-    }
-    await Future.wait([
-      _loadZones(),
-      _loadTypes(),
-    ]);
-    // เลือก "ทั้งหมด" ถ้ามี
-    final all = _zones.where((z) => z.zn == 'ทั้งหมด').firstOrNull;
+    await _loadGroups();
+    // default: เลือก "ทั้งหมด" (sentinel ser='0' จะถูก prepend ใน fetchGroups)
+    final all = _groups.where((g) => g.ser == '0').firstOrNull;
     if (all != null) {
-      _selectedZoneSer = all.ser;
-      _selectedZoneName = all.zn;
-    } else if (_zones.isNotEmpty) {
-      _selectedZoneSer = _zones.first.ser;
-      _selectedZoneName = _zones.first.zn;
+      _selectedGroupSer = all.ser;
+      _selectedGroupName = all.zn;
+    } else if (_groups.isNotEmpty) {
+      _selectedGroupSer = _groups.first.ser;
+      _selectedGroupName = _groups.first.zn;
     }
     notifyListeners();
-    await _loadAreasAndCount();
+    await _loadAreas();
   }
 
   /// Public refresh — ใช้รีเฟรชข้อมูลจากภายนอก (เช่น EmptyState)
-  Future<void> refresh() => _loadAreasAndCount();
+  Future<void> refresh() => _loadAreas();
 
   // ===============================================================
   // Loaders
   // ===============================================================
-  Future<void> _loadZones() async {
-    if ((_rser ?? '').isEmpty) return;
-    final list = await _service.fetchZones(_rser!);
-    _zones = list;
+  Future<void> _loadGroups() async {
+    final list = await _service.fetchGroups();
+    _groups = list;
   }
 
-  Future<void> _loadTypes() async {
-    if ((_rser ?? '').isEmpty) return;
-    final list = await _service.fetchTypes(_rser!);
-    _types = list;
+  Future<void> _loadZonesOfGroup(String groupSer) async {
+    if (groupSer == '0' || groupSer.isEmpty) {
+      _zonesOfGroup = [];
+    } else {
+      _zonesOfGroup = await _service.fetchZonesOfGroup(groupSer);
+    }
   }
 
-  Future<void> _loadAreasAndCount() async {
-    if ((_rser ?? '').isEmpty) return;
+  Future<void> _loadAreas() async {
     _isLoading = true;
     notifyListeners();
-    // v2: list + count ใน request เดียว (meta.total)
+    // zone_ser ส่งเป็น zone จริง ถ้าไม่มีก็ส่ง group ser (filter locks ใน group นั้น)
+    // ถ้าเป็น "ทั้งหมด" (group=0) → ไม่ส่ง zone_ser เลย (ทั้งหมด)
+    final zoneSer = _selectedZoneSer ??
+        ((_selectedGroupSer == '0' || _selectedGroupSer == null)
+            ? ''
+            : _selectedGroupSer!);
     final result = await _service.fetchLocks(
       perPage: 200,
-      zoneSer: _selectedZoneSer ?? '0',
+      zoneSer: zoneSer,
       q: _searchQuery,
     );
     _areas = result.data;
@@ -166,24 +173,30 @@ class AreaViewModel extends ChangeNotifier {
   }
 
   // ===============================================================
-  // Zone selection
+  // Selection: group / zone
   // ===============================================================
+  Future<void> onGroupChanged(String? ser, String? name) async {
+    _selectedGroupSer = ser;
+    _selectedGroupName = name;
+    _selectedZoneSer = null;
+    _selectedZoneName = null;
+    _currentPage = 1;
+    notifyListeners();
+    if (ser != null && ser != '0') {
+      await _loadZonesOfGroup(ser);
+    } else {
+      _zonesOfGroup = [];
+    }
+    notifyListeners();
+    await _loadAreas();
+  }
+
   Future<void> onZoneChanged(String? ser, String? name) async {
     _selectedZoneSer = ser;
     _selectedZoneName = name;
     _currentPage = 1;
     notifyListeners();
-    await _loadAreasAndCount();
-  }
-
-  // ===============================================================
-  // Type selection (filter area ตาม type)
-  // ===============================================================
-  void onTypeChanged(String? typeId) {
-    _selectedTypeId = typeId;
-    _currentPage = 1;
-    _applyFilter();
-    notifyListeners();
+    await _loadAreas();
   }
 
   // ===============================================================
@@ -195,10 +208,9 @@ class AreaViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void executeSearch() {
+  Future<void> executeSearch() async {
     _currentPage = 1;
-    _applyFilter();
-    notifyListeners();
+    await _loadAreas();
   }
 
   // ===============================================================
@@ -219,25 +231,78 @@ class AreaViewModel extends ChangeNotifier {
   }
 
   // ===============================================================
+  // CRUD: Group
+  // ===============================================================
+  Future<bool> addGroup({required String zn, int qty = 0}) async {
+    final ok = await _service.addGroup(zn: zn, qty: qty);
+    if (ok) {
+      _emit(const AreaSuccessEvent('เพิ่มหมวดสำเร็จ'));
+      await _loadGroups();
+      notifyListeners();
+    } else {
+      _emit(const AreaErrorEvent('เพิ่มหมวดล้มเหลว'));
+    }
+    return ok;
+  }
+
+  Future<bool> updateGroup({
+    required String ser,
+    required String zn,
+    int? qty,
+  }) async {
+    final ok = await _service.updateGroup(ser: ser, zn: zn, qty: qty);
+    if (ok) {
+      _emit(const AreaSuccessEvent('แก้ไขหมวดสำเร็จ'));
+      await _loadGroups();
+      notifyListeners();
+    } else {
+      _emit(const AreaErrorEvent('แก้ไขหมวดล้มเหลว'));
+    }
+    return ok;
+  }
+
+  Future<bool> deleteGroup({
+    required String ser,
+    required String name,
+  }) async {
+    final ok = await _service.deleteGroup(ser: ser);
+    if (ok) {
+      _emit(AreaSuccessEvent('ลบหมวด "$name" สำเร็จ'));
+      // ถ้าหมวดที่ลบคือที่เลือกอยู่ → กลับไป "ทั้งหมด"
+      if (_selectedGroupSer == ser) {
+        _selectedGroupSer = '0';
+        _selectedGroupName = 'ทั้งหมด';
+        _selectedZoneSer = null;
+        _selectedZoneName = null;
+        _zonesOfGroup = [];
+      }
+      await _loadGroups();
+      notifyListeners();
+      await _loadAreas();
+    } else {
+      _emit(const AreaErrorEvent('ลบหมวดล้มเหลว'));
+    }
+    return ok;
+  }
+
+  // ===============================================================
   // CRUD: Zone
   // ===============================================================
-  Future<bool> addZone({required String zn}) async {
-    if ((_rser ?? '').isEmpty) {
-      _emit(const AreaErrorEvent('ไม่พบ rser'));
-      return false;
-    }
-    // เช็คชื่อโซนซ้ำ (logic จาก Advance_AreaSet.dart)
-    final exists = await _service.zoneExists(rser: _rser!, zn: zn);
+  Future<bool> addZone({
+    required String groupSer,
+    required String zn,
+    int qty = 0,
+  }) async {
+    // เช็คชื่อโซนซ้ำในกลุ่มเดียวกัน
+    final exists = await _service.zoneExists(groupSer: groupSer, zn: zn);
     if (exists) {
-      _emit(AreaErrorEvent('มีโซนชื่อ "$zn" อยู่แล้ว'));
+      _emit(AreaErrorEvent('มีโซนชื่อ "$zn" อยู่ในหมวดนี้แล้ว'));
       return false;
     }
-    final ok = await _service.addZone(rser: _rser!, zn: zn);
+    final ok = await _service.addZone(groupSer: groupSer, zn: zn, qty: qty);
     if (ok) {
       _emit(const AreaSuccessEvent('เพิ่มโซนสำเร็จ'));
-      // Insert_log (pattern จาก Advance_AreaSet.dart)
-      
-      await _loadZones();
+      await _loadZonesOfGroup(groupSer);
       notifyListeners();
     } else {
       _emit(const AreaErrorEvent('เพิ่มโซนล้มเหลว'));
@@ -245,36 +310,42 @@ class AreaViewModel extends ChangeNotifier {
     return ok;
   }
 
-  Future<bool> deleteZone({
-    required String zoneSer,
-    required String zoneName,
+  Future<bool> updateZone({
+    required String ser,
+    required String zn,
+    int? qty,
   }) async {
-    if ((_rser ?? '').isEmpty) {
-      _emit(const AreaErrorEvent('ไม่พบ rser'));
-      return false;
-    }
-    // เช็คว่ามี area ในโซนนี้หรือไม่
-    final inUse = _areas.any((a) => a.zone == zoneSer);
-    if (inUse) {
-      _emit(AreaErrorEvent(
-          'ไม่สามารถลบโซน "$zoneName" ได้ เนื่องจากมีข้อมูล Area อยู่'));
-      return false;
-    }
-    final ok = await _service.deleteZone(rser: _rser!, zoneSer: zoneSer);
+    final ok = await _service.updateZone(ser: ser, zn: zn, qty: qty);
     if (ok) {
-      _emit(AreaSuccessEvent('ลบโซน "$zoneName" สำเร็จ'));
-    
-      await _loadZones();
-      // ถ้าโซนที่ถูกลบคือโซนที่เลือกอยู่ → กลับไป "ทั้งหมด"
-      if (_selectedZoneSer == zoneSer) {
-        final all = _zones.where((z) => z.zn == 'ทั้งหมด').firstOrNull;
-        if (all != null) {
-          _selectedZoneSer = all.ser;
-          _selectedZoneName = all.zn;
-        }
+      _emit(const AreaSuccessEvent('แก้ไขโซนสำเร็จ'));
+      final gs = _selectedGroupSer;
+      if (gs != null && gs != '0') {
+        await _loadZonesOfGroup(gs);
       }
       notifyListeners();
-      await _loadAreasAndCount();
+    } else {
+      _emit(const AreaErrorEvent('แก้ไขโซนล้มเหลว'));
+    }
+    return ok;
+  }
+
+  Future<bool> deleteZone({
+    required String ser,
+    required String name,
+  }) async {
+    final ok = await _service.deleteZone(ser: ser);
+    if (ok) {
+      _emit(AreaSuccessEvent('ลบโซน "$name" สำเร็จ'));
+      if (_selectedZoneSer == ser) {
+        _selectedZoneSer = null;
+        _selectedZoneName = null;
+      }
+      final gs = _selectedGroupSer;
+      if (gs != null && gs != '0') {
+        await _loadZonesOfGroup(gs);
+      }
+      notifyListeners();
+      await _loadAreas();
     } else {
       _emit(const AreaErrorEvent('ลบโซนล้มเหลว'));
     }
@@ -282,25 +353,15 @@ class AreaViewModel extends ChangeNotifier {
   }
 
   // ===============================================================
-  // CRUD: Area
+  // CRUD: Area (Lock)
   // ===============================================================
   Future<bool> addArea({
     required String ln,
-    required String sn,
-    required String sname,
-    required String sw,
     required String lncode,
     required String area,
     required String rent,
-    required String rentMaket,
     required String zone,
-    required String typeId,
   }) async {
-    if ((_rser ?? '').isEmpty) {
-      _emit(const AreaErrorEvent('ไม่พบ rser'));
-      return false;
-    }
-    // v2: รับเฉพาะ {zone_ser, lncode, ln, area, rent}
     final ok = await _service.addLock(
       zoneSer: zone,
       lncode: lncode,
@@ -310,39 +371,22 @@ class AreaViewModel extends ChangeNotifier {
     );
     if (ok) {
       _emit(const AreaSuccessEvent('เพิ่ม Area สำเร็จ'));
-
-      await _loadAreasAndCount();
+      await _loadAreas();
     } else {
       _emit(const AreaErrorEvent('เพิ่ม Area ล้มเหลว'));
     }
     return ok;
   }
 
-  /// แก้ไข Area — v2 รับเฉพาะ `{rent, st}` ในตอนนี้
   Future<bool> updateArea({
     required String ser,
-    required String ln,
-    required String sname,
-    required String area,
     required String rent,
-    required String zone,
-    required String typeId,
-    String? lncode,
-    String? sw,
-    String? rentMaket,
+    int? st,
   }) async {
-    if ((_rser ?? '').isEmpty) {
-      _emit(const AreaErrorEvent('ไม่พบ rser'));
-      return false;
-    }
-    final ok = await _service.updateLock(
-      ser: ser,
-      rent: rent,
-    );
+    final ok = await _service.updateLock(ser: ser, rent: rent, st: st);
     if (ok) {
       _emit(const AreaSuccessEvent('แก้ไข Area สำเร็จ'));
-
-      await _loadAreasAndCount();
+      await _loadAreas();
     } else {
       _emit(const AreaErrorEvent('แก้ไข Area ล้มเหลว'));
     }
@@ -350,27 +394,15 @@ class AreaViewModel extends ChangeNotifier {
   }
 
   Future<bool> deleteArea(AreaAreaModel area) async {
-    if ((_rser ?? '').isEmpty) {
-      _emit(const AreaErrorEvent('ไม่พบ rser'));
-      return false;
-    }
     final ok = await _service.deleteLock(ser: area.ser);
     if (ok) {
-      _emit(const AreaSuccessEvent('ลบ Area สำเร็จ'));
-
-      await _loadAreasAndCount();
+      _emit(AreaSuccessEvent('ลบ "${area.lncode.isNotEmpty ? area.lncode : area.ln}" สำเร็จ'));
+      await _loadAreas();
     } else {
       _emit(const AreaErrorEvent('ลบ Area ล้มเหลว'));
     }
     return ok;
   }
-
-  // ===============================================================
-  // UI actions — ใช้ navigate ไป full-page route (ไม่ popup)
-  // ===============================================================
-  void onAddZonePage() {}
-  void onAddAreaPage() {}
-  void onEditAreaPage(AreaAreaModel area) {}
 
   // ===============================================================
   // Helpers
@@ -383,21 +415,15 @@ class AreaViewModel extends ChangeNotifier {
   void _applyFilter() {
     final q = _searchQuery.trim().toLowerCase();
     Iterable<AreaAreaModel> list = _areas;
-    if (_selectedTypeId != null && _selectedTypeId!.isNotEmpty) {
-      list = list.where((a) => a.typeId == _selectedTypeId);
-    }
     if (q.isNotEmpty) {
       list = list.where((a) {
         return a.ln.toLowerCase().contains(q) ||
-            a.sname.toLowerCase().contains(q) ||
-            a.sn.toLowerCase().contains(q) ||
-            a.lncode.toLowerCase().contains(q) ||
-            a.sw.toLowerCase().contains(q);
+            a.lncode.toLowerCase().contains(q);
       });
     }
     final arr = list.toList();
-    // เรียงตาม sw asc
-    arr.sort((a, b) => a.sw.padLeft(5, '0').compareTo(b.sw.padLeft(5, '0')));
+    arr.sort((a, b) =>
+        a.lncode.padLeft(8, '0').compareTo(b.lncode.padLeft(8, '0')));
     _filtered = arr;
   }
 

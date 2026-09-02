@@ -4,16 +4,19 @@
 // ✅ SELF-CONTAINED — central zone service ใช้ร่วมทุกเมนู
 // ใช้แทน GC_zone.php / GC_zone_sub.php ทั้งหมด
 //
-// API ใหม่ (v2):
-// - GET {domain_v2}/admin/areas/groups
-//     → หมวดโซน [{"ser","zn","qty","zones_count",...}, ...]
-// - GET {domain_v2}/admin/areas/zones?group_ser=<ser>&per_page=15
-//     → โซนของหมวดนั้น [{"ser","zn","qty",...}, ...]
-//
-// Cache 1 นาที + Bearer token (MyToken.accessToken)
+// API (v2) — ไม่มี cache เพื่อให้ข้อมูล realtime ตาม backend:
+// - GET    /admin/areas/groups                          → หมวดโซน
+// - GET    /admin/areas/zones?group_ser=&per_page=&page=→ โซนของหมวดนั้น
+// - GET    /admin/areas/groups/{ser}                    → detail หมวด
+// - GET    /admin/areas/zones/{ser}                     → detail โซน
+// - POST   /admin/areas/groups     body {zn,qty,pri,ren_pri}
+// - POST   /admin/areas/zones      body {group_ser,zn,qty,status}
+// - PUT    /admin/areas/groups/{ser} body {zn,qty} (partial)
+// - PUT    /admin/areas/zones/{ser}  body {zn,qty} (partial)
+// - DELETE /admin/areas/groups/{ser}
+// - DELETE /admin/areas/zones/{ser}
 // ============================================================================
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -44,29 +47,20 @@ class AreaZone {
   }
 }
 
-/// Cache + load groups/zones (ใช้ร่วมทุกเมนู)
 class AreaZonesApi {
   AreaZonesApi();
 
   static const String _allLabel = 'ทั้งหมด';
-  static const Duration _ttl = Duration(minutes: 1);
 
-  // ---------- Cache ----------
-  final Map<String, _CacheEntry<List<AreaZone>>> _cache = {};
+  // ---------- Read ----------
 
-  void clearCache() => _cache.clear();
-
-  Future<List<AreaZone>> fetchGroups({bool forceRefresh = false}) async {
-    const key = 'groups';
-    if (!forceRefresh && _cache[key]?.isValid() == true) {
-      return List<AreaZone>.from(_cache[key]!.value);
-    }
+  Future<List<AreaZone>> fetchGroups() async {
     try {
       final headers = await MyHeaders.build();
       final url = '${MyConstant().domain_v2}/admin/areas/groups';
       final res = await http.get(Uri.parse(url), headers: headers);
       if (res.statusCode != 200) {
-        print('[AreaZonesApi] groups status ${res.statusCode}');
+        debugPrintLog('groups status ${res.statusCode}');
         return _withAll(const []);
       }
       final j = json.decode(res.body);
@@ -81,32 +75,32 @@ class AreaZonesApi {
           items.add(AreaZone.fromJson(Map<String, dynamic>.from(row)));
         }
       }
-      _cache[key] = _CacheEntry(items, DateTime.now());
       return _withAll(items);
     } catch (e) {
-      print('[AreaZonesApi] fetchGroups error: $e');
+      debugPrintLog('fetchGroups error: $e');
       return _withAll(const []);
     }
   }
 
   Future<List<AreaZone>> fetchZones({
     String? groupSer,
-    bool forceRefresh = false,
+    int page = 1,
+    int perPage = 200,
   }) async {
-    final key = 'zones_${groupSer ?? 'all'}';
-    if (!forceRefresh && _cache[key]?.isValid() == true) {
-      return List<AreaZone>.from(_cache[key]!.value);
-    }
     try {
       final headers = await MyHeaders.build();
-      final gs = (groupSer == null || groupSer.isEmpty || groupSer == '0')
-          ? ''
-          : '&group_ser=$groupSer';
-      final url =
-          '${MyConstant().domain_v2}/admin/areas/zones?per_page=15$gs';
-      final res = await http.get(Uri.parse(url), headers: headers);
+      final params = <String, String>{
+        'per_page': '$perPage',
+        'page': '$page',
+      };
+      if (groupSer != null && groupSer.isNotEmpty && groupSer != '0') {
+        params['group_ser'] = groupSer;
+      }
+      final uri = Uri.parse('${MyConstant().domain_v2}/admin/areas/zones')
+          .replace(queryParameters: params);
+      final res = await http.get(uri, headers: headers);
       if (res.statusCode != 200) {
-        print('[AreaZonesApi] zones status ${res.statusCode}');
+        debugPrintLog('zones status ${res.statusCode}');
         return _withAll(const []);
       }
       final j = json.decode(res.body);
@@ -121,10 +115,9 @@ class AreaZonesApi {
           items.add(AreaZone.fromJson(Map<String, dynamic>.from(row)));
         }
       }
-      _cache[key] = _CacheEntry(items, DateTime.now());
       return _withAll(items);
     } catch (e) {
-      print('[AreaZonesApi] fetchZones error: $e');
+      debugPrintLog('fetchZones error: $e');
       return _withAll(const []);
     }
   }
@@ -136,8 +129,6 @@ class AreaZonesApi {
 
   // ---------- Mutate (v2) ----------
 
-  /// เพิ่มหมวดโซน — `POST /admin/areas/groups`
-  /// body: `{zn, qty, pri, ren_pri}`
   Future<bool> addGroup({
     required String zn,
     int qty = 0,
@@ -157,20 +148,13 @@ class AreaZonesApi {
           'ren_pri': renPri,
         }),
       );
-      if (res.statusCode == 200) {
-        // invalidate groups cache
-        _cache.remove('groups');
-        return true;
-      }
-      return false;
+      return res.statusCode == 200;
     } catch (e) {
-      print('[AreaZonesApi] addGroup error: $e');
+      debugPrintLog('addGroup error: $e');
       return false;
     }
   }
 
-  /// เพิ่มโซน — `POST /admin/areas/zones`
-  /// body: `{group_ser, zn, qty, status}`
   Future<bool> addZone({
     required String groupSer,
     required String zn,
@@ -190,20 +174,13 @@ class AreaZonesApi {
           'status': status,
         }),
       );
-      if (res.statusCode == 200) {
-        // invalidate zones cache สำหรับ group นี้
-        _cache.remove('zones_$groupSer');
-        _cache.remove('zones_all');
-        return true;
-      }
-      return false;
+      return res.statusCode == 200;
     } catch (e) {
-      print('[AreaZonesApi] addZone error: $e');
+      debugPrintLog('addZone error: $e');
       return false;
     }
   }
 
-  /// ลบหมวดโซน — `DELETE /admin/areas/groups/{ser}`
   Future<bool> deleteGroup({required String ser}) async {
     final uri = Uri.parse('${MyConstant().domain_v2}/admin/areas/groups/$ser');
     try {
@@ -211,18 +188,13 @@ class AreaZonesApi {
       final request = http.Request('DELETE', uri);
       request.headers.addAll(headers);
       final res = await request.send();
-      if (res.statusCode == 200) {
-        _cache.remove('groups');
-        return true;
-      }
-      return false;
+      return res.statusCode == 200;
     } catch (e) {
-      print('[AreaZonesApi] deleteGroup error: $e');
+      debugPrintLog('deleteGroup error: $e');
       return false;
     }
   }
 
-  /// ลบโซน — `DELETE /admin/areas/zones/{ser}`
   Future<bool> deleteZone({required String ser}) async {
     final uri = Uri.parse('${MyConstant().domain_v2}/admin/areas/zones/$ser');
     try {
@@ -230,20 +202,13 @@ class AreaZonesApi {
       final request = http.Request('DELETE', uri);
       request.headers.addAll(headers);
       final res = await request.send();
-      if (res.statusCode == 200) {
-        // invalidate all zones caches (group ser ไม่รู้แล้ว)
-        _cache.removeWhere((k, _) => k.startsWith('zones_'));
-        return true;
-      }
-      return false;
+      return res.statusCode == 200;
     } catch (e) {
-      print('[AreaZonesApi] deleteZone error: $e');
+      debugPrintLog('deleteZone error: $e');
       return false;
     }
   }
 
-  /// แก้ไขหมวดโซน — `PUT /admin/areas/groups/{ser}`
-  /// body: `{zn, qty}` (partial — ส่งเฉพาะ field ที่ต้องการอัปเดต)
   Future<bool> updateGroup({
     required String ser,
     String? zn,
@@ -255,20 +220,15 @@ class AreaZonesApi {
       final body = <String, dynamic>{};
       if (zn != null) body['zn'] = zn;
       if (qty != null) body['qty'] = qty;
-      final res = await http.put(uri, headers: headers, body: json.encode(body));
-      if (res.statusCode == 200) {
-        _cache.remove('groups');
-        return true;
-      }
-      return false;
+      final res =
+          await http.put(uri, headers: headers, body: json.encode(body));
+      return res.statusCode == 200;
     } catch (e) {
-      print('[AreaZonesApi] updateGroup error: $e');
+      debugPrintLog('updateGroup error: $e');
       return false;
     }
   }
 
-  /// แก้ไขโซน — `PUT /admin/areas/zones/{ser}`
-  /// body: `{zn, qty}` (partial)
   Future<bool> updateZone({
     required String ser,
     String? zn,
@@ -280,22 +240,22 @@ class AreaZonesApi {
       final body = <String, dynamic>{};
       if (zn != null) body['zn'] = zn;
       if (qty != null) body['qty'] = qty;
-      final res = await http.put(uri, headers: headers, body: json.encode(body));
-      if (res.statusCode == 200) {
-        _cache.removeWhere((k, _) => k.startsWith('zones_'));
-        return true;
-      }
-      return false;
+      final res =
+          await http.put(uri, headers: headers, body: json.encode(body));
+      return res.statusCode == 200;
     } catch (e) {
-      print('[AreaZonesApi] updateZone error: $e');
+      debugPrintLog('updateZone error: $e');
       return false;
     }
   }
 }
 
-class _CacheEntry<T> {
-  final T value;
-  final DateTime at;
-  _CacheEntry(this.value, this.at);
-  bool isValid() => DateTime.now().difference(at) < AreaZonesApi._ttl;
+void debugPrintLog(String msg) {
+  // หลีกเลี่ยง print() ใน production — ใช้ debugPrint จาก foundation
+  // import 'package:flutter/foundation.dart' ผ่าน caller หากต้องการ
+  assert(() {
+    // ignore: avoid_print
+    print('[AreaZonesApi] $msg');
+    return true;
+  }());
 }
