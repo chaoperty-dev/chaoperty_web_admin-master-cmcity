@@ -705,8 +705,8 @@ class _PaymentSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: LaSpace.lg),
 
-          // ─── แสดงแค่ 4 ฟิลด์: เลขที่สัญญา / วันที่สิ้นสุด / บริเวณ / รหัสพื้นที่ ───
-          // ─── Layout 2 คอลัมน์ (2 แถว × 2 ฟิลด์) ───
+          // ─── แสดง 4 ฟิลด์: ชื่อ / เลขบัตร / บริเวณ/โซน / รหัสพื้นที่ ───
+          // ─── Layout 2 คอลัมน์ (2 แถว × 2 ฟิลด์) เหมือน approve page ───
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -726,9 +726,9 @@ class _PaymentSummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _InfoItem(
-                          icon: Icons.receipt_long_rounded,
-                          label: 'เลขที่สัญญา',
-                          value: d.paymentNo,
+                          icon: Icons.person_rounded,
+                          label: 'ชื่อ',
+                          value: d.payerName,
                         ),
                         const SizedBox(height: LaSpace.sm),
                         _InfoItem(
@@ -745,9 +745,10 @@ class _PaymentSummaryCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         _InfoItem(
-                          icon: Icons.calendar_today_rounded,
-                          label: 'วันที่สิ้นสุด',
-                          value: _formatDate(d.paidAt),
+                          icon: Icons.confirmation_number_rounded,
+                          label: 'เลขบัตร',
+                          value: d.clientTax,
+                          mono: true,
                         ),
                         const SizedBox(height: LaSpace.sm),
                         _InfoItem(
