@@ -1,3 +1,5 @@
 {
-    "cmake.sourceDirectory": "${workspaceFolder}/linux"
+    "cmake.sourceDirectory": "${workspaceFolder}/linux",
+    // ใช้ fvm 3.38.3 — SDK เก่า C:\src\flutter (3.10.5) pin intl 0.18.0 ซึ่งชนกับ intl ^0.20.2
+    "dart.flutterSdkPath": "C:/Users/Jittr/fvm/versions/3.38.3"
 }

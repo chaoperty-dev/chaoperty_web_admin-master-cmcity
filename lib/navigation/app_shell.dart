@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
 import 'menu_version.dart';
-import '../ChiangMai_Municipality/unity/SecurePrefs_helper.dart';
+import '../ChiangMai_Municipality/unity/auth_token_store.dart';
 import '../router/auth_state_notifier.dart';
 import 'app_navigation_rail.dart';
 import 'models/navigation_menu_model.dart';
@@ -120,7 +120,7 @@ class _MobileDrawerState extends State<_MobileDrawer> {
   @override
   void initState() {
     super.initState();
-    _menuFuture = NavigationMenuService.load();
+    _menuFuture = NavigationMenuService.loadFiltered();
     _loadUserName();
   }
 
@@ -133,12 +133,16 @@ class _MobileDrawerState extends State<_MobileDrawer> {
 
   Future<String> _getUserDisplayName() async {
     try {
-      final userJson =
-          await SecurePrefs.getDecrypted(SecurePrefsType.authUserObject);
+      final userJson = await AuthUserStore.read();
       if (userJson != null && userJson.isNotEmpty) {
         final user = jsonDecode(userJson) as Map<String, dynamic>?;
         if (user != null) {
-          final fname = user['fname'] ?? user['first_name'] ?? '';
+          final profile =
+              (user['profile'] as Map?)?.cast<String, dynamic>() ?? const {};
+          final fname = user['fname'] ??
+              user['first_name'] ??
+              profile['full_name'] ??
+              '';
           final lname = user['lname'] ?? user['last_name'] ?? '';
           final name = user['name'] ?? '';
           final email = user['email'] ?? '';
@@ -152,8 +156,7 @@ class _MobileDrawerState extends State<_MobileDrawer> {
         }
       }
 
-      final email =
-          await SecurePrefs.getDecrypted(SecurePrefsType.authUserEmail);
+      final email = await AuthEmailStore.read();
       if (email != null && email.isNotEmpty) return email;
 
       return '';

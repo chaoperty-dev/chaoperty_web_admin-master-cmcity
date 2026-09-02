@@ -515,6 +515,7 @@ extension on _LicenseAnnounceZoneFilterState {
         ),
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           state.selectedZoneSub ?? 'ทั้งหมด',
           style: LrText.body.copyWith(
@@ -594,6 +595,7 @@ extension on _LicenseAnnounceZoneFilterState {
         ),
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           state.selectedZone ?? 'เลือกโซน',
           style: LrText.body.copyWith(

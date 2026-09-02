@@ -10,8 +10,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
+import '../../unity/Enum.dart';
+import '../../unity/FormatDate.dart';
 import '../../viewmodels/license_request_detail_step1_view_model.dart';
 
 class RequestDetailContractSection extends StatelessWidget {

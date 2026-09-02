@@ -46,12 +46,6 @@ class GeneralDataStep1 extends StatelessWidget {
 
           // Section 1-3
           const _Section1AreaType(),
-
-          const _Section5PlaceName(),
-
-          const _Section6ExpiringDays(),
-
-          const _Section7MassOn(),
         ],
       ),
     );

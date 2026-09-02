@@ -94,14 +94,26 @@ class _RentalGeneralPageBodyState extends State<_RentalGeneralPageBody> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ─── Header (Back + Title) ───
-            GeneralDataHeader(
-              title: 'ข้อมูลทั่วไป',
-              onBack: () {
-                if (Navigator.of(context).canPop()) {
-                  Navigator.of(context).pop();
-                }
-              },
+            // ─── Top section — มี padding ซ้าย/ขวา (LaSpace.lg) ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  LaSpace.lg, LaSpace.lg, LaSpace.lg, 0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ─── Header (Back + Title) ───
+                  GeneralDataHeader(
+                    title: 'ข้อมูลทั่วไป',
+                    subtitle: 'ตั้งค่าข้อมูลพื้นฐานของระบบ',
+                    onBack: () {
+                      if (Navigator.of(context).canPop()) {
+                        Navigator.of(context).pop();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: LaSpace.lg),
+                ],
+              ),
             ),
 
             // ─── Body (ข้อมูลทั่วไป) ───

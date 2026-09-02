@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
 import '../ChiangMai_Municipality/unity/SecurePrefs_helper.dart';
+import '../ChiangMai_Municipality/unity/auth_token_store.dart';
 
 /// Notifier สำหรับ GoRouter — แจ้งเตือนเมื่อ auth state เปลี่ยน
 ///
@@ -36,17 +37,14 @@ class AuthStateNotifier extends ChangeNotifier {
 
   /// ออกจากระบบ — ลบ token และ notify GoRouter redirect ไป /login
   Future<void> signOut() async {
-    // ลบ auth keys ทั้งหมดจาก SecurePrefs
+    // ลบ auth data ทั้งหมด (sessionStorage บนเว็บ / SecurePrefs บน native)
+    await clearAllAuthStores();
     await Future.wait([
-      SecurePrefs.removeEncrypted(SecurePrefsType.authAccessToken),
       SecurePrefs.removeEncrypted(SecurePrefsType.authRefreshToken),
       SecurePrefs.removeEncrypted(SecurePrefsType.authTokenType),
-      SecurePrefs.removeEncrypted(SecurePrefsType.authUserUuid),
-      SecurePrefs.removeEncrypted(SecurePrefsType.authUserEmail),
       SecurePrefs.removeEncrypted(SecurePrefsType.authUserTel),
       SecurePrefs.removeEncrypted(SecurePrefsType.authUserTax),
       SecurePrefs.removeEncrypted(SecurePrefsType.authUserId),
-      SecurePrefs.removeEncrypted(SecurePrefsType.authUserObject),
     ]);
     markLoggedOut();
   }

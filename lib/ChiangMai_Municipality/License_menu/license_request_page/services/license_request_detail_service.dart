@@ -14,7 +14,7 @@ import 'package:chaoperty/Constant/Myconstant.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../Model/ReviewUuid_Model.dart';
-import '../../../unity/API_requests_reviews.dart';
+import '../unity/API_requests_reviews.dart';
 
 class LicenseRequestDetailService {
   LicenseRequestDetailService();

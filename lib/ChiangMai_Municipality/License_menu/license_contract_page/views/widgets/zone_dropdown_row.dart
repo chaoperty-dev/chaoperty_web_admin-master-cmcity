@@ -122,6 +122,7 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
         dropdownDecoration: _dropdownDecoration(),
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: _hint(vm.selectedSubZone ?? 'เลือกโซนพื้นที่เช่า'),
         value: vm.subZoneOptions.isEmpty ? null : vm.selectedSubZone,
         items: vm.subZoneOptions.isEmpty
@@ -171,6 +172,7 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
         dropdownDecoration: _dropdownDecoration(),
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: _hint(vm.selectedZn ?? 'เลือกโซน'),
         value: vm.selectedZn,
         items: vm.zoneOptions
@@ -210,6 +212,7 @@ class _ZoneDropdownRowState extends State<ZoneDropdownRow> {
         dropdownDecoration: _dropdownDecoration(),
         searchController: _propertySearchCtrl,
         searchInnerWidget: _SearchInner(_propertySearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedZn == null
               ? 'เลือกโซนก่อน'

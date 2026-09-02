@@ -16,8 +16,8 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
-import '../../../unity/license_status_labels.dart';
-import '../../../unity/zone_selection_store.dart';
+import '../unity/license_status_labels.dart';
+import '../unity/zone_selection_store.dart';
 import '../models/fact_check_item.dart';
 import '../models/license_fact_check_config.dart';
 import '../models/license_fact_check_event.dart';

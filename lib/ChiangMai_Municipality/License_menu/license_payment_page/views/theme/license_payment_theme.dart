@@ -9,7 +9,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../../unity/license_status_labels.dart' hide StatusPalette;
+import '../../unity/license_status_labels.dart' hide StatusPalette;
 
 /// 🎨 Brand & Semantic Colors
 class LaColors {

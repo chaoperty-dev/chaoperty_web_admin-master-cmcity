@@ -25,32 +25,45 @@ class _AreaMenuPaginationState extends State<AreaMenuPagination> {
     return LayoutBuilder(
       builder: (context, c) {
         final isMobile = c.maxWidth < 520;
+        final label = '${vm.currentPage}/${vm.lastPage}';
         if (!isMobile) {
-          return _buildFull(label: '${vm.total} ล็อค');
+          return _buildFull(
+            label: label,
+            canPrev: vm.canPrev,
+            canNext: vm.canNext,
+            onPrev: vm.canPrev ? () => vm.prevPage() : null,
+            onNext: vm.canNext ? () => vm.nextPage() : null,
+          );
         }
         return _buildCollapsible(
-          label: '${vm.total} ล็อค',
-          canPrev: false,
-          canNext: false,
+          label: label,
+          canPrev: vm.canPrev,
+          canNext: vm.canNext,
         );
       },
     );
   }
 
-  Widget _buildFull({required String label}) {
+  Widget _buildFull({
+    required String label,
+    required bool canPrev,
+    required bool canNext,
+    VoidCallback? onPrev,
+    VoidCallback? onNext,
+  }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(LaRadius.md),
+        borderRadius: BorderRadius.circular(LaRadius.pill),
         border: Border.all(color: LaColors.border, width: 1),
       ),
       child: _RowContent(
         label: label,
-        onPrev: null,
-        onNext: null,
-        canPrev: false,
-        canNext: false,
+        onPrev: onPrev,
+        onNext: onNext,
+        canPrev: canPrev,
+        canNext: canNext,
       ),
     );
   }
@@ -61,10 +74,10 @@ class _AreaMenuPaginationState extends State<AreaMenuPagination> {
     required bool canNext,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(LaRadius.md),
+        borderRadius: BorderRadius.circular(LaRadius.pill),
         border: Border.all(color: LaColors.border, width: 1),
       ),
       child: Text(
@@ -72,7 +85,7 @@ class _AreaMenuPaginationState extends State<AreaMenuPagination> {
         style: const TextStyle(
           fontFamily: LaText.fontBold,
           fontSize: 13,
-          color: LaColors.primaryDark,
+          color: LaColors.primary,
           fontWeight: FontWeight.w700,
         ),
       ),
@@ -112,7 +125,7 @@ class _RowContent extends StatelessWidget {
             style: const TextStyle(
               fontFamily: LaText.fontBold,
               fontSize: 13,
-              color: LaColors.primaryDark,
+              color: LaColors.primary,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -164,23 +177,17 @@ class _PillBtnState extends State<_PillBtn> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: LrAnimations.fast,
-            width: 32,
-            height: 32,
+            width: 26,
+            height: 26,
             decoration: BoxDecoration(
               color: !active
                   ? LaColors.surfaceMuted
-                  : (_hover ? LaColors.primary : Colors.white),
+                  : (_hover ? LaColors.primary : LaColors.surfaceMuted),
               borderRadius: BorderRadius.circular(LaRadius.pill),
-              border: Border.all(
-                color: !active
-                    ? LaColors.border
-                    : (_hover ? LaColors.primary : LaColors.borderStrong),
-                width: 1,
-              ),
             ),
             child: Icon(
               widget.icon,
-              size: 18,
+              size: 16,
               color: !active
                   ? LaColors.textMuted
                   : (_hover ? Colors.white : LaColors.textSecondary),

@@ -14,8 +14,8 @@ import 'package:chaoperty/Model/GetZone_Model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../unity/API_requests_reviews.dart';
-import '../../../unity/API_approvals_lastaction.dart';
+import '../unity/API_requests_reviews.dart';
+import '../unity/API_approvals_lastaction.dart';
 import '../models/verify_task_model.dart';
 import '../models/verify_attachment_item.dart';
 
@@ -27,46 +27,46 @@ class LicenseVerifyService {
 
   // ---------- Legacy v1 fallback ----------
   /// โหลดรายการ "คำขอต่อสัญญา" (ser=0 / level=1) — v1 fallback
-  Future<ReviewResponse> fetchRequests({
-    String? urlCustom,
-    String query = '',
-    int perPage = 50,
-    String? orderBy,
-    String sortDir = 'asc',
-    String? zn,
-    String searchField = 'scname',
-  }) async {
-    return await read_GC_Reviews(
-      urlCustom: urlCustom,
-      query: query,
-      perPage: 50,
-      orderBy: orderBy,
-      sortDir: sortDir,
-      zn: zn,
-      fild: [
-        {
-          'ser': '0',
-          'st': '1',
-          'title': _fieldTitle(searchField),
-          'value': searchField
-        },
-      ],
-    );
-  }
+  // Future<ReviewResponse> fetchRequests({
+  //   String? urlCustom,
+  //   String query = '',
+  //   int perPage = 50,
+  //   String? orderBy,
+  //   String sortDir = 'asc',
+  //   String? zn,
+  //   String searchField = 'scname',
+  // }) async {
+  //   return await read_GC_Reviews(
+  //     urlCustom: urlCustom,
+  //     query: query,
+  //     perPage: 50,
+  //     orderBy: orderBy,
+  //     sortDir: sortDir,
+  //     zn: zn,
+  //     fild: [
+  //       {
+  //         'ser': '0',
+  //         'st': '1',
+  //         'title': _fieldTitle(searchField),
+  //         'value': searchField
+  //       },
+  //     ],
+  //   );
+  // }
 
-  String _fieldTitle(String field) {
-    switch (field) {
-      case 'uuid':
-        return 'รหัสรายการ';
-      case 'tel':
-        return 'เบอร์โทร';
-      case 'cid':
-        return 'เลขที่สัญญา';
-      case 'scname':
-      default:
-        return 'ชื่อผู้ติดต่อ';
-    }
-  }
+  // String _fieldTitle(String field) {
+  //   switch (field) {
+  //     case 'uuid':
+  //       return 'รหัสรายการ';
+  //     case 'tel':
+  //       return 'เบอร์โทร';
+  //     case 'cid':
+  //       return 'เลขที่สัญญา';
+  //     case 'scname':
+  //     default:
+  //       return 'ชื่อผู้ติดต่อ';
+  //   }
+  // }
 
   // ---------- v2 VerifyTasks list ----------
   /// สร้าง URL สำหรับ v2 API (`/api/v2/...`) — strip `/v1` ออกจาก domain_v1
@@ -118,7 +118,8 @@ class LicenseVerifyService {
         final parsed = Uri.parse(urlCustom);
         final merged = Map<String, String>.from(parsed.queryParameters);
         if (q != null && q.isNotEmpty) merged['q'] = q;
-        if (customer != null && customer.isNotEmpty) merged['customer'] = customer;
+        if (customer != null && customer.isNotEmpty)
+          merged['customer'] = customer;
         if (moduleId != null) merged['module_id'] = '$moduleId';
         if (announcementUuid != null && announcementUuid.isNotEmpty) {
           merged['announcement_uuid'] = announcementUuid;
@@ -326,9 +327,7 @@ class LicenseVerifyService {
               reviewAttachmentsAllDone ? 'true' : 'false';
         }
         if (zser != null && zser.isNotEmpty && zser != '0') qp['zser'] = zser;
-        if (subzoneser != null &&
-            subzoneser.isNotEmpty &&
-            subzoneser != '0') {
+        if (subzoneser != null && subzoneser.isNotEmpty && subzoneser != '0') {
           qp['subzoneser'] = subzoneser;
         }
         if (statuses != null && statuses.isNotEmpty) {
@@ -362,7 +361,8 @@ class LicenseVerifyService {
         return VerifyAttachmentsListResult.empty;
       }
       if (resp.statusCode < 200 || resp.statusCode >= 300) {
-        print('[listTasksAttachments][ERR] ${resp.statusCode} ${resp.reasonPhrase}');
+        print(
+            '[listTasksAttachments][ERR] ${resp.statusCode} ${resp.reasonPhrase}');
         print('[listTasksAttachments][BODY] ${_truncate(resp.body, 200)}');
         return VerifyAttachmentsListResult.empty;
       }

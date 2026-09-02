@@ -13,7 +13,7 @@ import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../../../../unity/FormatPhone.dart';
+import '../../unity/FormatPhone.dart';
 import '../../models/license_payment_detail_model.dart';
 import '../../services/license_payment_detail_service.dart';
 import '../theme/license_payment_theme.dart';

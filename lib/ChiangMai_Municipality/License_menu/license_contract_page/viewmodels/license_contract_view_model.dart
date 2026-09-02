@@ -20,13 +20,13 @@ import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../Model/AnnouncementZone_Model.dart';
 import '../../../Model/Person&Shop_Model.dart';
-import '../../../Model/Properties_Model.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Model/Properties_Model.dart';
 import '../models/billing_models.dart';
 import '../models/license_contract_config.dart';
 import '../models/license_contract_event.dart';
 import '../models/license_contract_result.dart';
 import '../services/license_contract_service.dart';
-import '../../../unity/zone_selection_store.dart';
+import '../unity/zone_selection_store.dart';
 
 class LicenseContractViewModel extends ChangeNotifier {
   LicenseContractViewModel({
@@ -425,10 +425,10 @@ class LicenseContractViewModel extends ChangeNotifier {
       props = [PropertiesModel(newRequest: stubReq, client: stubClient)];
     }
 
-    // ── lockStatus convention (assumption): 1 = occupied, อื่นๆ = vacant
-    //    ถ้า API ส่งค่าอื่น (เช่น 0/2) ให้ปรับตรงนี้ภายหลัง
-    final isOccupiedByLock = item.lockStatus?.toString() == '1';
-    final quantity = isOccupiedByLock ? '1' : '0';
+    // ── align กับ area page logic: occupied iff hasRequest (requester มีค่า)
+    //    เพื่อให้ dropdown / area_info_card / box_card แสดงสถานะตรงกัน
+    final hasRequester = item.hasRequest;
+    final quantity = hasRequester ? '1' : '0';
 
     // ── ser จาก lock_code (fallback lock) — ใช้เป็น key สำหรับ join ภายใน VM
     final ser = item.lock ?? item.lockCode;

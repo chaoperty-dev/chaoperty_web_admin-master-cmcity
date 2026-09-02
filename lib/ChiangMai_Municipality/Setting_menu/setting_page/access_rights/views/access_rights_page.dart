@@ -124,8 +124,8 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
 
   Future<void> _openEditDialog(String userUuid) async {
     final vm = context.read<AccessRightsViewModel>();
-    final user = vm.users.where((u) => u.uuid == userUuid).firstOrNull;
-    if (user == null) return;
+    final user = await vm.reloadUser(userUuid);
+    if (user == null || !mounted) return;
     await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -139,8 +139,8 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
 
   Future<void> _openSignatureDialog(String userUuid) async {
     final vm = context.read<AccessRightsViewModel>();
-    final user = vm.users.where((u) => u.uuid == userUuid).firstOrNull;
-    if (user == null) return;
+    final user = await vm.reloadUser(userUuid);
+    if (user == null || !mounted) return;
     await showDialog<bool>(
       context: context,
       barrierDismissible: false,
@@ -168,6 +168,11 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
               title: vm.title,
               subtitle: 'จัดการผู้ใช้งาน ตำแหน่ง และสิทธิ์การเข้าถึงระบบ',
               totalCount: vm.total,
+              onBack: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
               onCreate: vm.onCreate,
             ),
             const SizedBox(height: ArSpace.lg),
@@ -182,23 +187,8 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
             ),
             const SizedBox(height: ArSpace.lg),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, c) {
-                  if (c.maxWidth < 700) {
-                    return SingleChildScrollView(
-                      child: AccessRightsTable(),
-                    );
-                  }
-                  return SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: SizedBox(
-                      width: 900,
-                      child: SingleChildScrollView(
-                        child: AccessRightsTable(),
-                      ),
-                    ),
-                  );
-                },
+              child: SingleChildScrollView(
+                child: const AccessRightsTable(),
               ),
             ),
           ],

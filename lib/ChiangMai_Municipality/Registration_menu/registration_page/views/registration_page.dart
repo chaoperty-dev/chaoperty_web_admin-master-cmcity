@@ -13,7 +13,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../Bureau_Registration/Add_Custo_Screen.dart' as legacy
+import '../../views/widgets/add_custo_screen.dart' as legacy
     show Add_Custo_Screen;
 import '../models/registration_config.dart';
 import '../models/registration_event.dart';

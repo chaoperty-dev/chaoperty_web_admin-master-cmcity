@@ -1,8 +1,11 @@
 // ============================================================================
 // area_menu_zone_filter.dart
 // ============================================================================
-// ตัวกรอง "หมวดโซนพื้นที่" + "โซนพื้นที่"
-// ✅ SELF-CONTAINED — ใช้ List<Map<String, dynamic>> จาก viewmodel
+// ตัวกรอง "หมวดโซนพื้นที่" + "โซนพื้นที่" + "สถานะคำขอ" + เรียง
+// ✅ coppy UI + ลอจิกยิง API จาก license_request_zone_filter.dart ทั้งหมด
+// - โซน disabled จนกว่าจะเลือกหมวดโซน
+// - เลือกอะไรก็ได้ → sync store → VM ยิง API ใหม่ทุกครั้ง
+// - ถ้า "สถานะคำขอ" = ทั้งหมด → ไม่ส่ง status ให้ backend
 // ============================================================================
 
 import 'package:auto_size_text/auto_size_text.dart';
@@ -23,12 +26,14 @@ class AreaMenuZoneFilter extends StatefulWidget {
 class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
   final TextEditingController _subZoneSearchCtrl = TextEditingController();
   final TextEditingController _zoneSearchCtrl = TextEditingController();
+  final TextEditingController _statusSearchCtrl = TextEditingController();
   bool _collapsed = true;
 
   @override
   void dispose() {
     _subZoneSearchCtrl.dispose();
     _zoneSearchCtrl.dispose();
+    _statusSearchCtrl.dispose();
     super.dispose();
   }
 
@@ -40,6 +45,7 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
       decoration: LaDecor.card(),
       child: LayoutBuilder(
         builder: (context, c) {
+          // จอแคบ (<1100px) → stack dropdown เป็นแนวตั้ง
           final body = c.maxWidth < 1100
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,6 +55,11 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
                     _zoneSection(vm),
                     const SizedBox(height: LaSpace.md),
                     _requestStatusSection(vm),
+                    const SizedBox(height: LaSpace.md),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: _sortSection(vm),
+                    ),
                   ],
                 )
               : Row(
@@ -59,11 +70,14 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
                     Expanded(flex: 4, child: _zoneSection(vm)),
                     _divider(),
                     Expanded(flex: 4, child: _requestStatusSection(vm)),
+                    _divider(),
+                    const SizedBox(width: LaSpace.sm),
+                    _sortSection(vm),
                   ],
                 );
-          // จอกว้าง (≥1100) → โชว์ Row ตรงๆ ไม่มี toggle
+          // desktop: แสดงตลอด (ไม่หุบ)
           if (c.maxWidth >= 1100) return body;
-          // จอแคบ (<1100) → toggle + animated
+          // mobile: collapsible (default หุบไว้)
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -88,10 +102,12 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
   }
 
   Widget _toggleHeader(AreaMenuViewModel vm) {
-    final hasFilter =
-        (vm.selectedZoneSub.isNotEmpty && vm.selectedZoneSub != 'ทั้งหมด') ||
-            (vm.selectedZone.isNotEmpty && vm.selectedZone != 'ทั้งหมด') ||
-            vm.selectedRequestStatus != 'ทั้งหมด';
+    final hasFilter = (vm.selectedZoneSub != null &&
+            vm.selectedZoneSub != 'ทั้งหมด') ||
+        (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด') ||
+        vm.selectedRequestStatus != 'ทั้งหมด' ||
+        vm.selectedSort != 'lock' ||
+        vm.selectedSortDir != 'asc';
     return InkWell(
       onTap: () => setState(() => _collapsed = !_collapsed),
       borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -157,8 +173,8 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
   }
 
   Widget _zoneSection(AreaMenuViewModel vm) {
-    // ✅ ให้คลิกได้เมอ — ไม่ต้องเลือก sub-zone ก่อน
-    final enabled = !vm.readOnly;
+    // เหมือน license — เลือกหมวดโซนก่อนถึงเปิดโซน
+    final enabled = vm.selectedZoneSub != null && !vm.readOnly;
     return _FilterField(
       enabled: enabled,
       icon: Icons.place_outlined,
@@ -169,9 +185,153 @@ class _AreaMenuZoneFilterState extends State<AreaMenuZoneFilter> {
 
   Widget _requestStatusSection(AreaMenuViewModel vm) {
     return _FilterField(
-      icon: Icons.assignment_outlined,
+      icon: Icons.flag_outlined,
       label: 'สถานะคำขอ',
       child: _requestStatusDropdown(vm),
+    );
+  }
+
+  Widget _sortSection(AreaMenuViewModel vm) {
+    final isDesc = vm.selectedSortDir == 'desc';
+    return InkWell(
+      onTap: vm.readOnly ? null : () => _showSortMenu(vm),
+      borderRadius: BorderRadius.circular(LaRadius.sm),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: LaColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(LaRadius.sm),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isDesc
+                  ? Icons.arrow_downward_rounded
+                  : Icons.arrow_upward_rounded,
+              size: 14,
+              color: LaColors.textMuted,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'เรียง',
+              style: TextStyle(fontSize: 13, color: LaColors.textSecondary),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.expand_more_rounded,
+              size: 14,
+              color: LaColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSortMenu(AreaMenuViewModel vm) {
+    final isDesc = vm.selectedSortDir == 'desc';
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(.05),
+      builder: (ctx) => Dialog(
+        alignment: Alignment.bottomRight,
+        insetPadding: const EdgeInsets.fromLTRB(0, 0, 24, 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LaRadius.md),
+        ),
+        child: SizedBox(
+          width: 280,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      vm.onSortDirChanged();
+                      Navigator.of(ctx).pop();
+                    },
+                    borderRadius: BorderRadius.circular(LaRadius.sm),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 10),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDesc
+                                ? Icons.arrow_downward_rounded
+                                : Icons.arrow_upward_rounded,
+                            size: 14,
+                            color: LaColors.textMuted,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AutoSizeText(
+                              isDesc ? 'มากไปน้อย' : 'น้อยไปมาก',
+                              style: LaText.body.copyWith(
+                                color: LaColors.textMuted,
+                                fontSize: 13,
+                              ),
+                              maxFontSize: 13,
+                              minFontSize: 11,
+                              maxLines: 1,
+                            ),
+                          ),
+                          const Icon(
+                            Icons.swap_vert_rounded,
+                            size: 14,
+                            color: LaColors.textMuted,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ...AreaMenuViewModel.sortOptions.map((k) => InkWell(
+                        onTap: () {
+                          vm.onSortChanged(k);
+                          Navigator.of(ctx).pop();
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 10),
+                          child: Row(
+                            children: [
+                              SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: k == vm.selectedSort
+                                    ? const Icon(
+                                        Icons.check_rounded,
+                                        size: 14,
+                                        color: LaColors.primary,
+                                      )
+                                    : null,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: AutoSizeText(
+                                  AreaMenuViewModel.sortLabels[k] ?? k,
+                                  style: LaText.body.copyWith(fontSize: 13),
+                                  maxFontSize: 13,
+                                  minFontSize: 11,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
@@ -247,6 +407,7 @@ class _DropdownShell extends StatelessWidget {
   }
 }
 
+/// Search field ภายใน dropdown
 class _SearchInner extends StatelessWidget {
   final TextEditingController ctrl;
   const _SearchInner(this.ctrl);
@@ -290,6 +451,9 @@ class _SearchInner extends StatelessWidget {
   }
 }
 
+/// ─────────────────────────────────────────────────────────────────────────
+/// _subZoneDropdown + _zoneDropdown + _requestStatusDropdown
+/// ─────────────────────────────────────────────────────────────────────────
 extension on _AreaMenuZoneFilterState {
   Widget _subZoneDropdown(AreaMenuViewModel vm) {
     return _DropdownShell(
@@ -313,10 +477,11 @@ extension on _AreaMenuZoneFilterState {
         ),
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
-          vm.selectedZoneSub,
+          vm.selectedZoneSub ?? 'ทั้งหมด',
           style: LaText.body.copyWith(
-            color: vm.selectedZoneSub == 'ทั้งหมด'
+            color: vm.selectedZoneSub == null
                 ? LaColors.textMuted
                 : LaColors.textPrimary,
           ),
@@ -326,44 +491,36 @@ extension on _AreaMenuZoneFilterState {
           overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZoneSub,
-        items: vm.subzoneModels.map<Map<String, dynamic>>((sub) {
-          final zn = sub['zn']?.toString() ?? '';
-          return {
-            'value': zn,
-            'label': zn,
-            'isAll': zn == 'ทั้งหมด',
-          };
-        }).map((entry) {
-          final v = entry['value'] as String;
-          return DropdownMenuItem<String>(
-            value: v,
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: (entry['isAll'] as bool)
-                        ? LaColors.textMuted
-                        : LaColors.primary,
-                    shape: BoxShape.circle,
+        items: vm.subzoneModels
+            .map((sub) => DropdownMenuItem<String>(
+                  value: sub['zn']?.toString() ?? '',
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: sub['zn']?.toString() == 'ทั้งหมด'
+                              ? LaColors.textMuted
+                              : LaColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: AutoSizeText(
+                          sub['zn']?.toString() ?? '-',
+                          style: LaText.body,
+                          maxFontSize: 14,
+                          minFontSize: 11,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Expanded(
-                  child: AutoSizeText(
-                    v.isEmpty ? '-' : v,
-                    style: LaText.body,
-                    maxFontSize: 14,
-                    minFontSize: 11,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+                ))
+            .toList(),
         onChanged: vm.readOnly ? null : (v) => vm.onSubZoneChanged(v),
         searchMatchFn: (item, searchValue) {
           return item.value
@@ -379,8 +536,7 @@ extension on _AreaMenuZoneFilterState {
   }
 
   Widget _zoneDropdown(AreaMenuViewModel vm) {
-    // ✅ ให้คลิกได้เสมอ — ไม่ต้องเลือก sub-zone ก่อน
-    final enabled = !vm.readOnly;
+    final enabled = vm.selectedZoneSub != null && !vm.readOnly;
     return _DropdownShell(
       enabled: enabled,
       child: DropdownButton2<String>(
@@ -402,10 +558,11 @@ extension on _AreaMenuZoneFilterState {
         ),
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
-          vm.selectedZone,
+          vm.selectedZone ?? 'เลือกโซน',
           style: LaText.body.copyWith(
-            color: vm.selectedZone == 'ทั้งหมด'
+            color: vm.selectedZone == null
                 ? LaColors.textMuted
                 : LaColors.textPrimary,
           ),
@@ -415,43 +572,36 @@ extension on _AreaMenuZoneFilterState {
           overflow: TextOverflow.ellipsis,
         ),
         value: vm.selectedZone,
-        items: vm.zoneModels.map<Map<String, dynamic>>((zn) {
-          final v = zn['zn']?.toString() ?? '';
-          return {
-            'value': v,
-            'isAll': v == 'ทั้งหมด',
-          };
-        }).map((entry) {
-          final v = entry['value'] as String;
-          return DropdownMenuItem<String>(
-            value: v,
-            child: Row(
-              children: [
-                Container(
-                  width: 6,
-                  height: 6,
-                  margin: const EdgeInsets.only(right: 8),
-                  decoration: BoxDecoration(
-                    color: (entry['isAll'] as bool)
-                        ? LaColors.textMuted
-                        : LaColors.primary,
-                    shape: BoxShape.circle,
+        items: vm.zoneModels
+            .map((zn) => DropdownMenuItem<String>(
+                  value: zn['zn']?.toString() ?? '',
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(
+                          color: zn['zn']?.toString() == 'ทั้งหมด'
+                              ? LaColors.textMuted
+                              : LaColors.primary,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      Expanded(
+                        child: AutoSizeText(
+                          zn['zn']?.toString() ?? '-',
+                          style: LaText.body,
+                          maxFontSize: 14,
+                          minFontSize: 11,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                Expanded(
-                  child: AutoSizeText(
-                    v.isEmpty ? '-' : v,
-                    style: LaText.body,
-                    maxFontSize: 14,
-                    minFontSize: 11,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
+                ))
+            .toList(),
         onChanged: enabled ? (v) => vm.onZoneChanged(v) : null,
         searchMatchFn: (item, searchValue) {
           return item.value
@@ -467,14 +617,14 @@ extension on _AreaMenuZoneFilterState {
   }
 
   Widget _requestStatusDropdown(AreaMenuViewModel vm) {
-    // ✅ ใช้ requestStatusItems เพื่อแสดง TH + EN key
     return _DropdownShell(
+      enabled: !vm.readOnly,
       child: DropdownButton2<String>(
         isExpanded: true,
         iconSize: 18,
         iconEnabledColor: LaColors.textSecondary,
-        buttonHeight: 50,
-        dropdownMaxHeight: 360,
+        buttonHeight: 40,
+        dropdownMaxHeight: 320,
         dropdownDecoration: BoxDecoration(
           borderRadius: BorderRadius.circular(LaRadius.md),
           color: Colors.white,
@@ -486,8 +636,23 @@ extension on _AreaMenuZoneFilterState {
             ),
           ],
         ),
-        // Hint: แสดง TH + EN key
-        hint: _requestStatusHintLabel(vm),
+        searchController: _statusSearchCtrl,
+        searchInnerWidget: _SearchInner(_statusSearchCtrl),
+        searchInnerWidgetHeight: 56,
+        hint: AutoSizeText(
+          vm.selectedRequestStatus == 'ทั้งหมด'
+              ? 'ทั้งหมด'
+              : vm.selectedRequestStatus,
+          style: LaText.body.copyWith(
+            color: vm.selectedRequestStatus == 'ทั้งหมด'
+                ? LaColors.textMuted
+                : LaColors.textPrimary,
+          ),
+          maxFontSize: 14,
+          minFontSize: 11,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         value: vm.selectedRequestStatus,
         items: vm.requestStatusItems.map((item) {
           final th = item['th'] ?? '';
@@ -510,70 +675,46 @@ extension on _AreaMenuZoneFilterState {
                   ),
                 ),
                 Expanded(
-                  child: _requestStatusItemLabel(th, en),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      AutoSizeText(
+                        th,
+                        style: LaText.body,
+                        maxFontSize: 14,
+                        minFontSize: 11,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (en.isNotEmpty)
+                        AutoSizeText(
+                          en,
+                          style: LaText.caption
+                              .copyWith(color: LaColors.textMuted),
+                          maxFontSize: 10,
+                          minFontSize: 9,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
           );
         }).toList(),
-        onChanged: (v) => vm.onRequestStatusChanged(v),
+        onChanged: vm.readOnly ? null : (v) => vm.onRequestStatusChanged(v),
+        searchMatchFn: (item, searchValue) {
+          return item.value
+              .toString()
+              .toLowerCase()
+              .contains(searchValue.toLowerCase());
+        },
+        onMenuStateChange: (isOpen) {
+          if (!isOpen) _statusSearchCtrl.clear();
+        },
       ),
     );
   }
-
-  /// Hint label สำหรับ dropdown (TH + EN ใต้กัน)
-  Widget _requestStatusHintLabel(AreaMenuViewModel vm) {
-    final th = vm.selectedRequestStatus;
-    final en = th == 'ทั้งหมด'
-        ? ''
-        : (vm.requestStatusItems.firstWhere(
-              (e) => e['th'] == th,
-              orElse: () => const {'th': '', 'en': ''},
-            )['en'] ??
-            '');
-    return _requestStatusItemLabel(th, en, isHint: true);
-  }
-
-  /// Render item — TH label (บน) + EN key (ล่าง, monospace, สี muted)
-  Widget _requestStatusItemLabel(String th, String en, {bool isHint = false}) {
-    final thStyle = LaText.body.copyWith(
-      color: isHint ? LaColors.textPrimary : LaColors.textPrimary,
-    );
-    final enStyle = LaText.caption.copyWith(
-      color: LaColors.textMuted,
-      fontFamily: 'monospace',
-      fontSize: 10,
-      letterSpacing: .3,
-    );
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Expanded(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              AutoSizeText(
-                th.isEmpty ? '-' : th,
-                style: thStyle,
-                maxFontSize: 14,
-                minFontSize: 11,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (en.isNotEmpty)
-                AutoSizeText(
-                  en,
-                  style: enStyle,
-                  maxFontSize: 10,
-                  minFontSize: 8,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-} // end extension
+}

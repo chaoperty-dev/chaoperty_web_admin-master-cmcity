@@ -7,7 +7,7 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 
-import '../../../../unity/ReusableSignaturePad.dart';
+import '../../unity/ReusableSignaturePad.dart';
 import '../theme/personal_information_theme.dart';
 
 class PersonalInformationSignatureDialog extends StatefulWidget {

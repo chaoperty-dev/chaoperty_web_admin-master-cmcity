@@ -11,7 +11,7 @@
 //   lib/ChiangMai_Municipality/unity/license_status_labels.dart
 // ============================================================================
 
-import '../../../unity/license_status_labels.dart';
+import '../unity/license_status_labels.dart';
 
 class PaymentTaskModule {
   final String code;

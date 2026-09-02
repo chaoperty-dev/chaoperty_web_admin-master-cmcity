@@ -18,8 +18,8 @@ import 'package:flutter/foundation.dart' show compute;
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../unity/API_requests_reviews.dart';
-import '../../../unity/API_approvals_lastaction.dart';
+import '../unity/API_requests_reviews.dart';
+import '../unity/API_approvals_lastaction.dart';
 import '../models/attach_task_model.dart';
 import '../models/attach_request_item.dart';
 

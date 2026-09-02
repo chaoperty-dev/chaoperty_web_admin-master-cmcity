@@ -14,6 +14,7 @@ class AccessRightsHeader extends StatelessWidget {
   final String? subtitle;
   final int? totalCount;
   final VoidCallback? onCreate;
+  final VoidCallback? onBack;
 
   const AccessRightsHeader({
     super.key,
@@ -21,6 +22,7 @@ class AccessRightsHeader extends StatelessWidget {
     this.subtitle,
     this.totalCount,
     this.onCreate,
+    this.onBack,
   });
 
   @override
@@ -45,6 +47,10 @@ class AccessRightsHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          if (onBack != null) ...[
+            _BackButton(onTap: onBack!),
+            const SizedBox(width: ArSpace.sm),
+          ],
           Container(
             width: 44,
             height: 44,
@@ -133,6 +139,53 @@ class AccessRightsHeader extends StatelessWidget {
           ],
           if (onCreate != null) _CreateButton(onPressed: onCreate!),
         ],
+      ),
+    );
+  }
+}
+
+/// Back button — hover-aware (เหมือน AreaHeader)
+class _BackButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _BackButton({required this.onTap});
+
+  @override
+  State<_BackButton> createState() => _BackButtonState();
+}
+
+class _BackButtonState extends State<_BackButton> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Tooltip(
+        message: 'ย้อนกลับ',
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: ArAnimations.fast,
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _hover
+                  ? Colors.white.withOpacity(.18)
+                  : Colors.white.withOpacity(.08),
+              borderRadius: BorderRadius.circular(ArRadius.sm),
+              border: Border.all(
+                color: Colors.white.withOpacity(.20),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.arrow_back_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
+          ),
+        ),
       ),
     );
   }

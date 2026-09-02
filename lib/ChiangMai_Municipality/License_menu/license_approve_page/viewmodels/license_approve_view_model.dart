@@ -15,7 +15,7 @@ import 'package:flutter/material.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../Model/Review_Model.dart';
-import '../../../unity/license_status_labels.dart';
+import '../unity/license_status_labels.dart';
 import '../models/license_approve_config.dart';
 import '../models/license_approve_event.dart';
 import '../services/license_approve_service.dart';

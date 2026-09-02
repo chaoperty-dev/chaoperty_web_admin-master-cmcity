@@ -18,6 +18,7 @@ class PaymentHeader extends StatelessWidget {
   final VoidCallback? onAddPayType;
   final VoidCallback? onAddBank;
   final VoidCallback? onAddBankType;
+  final VoidCallback? onBack;
 
   const PaymentHeader({
     super.key,
@@ -28,6 +29,7 @@ class PaymentHeader extends StatelessWidget {
     this.onAddPayType,
     this.onAddBank,
     this.onAddBankType,
+    this.onBack,
   });
 
   @override
@@ -55,6 +57,10 @@ class PaymentHeader extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              if (onBack != null) ...[
+                _BackButton(onTap: onBack!),
+                const SizedBox(width: PaySpace.sm),
+              ],
               Container(
                 width: 44,
                 height: 44,
@@ -144,66 +150,66 @@ class PaymentHeader extends StatelessWidget {
               if (onAdd != null) _AddButton(onPressed: onAdd!),
             ],
           ),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, c) {
-              if (c.maxWidth < 700) {
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (onAddPayType != null)
-                      _GhostButton(
-                        icon: Icons.category_outlined,
-                        label: 'เพิ่ม PayType',
-                        onPressed: onAddPayType!,
-                      ),
-                    if (onAddBank != null) ...[
-                      const SizedBox(height: PaySpace.sm),
-                      _GhostButton(
-                        icon: Icons.account_balance_outlined,
-                        label: 'เพิ่ม Bank',
-                        onPressed: onAddBank!,
-                      ),
-                    ],
-                    if (onAddBankType != null) ...[
-                      const SizedBox(height: PaySpace.sm),
-                      _GhostButton(
-                        icon: Icons.account_balance_wallet_outlined,
-                        label: 'เพิ่ม BankType',
-                        onPressed: onAddBankType!,
-                      ),
-                    ],
-                  ],
-                );
-              }
-              return Row(
-                children: [
-                  if (onAddPayType != null)
-                    _GhostButton(
-                      icon: Icons.category_outlined,
-                      label: 'เพิ่ม PayType',
-                      onPressed: onAddPayType!,
-                    ),
-                  if (onAddBank != null) ...[
-                    const SizedBox(width: PaySpace.sm),
-                    _GhostButton(
-                      icon: Icons.account_balance_outlined,
-                      label: 'เพิ่ม Bank',
-                      onPressed: onAddBank!,
-                    ),
-                  ],
-                  if (onAddBankType != null) ...[
-                    const SizedBox(width: PaySpace.sm),
-                    _GhostButton(
-                      icon: Icons.account_balance_wallet_outlined,
-                      label: 'เพิ่ม BankType',
-                      onPressed: onAddBankType!,
-                    ),
-                  ],
-                ],
-              );
-            },
-          ),
+          // const SizedBox(height: 12),
+          // LayoutBuilder(
+          //   builder: (context, c) {
+          //     if (c.maxWidth < 700) {
+          //       return Column(
+          //         crossAxisAlignment: CrossAxisAlignment.stretch,
+          //         children: [
+          //           if (onAddPayType != null)
+          //             _GhostButton(
+          //               icon: Icons.category_outlined,
+          //               label: 'เพิ่ม PayType',
+          //               onPressed: onAddPayType!,
+          //             ),
+          //           if (onAddBank != null) ...[
+          //             const SizedBox(height: PaySpace.sm),
+          //             _GhostButton(
+          //               icon: Icons.account_balance_outlined,
+          //               label: 'เพิ่ม Bank',
+          //               onPressed: onAddBank!,
+          //             ),
+          //           ],
+          //           if (onAddBankType != null) ...[
+          //             const SizedBox(height: PaySpace.sm),
+          //             _GhostButton(
+          //               icon: Icons.account_balance_wallet_outlined,
+          //               label: 'เพิ่ม BankType',
+          //               onPressed: onAddBankType!,
+          //             ),
+          //           ],
+          //         ],
+          //       );
+          //     }
+          //     return Row(
+          //       children: [
+          //         if (onAddPayType != null)
+          //           _GhostButton(
+          //             icon: Icons.category_outlined,
+          //             label: 'เพิ่ม PayType',
+          //             onPressed: onAddPayType!,
+          //           ),
+          //         if (onAddBank != null) ...[
+          //           const SizedBox(width: PaySpace.sm),
+          //           _GhostButton(
+          //             icon: Icons.account_balance_outlined,
+          //             label: 'เพิ่ม Bank',
+          //             onPressed: onAddBank!,
+          //           ),
+          //         ],
+          //         if (onAddBankType != null) ...[
+          //           const SizedBox(width: PaySpace.sm),
+          //           _GhostButton(
+          //             icon: Icons.account_balance_wallet_outlined,
+          //             label: 'เพิ่ม BankType',
+          //             onPressed: onAddBankType!,
+          //           ),
+          //         ],
+          //       ],
+          //     );
+          //   },
+          // ),
         ],
       ),
     );
@@ -316,6 +322,53 @@ class _GhostButtonState extends State<_GhostButton> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Back button — hover-aware (เหมือน AreaHeader)
+class _BackButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _BackButton({required this.onTap});
+
+  @override
+  State<_BackButton> createState() => _BackButtonState();
+}
+
+class _BackButtonState extends State<_BackButton> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Tooltip(
+        message: 'ย้อนกลับ',
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: PayAnimations.fast,
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _hover
+                  ? Colors.white.withOpacity(.18)
+                  : Colors.white.withOpacity(.08),
+              borderRadius: BorderRadius.circular(PayRadius.sm),
+              border: Border.all(
+                color: Colors.white.withOpacity(.20),
+                width: 1,
+              ),
+            ),
+            child: const Icon(
+              Icons.arrow_back_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
           ),
         ),
       ),

@@ -12,7 +12,7 @@ import 'package:flutter/material.dart' show GlobalKey;
 import 'package:flutter/foundation.dart';
 import 'package:syncfusion_flutter_signaturepad/signaturepad.dart';
 
-import '../../../unity/Enum.dart';
+import '../unity/Enum.dart';
 import '../models/personal_information_models.dart';
 import '../services/personal_information_service.dart';
 

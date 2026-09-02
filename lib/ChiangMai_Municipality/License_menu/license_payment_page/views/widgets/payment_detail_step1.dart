@@ -14,7 +14,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
-import '../../../../unity/FormatPhone.dart';
+import '../../unity/FormatPhone.dart';
 import '../../models/license_payment_attachment.dart';
 import '../../models/license_payment_detail_model.dart';
 import '../../models/license_prepayment_model.dart' hide formatMoney;

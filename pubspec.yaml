@@ -59,15 +59,15 @@ dependencies:
   mysql1: ^0.20.0
   # date_time_picker: ^2.1.0
   printing: ^5.11.0
-  syncfusion_flutter_xlsio: ^20.4.43-beta
+  syncfusion_flutter_xlsio: any
   file_saver: ^0.1.1
   permission_handler: ^10.2.0
-  syncfusion_flutter_datagrid_export: ^20.4.43-beta
+  syncfusion_flutter_datagrid_export: any
   excel_dart: ^3.0.0
   excel: ^2.0.1
   protect: ^1.0.0
   pdf: ^3.8.4
-  syncfusion_flutter_pdf: ^20.4.44
+  syncfusion_flutter_pdf: any
   # font_awesome_flutter: ^10.3.0
   file_cryptor: ^0.0.3
   path_provider: ^2.0.6
@@ -75,8 +75,8 @@ dependencies:
   webviewx: ^0.2.2 # no windows
   flutter_inappwebview: ^5.8.0
   pointer_interceptor: ^0.9.3+5
-  intl: ^0.18.0
-  http: ^0.13.5
+  intl: ^0.20.2
+  http: ^1.2.1
   dio: ^5.2.1+1
   image: ^4.0.17
   crypto: ^3.0.2
@@ -86,11 +86,11 @@ dependencies:
   fast_image_resizer: ^0.0.2
   responsive_grid_list: ^1.3.2
   image_downloader_web: ^2.0.2 # no windows
-  device_marketing_names: ^0.6.5
+  device_marketing_names: ^2.0.3
   dart_ipify: ^1.1.1
-  syncfusion_flutter_signaturepad: ^20.4.54
+  syncfusion_flutter_signaturepad: any
   hand_signature: ^3.0.1
-  syncfusion_flutter_pdfviewer: ^20.4.54
+  syncfusion_flutter_pdfviewer: any
   flutter_localization: ^0.1.12
   widgets_to_image: ^0.0.2
   syncfusion_flutter_barcodes: any
@@ -111,7 +111,7 @@ dependencies:
   carousel_slider: ^4.2.1
   scrollview_observer: ^1.19.0
   # ftpconnect: ^2.0.5
-  month_year_picker: ^0.3.0+1
+  month_year_picker: any
   flutter_chat_bubble: ^2.0.2
   chat_bubbles: ^1.5.0
   cached_network_image: ^3.3.1 # no windows
@@ -121,12 +121,12 @@ dependencies:
   # esc_pos_utils_plus: ^2.0.3
   panara_dialogs: ^0.1.4
   flutter_colorpicker: ^1.0.3
-  syncfusion_flutter_calendar: ^20.4.54
+  syncfusion_flutter_calendar: any
   translator: ^0.1.7
   infinite_canvas: ^0.0.9
   random_color: ^1.0.6-nullsafety
   time_range_picker: ^2.3.0
-  syncfusion_flutter_datepicker: ^20.4.54
+  syncfusion_flutter_datepicker: any
   custom_rating_bar: ^3.0.0
   dropdown_plus: ^0.0.9
   animated_custom_dropdown: ^3.1.1
@@ -167,6 +167,18 @@ dev_dependencies:
 dependency_overrides:
   protect:
     path: lib/_vendor/protect
+  # 🔧 Local fork of dropdown_button2 1.9.4 — textTheme.subtitle1 → titleMedium
+  # (subtitle1 removed in newer Flutter; keeps 1.x API so 79 files need no migration).
+  # Lives OUTSIDE lib/ — a path dep inside lib/ gets claimed by both packages
+  # (root packageUri lib/) → language-version mismatch between library and parts.
+  dropdown_button2:
+    path: vendor/dropdown_button2
+  # translator 0.1.7 pins http ^0.13 but only uses the stable base API
+  # (get/post + jsonDecode) — safe to force http 1.x required by new syncfusion.
+  http: ^1.2.1
+  # webviewx pins uuid ^3; new syncfusion pdfviewer needs uuid ^4.
+  # Both only use Uuid().v4() which is identical across major versions.
+  uuid: ^4.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

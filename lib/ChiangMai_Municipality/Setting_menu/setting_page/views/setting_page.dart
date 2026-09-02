@@ -83,7 +83,10 @@ class SettingPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isMobile = SetResponsive.isMobile(context);
-    final crossAxisCount = isMobile ? 2 : 3;
+    // responsive column count:
+    //   mobile  (<500)  → 1 col
+    //   desktop (≥500)  → 2 col (4 cards = 2 rows × 2)
+    final crossAxisCount = isMobile ? 1 : 2;
 
     // รายการเมนู (ใช้ SetColors.menu* สำหรับสีของแต่ละเมนู)
     final menus = <_MenuItem>[
@@ -143,26 +146,30 @@ class SettingPage extends StatelessWidget {
               subtitle: 'จัดการการตั้งค่าระบบทั้งหมดของคุณ',
             ),
             const SizedBox(height: SetSpace.lg),
-            Expanded(
-              child: GridView.builder(
-                itemCount: menus.length,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: crossAxisCount,
-                  mainAxisSpacing: SetSpace.lg,
-                  crossAxisSpacing: SetSpace.lg,
-                  childAspectRatio: isMobile ? 1.05 : 1.25,
-                ),
-                itemBuilder: (context, i) {
-                  final menu = menus[i];
-                  return SettingMenuCard(
-                    title: menu.title,
-                    subtitle: menu.subtitle,
-                    icon: menu.icon,
-                    color: menu.color,
-                    onTap: () => _onMenuTap(context, menu),
-                  );
-                },
-              ),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const gap = SetSpace.lg;
+                final cardWidth =
+                    (constraints.maxWidth - (gap * (crossAxisCount - 1))) /
+                        crossAxisCount;
+                return Wrap(
+                  spacing: gap,
+                  runSpacing: gap,
+                  children: menus.map((menu) {
+                    return SizedBox(
+                      width: cardWidth,
+                      height: 108,
+                      child: SettingMenuCard(
+                        title: menu.title,
+                        subtitle: menu.subtitle,
+                        icon: menu.icon,
+                        color: menu.color,
+                        onTap: () => _onMenuTap(context, menu),
+                      ),
+                    );
+                  }).toList(),
+                );
+              },
             ),
           ],
         ),
@@ -241,7 +248,7 @@ class _PlaceholderPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
+            const Icon(
               Icons.construction_rounded,
               size: 56,
               color: SetColors.textMuted,

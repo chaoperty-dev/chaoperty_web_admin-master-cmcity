@@ -239,33 +239,6 @@ class _Section7MassOn extends StatelessWidget {
                 ),
             ],
           ),
-          // Hint
-          if (!isMobile) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.amber.shade300),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.info_outline,
-                      color: Colors.amber.shade800, size: 14),
-                  const SizedBox(width: 6),
-                  Text(
-                    'อาจมีค่าใช้จ่ายเพิ่มเติม',
-                    style: LaText.caption.copyWith(
-                      color: Colors.amber.shade900,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
         ],
       ),
     );

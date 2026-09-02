@@ -113,30 +113,30 @@ class _TenantLicensePageBodyState extends State<_TenantLicensePageBody> {
           :final status
         ):
         if (route == 'PeopleChaoScreen2') {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => Scaffold(
-                backgroundColor: LaColors.surface,
-                body: SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(LaSpace.md),
-                    child: people_chao.PeopleChaoScreen2(
-                      Get_Value_NameShop_index: nameShopIndex,
-                      Get_Value_cid: routeData,
-                      Get_Value_status: status,
-                      Get_Value_indexpage: '0',
-                      updateMessage:
-                          (dynamic newMessage, dynamic nameShop, dynamic cid) {
-                        // ถ้า PeopleChaoScreen2 เรียก updateMessage กลับมา
-                        // สามารถ refresh หรือนำทางกลับได้ที่นี่
-                      },
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (_) => Scaffold(
+          //       backgroundColor: LaColors.surface,
+          //       body: SafeArea(
+          //         child: SingleChildScrollView(
+          //           padding: const EdgeInsets.all(LaSpace.md),
+          //           child: people_chao.PeopleChaoScreen2(
+          //             Get_Value_NameShop_index: nameShopIndex,
+          //             Get_Value_cid: routeData,
+          //             Get_Value_status: status,
+          //             Get_Value_indexpage: '0',
+          //             updateMessage:
+          //                 (dynamic newMessage, dynamic nameShop, dynamic cid) {
+          //               // ถ้า PeopleChaoScreen2 เรียก updateMessage กลับมา
+          //               // สามารถ refresh หรือนำทางกลับได้ที่นี่
+          //             },
+          //           ),
+          //         ),
+          //       ),
+          //     ),
+          //   ),
+          // );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(

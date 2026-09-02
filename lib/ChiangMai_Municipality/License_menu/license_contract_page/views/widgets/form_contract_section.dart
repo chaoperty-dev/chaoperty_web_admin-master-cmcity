@@ -11,8 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
+import '../../unity/Enum.dart';
+import '../../unity/FormatDate.dart';
 import '../theme/license_contract_theme.dart';
 import '../../viewmodels/license_contract_view_model.dart';
 

@@ -234,7 +234,7 @@ class AreaViewModel extends ChangeNotifier {
     if (ok) {
       _emit(const AreaSuccessEvent('เพิ่มโซนสำเร็จ'));
       // Insert_log (pattern จาก Advance_AreaSet.dart)
-      Insert_log.Insert_logs('ตั้งค่า', 'พื้นที่>>เพิ่มโซนพื้นที่($zn)');
+      
       await _loadZones();
       notifyListeners();
     } else {
@@ -261,7 +261,7 @@ class AreaViewModel extends ChangeNotifier {
     final ok = await _service.deleteZone(rser: _rser!, zoneSer: zoneSer);
     if (ok) {
       _emit(AreaSuccessEvent('ลบโซน "$zoneName" สำเร็จ'));
-      Insert_log.Insert_logs('ตั้งค่า', 'พื้นที่>>ยืนยันลบโซน $zoneName');
+    
       await _loadZones();
       // ถ้าโซนที่ถูกลบคือโซนที่เลือกอยู่ → กลับไป "ทั้งหมด"
       if (_selectedZoneSer == zoneSer) {
@@ -311,8 +311,7 @@ class AreaViewModel extends ChangeNotifier {
     );
     if (ok) {
       _emit(const AreaSuccessEvent('เพิ่ม Area สำเร็จ'));
-      Insert_log.Insert_logs(
-          'ตั้งค่า', 'พื้นที่>>เพิ่มพื้นที่($lncode : $sname)');
+  
       await _loadAreasAndCount();
     } else {
       _emit(const AreaErrorEvent('เพิ่ม Area ล้มเหลว'));
@@ -351,7 +350,7 @@ class AreaViewModel extends ChangeNotifier {
     );
     if (ok) {
       _emit(const AreaSuccessEvent('แก้ไข Area สำเร็จ'));
-      Insert_log.Insert_logs('ตั้งค่า', 'พื้นที่>>แก้ไข($lncode : $sname)');
+     
       await _loadAreasAndCount();
     } else {
       _emit(const AreaErrorEvent('แก้ไข Area ล้มเหลว'));
@@ -367,8 +366,7 @@ class AreaViewModel extends ChangeNotifier {
     final ok = await _service.deleteArea(rser: _rser!, ser: area.ser);
     if (ok) {
       _emit(const AreaSuccessEvent('ลบ Area สำเร็จ'));
-      Insert_log.Insert_logs(
-          'ตั้งค่า', 'พื้นที่>>ลบ(${area.lncode} : ${area.ln})');
+
       await _loadAreasAndCount();
     } else {
       _emit(const AreaErrorEvent('ลบ Area ล้มเหลว'));

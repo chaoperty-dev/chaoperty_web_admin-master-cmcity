@@ -136,7 +136,7 @@ class AccessRightsTable extends StatelessWidget {
           cell('สิทธิ์การเข้าถึง', 'roles', flex: 3),
           cell('ลำดับเซ็น', 'level', flex: 1, center: true),
           const SizedBox(
-              width: 150, child: _ActionHeader()),
+              width: 170, child: _ActionHeader()),
         ],
       ),
     );
@@ -188,25 +188,21 @@ class AccessRightsTable extends StatelessWidget {
               ),
             ),
             SizedBox(
-              width: 150,
+              width: 170,
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: _MiniButton(
-                      icon: Icons.edit_rounded,
-                      label: 'แก้ไข',
-                      onTap: () => vm.onEdit(model.uuid),
-                    ),
+                  _MiniButton(
+                    icon: Icons.edit_rounded,
+                    label: 'แก้ไข',
+                    onTap: () => vm.onEdit(model.uuid),
                   ),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: _MiniButton(
-                      icon: Icons.draw_rounded,
-                      label: 'ลายเซ็น',
-                      onTap: () => vm.onSignature(model.uuid),
-                      color: ArColors.statusInfoFg,
-                    ),
+                  const SizedBox(width: 8),
+                  _MiniButton(
+                    icon: Icons.draw_rounded,
+                    label: 'ลายเซ็น',
+                    onTap: () => vm.onSignature(model.uuid),
+                    color: ArColors.statusInfoFg,
                   ),
                 ],
               ),
@@ -317,6 +313,7 @@ class _MiniButtonState extends State<_MiniButton> {
   @override
   Widget build(BuildContext context) {
     final c = widget.color ?? ArColors.primary;
+    final fg = _hover ? Colors.white : c;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hover = true),
@@ -325,30 +322,36 @@ class _MiniButtonState extends State<_MiniButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: ArAnimations.fast,
-          height: 30,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _hover ? c : Colors.white,
-            borderRadius: BorderRadius.circular(ArRadius.sm),
-            border: Border.all(color: c, width: 1),
+            color: _hover ? c : c.withOpacity(.08),
+            borderRadius: BorderRadius.circular(ArRadius.pill),
+            border: Border.all(
+              color: _hover ? c : c.withOpacity(.25),
+              width: 1,
+            ),
+            boxShadow: [
+              if (_hover)
+                BoxShadow(
+                  color: c.withOpacity(.28),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+            ],
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(widget.icon, size: 12, color: _hover ? Colors.white : c),
-              const SizedBox(width: 4),
-              Flexible(
-                child: Text(
-                  widget.label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontFamily: ArText.fontBold,
-                    fontSize: 11,
-                    color: _hover ? Colors.white : c,
-                  ),
+              Icon(widget.icon, size: 13, color: fg),
+              const SizedBox(width: 5),
+              Text(
+                widget.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontFamily: ArText.fontBold,
+                  fontSize: 11,
+                  color: fg,
                 ),
               ),
             ],

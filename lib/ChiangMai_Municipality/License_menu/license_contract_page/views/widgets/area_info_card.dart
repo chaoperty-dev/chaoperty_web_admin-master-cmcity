@@ -9,8 +9,8 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
+import '../../unity/Enum.dart';
+import '../../unity/FormatDate.dart';
 import '../../../../../Model/GetArea_Model.dart';
 import '../theme/license_contract_theme.dart';
 import '../../viewmodels/license_contract_view_model.dart';

@@ -13,7 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../theme/license_approve_theme.dart';
-import '../../../../unity/license_status_labels.dart' hide StatusPalette;
+import '../../unity/license_status_labels.dart' hide StatusPalette;
 import '../../viewmodels/license_approve_view_model.dart';
 
 class LicenseApproveZoneFilter extends StatefulWidget {
@@ -481,6 +481,7 @@ extension on _LicenseRequestZoneFilterState {
         ),
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedZoneSub ?? 'ทั้งหมด',
           style: LaText.body.copyWith(
@@ -565,6 +566,7 @@ extension on _LicenseRequestZoneFilterState {
         ),
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedZone ?? 'เลือกโซน',
           style: LaText.body.copyWith(
@@ -646,6 +648,7 @@ extension on _LicenseRequestZoneFilterState {
         ),
         searchController: _statusSearchCtrl,
         searchInnerWidget: _SearchInner(_statusSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedStatus == null
               ? 'ทั้งหมด'

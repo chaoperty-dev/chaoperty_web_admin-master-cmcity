@@ -7,14 +7,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart' as http;
-
-import '../../../unity/API_admin_signature.dart';
-import '../../../unity/API_permission.dart';
-import '../../../unity/Enum.dart';
-import '../../../unity/ReusableSignaturePad.dart';
-import '../../../unity/SecurePrefs_helper.dart';
 import '../models/personal_information_models.dart';
+import '../unity/API_admin_signature.dart';
+import '../unity/API_permission.dart';
+import '../unity/Enum.dart';
+import '../unity/ReusableSignaturePad.dart';
+import '../unity/auth_token_store.dart';
 
 class PersonalInformationService {
   /// โหลด profile + signature ของ admin ที่ login อยู่
@@ -34,12 +32,8 @@ class PersonalInformationService {
     final positionName = data?['position_name'] as String? ?? '';
 
     // 2. secure user
-    final userJson = await SecurePrefs.getDecrypted(
-      SecurePrefsType.authUserObject,
-    );
-    final userUuid = await SecurePrefs.getDecrypted(
-      SecurePrefsType.authUserUuid,
-    );
+    final userJson = await AuthUserStore.read();
+    final userUuid = await AuthUuidStore.read();
 
     String email = '';
     if (userJson != null) {

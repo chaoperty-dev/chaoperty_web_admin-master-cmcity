@@ -318,6 +318,7 @@ extension on _TenantLicenseZoneFilterState {
         ),
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedZoneSub ?? 'ทั้งหมด',
           style: LaText.body.copyWith(
@@ -397,6 +398,7 @@ extension on _TenantLicenseZoneFilterState {
         ),
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedZone ?? 'เลือกโซน',
           style: LaText.body.copyWith(

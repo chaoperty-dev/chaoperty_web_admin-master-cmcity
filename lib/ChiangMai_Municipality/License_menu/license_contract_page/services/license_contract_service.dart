@@ -18,8 +18,8 @@ import '../../../../Model/GetSubZone_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../Model/AnnouncementZone_Model.dart';
 import '../../../Model/Properties_Model.dart';
-import '../../../unity/API_announcement.dart';
-import '../../../unity/API_properties.dart';
+import '../unity/API_announcement.dart';
+import '../unity/API_properties.dart';
 
 class LicenseContractService {
   LicenseContractService({ApiCache? cache})

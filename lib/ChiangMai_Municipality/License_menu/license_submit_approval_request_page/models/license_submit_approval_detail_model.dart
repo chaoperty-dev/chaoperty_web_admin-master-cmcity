@@ -9,7 +9,7 @@
 
 import 'package:intl/intl.dart';
 
-import '../../../unity/license_status_labels.dart';
+import '../unity/license_status_labels.dart';
 
 /// แถวค่าใช้จ่าย (addons / debt lines) ในรายส่งคำร้องขออนุมัติ
 class SubmitApprovalAddon {

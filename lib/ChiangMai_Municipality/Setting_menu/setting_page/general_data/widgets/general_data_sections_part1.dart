@@ -23,17 +23,14 @@ class _HeroStatsCard extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(isMobile ? LaSpace.md : LaSpace.lg),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [LaColors.primary, LaColors.primaryDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: LaColors.cardBg,
         borderRadius: BorderRadius.circular(LaRadius.lg),
+        border: Border.all(color: LaColors.border, width: 1),
         boxShadow: [
           BoxShadow(
-            color: LaColors.primary.withOpacity(.25),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(.03),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -45,7 +42,7 @@ class _HeroStatsCard extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.storefront_rounded,
-                  color: Colors.white, size: 20),
+                  color: LaColors.primary, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -53,7 +50,7 @@ class _HeroStatsCard extends StatelessWidget {
                       ? vm.data.pn!.trim()
                       : 'ยังไม่ได้ตั้งชื่อสถานที่',
                   style: LaText.h2.copyWith(
-                    color: Colors.white,
+                    color: LaColors.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: isMobile ? 16 : 18,
                   ),
@@ -66,14 +63,15 @@ class _HeroStatsCard extends StatelessWidget {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(.18),
+                    color: LaColors.primaryLight,
                     borderRadius: BorderRadius.circular(999),
+                    border: Border.all(color: LaColors.primary.withOpacity(.3)),
                   ),
                   child: Text(
                     'Pkg ${vm.data.pk}',
                     style: LaText.caption.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w600,
+                      color: LaColors.primaryDark,
+                      fontWeight: FontWeight.w700,
                       fontSize: 11,
                     ),
                   ),
@@ -105,7 +103,7 @@ class _HeroStatsCard extends StatelessWidget {
                   label: 'คงเหลือ',
                   value: nFormat.format(remaining),
                   compact: true,
-                  tone: remaining > 0 ? Colors.white : Colors.amber.shade200,
+                  tone: remaining > 0 ? LaColors.primary : Colors.amber.shade700,
                 ),
                 const SizedBox(width: 6),
                 _HeroStat(
@@ -131,13 +129,13 @@ class _HeroStatsCard extends StatelessWidget {
                   icon: Icons.check_circle_outline,
                   label: 'ใช้งานแล้ว',
                   value: nFormat.format(used),
-                  tone: Colors.white,
+                  tone: LaColors.primary,
                 ),
                 _HeroStat(
                   icon: Icons.layers_outlined,
                   label: 'คงเหลือ',
                   value: nFormat.format(remaining),
-                  tone: remaining > 0 ? Colors.white : Colors.amber.shade200,
+                  tone: remaining > 0 ? LaColors.primary : Colors.amber.shade700,
                 ),
                 _HeroStat(
                   icon: Icons.people_alt_outlined,
@@ -153,11 +151,11 @@ class _HeroStatsCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: usedPct,
               minHeight: isMobile ? 6 : 8,
-              backgroundColor: Colors.white.withOpacity(.18),
+              backgroundColor: LaColors.surfaceMuted,
               valueColor: AlwaysStoppedAnimation<Color>(
                 usedPct >= 1.0
-                    ? Colors.amber.shade300
-                    : Colors.white.withOpacity(.95),
+                    ? Colors.amber.shade600
+                    : LaColors.primary,
               ),
             ),
           ),
@@ -165,7 +163,7 @@ class _HeroStatsCard extends StatelessWidget {
           Text(
             'ใช้งาน ${(usedPct * 100).toStringAsFixed(1)}% ของพื้นที่ทั้งหมด',
             style: LaText.caption.copyWith(
-              color: Colors.white.withOpacity(.75),
+              color: LaColors.textSecondary,
               fontSize: isMobile ? 10 : 11,
             ),
           ),
@@ -197,18 +195,19 @@ class _HeroStat extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(.12),
+            color: LaColors.surfaceMuted,
             borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: LaColors.border, width: 1),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, color: tone ?? Colors.white, size: 14),
+              Icon(icon, color: tone ?? LaColors.primary, size: 14),
               const SizedBox(height: 2),
               Text(
                 value,
                 style: TextStyle(
-                  color: tone ?? Colors.white,
+                  color: tone ?? LaColors.textPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 13,
                 ),
@@ -218,7 +217,7 @@ class _HeroStat extends StatelessWidget {
               Text(
                 label,
                 style: LaText.caption.copyWith(
-                  color: Colors.white.withOpacity(.75),
+                  color: LaColors.textSecondary,
                   fontSize: 9,
                 ),
                 maxLines: 1,
@@ -232,14 +231,14 @@ class _HeroStat extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.12),
+        color: LaColors.surfaceMuted,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.white.withOpacity(.15), width: 1),
+        border: Border.all(color: LaColors.border, width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: tone ?? Colors.white, size: 18),
+          Icon(icon, color: tone ?? LaColors.primary, size: 18),
           const SizedBox(width: 8),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,14 +247,14 @@ class _HeroStat extends StatelessWidget {
               Text(
                 label,
                 style: LaText.caption.copyWith(
-                  color: Colors.white.withOpacity(.75),
+                  color: LaColors.textSecondary,
                   fontSize: 10,
                 ),
               ),
               Text(
                 value,
                 style: LaText.body.copyWith(
-                  color: tone ?? Colors.white,
+                  color: tone ?? LaColors.textPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 16,
                 ),
@@ -335,7 +334,7 @@ class _SectionCard extends StatelessWidget {
                 Text(
                   title,
                   style: LaText.label.copyWith(
-                    color: tone,
+                    color: LaColors.textPrimary,
                     fontWeight: FontWeight.w700,
                     fontSize: isMobile ? 12 : 13,
                   ),

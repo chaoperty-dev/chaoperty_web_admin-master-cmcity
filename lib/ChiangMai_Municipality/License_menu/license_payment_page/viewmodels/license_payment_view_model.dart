@@ -19,10 +19,10 @@ import '../models/license_payment_detail_model.dart';
 import '../models/license_payment_config.dart';
 import '../models/license_payment_event.dart';
 import '../models/payment_task_model.dart';
-import '../../../unity/license_status_labels.dart';
+import '../unity/license_status_labels.dart';
 import '../services/license_payment_detail_service.dart';
 import '../services/license_payment_service.dart';
-import '../../../unity/zone_selection_store.dart';
+import '../unity/zone_selection_store.dart';
 
 class LicensePaymentViewModel extends ChangeNotifier {
   LicensePaymentViewModel({

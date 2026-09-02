@@ -14,7 +14,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../unity/show_dialog_cmm.dart';
 import '../models/personal_information_models.dart';
 import '../viewmodels/personal_information_view_model.dart';
 import 'theme/personal_information_theme.dart';
@@ -63,7 +62,13 @@ class _ManagePersonalInformationPageState
     switch (e) {
       case PersonalInformationError(:final message):
         // ใช้ Dialog_error เพื่อความ consistent กับหน้าอื่นในโปรเจค
-        Dialog_error(context, message);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('เกิดข้อผิดพลาด'),
+            backgroundColor: PiColors.statusApprovedFg,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       case PersonalInformationSaved():
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(

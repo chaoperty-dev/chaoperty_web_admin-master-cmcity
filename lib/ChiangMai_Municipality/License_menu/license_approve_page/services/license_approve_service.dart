@@ -17,8 +17,8 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../Model/Review_Model.dart';
-import '../../../unity/API_requests_reviews.dart';
-import '../../../unity/API_approvals_lastaction.dart';
+import '../unity/API_requests_reviews.dart';
+import '../unity/API_approvals_lastaction.dart';
 
 class LicenseApproveService {
   LicenseApproveService({ApiCache? cache})

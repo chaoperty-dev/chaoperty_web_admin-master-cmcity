@@ -21,8 +21,8 @@ import '../models/license_submit_approval_event.dart';
 import '../services/license_submit_approval_detail_service.dart';
 import '../services/license_submit_approval_service.dart';
 import '../../license_request_page/services/license_request_service.dart';
-import '../../../unity/license_status_labels.dart';
-import '../../../unity/zone_selection_store.dart';
+import '../unity/license_status_labels.dart';
+import '../unity/zone_selection_store.dart';
 
 class LicenseSubmitApprovalViewModel extends ChangeNotifier {
   LicenseSubmitApprovalViewModel({

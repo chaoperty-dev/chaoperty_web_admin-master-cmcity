@@ -205,6 +205,11 @@ class _PaymentPageBodyState extends State<_PaymentPageBody> {
               title: vm.title,
               subtitle: 'จัดการช่องทางการรับชำระ ประเภท และธนาคาร',
               totalCount: vm.payments.length,
+              onBack: () {
+                if (Navigator.of(context).canPop()) {
+                  Navigator.of(context).pop();
+                }
+              },
               onAdd: vm.onAdd,
               onAddPayType: vm.onAddPayType,
               onAddBank: vm.onAddBank,

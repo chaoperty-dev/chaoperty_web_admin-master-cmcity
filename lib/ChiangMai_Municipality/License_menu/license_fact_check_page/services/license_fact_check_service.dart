@@ -23,8 +23,8 @@ import 'package:http_parser/http_parser.dart';
 import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../unity/API_requests_reviews.dart';
-import '../../../unity/API_approvals_lastaction.dart';
+import '../unity/API_requests_reviews.dart';
+import '../unity/API_approvals_lastaction.dart';
 import '../models/fact_check_item.dart';
 
 class LicensefactcheckService {

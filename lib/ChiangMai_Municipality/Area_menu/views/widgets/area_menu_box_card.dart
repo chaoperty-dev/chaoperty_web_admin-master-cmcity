@@ -11,6 +11,8 @@ import 'package:flutter/material.dart';
 import '../theme/area_menu_theme.dart';
 import '../../../unity/FormatDate.dart';
 import '../../../unity/Enum.dart';
+import '../../viewmodels/area_menu_view_model.dart'
+    show AreaMenuViewModel;
 import 'area_license_action_menu.dart';
 
 class AreaMenuBoxCard extends StatefulWidget {
@@ -56,25 +58,8 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
     return '-';
   }
 
-  /// Status: derive จาก item (เหมือน ViewModel.computeStatusLabel)
-  String get _statusText {
-    final requester = widget.model['requester']?.toString() ?? '';
-    final hasRequester = requester.isNotEmpty;
-    final ldateRaw = widget.model['ldate']?.toString() ?? '';
-
-    if (hasRequester && ldateRaw.isNotEmpty) {
-      try {
-        final ldate = DateTime.parse(ldateRaw);
-        final today = DateTime.now();
-        final end = DateTime(ldate.year, ldate.month, ldate.day);
-        final now = DateTime(today.year, today.month, today.day);
-        if (end.isBefore(now)) return 'หมดสัญญา';
-      } catch (_) {}
-    }
-
-    if (hasRequester) return 'เช่าอยู่';
-    return 'ว่าง';
-  }
+  /// Status: สถานะคำขอจาก API (`status` EN key → TH) — ไม่ใช่เช่าอยู่/ว่าง
+  String get _statusText => AreaMenuViewModel.requestStatusLabel(widget.model);
 
   /// แสดง "subzone · zone" (จาก overview API) — เก็บไว้เผื่อใช้
   /// ignore: unused_element

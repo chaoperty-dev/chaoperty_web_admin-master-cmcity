@@ -15,7 +15,7 @@ import 'dart:convert';
 import 'package:chaoperty/Constant/Myconstant.dart';
 import 'package:http/http.dart' as http;
 
-import '../../../unity/API_requests_reviews.dart';
+import '../unity/API_requests_reviews.dart';
 import '../../../Model/Review_Model.dart';
 
 class LicenseApproveReviewDetailService {

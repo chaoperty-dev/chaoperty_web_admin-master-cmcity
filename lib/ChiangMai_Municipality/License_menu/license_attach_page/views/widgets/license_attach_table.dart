@@ -17,9 +17,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
-import '../../../../unity/FormatPhone.dart';
+import '../../unity/Enum.dart';
+import '../../unity/FormatDate.dart';
+import '../../unity/FormatPhone.dart';
 import '../../models/attach_request_item.dart';
 import '../theme/license_attach_theme.dart';
 import '../../viewmodels/license_attach_view_model.dart';

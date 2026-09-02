@@ -15,6 +15,7 @@ import '../models/access_rights_config.dart';
 import '../models/access_rights_event.dart';
 import '../models/access_rights_position.dart';
 import '../models/access_rights_role.dart';
+import '../models/access_rights_role_position.dart';
 import '../models/access_rights_user.dart';
 import '../services/access_rights_service.dart';
 
@@ -48,6 +49,10 @@ class AccessRightsViewModel extends ChangeNotifier {
   List<AccessRightsPosition> get positions => _positions;
   List<AccessRightsRole> _roles = [];
   List<AccessRightsRole> get roles => _roles;
+
+  // ---------- Role<->Position mapping (API v2 role-positions) ----------
+  List<AccessRightsRolePosition> _rolePositions = [];
+  List<AccessRightsRolePosition> get rolePositions => _rolePositions;
 
   // ---------- Pagination ----------
   int _currentPage = 1;
@@ -86,30 +91,69 @@ class AccessRightsViewModel extends ChangeNotifier {
       _searchQuery = _config.routeData!;
     }
     await Future.wait([
-      _loadPositions(),
       _loadRoles(),
+      _loadRolePositions(),
     ]);
+    _syncRoleIds();
+    debugPrint('[AR] bootstrap done: '
+        'positions=${_positions.length} '
+        'roles=${_roles.length} '
+        'rolePositions=${_rolePositions.length}');
     await refresh();
+  }
+
+  /// รายการตำแหน่ง derive จาก role-positions (เส้นเก่า /lookup/permission ถูกลบ)
+  void _derivePositions() {
+    final seen = <int>{};
+    final out = <AccessRightsPosition>[];
+    for (final rp in _rolePositions) {
+      if (rp.positionId == 0 || seen.contains(rp.positionId)) continue;
+      seen.add(rp.positionId);
+      out.add(AccessRightsPosition(
+        id: rp.positionId,
+        nameTh: rp.positionName,
+      ));
+    }
+    _positions = out;
+  }
+
+  /// /admin/roles (v2) ไม่มี integer id — join ผ่าน code กับ role-positions
+  /// (ซึ่งมี role.id และ role.code) เพื่อให้ chip selection + role_ids
+  /// ตอน submit ใช้ id ตรงกับ API
+  void _syncRoleIds() {
+    if (_roles.isEmpty || _rolePositions.isEmpty) return;
+    final codeToId = <String, int>{
+      for (final rp in _rolePositions)
+        if (rp.roleCode.isNotEmpty && rp.roleId != 0) rp.roleCode: rp.roleId,
+    };
+    if (codeToId.isEmpty) return;
+    _roles = _roles
+        .map((r) =>
+            r.id == 0 && codeToId.containsKey(r.code)
+                ? r.copyWith(id: codeToId[r.code])
+                : r)
+        .toList();
   }
 
   // ===============================================================
   // Loaders
   // ===============================================================
-  Future<void> _loadPositions() async {
-    try {
-      _positions = await _service.fetchPositions();
-      notifyListeners();
-    } catch (e) {
-      _emit(AccessRightsErrorEvent('โหลดตำแหน่งล้มเหลว: $e'));
-    }
-  }
-
   Future<void> _loadRoles() async {
     try {
       _roles = await _service.fetchRoles();
       notifyListeners();
     } catch (e) {
       _emit(AccessRightsErrorEvent('โหลดสิทธิ์ล้มเหลว: $e'));
+    }
+  }
+
+  Future<void> _loadRolePositions() async {
+    try {
+      _rolePositions = await _service.fetchRolePositions();
+      _derivePositions();
+      notifyListeners();
+    } catch (e) {
+      _emit(AccessRightsErrorEvent('โหลด mapping สิทธิ์-ตำแหน่งล้มเหลว: $e'));
     }
   }
 
@@ -128,6 +172,24 @@ class AccessRightsViewModel extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// โหลดผู้ใช้รายเดียวสดจาก API (GET /admin/users/{uuid})
+  /// — fallback เป็นข้อมูลใน list ถ้า API fail
+  Future<AccessRightsUser?> reloadUser(String uuid) async {
+    try {
+      final fresh = await _service.fetchUser(uuid);
+      if (fresh != null) {
+        final i = _users.indexWhere((u) => u.uuid == uuid);
+        if (i != -1) {
+          _users[i] = fresh;
+          _applyFilter();
+          notifyListeners();
+        }
+        return fresh;
+      }
+    } catch (_) {}
+    return _users.where((u) => u.uuid == uuid).firstOrNull;
   }
 
   // ===============================================================
@@ -174,8 +236,7 @@ class AccessRightsViewModel extends ChangeNotifier {
     required int positionId,
     required List<int> roleIds,
   }) async {
-    final code = await _service.createUser(
-      fileData: fileData,
+    final (code, newUuid) = await _service.createUser(
       username: username,
       email: email,
       password: password,
@@ -190,6 +251,10 @@ class AccessRightsViewModel extends ChangeNotifier {
     );
     final ok = code == 200 || code == 201;
     if (ok) {
+      // v2 — อัปโหลดลายเซ็นแยกหลังสร้างผู้ใช้สำเร็จ
+      if (fileData.isNotEmpty && newUuid.isNotEmpty) {
+        await _service.uploadSignature(userUuid: newUuid, fileData: fileData);
+      }
       _emit(const AccessRightsSuccessEvent('เพิ่มผู้ใช้สำเร็จ'));
       await refresh();
     } else {

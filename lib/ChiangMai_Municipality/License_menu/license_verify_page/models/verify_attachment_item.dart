@@ -15,7 +15,7 @@
 
 import 'package:intl/intl.dart';
 
-import '../../../unity/license_status_labels.dart';
+import '../unity/license_status_labels.dart';
 
 /// module — ดึงจาก json['module']
 class VerifyAttachmentModule {

@@ -26,9 +26,11 @@ class AreaMenuCardGrid extends StatelessWidget {
     if (vm.requests.isEmpty) {
       return _EmptyState(
         hasFilter: vm.searchQuery.isNotEmpty ||
-            (vm.selectedZoneSub.isNotEmpty &&
+            (vm.selectedZoneSub != null &&
+                vm.selectedZoneSub!.isNotEmpty &&
                 vm.selectedZoneSub != 'ทั้งหมด') ||
-            (vm.selectedZone.isNotEmpty &&
+            (vm.selectedZone != null &&
+                vm.selectedZone!.isNotEmpty &&
                 vm.selectedZone != 'ทั้งหมด') ||
             vm.selectedStatus != 'ทั้งหมด' ||
             vm.selectedRequestStatus != 'ทั้งหมด',

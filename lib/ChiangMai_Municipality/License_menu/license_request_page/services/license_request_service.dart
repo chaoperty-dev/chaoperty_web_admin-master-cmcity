@@ -14,8 +14,8 @@ import 'package:chaoperty/Model/GetZone_Model.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../unity/API_requests_reviews.dart';
-import '../../../unity/API_approvals_lastaction.dart';
+import '../unity/API_requests_reviews.dart';
+import '../unity/API_approvals_lastaction.dart';
 import '../models/license_request_item.dart';
 
 class LicenseRequestService {

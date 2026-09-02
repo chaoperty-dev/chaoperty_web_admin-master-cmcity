@@ -10,7 +10,8 @@
       "route": "/area",
       "icon": "map_outlined",
       "activeIcon": "map",
-      "status": true
+      "status": true,
+      "permission": "area_manager"
     },
     {
       "type": "item",
@@ -18,7 +19,8 @@
       "route": "/tenant",
       "icon": "people_outline",
       "activeIcon": "people",
-      "status": true
+      "status": true,
+      "permission": "CURRENT_TENANTS" 
     },
     {
       "type": "group",
@@ -27,62 +29,72 @@
       "activeIcon": "description",
       "expandedByDefault": true,
       "status": true,
+      "permission": "LICENSE_ISSUANCE_PROCESS",
       "children": [
         {
           "label": "ประกาศคำขอใบอนุญาต",
           "route": "/announce",
           "icon": "campaign_outlined",
           "activeIcon": "campaign",
-          "status": true
+          
+          "status": true,
+              "permission": "LICENSE_REQUEST_ANNOUNCEMENT"
         },
         {
           "label": "คำขอใบอนุญาต",
           "route": "/contract",
           "icon": "edit_note_outlined",
           "activeIcon": "edit_note",
-          "status": true
+          "status": true,
+           "permission": "LICENSE_REQUEST"
         },
         {
           "label": "แนบเอกสารคำขอ",
           "route": "/attach",
           "icon": "attach_file_outlined",
           "activeIcon": "attach_file",
-          "status": true
+          "status": true,
+           "permission": "REQUEST_DOCUMENT_ATTACHMENT"
         },
         {
           "label": "ชำระค่าธรรมเนียม",
           "route": "/payment",
           "icon": "payments_outlined",
           "activeIcon": "payments",
-          "status": true
+          "status": true,
+           "permission": "FEE_PAYMENT"
         },
         {
           "label": "ตรวจสอบเอกสารคำขอ",
           "route": "/verify",
           "icon": "rule_outlined",
           "activeIcon": "rule",
-          "status": true
+          "status": true,
+           "permission": "REQUEST_DOCUMENT_REVIEW"
         },
         {
           "label": "ตรวจสอบข้อเท็จจริง",
           "route": "/fact-check",
           "icon": "search_outlined",
           "activeIcon": "search",
-          "status": true
+          "status": true,
+           "permission": "FACT_VERIFICATION"
         },
         {
           "label": "ส่งคำร้องขออนุมัติ",
           "route": "/submit-approval",
           "icon": "send_outlined",
           "activeIcon": "send",
-          "status": true
+          "status": true,
+           "permission": "SUBMIT_APPROVAL_REQUEST"
         },
         {
           "label": "อนุมัติคำร้อง",
           "route": "/approve",
           "icon": "check_circle_outline",
           "activeIcon": "check_circle",
-          "status": true
+          "status": true,
+           "permission": "APPROVE_REQUEST"
         }
       ]
     },
@@ -92,7 +104,8 @@
       "route": "/registration",
       "icon": "app_registration_outlined",
       "activeIcon": "app_registration",
-      "status": true
+      "status": true,
+      "permission": "TENANT_REGISTRY"
     },
     {
       "type": "group",
@@ -101,20 +114,23 @@
       "activeIcon": "analytics",
       "expandedByDefault": true,
       "status": true,
+      "permission": "reports",
       "children": [
         {
           "label": "รายงานลูกค้า",
           "route": "/report/customers",
           "icon": "people_alt_outlined",
           "activeIcon": "people_alt",
-          "status": true
+          "status": true,
+      "permission": "REGISTRY_REPORT"
         },
         {
           "label": "รายงานพื้นที่เช่า",
           "route": "/report/areas",
           "icon": "area_chart_outlined",
           "activeIcon": "area_chart",
-          "status": true
+          "status": true,
+      "permission": "RENTAL_AREA_REPORT"
         }
       ]
     },
@@ -124,7 +140,8 @@
       "route": "/setting",
       "icon": "settings_outlined",
       "activeIcon": "settings",
-      "status": true
+      "status": true,
+      "permission": "setting"
     },
     {
       "type": "item",
@@ -132,7 +149,8 @@
       "route": "/profile/manage",
       "icon": "manage_accounts_outlined",
       "activeIcon": "manage_accounts",
-      "status": true
+      "status": true,
+      "permission": "profile"
     }
   ]
 }

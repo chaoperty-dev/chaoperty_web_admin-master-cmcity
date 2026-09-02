@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../AdminScaffold/AdminScaffold.dart';
 import '../../../Responsive/responsive.dart';
 import '../../../Setting/Bill_Document_Template.dart';
 import '../../../Style/Translate.dart';
 import '../../../Style/colors.dart';
 import '../../../router/auth_state_notifier.dart';
-import '../../unity/SecurePrefs_helper.dart';
+import '../../unity/auth_token_store.dart';
 import 'AuthService.dart';
 import 'SetupPage.dart';
 
@@ -130,10 +129,10 @@ class _LoginPageState extends State<LoginPage> {
         notifier.markLoggedIn();
       } catch (_) {}
     } else {
-      Dialog_error(context, 'เข้าสู่ระบบไม่สำเร็จ');
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   const SnackBar(content: Text('เข้าสู่ระบบไม่สำเร็จ')),
-      // );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('เข้าสู่ระบบไม่สำเร็จ')),
+      );
     }
   }
 
@@ -453,7 +452,6 @@ class _LoginPageState extends State<LoginPage> {
     //       ],
     //     ),
     //   ),
-    // );
 
     // Scaffold(
     //   // appBar: AppBar(title: const Text('เข้าสู่ระบบ')),
@@ -487,14 +485,12 @@ class _LoginPageState extends State<LoginPage> {
     //                           child: InkWell(
     //                             onTap: () {
     //                               Navigator.push(
-    //                                 context,
     //                                 MaterialPageRoute(
     //                                     builder: (context) => PreviewScreen_doc3(
     //                                         Url:
     //                                             'https://chaoperties.com/chao_api/Awaitdownload/Privacy_Policy.pdf',
     //                                         title:
     //                                             ' เช่าเพอร์ตี้ Privacy Policy')),
-    //                               );
     //                               // PreviewScreen_doc2(
     //                               // Url:
     //                               //     'https://cdn.syncfusion.com/content/PDFViewer/flutter-succinctly.pdf',
@@ -698,8 +694,6 @@ class _LoginPageState extends State<LoginPage> {
     //           )
     //         ]),
     //   ),
-
-    // );
   }
 }
 
@@ -756,8 +750,7 @@ class _HomePageState extends State<HomePage> {
   //     AuthService.printStoredAuthData();
   //   }
   Future<void> routeToService() async {
-    final userStr =
-        await SecurePrefs.getDecrypted(SecurePrefsType.authUserObject);
+    final userStr = await AuthUserStore.read();
 
     if (userStr != null) {
       try {
@@ -787,13 +780,6 @@ class _HomePageState extends State<HomePage> {
         fields.forEach((k, v) => preferences.setString(k, v));
 
         print('✅ [routeToService] Preferences saved:');
-        fields.forEach((k, v) => print('   $k: $v'));
-
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => AdminScafScreen(route: 'หน้าหลัก')),
-          (route) => false,
-        );
       } catch (e) {
         //  print('❌ Failed to decode user JSON: $e');
       }

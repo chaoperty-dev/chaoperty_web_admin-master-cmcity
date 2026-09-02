@@ -22,6 +22,7 @@ class NavigationMenuModel {
   }
 }
 
+
 class NavigationHeaderModel {
   final String title;
   final IconData? icon;
@@ -47,6 +48,9 @@ class NavigationItemModel {
   final IconData? activeIcon;
   final bool status;
   final bool expandedByDefault;
+
+  /// โค้ดสิทธิ์ (จาก roles/tree) — null = แสดงได้เสมอ
+  final String? permission;
   final List<NavigationChildModel> children;
 
   const NavigationItemModel({
@@ -57,6 +61,7 @@ class NavigationItemModel {
     this.activeIcon,
     this.status = true,
     this.expandedByDefault = false,
+    this.permission,
     this.children = const [],
   });
 
@@ -72,6 +77,7 @@ class NavigationItemModel {
       activeIcon: _parseIcon(json['activeIcon'] as String?),
       status: json['status'] as bool? ?? true,
       expandedByDefault: json['expandedByDefault'] as bool? ?? false,
+      permission: json['permission'] as String?,
       children: rawChildren
           .map((e) => NavigationChildModel.fromJson(e as Map<String, dynamic>))
           .where((e) => e.status)
@@ -80,6 +86,20 @@ class NavigationItemModel {
   }
 
   bool get isGroup => type == NavigationItemType.group;
+
+  NavigationItemModel copyWithChildren(List<NavigationChildModel> children) {
+    return NavigationItemModel(
+      type: type,
+      label: label,
+      route: route,
+      icon: icon,
+      activeIcon: activeIcon,
+      status: status,
+      expandedByDefault: expandedByDefault,
+      permission: permission,
+      children: children,
+    );
+  }
 }
 
 class NavigationChildModel {
@@ -89,12 +109,16 @@ class NavigationChildModel {
   final IconData? activeIcon;
   final bool status;
 
+  /// โค้ดสิทธิ์ของซับเมนู — null = สืบทอดจากกลุ่มแม่
+  final String? permission;
+
   const NavigationChildModel({
     required this.label,
     required this.route,
     this.icon,
     this.activeIcon,
     this.status = true,
+    this.permission,
   });
 
   factory NavigationChildModel.fromJson(Map<String, dynamic> json) {
@@ -104,6 +128,7 @@ class NavigationChildModel {
       icon: _parseIcon(json['icon'] as String?),
       activeIcon: _parseIcon(json['activeIcon'] as String?),
       status: json['status'] as bool? ?? true,
+      permission: json['permission'] as String?,
     );
   }
 }

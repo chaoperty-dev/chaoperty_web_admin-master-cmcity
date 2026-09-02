@@ -27,7 +27,7 @@ import 'package:provider/provider.dart';
 import '../../services/license_request_billing_service.dart';
 import '../../viewmodels/license_request_detail_step2_view_model.dart';
 import '../../viewmodels/license_request_detail_view_model.dart';
-import 'package:chaoperty/ChiangMai_Municipality/unity/license_status_labels.dart';
+import '../../unity/license_status_labels.dart';
 import '../theme/license_request_theme.dart';
 import 'license_request_addbilling_table.dart';
 

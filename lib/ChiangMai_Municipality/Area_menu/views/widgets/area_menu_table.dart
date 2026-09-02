@@ -111,11 +111,13 @@ class _TableSlice {
     return other is _TableSlice &&
         other.isLoading == isLoading &&
         other.isInitiallyLoading == isInitiallyLoading &&
-        identical(other.requests, requests); // list ref — เพียงพอสำหรับ change detection
+        identical(other.requests,
+            requests); // list ref — เพียงพอสำหรับ change detection
   }
 
   @override
-  int get hashCode => Object.hash(isLoading, isInitiallyLoading, requests.hashCode);
+  int get hashCode =>
+      Object.hash(isLoading, isInitiallyLoading, requests.hashCode);
 }
 
 /// Empty filter widget — scope Consumer<VM> ที่นี่เท่านั้น
@@ -128,9 +130,12 @@ class _AreaMenuEmptyFilter extends StatelessWidget {
       builder: (context, vm, _) {
         return _EmptyState(
           hasFilter: vm.searchQuery.isNotEmpty ||
-              (vm.selectedZoneSub.isNotEmpty &&
+              (vm.selectedZoneSub != null &&
+                  vm.selectedZoneSub!.isNotEmpty &&
                   vm.selectedZoneSub != 'ทั้งหมด') ||
-              (vm.selectedZone.isNotEmpty && vm.selectedZone != 'ทั้งหมด') ||
+              (vm.selectedZone != null &&
+                  vm.selectedZone!.isNotEmpty &&
+                  vm.selectedZone != 'ทั้งหมด') ||
               vm.selectedStatus != 'ทั้งหมด' ||
               vm.selectedRequestStatus != 'ทั้งหมด',
           onClear: vm.refresh,
@@ -173,10 +178,14 @@ class _AreaMenuRow extends StatelessWidget {
             width: 110,
             child: Center(child: _ViewButton(onTap: onView)),
           ),
-          _Cell(value: (model['lock'] ?? '-').toString(), flex: 2, isMono: true),
+          _Cell(
+              value: (model['lock'] ?? '-').toString(), flex: 2, isMono: true),
           _Cell(value: (model['zone'] ?? '-').toString(), flex: 2),
           _Cell(value: (model['subzone'] ?? '-').toString(), flex: 2),
-          _Cell(value: (model['customer_no'] ?? '-').toString(), flex: 2, isMono: true),
+          _Cell(
+              value: (model['customer_no'] ?? '-').toString(),
+              flex: 2,
+              isMono: true),
           _Cell(
             value: maskName(model['requester']),
             tooltip: model['requester']?.toString(),
@@ -202,36 +211,17 @@ class _AreaMenuRow extends StatelessWidget {
 // ============================================================================
 // Helpers (top-level, pure)
 // ============================================================================
-// Map status label — derive จาก item (API areas/overview)
-// - ldate < วันนี้ && requester != null → "หมดสัญญา"
-// - requester != null → "เช่าอยู่"
-// - requester == null → "ว่าง"
-String statusLabel(Map<String, dynamic> m) {
-  final requester = m['requester']?.toString() ?? '';
-  final hasRequester = requester.isNotEmpty;
-  final ldateRaw = m['ldate']?.toString() ?? '';
-
-  if (hasRequester && ldateRaw.isNotEmpty) {
-    try {
-      final ldate = DateTime.parse(ldateRaw);
-      final today = DateTime.now();
-      final end = DateTime(ldate.year, ldate.month, ldate.day);
-      final now = DateTime(today.year, today.month, today.day);
-      if (end.isBefore(now)) return 'หมดสัญญา';
-    } catch (_) {}
-  }
-
-  if (hasRequester) return 'เช่าอยู่';
-  return 'ว่าง';
-}
+// Map status label — สถานะคำขอจาก API (`status` EN key → TH)
+// (ไม่ใช่เช่าอยู่/ว่าง — delegate ไป AreaMenuViewModel.requestStatusLabel)
+String statusLabel(Map<String, dynamic> m) =>
+    AreaMenuViewModel.requestStatusLabel(m);
 
 /// Mask ชื่อผู้ติดต่อ — ชื่อต้นแสดงเต็ม นามสกุลซ่อน 3 ตัวอักษรท้าย
 /// เช่น "นางกชกร วิชชุชัยมงคล" → "นางกชกร วิชชุชัยม***"
 String maskName(String? raw) {
   final name = raw?.toString().trim() ?? '';
   if (name.isEmpty) return '-';
-  final words =
-      name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
+  final words = name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
   if (words.isEmpty) return '-';
 
   if (words.length == 1) {

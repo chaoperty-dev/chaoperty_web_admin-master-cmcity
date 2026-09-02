@@ -11,7 +11,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../../../Bureau_Registration/Add_Custo_Screen.dart';
+import 'add_custo_screen.dart';
 import '../theme/registration_theme.dart';
 
 class AddCustoRgScreen extends StatefulWidget {

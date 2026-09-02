@@ -288,6 +288,7 @@ extension on _AreaZoneFilterState {
         ),
         searchController: _subZoneSearchCtrl,
         searchInnerWidget: _SearchInner(_subZoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           'ทั้งหมด',
           style: AeaText.body.copyWith(color: AeaColors.textPrimary),
@@ -326,6 +327,7 @@ extension on _AreaZoneFilterState {
         ),
         searchController: _zoneSearchCtrl,
         searchInnerWidget: _SearchInner(_zoneSearchCtrl),
+        searchInnerWidgetHeight: 56,
         hint: AutoSizeText(
           vm.selectedZoneName ?? 'เลือกโซน',
           style: AeaText.body.copyWith(

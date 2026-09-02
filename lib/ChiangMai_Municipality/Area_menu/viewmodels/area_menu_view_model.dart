@@ -1,13 +1,12 @@
 // ============================================================================
 // area_menu_view_model.dart
 // ============================================================================
-// ViewModel — จัดการ state + business logic ของหน้า "คำขอต่อสัญญา"
-// ✅ SELF-CONTAINED — ใช้ Map<String, dynamic> เป็น data type
-//
-// Data Source: GET /api/v2/admin/reports/areas/overview
-// - โหลด API เดียวครั้งเดียว
-// - filter ทุกอย่าง in-memory
-// - Status & zones derive จาก items โดยตรง
+// ViewModel — หน้า "พื้นที่เช่า"
+// Data Source: GET /api/v2/admin/areas/overview — SERVER-DRIVEN
+// - ลอจิกยิง API สำรองมาจาก license_request_view_model:
+//   เลือก dropdown → sync ZoneSelectionStore → listener resolve ser →
+//   reload รายการโซน (กรอง sub_zone) + ยิง overview หน้า 1 ใหม่ทุกครั้ง
+// - sort (sort_by / sort_dir), pagination server-side
 // ============================================================================
 
 import 'dart:async';
@@ -31,20 +30,29 @@ class AreaMenuViewModel extends ChangeNotifier {
     if (routeData != null && routeData.isNotEmpty) {
       _searchQuery = routeData;
     }
-    // ✅ sync state จาก global ZoneSelectionStore (area scope)
-    _selectedZoneSub = ZoneSelectionStore.instance.areaSubZone;
-    _selectedZone = ZoneSelectionStore.instance.areaZone;
+    // sync จาก global store ('ทั้งหมด' → null เหมือน license)
+    _selectedZoneSub = ZoneSelectionStore.instance.areaSubZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.areaSubZone;
+    _selectedZone = ZoneSelectionStore.instance.areaZone == 'ทั้งหมด'
+        ? null
+        : ZoneSelectionStore.instance.areaZone;
     _selectedRequestStatus = ZoneSelectionStore.instance.areaRequestStatus;
     _selectedStatus = ZoneSelectionStore.instance.areaLeaseStatus;
     ZoneSelectionStore.instance.addListener(_onZoneStoreChanged);
     _loadInitial();
   }
 
+  final AreaMenuService _service;
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
   void _onZoneStoreChanged() {
-    final newSub = _zoneStore.areaSubZone;
-    final newZone = _zoneStore.areaZone;
+    final newSub = _zoneStore.areaSubZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.areaSubZone;
+    final newZone = _zoneStore.areaZone == 'ทั้งหมด'
+        ? null
+        : _zoneStore.areaZone;
     final newRequestStatus = _zoneStore.areaRequestStatus;
     final newLeaseStatus = _zoneStore.areaLeaseStatus;
     final subChanged = _selectedZoneSub != newSub;
@@ -52,93 +60,87 @@ class AreaMenuViewModel extends ChangeNotifier {
     final reqChanged = _selectedRequestStatus != newRequestStatus;
     final leaseChanged = _selectedStatus != newLeaseStatus;
     if (!subChanged && !zoneChanged && !reqChanged && !leaseChanged) return;
+
     _selectedZoneSub = newSub;
     _selectedZone = newZone;
     _selectedRequestStatus = newRequestStatus;
     _selectedStatus = newLeaseStatus;
-    _invalidateFilterCache();
-    notifyListeners();
-  }
 
-  final AreaMenuService _service;
+    notifyListeners();
+
+    // resolve sub-ser + reload รายการโซน (กรองตามหมวด) — เหมือน license
+    String? subSer;
+    if (_selectedZoneSub != null) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s['zn']?.toString() == _selectedZoneSub,
+        orElse: () => const <String, dynamic>{'ser': '0', 'zn': ''},
+      );
+      final ser = sub['ser']?.toString();
+      subSer = (ser == '0' || ser == null || ser.isEmpty) ? null : ser;
+      loadZones(subzoneSer: subSer);
+    }
+    refresh(); // ✅ ยิง API ทุกครั้งที่เลือกใหม่
+  }
 
   // ---------- Event channel ----------
   final StreamController<evt.AreaMenuEvent> _eventController =
       StreamController<evt.AreaMenuEvent>.broadcast();
   Stream<evt.AreaMenuEvent> get events => _eventController.stream;
 
-  // ---------- Data ----------
-  List<Map<String, dynamic>> _allItems = [];
-
-  /// ✅ Filter cache — invalidate on filter/data change (5 chained .where() was hot)
-  List<Map<String, dynamic>>? _filteredCache;
-
-  List<Map<String, dynamic>> get requests => _filteredCache ??= _computeFiltered();
-
-  List<Map<String, dynamic>> _computeFiltered() {
-    Iterable<Map<String, dynamic>> out = _allItems;
-
-    if (_selectedZoneSub != null &&
-        _selectedZoneSub != 'ทั้งหมด' &&
-        (_selectedZoneSub ?? '').isNotEmpty) {
-      out = out
-          .where((r) => (r['subzone']?.toString() ?? '') == _selectedZoneSub);
-    }
-
-    if (_selectedZone != 'ทั้งหมด') {
-      out = out.where((r) => (r['zone']?.toString() ?? '') == _selectedZone);
-    }
-
-    if (_selectedStatus != 'ทั้งหมด') {
-      out = out.where((r) => _computeStatusLabel(r) == _selectedStatus);
-    }
-
-    if (_selectedRequestStatus != 'ทั้งหมด') {
-      final key = _requestStatusKeyMap[_selectedRequestStatus];
-      out = out.where((r) {
-        final status = r['status']?.toString() ?? '';
-        return status == _selectedRequestStatus ||
-            (key != null && status == key);
-      });
-    }
-
-    final q = _searchQuery.trim().toLowerCase();
-    if (q.isNotEmpty) {
-      out = out.where((r) {
-        final lock = r['lock']?.toString().toLowerCase() ?? '';
-        final zone = r['zone']?.toString().toLowerCase() ?? '';
-        final subzone = r['subzone']?.toString().toLowerCase() ?? '';
-        final requester = r['requester']?.toString().toLowerCase() ?? '';
-        final custNo = r['customer_no']?.toString().toLowerCase() ?? '';
-        final custTel = r['customer_tel']?.toString().toLowerCase() ?? '';
-        return lock.contains(q) ||
-            zone.contains(q) ||
-            subzone.contains(q) ||
-            requester.contains(q) ||
-            custNo.contains(q) ||
-            custTel.contains(q);
-      });
-    }
-
-    return out.toList();
-  }
-
-  void _invalidateFilterCache() {
-    _filteredCache = null;
-  }
+  // ---------- Data (หน้าปัจจุบันจาก API) ----------
+  List<Map<String, dynamic>> _items = [];
+  List<Map<String, dynamic>> get requests => _items;
 
   // ---------- Stats (จาก API) ----------
-  int? get totalArea => _totalArea;
-  int? get totalLeased => _totalLeased;
-  int? get totalVacant => _totalVacant;
-  String? get reportDate => _reportDate;
-
   int? _totalArea;
   int? _totalLeased;
   int? _totalVacant;
+  int? _duplicateLeases;
   String? _reportDate;
 
-  // ---------- Status filter (เก็บไว้เผื่อใช้ แต่ UI ลบ dropdown นี้ออกแล้ว) ----------
+  int? get totalArea => _totalArea;
+  int? get totalLeased => _totalLeased;
+  int? get totalVacant => _totalVacant;
+  int? get duplicateLeases => _duplicateLeases;
+  String? get reportDate => _reportDate;
+
+  // ---------- Sort (เหมือน license) ----------
+  /// key ที่ API รับ (sort_by)
+  static const List<String> sortOptions = <String>[
+    'lock',
+    'zone',
+    'subzone',
+    'status',
+  ];
+
+  /// ป้ายภาษาไทย (key → label)
+  static const Map<String, String> sortLabels = <String, String>{
+    'lock': 'ล็อค',
+    'zone': 'โซน',
+    'subzone': 'หมวดโซน',
+    'status': 'สถานะ',
+  };
+
+  String _selectedSort = 'lock';
+  String _selectedSortDir = 'asc';
+  String get selectedSort => _selectedSort;
+  String get selectedSortDir => _selectedSortDir;
+
+  /// ผู้ใช้เลือก key sort → ยิง API ใหม่
+  Future<void> onSortChanged(String? value) async {
+    _selectedSort = (value == null || value.isEmpty) ? 'lock' : value;
+    notifyListeners();
+    await refresh();
+  }
+
+  /// สลับ asc/desc → ยิง API ใหม่
+  Future<void> onSortDirChanged() async {
+    _selectedSortDir = _selectedSortDir == 'asc' ? 'desc' : 'asc';
+    notifyListeners();
+    await refresh();
+  }
+
+  // ---------- Status filter (UI เดิม — เก็บ contract ไว้) ----------
   static const List<String> _statusLabels = [
     'ทั้งหมด',
     'เช่าอยู่',
@@ -150,8 +152,7 @@ class AreaMenuViewModel extends ChangeNotifier {
   String get selectedStatus => _selectedStatus;
   List<String> get statusOptions => _statusLabels;
 
-  // ---------- Request status filter (in-memory) ----------
-  // TH label → EN key ที่ API ส่งมาใน status
+  // ---------- Request status filter (server param `status`) ----------
   static const Map<String, String> _requestStatusKeyMap = {
     'ฉบับร่าง': 'draft',
     'ส่งเอกสารแล้ว': 'documents_submitted',
@@ -166,7 +167,6 @@ class AreaMenuViewModel extends ChangeNotifier {
     'ถูกปฏิเสธ': 'rejected',
   };
 
-  // ✅ เรียงตามลำดับที่แสดงใน UI (dropdown) — ตามรูปที่คุณส่งมา
   static const List<String> _requestStatusLabels = [
     'ทั้งหมด',
     'ฉบับร่าง',
@@ -186,8 +186,7 @@ class AreaMenuViewModel extends ChangeNotifier {
   String get selectedRequestStatus => _selectedRequestStatus;
   List<String> get requestStatusOptions => _requestStatusLabels;
 
-  /// ✅ สำหรับ UI dropdown item — TH label + EN key
-  /// คืน List<Map<String, String>> ที่มี key 'th' และ 'en'
+  /// UI dropdown item — TH label + EN key
   List<Map<String, String>> get requestStatusItems {
     return _requestStatusLabels.map((th) {
       return {
@@ -197,60 +196,58 @@ class AreaMenuViewModel extends ChangeNotifier {
     }).toList(growable: false);
   }
 
-  // ---------- Sub-zone & Zone (derived from items) ----------
-  String? _selectedZoneSub = 'ทั้งหมด';
-  String get selectedZoneSub => _selectedZoneSub ?? 'ทั้งหมด';
+  // ---------- Zones (Map {ser, zn} — ลอจิกเหมือน license) ----------
+  List<Map<String, dynamic>> _subzoneModels = [
+    {'ser': '0', 'zn': 'ทั้งหมด'},
+  ];
+  List<Map<String, dynamic>> _zoneModels = [
+    {'ser': '0', 'zn': 'ทั้งหมด'},
+  ];
+  String? _selectedZoneSub;
+  String? _selectedZone;
 
-  String _selectedZone = 'ทั้งหมด';
-  String get selectedZone => _selectedZone;
+  List<Map<String, dynamic>> get subzoneModels => _subzoneModels;
+  List<Map<String, dynamic>> get zoneModels => _zoneModels;
+  String? get selectedZoneSub => _selectedZoneSub;
+  String? get selectedZone => _selectedZone;
 
-  /// Cache สำหรับ map ชื่อ → ser
-  /// ser = index+1 (1-based) — เพราะ API item ไม่มี id โดยตรง
-  /// ใช้ rowNumber (sorted) เพื่อให้ UI กับ API ตรงกันในแต่ละ session
-  static const int _allIndex = 0; // แทน 'ทั้งหมด'
-
-  /// Extract unique subzones (มี 'ทั้งหมด' นำหน้า)
-  /// Filter in-memory ตรงๆ ด้วยชื่อ ไม่ต้อง map เป็น ser
-  List<Map<String, dynamic>> get subzoneModels {
-    final set = <String>{};
-    for (final r in _allItems) {
-      final s = r['subzone']?.toString();
-      if (s != null && s.isNotEmpty) set.add(s);
+  /// name → ser ('ทั้งหมด'/ไม่เจอ → null = ไม่ส่ง param)
+  String? _resolveSubzoneSer(String? name) {
+    if (name == null || name.isEmpty || name == 'ทั้งหมด') return null;
+    for (final m in _subzoneModels) {
+      if (m['zn']?.toString() == name) {
+        final ser = m['ser']?.toString();
+        return (ser == null || ser.isEmpty || ser == '0') ? null : ser;
+      }
     }
-    final sorted = set.toList()..sort();
-    return [
-      {'zn': 'ทั้งหมด'},
-      ...sorted.map((s) => {'zn': s}),
-    ];
+    return null;
   }
 
-  /// Extract unique zones (กรองตาม sub-zone ที่เลือก)
-  List<Map<String, dynamic>> get zoneModels {
-    final set = <String>{};
-    final selectedSub =
-        (_selectedZoneSub == 'ทั้งหมด' || _selectedZoneSub == null)
-            ? null
-            : _selectedZoneSub;
-    for (final r in _allItems) {
-      final sub = r['subzone']?.toString();
-      final zn = r['zone']?.toString();
-      if (selectedSub != null && sub != selectedSub) continue;
-      if (zn != null && zn.isNotEmpty) set.add(zn);
+  String? _resolveZoneSer(String? name) {
+    if (name == null || name.isEmpty || name == 'ทั้งหมด') return null;
+    for (final m in _zoneModels) {
+      if (m['zn']?.toString() == name) {
+        final ser = m['ser']?.toString();
+        return (ser == null || ser.isEmpty || ser == '0') ? null : ser;
+      }
     }
-    final sorted = set.toList()..sort();
-    return [
-      {'zn': 'ทั้งหมด'},
-      ...sorted.map((z) => {'zn': z}),
-    ];
+    return null;
   }
 
   // ---------- Search ----------
   String _searchQuery = '';
   String get searchQuery => _searchQuery;
 
-  // ---------- Reference date (optional, ส่งให้ API) ----------
-  String? _selectedDate;
-  String? get selectedDate => _selectedDate;
+  // ---------- Pagination (server-side) ----------
+  int _currentPage = 1;
+  int _lastPage = 1;
+  int _totalRows = 0;
+
+  int get currentPage => _currentPage;
+  int get lastPage => _lastPage;
+  int get total => _totalRows;
+  bool get canPrev => _currentPage > 1;
+  bool get canNext => _currentPage < _lastPage;
 
   // ---------- Misc ----------
   bool _isLoading = false;
@@ -263,36 +260,70 @@ class AreaMenuViewModel extends ChangeNotifier {
   final String _title;
   final String? _routeData;
 
-  // ✅ API ใหม่ไม่มี pagination — เก็บ stub สำหรับ backward compat
-  int get currentPage => 1;
-  int get lastPage => 1;
-  int get total => _allItems.length;
-  String? get linksNext => null;
-  String? get linksPrev => null;
-
   // ===============================================================
-  // Loaders
+  // Init — เหมือน license _loadInitial
   // ===============================================================
-  void _loadInitial() {
-    loadOverview();
+  Future<void> _loadInitial() async {
+    // 1) โหลดหมวดโซนก่อน (resolve ser)
+    await loadSubZones();
+    // 2) resolve sub-ser + โหลดโซนที่กรองแล้ว
+    String? subSer;
+    if (_selectedZoneSub != null && _selectedZoneSub!.isNotEmpty) {
+      final sub = _subzoneModels.firstWhere(
+        (s) => s['zn']?.toString() == _selectedZoneSub,
+        orElse: () => const <String, dynamic>{'ser': '0', 'zn': ''},
+      );
+      final ser = sub['ser']?.toString();
+      subSer = (ser == '0' || ser == null || ser.isEmpty) ? null : ser;
+    }
+    await loadZones(subzoneSer: subSer);
+    // 3) ยิง overview
+    await loadOverview();
   }
 
-  /// โหลด overview (API เดียวจบ — filter ทำ in-memory)
-  Future<void> loadOverview({bool forceRefresh = false}) async {
-    if (_isLoading && !forceRefresh) return;
+  Future<void> loadSubZones() async {
+    try {
+      _subzoneModels = await _service.fetchSubZones();
+      notifyListeners();
+    } catch (e) {
+      print('[Area] loadSubZones error: $e');
+    }
+  }
+
+  Future<void> loadZones({String? subzoneSer}) async {
+    try {
+      _zoneModels = await _service.fetchZones(subzoneSer: subzoneSer);
+      notifyListeners();
+    } catch (e) {
+      print('[Area] loadZones error: $e');
+    }
+  }
+
+  /// ยิง API 1 หน้า — filter ทั้งหมดเป็น query params
+  Future<void> loadOverview({bool forceRefresh = false, int? page}) async {
+    if (_isLoading && !forceRefresh && page == null) return;
     _setLoading(true);
     try {
       final result = await _service.fetchAreasOverview(
         forceRefresh: forceRefresh,
-        date: _selectedDate,
+        zoneSer: _resolveZoneSer(_selectedZone),
+        subzoneSer: _resolveSubzoneSer(_selectedZoneSub),
+        q: _searchQuery.trim().isEmpty ? null : _searchQuery.trim(),
+        status: _requestStatusKeyMap[_selectedRequestStatus],
+        sortBy: _selectedSort,
+        sortDir: _selectedSortDir,
+        page: page ?? _currentPage,
       );
-      _allItems = result.items.map((it) => it.toJson()).toList(growable: false);
+      _items = result.items.map((it) => it.toJson()).toList(growable: false);
       _totalArea = result.totalArea;
       _totalLeased = result.totalLeased;
       _totalVacant = result.totalVacant;
+      _duplicateLeases = result.duplicateLeases;
       _reportDate = result.date;
-      _invalidateFilterCache();
-      _validateSelectedZone();
+      _currentPage = result.currentPage;
+      _lastPage = result.lastPage;
+      _totalRows = result.totalRows;
+      notifyListeners();
     } catch (e) {
       _emitError('โหลดข้อมูลไม่สำเร็จ: $e');
     } finally {
@@ -300,46 +331,56 @@ class AreaMenuViewModel extends ChangeNotifier {
     }
   }
 
-  Future<void> refresh() => loadOverview(forceRefresh: true);
+  Future<void> refresh() => loadOverview(forceRefresh: true, page: 1);
 
-  /// Stub สำหรับ Pagination widget
-  Future<void> loadPage(String? url) async {
-    // API ใหม่ไม่รองรับ pagination
+  /// Stub เดิม (backward compat)
+  Future<void> loadPage(String? url) async {}
+
+  /// เปลี่ยนหน้า — ยิง API ใหม่
+  Future<void> goToPage(int page) async {
+    if (page < 1 || page > _lastPage || page == _currentPage) return;
+    await loadOverview(page: page);
   }
 
+  Future<void> nextPage() => goToPage(_currentPage + 1);
+  Future<void> prevPage() => goToPage(_currentPage - 1);
+
   // ===============================================================
-  // Filter handlers — เปลี่ยน sub-zone/zone filter in-memory เท่านั้น
-  // (API จะถูกเรียกครั้งเดียวตอน loadOverview() ครั้งแรก)
+  // Filter handlers — เหมือน license: sync store → listener ยิง API
   // ===============================================================
-  void onSubZoneChanged(String? value) {
-    // ✅ sync เข้า global store (area scope, auto-reset zone)
+  Future<void> onSubZoneChanged(String? value) async {
+    if (value == null) return;
     _zoneStore.setAreaSubZone(value);
-    // store listener จะ sync กลับมาให้ VM ผ่าน _onZoneStoreChanged
   }
 
-  void onZoneChanged(String? value) {
+  Future<void> onZoneChanged(String? value) async {
+    if (value == null) return;
     _zoneStore.setAreaZone(value);
-    // store listener จะ sync กลับมาให้ VM
   }
 
   void onStatusChanged(String? value) {
-    // ✅ sync เข้า global store (area lease status)
-    _zoneStore.setAreaLeaseStatus(value);
+    // lease-status dropdown ถูกลบจาก UI แล้ว — sync store อย่างเดียว
+    _selectedStatus = value ?? 'ทั้งหมด';
+    _zoneStore.setAreaLeaseStatus(_selectedStatus);
   }
 
   void onRequestStatusChanged(String? value) {
-    // ✅ sync เข้า global store (area request status)
-    _zoneStore.setAreaRequestStatus(value);
+    final next = value ?? 'ทั้งหมด';
+    if (_selectedRequestStatus == next) return;
+    _selectedRequestStatus = next;
+    _zoneStore.setAreaRequestStatus(next);
+    notifyListeners();
+    refresh(); // ✅ ยิง API ทุกครั้งที่เลือกใหม่
   }
 
   void setSearch(String value) {
     _searchQuery = value;
-    _invalidateFilterCache();
     notifyListeners();
   }
 
+  /// debounce 500ms จาก search bar เรียก — ยิง API หน้า 1
   Future<void> executeSearch() async {
-    notifyListeners();
+    await loadOverview(page: 1);
   }
 
   /// ผู้ใช้กด "เรียกดู" → ส่ง composite key
@@ -363,27 +404,7 @@ class AreaMenuViewModel extends ChangeNotifier {
     _eventController.add(evt.AreaMenuErrorEvent(msg));
   }
 
-  /// Validate selected zone ต้องมีอยู่ใน list (กรณี refresh แล้ว zone หายไป)
-  void _validateSelectedZone() {
-    final zones =
-        zoneModels.map((z) => z['zn']?.toString()).whereType<String>().toSet();
-    if (!zones.contains(_selectedZone)) {
-      _selectedZone = 'ทั้งหมด';
-    }
-    final subs = subzoneModels
-        .map((z) => z['zn']?.toString())
-        .whereType<String>()
-        .toSet();
-    final cur = _selectedZoneSub ?? 'ทั้งหมด';
-    if (!subs.contains(cur)) {
-      _selectedZoneSub = 'ทั้งหมด';
-    }
-  }
-
-  /// คำนวณ status label (TH) จาก item
-  /// - ldate < วันนี้ && requester != null → "หมดสัญญา"
-  /// - requester != null → "เช่าอยู่"
-  /// - requester == null → "ว่าง"
+  /// คำนวณ status label (TH) จาก item — display เท่านั้น (filter เป็นของ server)
   static String _computeStatusLabel(Map<String, dynamic> r) {
     final requester = r['requester']?.toString() ?? '';
     final hasRequester = requester.isNotEmpty;
@@ -406,6 +427,17 @@ class AreaMenuViewModel extends ChangeNotifier {
   /// Public wrapper สำหรับ widget เรียกใช้
   static String computeStatusLabel(Map<String, dynamic> r) =>
       _computeStatusLabel(r);
+
+  /// ✅ สถานะ pill แสดง "สถานะคำขอ" จาก API (`status` EN key → TH)
+  /// null/ว่าง → 'ว่าง' (ยังไม่มีคำขอ)
+  static String requestStatusLabel(Map<String, dynamic> r) {
+    final key = (r['status']?.toString() ?? '').trim();
+    if (key.isEmpty) return 'ว่าง';
+    for (final entry in _requestStatusKeyMap.entries) {
+      if (entry.value == key) return entry.key;
+    }
+    return key; // key ใหม่ที่ยังไม่มี label — แสดงดิบ
+  }
 
   @override
   void dispose() {

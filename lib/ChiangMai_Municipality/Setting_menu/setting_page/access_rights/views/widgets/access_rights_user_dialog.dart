@@ -55,6 +55,7 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
   int? _positionId;
   final Set<int> _selectedRoleIds = <int>{};
   bool _submitting = false;
+  bool _hasDrawn = false;
 
   @override
   void initState() {
@@ -94,54 +95,72 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
       _showMessage('กรุณาเลือกลำดับการลงลายมือชื่อ');
       return;
     }
+    final vm = widget.viewModel;
+    // ตัดสิทธิ์ที่ไม่ได้ mapping กับตำแหน่งปัจจุบันออกก่อนส่ง (กัน prefill โหมดแก้ไข)
+    final allowed = _allowedRoleIds(vm);
+    if (allowed != null) {
+      _selectedRoleIds.removeWhere((id) => !allowed.contains(id));
+    }
     if (_selectedRoleIds.isEmpty) {
       _showMessage('กรุณาเลือกสิทธิ์อย่างน้อย 1 รายการ');
       return;
     }
 
-    Uint8List signatureBytes = Uint8List(0);
-    if (widget.mode == ArUserDialogMode.create) {
-      signatureBytes = await _exportSignature() ?? Uint8List(0);
-      if (signatureBytes.isEmpty) {
-        _showMessage('กรุณาวาดลายเซ็นก่อนบันทึก');
-        return;
-      }
-    }
-
     setState(() => _submitting = true);
-    final vm = widget.viewModel;
-    final ok = widget.mode == ArUserDialogMode.create
-        ? await vm.createUser(
-            fileData: signatureBytes,
-            username: _username.text.trim(),
-            email: _email.text.trim(),
-            password: _password.text,
-            prefix: _prefix.text.trim(),
-            firstName: _firstName.text.trim(),
-            lastName: _lastName.text.trim(),
-            citizenId: _citizenId.text.trim(),
-            phone: _phone.text.trim(),
-            prepostion: _prepostion.text.trim(),
-            positionId: _positionId!,
-            roleIds: _selectedRoleIds.toList(),
-          )
-        : await vm.updateUser(
-            userUuid: widget.initial!.uuid,
-            username: _username.text.trim(),
-            email: _email.text.trim(),
-            password: _password.text,
-            prefix: _prefix.text.trim(),
-            firstName: _firstName.text.trim(),
-            lastName: _lastName.text.trim(),
-            citizenId: _citizenId.text.trim(),
-            phone: _phone.text.trim(),
-            prepostion: _prepostion.text.trim(),
-            positionId: _positionId!,
-            roleIds: _selectedRoleIds.toList(),
-          );
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    if (ok) Navigator.of(context).pop(true);
+    try {
+      Uint8List signatureBytes = Uint8List(0);
+      if (widget.mode == ArUserDialogMode.create) {
+        try {
+          signatureBytes = await _exportSignature() ?? Uint8List(0);
+        } catch (_) {
+          signatureBytes = Uint8List(0);
+        }
+        if (signatureBytes.isEmpty) {
+          _showMessage('กรุณาวาดลายเซ็นก่อนบันทึก');
+          return;
+        }
+      }
+
+      final ok = widget.mode == ArUserDialogMode.create
+          ? await vm.createUser(
+              fileData: signatureBytes,
+              username: _username.text.trim(),
+              email: _email.text.trim(),
+              password: _password.text,
+              prefix: _prefix.text.trim(),
+              firstName: _firstName.text.trim(),
+              lastName: _lastName.text.trim(),
+              citizenId: _citizenId.text.trim(),
+              phone: _phone.text.trim(),
+              prepostion: _prepostion.text.trim(),
+              positionId: _positionId!,
+              roleIds: _selectedRoleIds.toList(),
+            )
+          : await vm.updateUser(
+              userUuid: widget.initial!.uuid,
+              username: _username.text.trim(),
+              email: _email.text.trim(),
+              password: _password.text,
+              prefix: _prefix.text.trim(),
+              firstName: _firstName.text.trim(),
+              lastName: _lastName.text.trim(),
+              citizenId: _citizenId.text.trim(),
+              phone: _phone.text.trim(),
+              prepostion: _prepostion.text.trim(),
+              positionId: _positionId!,
+              roleIds: _selectedRoleIds.toList(),
+            );
+      if (!mounted) return;
+      if (ok) {
+        Navigator.of(context).pop(true);
+      } else {
+        _showMessage('บันทึกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      }
+    } catch (e) {
+      if (mounted) _showMessage('เกิดข้อผิดพลาด: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
   }
 
   Future<Uint8List?> _exportSignature() async {
@@ -168,84 +187,188 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
     final title = widget.mode == ArUserDialogMode.create
         ? 'เพิ่มผู้ใช้'
         : 'แก้ไขผู้ใช้';
+    final screenHeight = MediaQuery.of(context).size.height;
 
     return Dialog(
       backgroundColor: ArColors.cardBg,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(ArRadius.lg),
       ),
-      insetPadding: const EdgeInsets.all(16),
+      insetPadding: const EdgeInsets.all(24),
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 720),
-        child: Padding(
-          padding: const EdgeInsets.all(ArSpace.lg),
-          child: Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _dialogHeader(title),
-                  const SizedBox(height: ArSpace.md),
-                  _formGrid(),
-                  const SizedBox(height: ArSpace.lg),
-                  Text('ลำดับการลงลายมือชื่อ',
-                      style: ArText.h2.copyWith(fontSize: 14)),
-                  const SizedBox(height: ArSpace.sm),
-                  _positionDropdown(vm.positions),
-                  const SizedBox(height: ArSpace.lg),
-                  Text('สิทธิการเข้าถึง ( *กรุณากำหนดสิทธิ )',
-                      style: ArText.h2.copyWith(fontSize: 14)),
-                  const SizedBox(height: ArSpace.sm),
-                  _roleCheckList(vm.roles),
-                  if (widget.mode == ArUserDialogMode.create) ...[
-                    const SizedBox(height: ArSpace.lg),
-                    Text('ลายมือชื่อ', style: ArText.h2.copyWith(fontSize: 14)),
-                    const SizedBox(height: ArSpace.sm),
-                    _signaturePad(),
-                  ],
-                  const SizedBox(height: ArSpace.lg),
-                  _actionRow(),
-                ],
+        constraints: BoxConstraints(
+          maxWidth: 760,
+          maxHeight: screenHeight * 0.92,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // ─── Header (ตรึงบน) ───
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  ArSpace.lg, ArSpace.md, ArSpace.md, ArSpace.md),
+              child: _dialogHeader(title),
+            ),
+            const Divider(height: 1, color: ArColors.border),
+
+            // ─── Body (scroll) ───
+            Flexible(
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(ArSpace.lg),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _sectionLabel('ข้อมูลส่วนตัว', Icons.person_outline_rounded),
+                      const SizedBox(height: ArSpace.sm),
+                      _formGrid(),
+                      const SizedBox(height: ArSpace.lg),
+                      _sectionLabel(
+                          'ข้อมูลการเข้าสู่ระบบ', Icons.login_rounded),
+                      const SizedBox(height: ArSpace.sm),
+                      _accountGrid(),
+                      const SizedBox(height: ArSpace.lg),
+                      _sectionLabel('ลำดับการลงลายมือชื่อ',
+                          Icons.format_list_numbered_rounded),
+                      const SizedBox(height: ArSpace.sm),
+                      _positionDropdown(vm.positions),
+                      const SizedBox(height: ArSpace.lg),
+                      _sectionLabel(
+                          'สิทธิการเข้าถึง *', Icons.verified_user_outlined),
+                      const SizedBox(height: ArSpace.sm),
+                      _roleCheckList(vm.roles, vm),
+                      const SizedBox(height: ArSpace.lg),
+                      _sectionLabel('ลายมือชื่อ', Icons.draw_rounded),
+                      const SizedBox(height: ArSpace.sm),
+                      if (widget.mode == ArUserDialogMode.create)
+                        _signaturePad()
+                      else
+                        _signatureHint(),
+                    ],
+                  ),
+                ),
               ),
             ),
-          ),
+
+            // ─── Footer (ตรึงล่าง) ───
+            const Divider(height: 1, color: ArColors.border),
+            Padding(
+              padding: const EdgeInsets.all(ArSpace.md),
+              child: _actionRow(),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _dialogHeader(String title) {
+  /// หัวข้อ section — icon box + label
+  Widget _sectionLabel(String text, IconData icon) {
     return Row(
       children: [
-        Expanded(child: Text(title, style: ArText.h1)),
-        IconButton(
-          icon: const Icon(Icons.close_rounded),
-          color: ArColors.textMuted,
-          onPressed: () => Navigator.of(context).pop(false),
+        Container(
+          width: 26,
+          height: 26,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: ArColors.primary.withOpacity(.10),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 15, color: ArColors.primary),
         ),
+        const SizedBox(width: 8),
+        Text(text, style: ArText.h2.copyWith(fontSize: 14)),
       ],
+    );
+  }
+
+  Widget _dialogHeader(String title) {
+    final isCreate = widget.mode == ArUserDialogMode.create;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          width: 42,
+          height: 42,
+          decoration: BoxDecoration(
+            color: ArColors.primary.withOpacity(.12),
+            borderRadius: BorderRadius.circular(ArRadius.md),
+            border: Border.all(color: ArColors.primary.withOpacity(.28)),
+          ),
+          child: Icon(
+            isCreate ? Icons.person_add_rounded : Icons.edit_rounded,
+            color: ArColors.primary,
+            size: 22,
+          ),
+        ),
+        const SizedBox(width: ArSpace.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(title, style: ArText.h1),
+              Text(
+                isCreate
+                    ? 'กรอกข้อมูลผู้ใช้และกำหนดสิทธิ์การเข้าถึง'
+                    : 'แก้ไขข้อมูลผู้ใช้และสิทธิ์การเข้าถึง',
+                style: ArText.bodyMuted.copyWith(fontSize: 12),
+              ),
+            ],
+          ),
+        ),
+        _CloseButton(onTap: () => Navigator.of(context).pop(false)),
+      ],
+    );
+  }
+
+  InputDecoration _inputDeco(String label) {
+    OutlineInputBorder border([Color? color, double w = 1]) => OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: color ?? ArColors.border, width: w),
+        );
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(fontSize: 13, color: ArColors.textSecondary),
+      filled: true,
+      fillColor: ArColors.surfaceMuted.withOpacity(.35),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      border: border(),
+      enabledBorder: border(),
+      focusedBorder: border(ArColors.primary, 1.4),
+      errorBorder: border(ArColors.statusRejectedFg),
+      focusedErrorBorder: border(ArColors.statusRejectedFg, 1.4),
+      isDense: true,
+      counterText: '',
     );
   }
 
   Widget _formGrid() {
     Widget field(TextEditingController c, String label,
-        {TextInputType? type, String? Function(String?)? validator, int? maxLen}) {
+        {TextInputType? type,
+        String? Function(String?)? validator,
+        int? maxLen,
+        bool digits = false,
+        bool nameOnly = false}) {
       return TextFormField(
         controller: c,
         keyboardType: type,
         maxLength: maxLen,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: const TextStyle(fontSize: 13, color: ArColors.textSecondary),
-          border: const OutlineInputBorder(),
-          isDense: true,
-          counterText: '',
-        ),
-        inputFormatters: type == TextInputType.number
-            ? [FilteringTextInputFormatter.digitsOnly]
-            : null,
+        decoration: _inputDeco(label),
+        inputFormatters: [
+          // ชื่อ/นามสกุล — ได้เฉพาะตัวอักษรไทย+อังกฤษ (ตัดเว้นวรรค/อักขระพิเศษ)
+          if (nameOnly)
+            FilteringTextInputFormatter.allow(
+                RegExp(r'[a-zA-Z฀-๿]')),
+          if (digits) ...[
+            FilteringTextInputFormatter.digitsOnly,
+            LengthLimitingTextInputFormatter(maxLen ?? 10),
+          ],
+        ],
         validator: validator ??
             (v) => (v == null || v.trim().isEmpty) ? 'กรุณากรอก$label' : null,
       );
@@ -254,22 +377,69 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
     return Column(
       children: [
         Row(children: [
-          Expanded(child: field(_prefix, 'คำนำหน้า', validator: (_) => null)),
+          Expanded(child: field(_prefix, 'คำนำหน้าชื่อ', nameOnly: true)),
           const SizedBox(width: ArSpace.sm),
-          Expanded(child: field(_firstName, 'ชื่อ')),
+          Expanded(child: field(_firstName, 'ชื่อ (ไม่มีเว้นวรรค/อักขระพิเศษ)',
+              nameOnly: true, maxLen: 50)),
         ]),
         const SizedBox(height: ArSpace.sm),
         Row(children: [
-          Expanded(child: field(_lastName, 'นามสกุล')),
+          Expanded(child: field(_lastName, 'นามสกุล (ไม่มีเว้นวรรค/อักขระพิเศษ)',
+              nameOnly: true, maxLen: 50)),
           const SizedBox(width: ArSpace.sm),
-          Expanded(child: field(_phone, 'เบอร์โทร', type: TextInputType.phone)),
+          Expanded(
+            child: field(
+              _phone,
+              'เบอร์โทร (0-9)',
+              type: TextInputType.phone,
+              digits: true,
+              maxLen: 10,
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return 'กรุณากรอกเบอร์โทร';
+                if (t.length < 9) return 'เบอร์โทรต้องมี 9-10 หลัก';
+                return null;
+              },
+            ),
+          ),
         ]),
-        const SizedBox(height: ArSpace.sm),
+      ],
+    );
+  }
+
+  Widget _accountGrid() {
+    Widget field(TextEditingController c, String label,
+        {TextInputType? type,
+        String? Function(String?)? validator,
+        int? maxLen,
+        bool digits = false,
+        bool noSpace = false,
+        bool englishOnly = false}) {
+      return TextFormField(
+        controller: c,
+        keyboardType: type,
+        maxLength: maxLen,
+        decoration: _inputDeco(label),
+        inputFormatters: [
+          if (englishOnly)
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._\-]')),
+          if (digits) FilteringTextInputFormatter.digitsOnly,
+          if (noSpace) FilteringTextInputFormatter.deny(RegExp(r'\s')),
+        ],
+        validator: validator ??
+            (v) => (v == null || v.trim().isEmpty) ? 'กรุณากรอก$label' : null,
+      );
+    }
+
+    return Column(
+      children: [
         Row(children: [
           Expanded(
             child: field(
               _email,
-              'อีเมล',
+              'อีเมล (ห้ามเว้นวรรค)',
+              type: TextInputType.emailAddress,
+              noSpace: true,
               validator: (v) {
                 if (v == null || v.trim().isEmpty) return 'กรุณากรอกอีเมล';
                 final r = RegExp(r'^[\w\.\-]+@([\w\-]+\.)+[\w\-]{2,4}$');
@@ -278,24 +448,46 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
             ),
           ),
           const SizedBox(width: ArSpace.sm),
-          Expanded(child: field(_citizenId, 'เลขบัตรประชาชน', type: TextInputType.number, maxLen: 13)),
+          Expanded(
+            child: field(_citizenId, 'เลขบัตรประชาชน (0-9)',
+                type: TextInputType.number, digits: true, maxLen: 13,
+                validator: (v) {
+                  final t = (v ?? '').trim();
+                  if (t.isEmpty) return 'กรุณากรอกเลขบัตรประชาชน';
+                  if (t.length != 13) return 'เลขบัตรประชาชนต้องมี 13 หลัก';
+                  return null;
+                }),
+          ),
         ]),
         const SizedBox(height: ArSpace.sm),
         Row(children: [
-          Expanded(child: field(_username, 'ชื่อผู้ใช้ (username)')),
+          Expanded(
+            child: field(
+              _username,
+              'ชื่อผู้ใช้ (username) — a-z, A-Z, 0-9 เท่านั้น',
+              englishOnly: true,
+              validator: (v) {
+                final t = (v ?? '').trim();
+                if (t.isEmpty) return 'กรุณากรอกชื่อผู้ใช้';
+                final r = RegExp(r'^[a-zA-Z0-9._-]+$');
+                if (!r.hasMatch(t)) {
+                  return 'ใช้ได้เฉพาะอังกฤษ/ตัวเลข ห้ามเว้นวรรคและตัวอักษรไทย';
+                }
+                return null;
+              },
+            ),
+          ),
           const SizedBox(width: ArSpace.sm),
           Expanded(
             child: TextFormField(
               controller: _password,
               obscureText: true,
-              decoration: InputDecoration(
-                labelText: widget.mode == ArUserDialogMode.edit
-                    ? 'รหัสผ่าน (เว้นว่างไว้ถ้าไม่เปลี่ยน)'
-                    : 'รหัสผ่าน',
-                labelStyle: const TextStyle(fontSize: 13, color: ArColors.textSecondary),
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
+              decoration: _inputDeco(widget.mode == ArUserDialogMode.edit
+                  ? 'รหัสผ่าน (เว้นว่างไว้ถ้าไม่เปลี่ยน)'
+                  : 'รหัสผ่าน (ห้ามเว้นวรรค)'),
+              inputFormatters: [
+                FilteringTextInputFormatter.deny(RegExp(r'\s')),
+              ],
               validator: (v) {
                 if (widget.mode == ArUserDialogMode.create && (v == null || v.isEmpty)) {
                   return 'กรุณากรอกรหัสผ่าน';
@@ -309,7 +501,7 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
           ),
         ]),
         const SizedBox(height: ArSpace.sm),
-        field(_prepostion, 'ตำแหน่งเตรียม (prepostion)', validator: (_) => null),
+        field(_prepostion, 'ตำแหน่งเตรียม (prepostion)'),
       ],
     );
   }
@@ -325,29 +517,67 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
+        color: ArColors.surfaceMuted.withOpacity(.35),
         border: Border.all(color: ArColors.border),
-        borderRadius: BorderRadius.circular(ArRadius.sm),
+        borderRadius: BorderRadius.circular(10),
       ),
       child: DropdownButtonHideUnderline(
         child: DropdownButton<int>(
           isExpanded: true,
           value: _positionId,
           hint: const Text('เลือกลำดับการลงลายมือชื่อ'),
+          icon: const Icon(Icons.expand_more_rounded, color: ArColors.textSecondary),
+          borderRadius: BorderRadius.circular(10),
           items: positions
               .map(
                 (p) => DropdownMenuItem<int>(
                   value: p.id,
-                  child: Text('${p.id}. ${p.nameTh}'),
+                  child: Text(
+                    '${p.id}. ${p.nameTh}',
+                    style: ArText.body.copyWith(fontSize: 13),
+                  ),
                 ),
               )
               .toList(),
-          onChanged: (v) => setState(() => _positionId = v),
+          onChanged: (v) => setState(() {
+            _positionId = v;
+            // รีเซ็ตสิทธิ์ที่เลือกทุกครั้งที่เปลี่ยนลำดับ (เหมือนของเดิม)
+            _selectedRoleIds.clear();
+          }),
         ),
       ),
     );
   }
 
-  Widget _roleCheckList(List<AccessRightsRole> roles) {
+  /// id ของสิทธิ์ที่ mapping กับตำแหน่งปัจจุบัน (API v2 role-positions)
+  /// — เอาเฉพาะ active == true
+  /// - ถ้า mapping ว่าง (API fail) → คืน null = ไม่กรอง แสดงทุกสิทธิ์
+  Set<int>? _allowedRoleIds(AccessRightsViewModel vm) {
+    if (vm.rolePositions.isEmpty) return null;
+    return {
+      for (final rp in vm.rolePositions)
+        if (rp.active && rp.positionId == _positionId) rp.roleId
+    };
+  }
+
+  Widget _roleCheckList(
+      List<AccessRightsRole> roles, AccessRightsViewModel vm) {
+    // ยังไม่เลือกลำดับการลงลายมือชื่อ — เตือนก่อน (เหมือนของเดิม)
+    if (_positionId == null) {
+      return Container(
+        padding: const EdgeInsets.all(ArSpace.md),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+              color: ArColors.statusRejectedFg.withOpacity(.40), width: 1),
+          color: ArColors.statusRejectedFg.withOpacity(.05),
+        ),
+        child: const Text(
+          '** กรุณาเลือกลำดับการลงลายมือชื่อก่อน..!!',
+          style: TextStyle(color: ArColors.statusRejectedFg, fontSize: 13),
+        ),
+      );
+    }
     if (roles.isEmpty) {
       return Container(
         padding: const EdgeInsets.all(ArSpace.md),
@@ -355,31 +585,48 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
         child: const Text('ยังไม่มีสิทธิ์ในระบบ', style: ArText.bodyMuted),
       );
     }
+
+    // แสดงเฉพาะสิทธิ์ที่ mapping กับตำแหน่งนี้ (v2 role-positions)
+    // mapping ว่าง → แสดงทั้งหมด (fallback)
+    final allowed = _allowedRoleIds(vm);
+    final visible = allowed == null
+        ? roles
+        : roles.where((r) => allowed.contains(r.id)).toList();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final r in visible)
+          _RoleChip(
+            label: r.nameTh,
+            selected: _selectedRoleIds.contains(r.id),
+            onTap: () {
+              setState(() {
+                if (!_selectedRoleIds.add(r.id)) {
+                  _selectedRoleIds.remove(r.id);
+                }
+              });
+            },
+          ),
+      ],
+    );
+  }
+
+  /// โหมดแก้ไข — ลายเซ็นจัดการผ่าน dialog ลายเซ็นแยก
+  Widget _signatureHint() {
     return Container(
-      decoration: ArDecor.softCard(),
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        children: [
-          for (final r in roles)
-            CheckboxListTile(
-              dense: true,
-              value: _selectedRoleIds.contains(r.id),
-              onChanged: (v) {
-                setState(() {
-                  if (v == true) {
-                    _selectedRoleIds.add(r.id);
-                  } else {
-                    _selectedRoleIds.remove(r.id);
-                  }
-                });
-              },
-              title: Text(
-                '${r.nameTh}  (level ${r.level})',
-                style: const TextStyle(fontSize: 13),
-              ),
-              controlAffinity: ListTileControlAffinity.leading,
-            ),
-        ],
+      height: 200,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: ArColors.border),
+        color: ArColors.surfaceMuted.withOpacity(.25),
+      ),
+      child: const Center(
+        child: Text(
+          'จัดการลายเซ็นผ่านปุ่ม "ลายเซ็น" ในตาราง',
+          style: TextStyle(color: ArColors.textMuted, fontSize: 13),
+        ),
       ),
     );
   }
@@ -387,30 +634,58 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
   Widget _signaturePad() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(ArRadius.md),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: ArColors.border),
+        color: ArColors.surfaceMuted.withOpacity(.25),
       ),
       padding: const EdgeInsets.all(8),
       child: Column(
         children: [
-          SizedBox(
-            height: 180,
-            child: SfSignaturePad(
-              key: _signatureKey,
-              backgroundColor: Colors.white,
-              strokeColor: Colors.black87,
-              minimumStrokeWidth: 1.2,
-              maximumStrokeWidth: 3.0,
-            ),
+          Stack(
+            children: [
+              Listener(
+                onPointerDown: (_) {
+                  if (!_hasDrawn) setState(() => _hasDrawn = true);
+                },
+                child: SizedBox(
+                  height: 180,
+                  child: SfSignaturePad(
+                    key: _signatureKey,
+                    backgroundColor: Colors.white,
+                    strokeColor: Colors.black87,
+                    minimumStrokeWidth: 1.2,
+                    maximumStrokeWidth: 3.0,
+                  ),
+                ),
+              ),
+              // hint (หายเมื่อเริ่มวาด)
+              if (!_hasDrawn)
+                const IgnorePointer(
+                  child: SizedBox(
+                    height: 180,
+                    child: Center(
+                      child: Text(
+                        'เซ็นชื่อภายในกรอบนี้',
+                        style: TextStyle(
+                            color: ArColors.textMuted, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
-              onPressed: () => _signatureKey.currentState?.clear(),
-              icon: const Icon(Icons.cleaning_services_rounded, size: 16),
-              label: const Text('ล้างลายเซ็น'),
+              onPressed: () {
+                _signatureKey.currentState?.clear();
+                setState(() => _hasDrawn = false);
+              },
+              icon: const Icon(Icons.cleaning_services_rounded,
+                  size: 16, color: ArColors.statusRejectedFg),
+              label: const Text('ล้างลายเซ็น',
+                  style: TextStyle(color: ArColors.statusRejectedFg)),
             ),
           ),
         ],
@@ -422,15 +697,127 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        TextButton(
-          onPressed: _submitting ? null : () => Navigator.of(context).pop(false),
-          child: const Text('ยกเลิก'),
+        _CancelButton(
+          disabled: _submitting,
+          onTap: () => Navigator.of(context).pop(false),
         ),
-        const SizedBox(width: 8),
-        ElevatedButton.icon(
-          onPressed: _submitting ? null : _onSubmit,
-          icon: _submitting
-              ? const SizedBox(
+        const SizedBox(width: 12),
+        _SaveButton(
+          label: widget.mode == ArUserDialogMode.create
+              ? 'เพิ่มผู้ใช้'
+              : 'บันทึกการแก้ไข',
+          loading: _submitting,
+          onTap: _onSubmit,
+        ),
+      ],
+    );
+  }
+}
+
+/// ปุ่มยกเลิก — ขาวขอบเทา ไม่มีสี
+class _CancelButton extends StatefulWidget {
+  final bool disabled;
+  final VoidCallback onTap;
+  const _CancelButton({required this.disabled, required this.onTap});
+  @override
+  State<_CancelButton> createState() => _CancelButtonState();
+}
+
+class _CancelButtonState extends State<_CancelButton> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    final enabled = !widget.disabled;
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : MouseCursor.defer,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: enabled ? widget.onTap : null,
+        child: AnimatedContainer(
+          duration: ArAnimations.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          decoration: BoxDecoration(
+            color: _hover && enabled
+                ? ArColors.surfaceMuted
+                : Colors.white,
+            borderRadius: BorderRadius.circular(ArRadius.md),
+            border: Border.all(
+              color: _hover && enabled
+                  ? ArColors.textMuted.withOpacity(.5)
+                  : ArColors.border,
+              width: 1,
+            ),
+          ),
+          child: Text(
+            'ยกเลิก',
+            style: TextStyle(
+              fontSize: 13,
+              fontFamily: ArText.fontBold,
+              color: _hover && enabled
+                  ? ArColors.textPrimary
+                  : ArColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// ปุ่มบันทึก/เพิ่ม — เขียว hover เงา + loading spinner
+class _SaveButton extends StatefulWidget {
+  final String label;
+  final bool loading;
+  final VoidCallback onTap;
+  const _SaveButton({
+    required this.label,
+    required this.loading,
+    required this.onTap,
+  });
+  @override
+  State<_SaveButton> createState() => _SaveButtonState();
+}
+
+class _SaveButtonState extends State<_SaveButton> {
+  bool _hover = false;
+  bool _down = false;
+  @override
+  Widget build(BuildContext context) {
+    final enabled = !widget.loading;
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTapDown: enabled ? (_) => setState(() => _down = true) : null,
+        onTapUp: (_) => setState(() => _down = false),
+        onTapCancel: () => setState(() => _down = false),
+        onTap: enabled ? widget.onTap : null,
+        child: AnimatedContainer(
+          duration: ArAnimations.fast,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 11),
+          decoration: BoxDecoration(
+            color: !enabled
+                ? ArColors.primary.withOpacity(.55)
+                : (_down
+                    ? ArColors.primaryDark
+                    : ArColors.primary),
+            borderRadius: BorderRadius.circular(ArRadius.md),
+            boxShadow: [
+              if (_hover && enabled)
+                BoxShadow(
+                  color: ArColors.primary.withOpacity(.35),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (widget.loading)
+                const SizedBox(
                   width: 14,
                   height: 14,
                   child: CircularProgressIndicator(
@@ -438,15 +825,127 @@ class _AccessRightsUserDialogState extends State<AccessRightsUserDialog> {
                     valueColor: AlwaysStoppedAnimation(Colors.white),
                   ),
                 )
-              : const Icon(Icons.save_rounded, size: 16),
-          label: Text(widget.mode == ArUserDialogMode.create ? 'เพิ่มผู้ใช้' : 'บันทึกการแก้ไข'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ArColors.primary,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              else
+                const Icon(Icons.save_rounded, size: 16, color: Colors.white),
+              const SizedBox(width: 7),
+              Text(
+                widget.label,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontFamily: ArText.fontBold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
           ),
         ),
-      ],
+      ),
+    );
+  }
+}
+
+/// Chip สิทธิ์ — แสดงเฉพาะชื่อ (เลือก = เขียวทึบ)
+class _RoleChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _RoleChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(999),
+      child: AnimatedContainer(
+        duration: ArAnimations.fast,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? ArColors.primary : Colors.white,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: selected ? ArColors.primary : ArColors.border,
+            width: 1,
+          ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: ArColors.primary.withOpacity(.30),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (selected) ...[
+              const Icon(Icons.check_rounded,
+                  size: 14, color: Colors.white),
+              const SizedBox(width: 5),
+            ],
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontFamily: selected ? ArText.fontBold : ArText.fontRegular,
+                  color: selected ? Colors.white : ArColors.textSecondary,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// ปุ่มกลมปิด dialog — hover แดง (ใช้ร่วมทั้ง 2 dialog)
+class _CloseButton extends StatefulWidget {
+  final VoidCallback onTap;
+  const _CloseButton({required this.onTap});
+
+  @override
+  State<_CloseButton> createState() => _CloseButtonState();
+}
+
+class _CloseButtonState extends State<_CloseButton> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: ArAnimations.fast,
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: _hover
+                ? ArColors.statusRejectedBg
+                : ArColors.surfaceMuted.withOpacity(.6),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.close_rounded,
+            size: 20,
+            color: _hover
+                ? ArColors.statusRejectedFg
+                : ArColors.textSecondary,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -483,27 +982,57 @@ class _AccessRightsSignatureDialogState extends State<AccessRightsSignatureDialo
   Future<void> _loadExisting() async {
     final sigUuid = widget.user.signatureUuid;
     if (sigUuid == null || sigUuid.isEmpty) return;
-    final bytes = await widget.viewModel.loadSignatureImage(sigUuid);
-    if (!mounted || bytes == null) return;
-    setState(() => _existing = bytes);
+    try {
+      final bytes = await widget.viewModel.loadSignatureImage(sigUuid);
+      if (!mounted || bytes == null) return;
+      setState(() => _existing = bytes);
+    } catch (_) {
+      // โหลดลายเซ็นเดิมไม่ได้ — แสดงแค่ pad ว่าง (ไม่ block การใช้งาน)
+    }
   }
 
   Future<void> _onSave() async {
     final state = _padKey.currentState;
     if (state == null) return;
-    final image = await state.toImage();
-    final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
-    if (byteData == null) return;
-    final bytes = byteData.buffer.asUint8List();
-    if (bytes.isEmpty) return;
     setState(() => _submitting = true);
-    final ok = await widget.viewModel.uploadSignature(
-      userUuid: widget.user.uuid,
-      fileData: bytes,
-    );
+    try {
+      final image = await state.toImage();
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+      if (byteData == null) {
+        _showSnack('ไม่สามารถสร้างภาพลายเซ็นได้');
+        return;
+      }
+      final bytes = byteData.buffer.asUint8List();
+      if (bytes.isEmpty) {
+        _showSnack('กรุณาวาดลายเซ็นก่อนอัปโหลด');
+        return;
+      }
+      final ok = await widget.viewModel.uploadSignature(
+        userUuid: widget.user.uuid,
+        fileData: bytes,
+      );
+      if (!mounted) return;
+      if (ok) {
+        Navigator.of(context).pop(true);
+      } else {
+        _showSnack('อัปโหลดลายเซ็นไม่สำเร็จ');
+      }
+    } catch (e) {
+      if (mounted) _showSnack('เกิดข้อผิดพลาด: $e');
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  void _showSnack(String message) {
     if (!mounted) return;
-    setState(() => _submitting = false);
-    if (ok) Navigator.of(context).pop(true);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: ArColors.statusRejectedFg,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   @override
@@ -524,10 +1053,7 @@ class _AccessRightsSignatureDialogState extends State<AccessRightsSignatureDialo
               Row(
                 children: [
                   Expanded(child: Text('จัดการลายเซ็น', style: ArText.h1)),
-                  IconButton(
-                    icon: const Icon(Icons.close_rounded),
-                    onPressed: () => Navigator.of(context).pop(false),
-                  ),
+                  _CloseButton(onTap: () => Navigator.of(context).pop(false)),
                 ],
               ),
               const SizedBox(height: ArSpace.sm),

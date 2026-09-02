@@ -16,7 +16,7 @@
 //   - มี inspection_passed + inspection_review
 // ============================================================================
 
-import '../../../unity/license_status_labels.dart';
+import '../unity/license_status_labels.dart';
 
 class VerifyTaskModule {
   final String code;

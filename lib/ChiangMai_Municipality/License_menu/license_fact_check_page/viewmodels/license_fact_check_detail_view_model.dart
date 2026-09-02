@@ -10,7 +10,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import '../../../Model/Review_Model.dart';
-import '../../../unity/API_requests_reviews.dart';
+import '../unity/API_requests_reviews.dart';
 import '../services/license_fact_check_service.dart';
 import 'package:flutter/foundation.dart';
 

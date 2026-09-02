@@ -14,8 +14,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
-import '../../../unity/license_status_labels.dart';
-import '../../../unity/zone_selection_store.dart';
+import '../unity/license_status_labels.dart';
+import '../unity/zone_selection_store.dart';
 import '../models/verify_attachment_item.dart';
 import '../models/license_verify_config.dart';
 import '../models/license_verify_event.dart';
