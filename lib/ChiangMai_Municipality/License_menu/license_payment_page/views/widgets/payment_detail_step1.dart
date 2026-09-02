@@ -14,7 +14,6 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
-import '../../unity/FormatPhone.dart';
 import '../../models/license_payment_attachment.dart';
 import '../../models/license_payment_detail_model.dart';
 import '../../models/license_prepayment_model.dart' hide formatMoney;
@@ -706,67 +705,30 @@ class _PaymentSummaryCard extends StatelessWidget {
           ),
           const SizedBox(height: LaSpace.lg),
 
-          // ─── Grid 2 columns ───
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: _InfoColumn(
-                  title: 'ข้อมูลคำขอ',
-                  items: [
-                    _InfoItem(
-                      icon: Icons.receipt_long_rounded,
-                      label: 'เลขที่สัญญา',
-                      value: d.paymentNo,
-                    ),
-                    _InfoItem(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'วันที่สิ้นสุด',
-                      value: _formatDate(d.paidAt),
-                    ),
-                    _InfoItem(
-                      icon: Icons.location_on_rounded,
-                      label: 'บริเวณ / โซน',
-                      value: d.payType,
-                    ),
-                    _InfoItem(
-                      icon: Icons.numbers_rounded,
-                      label: 'รหัสพื้นที่',
-                      value: d.methodName,
-                      mono: true,
-                    ),
-                  ],
-                ),
+          // ─── แสดงแค่ 4 ฟิลด์: เลขที่สัญญา / วันที่สิ้นสุด / บริเวณ / รหัสพื้นที่ ───
+          _InfoColumn(
+            title: 'ข้อมูลส่วนบุคคล',
+            items: [
+              _InfoItem(
+                icon: Icons.receipt_long_rounded,
+                label: 'เลขที่สัญญา',
+                value: d.paymentNo,
               ),
-              const SizedBox(width: LaSpace.lg),
-              Expanded(
-                child: _InfoColumn(
-                  title: 'ข้อมูลลูกค้า',
-                  items: [
-                    _InfoItem(
-                      icon: Icons.person_rounded,
-                      label: 'ชื่อผู้ติดต่อ',
-                      value: d.payerName,
-                    ),
-                    _InfoItem(
-                      icon: Icons.phone_rounded,
-                      label: 'เบอร์โทร',
-                      value: formatPhoneNumber(d.clientTel),
-                      mono: true,
-                    ),
-                    _InfoItem(
-                      icon: Icons.confirmation_number_rounded,
-                      label: 'เลขประจำตัวผู้เสียภาษี',
-                      value: d.clientTax,
-                      mono: true,
-                    ),
-                    _InfoItem(
-                      icon: Icons.place_rounded,
-                      label: 'ที่อยู่',
-                      value: d.clientAddr,
-                    ),
-                  ],
-                ),
+              _InfoItem(
+                icon: Icons.calendar_today_rounded,
+                label: 'วันที่สิ้นสุด',
+                value: _formatDate(d.paidAt),
+              ),
+              _InfoItem(
+                icon: Icons.location_on_rounded,
+                label: 'บริเวณ / โซน',
+                value: d.payType,
+              ),
+              _InfoItem(
+                icon: Icons.numbers_rounded,
+                label: 'รหัสพื้นที่',
+                value: d.methodName,
+                mono: true,
               ),
             ],
           ),
