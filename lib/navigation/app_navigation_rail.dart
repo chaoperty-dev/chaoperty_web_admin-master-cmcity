@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import '../ChiangMai_Municipality/unity/auth_token_store.dart';
 import '../router/auth_state_notifier.dart';
 import 'models/navigation_menu_model.dart';
+import 'services/favorite_menu_service.dart';
 import 'services/navigation_menu_service.dart';
+import 'widgets/favorites_section.dart';
 
 /// Custom NavigationRail ด้านซ้าย — responsive + โหลดเมนูจาก JSON
 /// - Desktop (≥ 1100px): แสดง sidebar 240px (persistent)
@@ -36,11 +38,68 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
   final Map<String, bool> _expandedGroups = {};
   String _userDisplayName = '';
 
+  // ⭐ favorites state
+  Set<String> _pinnedRoutes = <String>{};
+  Set<String> _allowedPermissions = <String>{};
+  int? _currentRoleId;
+
   @override
   void initState() {
     super.initState();
-    _menuFuture = NavigationMenuService.loadFiltered();
+    _menuFuture = _loadMenu();
     _loadUserName();
+  }
+
+  Future<NavigationMenuModel?> _loadMenu() async {
+    final menu = await NavigationMenuService.loadFiltered();
+    if (!mounted) return menu;
+    // allowed permissions = union ของ permission ใน items + children
+    final perms = <String>{};
+    for (final it in menu.items) {
+      if (it.permission != null) perms.add(it.permission!);
+      for (final c in it.children) {
+        if (c.permission != null) perms.add(c.permission!);
+      }
+    }
+    setState(() => _allowedPermissions = perms);
+    // โหลด favorites หลังเมนูพร้อม (ต้องการ allowed perms)
+    _loadFavorites();
+    return menu;
+  }
+
+  Future<void> _loadFavorites() async {
+    // 1) cache ก่อน → render ได้ทันที
+    final cached = await FavoriteMenuService.readCachedRoutes();
+    if (!mounted) return;
+    setState(() => _pinnedRoutes = cached);
+    // 2) sync จาก server
+    final fresh = await FavoriteMenuService.fetchPinnedRoutes();
+    if (!mounted) return;
+    if (fresh.isNotEmpty || cached.isEmpty) {
+      setState(() => _pinnedRoutes = fresh);
+    }
+    // 3) load role id (ไว้สำหรับ POST /admin/roles/pin)
+    final roleId = await _readRoleId();
+    if (!mounted) return;
+    setState(() => _currentRoleId = roleId);
+  }
+
+  Future<int?> _readRoleId() async {
+    try {
+      final raw = await AuthRolesTreeStore.read();
+      if (raw == null || raw.isEmpty) return null;
+      final data = jsonDecode(raw);
+      if (data is List) {
+        for (final r in data) {
+          if (r is Map && r['assigned'] == true) {
+            final id = r['id'] ?? r['role_id'];
+            if (id is int) return id;
+            if (id is String) return int.tryParse(id);
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
   }
 
   Future<void> _loadUserName() async {
@@ -200,6 +259,15 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
+                      // ⭐ Favorites box (เหนือสุด, ถ้ามี)
+                      FavoritesSection(
+                        menu: menu,
+                        pinnedRoutes: _pinnedRoutes,
+                        allowedPermissions: _allowedPermissions,
+                        activeRoute: _location,
+                        onTapRoute: _go,
+                        onRemoveRoute: _togglePin,
+                      ),
                       for (int i = 0; i < menu.items.length; i++) ...[
                         if (i > 0) const SizedBox(height: 4),
                         _buildMenuItem(menu.items[i]),
@@ -305,6 +373,31 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
     }
   }
 
+  /// ⭐ toggle pin สำหรับ route (optimistic + sync)
+  Future<void> _togglePin(String route) async {
+    final roleId = _currentRoleId;
+    if (roleId == null) {
+      // ไม่มี role id → toggle cache เฉยๆ (fallback)
+      final current = {..._pinnedRoutes};
+      if (current.contains(route)) {
+        current.remove(route);
+      } else {
+        current.add(route);
+      }
+      setState(() => _pinnedRoutes = current);
+      return;
+    }
+    final next = await FavoriteMenuService.toggleRoute(route, roleId: roleId);
+    if (!mounted) return;
+    setState(() {
+      if (next) {
+        _pinnedRoutes.add(route);
+      } else {
+        _pinnedRoutes.remove(route);
+      }
+    });
+  }
+
   Widget _buildMenuItem(NavigationItemModel item) {
     if (item.isGroup) {
       final expanded = _expandedGroups[item.label] ?? item.expandedByDefault;
@@ -325,20 +418,27 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
                 label: child.label,
                 isActive: _isRouteActive(child.route),
                 onTap: () => _go(child.route),
+                route: child.route,
+                isPinned: _pinnedRoutes.contains(child.route),
+                onTogglePin: () => _togglePin(child.route),
               ),
             )
             .toList(),
       );
     }
 
+    final route = item.route;
     return _MenuItem(
       icon: item.icon ?? Icons.circle_outlined,
       activeIcon: item.activeIcon ?? item.icon ?? Icons.circle,
       label: item.label,
-      isActive: item.route != null && _isRouteActive(item.route!),
+      isActive: route != null && _isRouteActive(route),
       onTap: () {
-        if (item.route != null) _go(item.route!);
+        if (route != null) _go(route);
       },
+      route: route,
+      isPinned: route != null && _pinnedRoutes.contains(route),
+      onTogglePin: route == null ? null : () => _togglePin(route),
     );
   }
 }
@@ -347,12 +447,15 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
 // Widgets ช่วย
 // ═══════════════════════════════════════════════════════════════════════
 
-class _MenuItem extends StatelessWidget {
+class _MenuItem extends StatefulWidget {
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final String? route;
+  final bool isPinned;
+  final VoidCallback? onTogglePin;
 
   const _MenuItem({
     required this.icon,
@@ -360,41 +463,73 @@ class _MenuItem extends StatelessWidget {
     required this.label,
     required this.isActive,
     required this.onTap,
+    this.route,
+    this.isPinned = false,
+    this.onTogglePin,
   });
 
   @override
+  State<_MenuItem> createState() => _MenuItemState();
+}
+
+class _MenuItemState extends State<_MenuItem> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
+    final showStar = _hover || widget.isPinned;
+    final fg = widget.isActive ? const Color(0xFF1E40AF) : const Color(0xFF6B7280);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Material(
+        color: widget.isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Icon(
-                isActive ? activeIcon : icon,
-                size: 20,
-                color: isActive
-                    ? const Color(0xFF1E40AF)
-                    : const Color(0xFF6B7280),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: _AppNavigationRailState._noUnderlineTextStyle(
-                    fontSize: 14,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-                    color: isActive
-                        ? const Color(0xFF1E40AF)
-                        : const Color(0xFF6B7280),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  widget.isActive ? widget.activeIcon : widget.icon,
+                  size: 20,
+                  color: fg,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: _AppNavigationRailState._noUnderlineTextStyle(
+                      fontSize: 14,
+                      fontWeight:
+                          widget.isActive ? FontWeight.w600 : FontWeight.w500,
+                      color: fg,
+                    ),
                   ),
                 ),
-              ),
-            ],
+                if (widget.onTogglePin != null)
+                  AnimatedOpacity(
+                    duration: const Duration(milliseconds: 120),
+                    opacity: showStar ? 1.0 : 0.0,
+                    child: InkWell(
+                      onTap: widget.onTogglePin,
+                      borderRadius: BorderRadius.circular(4),
+                      child: Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: Icon(
+                          widget.isPinned
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          size: 16,
+                          color: const Color(0xFF1E40AF),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
       ),
@@ -494,54 +629,91 @@ class _MenuGroup extends StatelessWidget {
   }
 }
 
-class _SubMenuItem extends StatelessWidget {
+class _SubMenuItem extends StatefulWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final String route;
+  final bool isPinned;
+  final VoidCallback onTogglePin;
 
   const _SubMenuItem({
     required this.label,
     required this.isActive,
     required this.onTap,
+    required this.route,
+    this.isPinned = false,
+    required this.onTogglePin,
   });
 
   @override
+  State<_SubMenuItem> createState() => _SubMenuItemState();
+}
+
+class _SubMenuItemState extends State<_SubMenuItem> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
-      borderRadius: BorderRadius.circular(6),
-      child: InkWell(
-        onTap: onTap,
+    final showStar = _hover || widget.isPinned;
+    final fg =
+        widget.isActive ? const Color(0xFF1E40AF) : const Color(0xFF6B7280);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Material(
+        color: widget.isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: [
-              // bullet
-              Container(
-                width: 5,
-                height: 5,
-                margin: const EdgeInsets.only(left: 6, right: 14),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? const Color(0xFF1E40AF)
-                      : const Color(0xFF9CA3AF),
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Text(
-                  label,
-                  style: _AppNavigationRailState._noUnderlineTextStyle(
-                    fontSize: 13,
-                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                    color: isActive
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(
+              children: [
+                // bullet
+                Container(
+                  width: 5,
+                  height: 5,
+                  margin: const EdgeInsets.only(left: 6, right: 14),
+                  decoration: BoxDecoration(
+                    color: widget.isActive
                         ? const Color(0xFF1E40AF)
-                        : const Color(0xFF6B7280),
+                        : const Color(0xFF9CA3AF),
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ),
-            ],
+                Expanded(
+                  child: Text(
+                    widget.label,
+                    style: _AppNavigationRailState._noUnderlineTextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          widget.isActive ? FontWeight.w600 : FontWeight.w400,
+                      color: fg,
+                    ),
+                  ),
+                ),
+                AnimatedOpacity(
+                  duration: const Duration(milliseconds: 120),
+                  opacity: showStar ? 1.0 : 0.0,
+                  child: InkWell(
+                    onTap: widget.onTogglePin,
+                    borderRadius: BorderRadius.circular(4),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: Icon(
+                        widget.isPinned
+                            ? Icons.star_rounded
+                            : Icons.star_outline_rounded,
+                        size: 14,
+                        color: const Color(0xFF1E40AF),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

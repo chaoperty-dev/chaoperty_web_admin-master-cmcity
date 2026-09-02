@@ -9,7 +9,9 @@ import '../ChiangMai_Municipality/unity/auth_token_store.dart';
 import '../router/auth_state_notifier.dart';
 import 'app_navigation_rail.dart';
 import 'models/navigation_menu_model.dart';
+import 'services/favorite_menu_service.dart';
 import 'services/navigation_menu_service.dart';
+import 'widgets/favorites_section.dart';
 
 /// Layout หลักของแอปหลังล็อกอิน — responsive
 /// - Desktop (≥ 1100px): Row(NavigationRail 240px, Content) — โชว์ sidebar ถาวร
@@ -117,11 +119,86 @@ class _MobileDrawerState extends State<_MobileDrawer> {
   final Map<String, bool> _expandedGroups = {};
   String _userDisplayName = '';
 
+  // ⭐ favorites state (mirror rail)
+  Set<String> _pinnedRoutes = <String>{};
+  Set<String> _allowedPermissions = <String>{};
+  int? _currentRoleId;
+
   @override
   void initState() {
     super.initState();
-    _menuFuture = NavigationMenuService.loadFiltered();
+    _menuFuture = _loadMenu();
     _loadUserName();
+  }
+
+  Future<NavigationMenuModel?> _loadMenu() async {
+    final menu = await NavigationMenuService.loadFiltered();
+    if (!mounted) return menu;
+    final perms = <String>{};
+    for (final it in menu.items) {
+      if (it.permission != null) perms.add(it.permission!);
+      for (final c in it.children) {
+        if (c.permission != null) perms.add(c.permission!);
+      }
+    }
+    setState(() => _allowedPermissions = perms);
+    _loadFavorites();
+    return menu;
+  }
+
+  Future<void> _loadFavorites() async {
+    final cached = await FavoriteMenuService.readCachedRoutes();
+    if (!mounted) return;
+    setState(() => _pinnedRoutes = cached);
+    final fresh = await FavoriteMenuService.fetchPinnedRoutes();
+    if (!mounted) return;
+    if (fresh.isNotEmpty || cached.isEmpty) {
+      setState(() => _pinnedRoutes = fresh);
+    }
+    final roleId = await _readRoleId();
+    if (!mounted) return;
+    setState(() => _currentRoleId = roleId);
+  }
+
+  Future<int?> _readRoleId() async {
+    try {
+      final raw = await AuthRolesTreeStore.read();
+      if (raw == null || raw.isEmpty) return null;
+      final data = jsonDecode(raw);
+      if (data is List) {
+        for (final r in data) {
+          if (r is Map && r['assigned'] == true) {
+            final id = r['id'] ?? r['role_id'];
+            if (id is int) return id;
+            if (id is String) return int.tryParse(id);
+          }
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  Future<void> _togglePin(String route) async {
+    final roleId = _currentRoleId;
+    if (roleId == null) {
+      final current = {..._pinnedRoutes};
+      if (current.contains(route)) {
+        current.remove(route);
+      } else {
+        current.add(route);
+      }
+      setState(() => _pinnedRoutes = current);
+      return;
+    }
+    final next = await FavoriteMenuService.toggleRoute(route, roleId: roleId);
+    if (!mounted) return;
+    setState(() {
+      if (next) {
+        _pinnedRoutes.add(route);
+      } else {
+        _pinnedRoutes.remove(route);
+      }
+    });
   }
 
   Future<void> _loadUserName() async {
@@ -242,6 +319,16 @@ class _MobileDrawerState extends State<_MobileDrawer> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
+                        // ⭐ Favorites box (เหนือสุด, ถ้ามี)
+                        FavoritesSection(
+                          menu: menu,
+                          pinnedRoutes: _pinnedRoutes,
+                          allowedPermissions: _allowedPermissions,
+                          activeRoute: _location,
+                          onTapRoute: (route) =>
+                              _closeAndGo(context, route),
+                          onRemoveRoute: _togglePin,
+                        ),
                         for (int i = 0; i < menu.items.length; i++) ...[
                           if (i > 0)
                             const Padding(
@@ -370,6 +457,9 @@ class _MobileDrawerState extends State<_MobileDrawer> {
                         label: child.label,
                         isActive: _isRouteActive(child.route),
                         onTap: () => _closeAndGo(context, child.route),
+                        route: child.route,
+                        isPinned: _pinnedRoutes.contains(child.route),
+                        onTogglePin: () => _togglePin(child.route),
                       ),
                     )
                     .toList(),
@@ -383,14 +473,18 @@ class _MobileDrawerState extends State<_MobileDrawer> {
       );
     }
 
+    final route = item.route;
     return _DrawerMenuItem(
       icon: item.icon ?? Icons.circle_outlined,
       activeIcon: item.activeIcon ?? item.icon ?? Icons.circle,
       label: item.label,
-      isActive: item.route != null && _isRouteActive(item.route!),
+      isActive: route != null && _isRouteActive(route),
       onTap: () {
-        if (item.route != null) _closeAndGo(context, item.route!);
+        if (route != null) _closeAndGo(context, route);
       },
+      route: route,
+      isPinned: route != null && _pinnedRoutes.contains(route),
+      onTogglePin: route == null ? null : () => _togglePin(route),
     );
   }
 }
@@ -403,6 +497,9 @@ class _DrawerMenuItem extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
   final Widget? trailing;
+  final String? route;
+  final bool isPinned;
+  final VoidCallback? onTogglePin;
 
   const _DrawerMenuItem({
     required this.icon,
@@ -411,10 +508,14 @@ class _DrawerMenuItem extends StatelessWidget {
     required this.isActive,
     required this.onTap,
     this.trailing,
+    this.route,
+    this.isPinned = false,
+    this.onTogglePin,
   });
 
   @override
   Widget build(BuildContext context) {
+    final hasPin = onTogglePin != null;
     return Material(
       color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
@@ -432,7 +533,27 @@ class _DrawerMenuItem extends StatelessWidget {
             fontSize: 14,
           ),
         ),
-        trailing: trailing,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (hasPin)
+              InkWell(
+                onTap: onTogglePin,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    isPinned
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 18,
+                    color: const Color(0xFF1E40AF),
+                  ),
+                ),
+              ),
+            if (trailing != null) trailing!,
+          ],
+        ),
         onTap: onTap,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
@@ -445,11 +566,17 @@ class _DrawerSubItem extends StatelessWidget {
   final String label;
   final bool isActive;
   final VoidCallback onTap;
+  final String route;
+  final bool isPinned;
+  final VoidCallback onTogglePin;
 
   const _DrawerSubItem({
     required this.label,
     required this.isActive,
     required this.onTap,
+    required this.route,
+    this.isPinned = false,
+    required this.onTogglePin,
   });
 
   @override
@@ -475,14 +602,30 @@ class _DrawerSubItem extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              Text(
-                label,
-                style: TextStyle(
-                  color: isActive
-                      ? const Color(0xFF1E40AF)
-                      : const Color(0xFF6B7280),
-                  fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                  fontSize: 13,
+              Expanded(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    color: isActive
+                        ? const Color(0xFF1E40AF)
+                        : const Color(0xFF6B7280),
+                    fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                    fontSize: 13,
+                  ),
+                ),
+              ),
+              InkWell(
+                onTap: onTogglePin,
+                borderRadius: BorderRadius.circular(4),
+                child: Padding(
+                  padding: const EdgeInsets.all(4),
+                  child: Icon(
+                    isPinned
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    size: 16,
+                    color: const Color(0xFF1E40AF),
+                  ),
                 ),
               ),
             ],
