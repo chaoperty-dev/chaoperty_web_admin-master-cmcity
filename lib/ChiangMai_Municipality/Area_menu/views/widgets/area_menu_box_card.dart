@@ -14,6 +14,7 @@ import '../../../unity/Enum.dart';
 import '../../viewmodels/area_menu_view_model.dart'
     show AreaMenuViewModel;
 import 'area_license_action_menu.dart';
+import 'area_card_callout.dart';
 
 class AreaMenuBoxCard extends StatefulWidget {
   final Map<String, dynamic> model;
@@ -168,13 +169,11 @@ class _AreaMenuBoxCardState extends State<AreaMenuBoxCard> {
           child: InkWell(
             borderRadius: BorderRadius.circular(LaRadius.md),
             onTap: () {
-              // กดที่การ์ด → เปิด action menu ทันที (filter ตามสิทธิ์ user)
-              final key = m['key']?.toString() ??
-                  '${m['subzone'] ?? ''}|${m['zone'] ?? ''}|${m['lock'] ?? ''}';
-              showAreaLicenseActionMenuAt(
+              // กด block → callout bubble เหนือ block; ใน bubble กด → action menu 7 เมนู
+              showAreaCardCalloutAt(
                 context: context,
                 anchorKey: _anchorKey,
-                routeData: key,
+                model: m,
               );
             },
             child: Stack(
