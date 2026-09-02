@@ -544,8 +544,8 @@ class _DrawerMenuItem extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   child: Icon(
                     isPinned
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
+                        ? Icons.push_pin_rounded
+                        : Icons.push_pin_outlined,
                     size: 18,
                     color: const Color(0xFF1E40AF),
                   ),
@@ -621,8 +621,8 @@ class _DrawerSubItem extends StatelessWidget {
                   padding: const EdgeInsets.all(4),
                   child: Icon(
                     isPinned
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
+                        ? Icons.push_pin_rounded
+                        : Icons.push_pin_outlined,
                     size: 16,
                     color: const Color(0xFF1E40AF),
                   ),

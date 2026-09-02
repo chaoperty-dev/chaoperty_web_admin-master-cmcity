@@ -100,7 +100,7 @@ class FavoritesSection extends StatelessWidget {
             child: Row(
               children: [
                 const Icon(
-                  Icons.star_rounded,
+                  Icons.push_pin_rounded,
                   size: 14,
                   color: Color(0xFF1E40AF),
                 ),
@@ -188,7 +188,7 @@ class _FavoriteRow extends StatelessWidget {
                 child: const Padding(
                   padding: EdgeInsets.all(4),
                   child: Icon(
-                    Icons.star_rounded,
+                    Icons.push_pin_rounded,
                     size: 14,
                     color: Color(0xFF1E40AF),
                   ),

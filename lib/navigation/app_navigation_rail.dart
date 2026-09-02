@@ -520,8 +520,8 @@ class _MenuItemState extends State<_MenuItem> {
                         padding: const EdgeInsets.all(4),
                         child: Icon(
                           widget.isPinned
-                              ? Icons.star_rounded
-                              : Icons.star_outline_rounded,
+                              ? Icons.push_pin_rounded
+                              : Icons.push_pin_outlined,
                           size: 16,
                           color: const Color(0xFF1E40AF),
                         ),
@@ -704,8 +704,8 @@ class _SubMenuItemState extends State<_SubMenuItem> {
                       padding: const EdgeInsets.all(4),
                       child: Icon(
                         widget.isPinned
-                            ? Icons.star_rounded
-                            : Icons.star_outline_rounded,
+                            ? Icons.push_pin_rounded
+                            : Icons.push_pin_outlined,
                         size: 14,
                         color: const Color(0xFF1E40AF),
                       ),
