@@ -118,7 +118,8 @@ class _AreaListTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: 'เริ่มต้น', flex: 0, width: 120),
-          _HeaderCell(label: 'โซน', flex: 3),
+          _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
+          _HeaderCell(label: 'ชื่อพื้นที่', flex: 3),
           _HeaderCell(label: 'โซน', flex: 2),
           _HeaderCell(label: 'หมวด', flex: 2),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
@@ -152,7 +153,6 @@ class _AreaListTable extends StatelessWidget {
     final groupName = _lookupGroupName(vm, a.zone);
     final code = a.lncode.isEmpty ? '-' : a.lncode;
     final name = a.ln.isEmpty ? '-' : a.ln;
-    final fullName = '$code · $name';
     return _HoverableRow(
       index: index,
       isSelected: isSelected,
@@ -181,7 +181,8 @@ class _AreaListTable extends StatelessWidget {
               },
             )),
           ),
-          _Cell(value: fullName, tooltip: fullName, flex: 3),
+          _Cell(value: code, tooltip: code, flex: 2, isMono: true),
+          _Cell(value: name, tooltip: name, flex: 3),
           _Cell(value: zoneName, flex: 2),
           _Cell(value: groupName, flex: 2),
           _Cell(
