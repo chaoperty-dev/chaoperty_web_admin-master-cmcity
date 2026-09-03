@@ -94,8 +94,8 @@ class _AreaListTable extends StatelessWidget {
           _headerRow(),
           const Divider(height: 1, color: AeaColors.border),
           for (int i = 0; i < rows.length; i++)
-            _dataRow(context, rows[i], i, onEdit, onDelete, onRowTap,
-                selectedSer),
+            _dataRow(
+                context, rows[i], i, onEdit, onDelete, onRowTap, selectedSer),
         ],
       ),
     );
@@ -117,12 +117,12 @@ class _AreaListTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: 'จัดการ', flex: 0, width: 180),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 3),
           _HeaderCell(label: 'ชื่อพื้นที่', flex: 3),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
           _HeaderCell(label: 'ค่าเช่า', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
+          _HeaderCell(label: 'จัดการ', flex: 0, width: 180),
         ],
       ),
     );
@@ -157,7 +157,28 @@ class _AreaListTable extends StatelessWidget {
       },
       child: Row(
         children: [
-          // ── Action column (pill edit + delete) ──
+          _Cell(
+              value: a.lncode.isEmpty ? '-' : a.lncode, flex: 3, isMono: true),
+          _Cell(
+              value: a.ln.isEmpty ? '-' : a.ln,
+              tooltip: a.ln.isEmpty ? '-' : a.ln,
+              flex: 3),
+          _Cell(
+              value: '${a.area.isEmpty ? '0.00' : a.area}',
+              flex: 2,
+              isMono: true),
+          _Cell(
+              value: '${a.rent.isEmpty ? '0.00' : a.rent}',
+              flex: 2,
+              isMono: true),
+          Expanded(
+            flex: 2,
+            child: _StatusPillBox(
+              label: status.label,
+              palette: palette,
+            ),
+          ),
+          // ── Action column (pill edit + delete) — อยู่หลัง สถานะ ──
           SizedBox(
             width: 180,
             child: Row(
@@ -184,27 +205,6 @@ class _AreaListTable extends StatelessWidget {
                   },
                 ),
               ],
-            ),
-          ),
-          _Cell(
-              value: a.lncode.isEmpty ? '-' : a.lncode, flex: 3, isMono: true),
-          _Cell(
-              value: a.ln.isEmpty ? '-' : a.ln,
-              tooltip: a.ln.isEmpty ? '-' : a.ln,
-              flex: 3),
-          _Cell(
-              value: '${a.area.isEmpty ? '0.00' : a.area}',
-              flex: 2,
-              isMono: true),
-          _Cell(
-              value: '${a.rent.isEmpty ? '0.00' : a.rent}',
-              flex: 2,
-              isMono: true),
-          Expanded(
-            flex: 2,
-            child: _StatusPillBox(
-              label: status.label,
-              palette: palette,
             ),
           ),
         ],
@@ -901,7 +901,8 @@ class _RowPillActionState extends State<_RowPillAction> {
   Widget build(BuildContext context) {
     final disabled = !widget.enabled;
     return MouseRegion(
-      cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+      cursor:
+          disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
       onEnter: disabled ? null : (_) => setState(() => _hover = true),
       onExit: disabled ? null : (_) => setState(() => _hover = false),
       child: GestureDetector(
