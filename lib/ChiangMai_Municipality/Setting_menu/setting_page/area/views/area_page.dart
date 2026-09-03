@@ -766,7 +766,8 @@ class _GroupList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AreaViewModel>();
-    final groups = vm.groups;
+    // ซ่อน "ทั้งหมด" (ser=0, sentinel) — ไม่ใช่หมวดจริง ใช้แค่ใน dropdown filter
+    final groups = vm.groups.where((g) => g.ser != '0').toList();
     if (groups.isEmpty) {
       return Container(
         decoration: AeaDecor.card(),
@@ -820,8 +821,6 @@ class _GroupList extends StatelessWidget {
                 final isSel = vm.selectedGroupSer == g.ser;
                 final base = i.isEven ? Colors.white : AeaColors.surfaceMuted;
                 final hoverBg = AeaColors.primary.withOpacity(.06);
-                // ✅ "ทั้งหมด" (ser=0) ห้าม edit/delete inline
-                final allowActions = g.ser != '0';
                 return AnimatedContainer(
                   duration: AeaAnimations.fast,
                   padding: const EdgeInsets.symmetric(
@@ -870,28 +869,26 @@ class _GroupList extends StatelessWidget {
                       // ✅ action pills (อยู่นอก InkWell → คลิกไม่ trigger เลือกแถว)
                       SizedBox(
                         width: 180,
-                        child: allowActions
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _RowPillAction(
-                                    icon: Icons.edit_outlined,
-                                    bg: AeaColors.statusApprovedBg,
-                                    fg: AeaColors.statusApprovedFg,
-                                    label: 'แก้ไข',
-                                    onTap: () => onEdit?.call(g),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  _RowPillAction(
-                                    icon: Icons.delete_outline_rounded,
-                                    bg: AeaColors.statusInfoBg,
-                                    fg: AeaColors.statusInfoFg,
-                                    label: 'ลบ',
-                                    onTap: () => onDelete?.call(g),
-                                  ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _RowPillAction(
+                              icon: Icons.edit_outlined,
+                              bg: AeaColors.statusApprovedBg,
+                              fg: AeaColors.statusApprovedFg,
+                              label: 'แก้ไข',
+                              onTap: () => onEdit?.call(g),
+                            ),
+                            const SizedBox(width: 6),
+                            _RowPillAction(
+                              icon: Icons.delete_outline_rounded,
+                              bg: AeaColors.statusInfoBg,
+                              fg: AeaColors.statusInfoFg,
+                              label: 'ลบ',
+                              onTap: () => onDelete?.call(g),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
