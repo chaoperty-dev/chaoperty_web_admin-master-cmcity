@@ -120,7 +120,7 @@ class _AreaListTable extends StatelessWidget {
     return _HoverableRow(
       index: index,
       isSelected: isSelected,
-      onTap: null,
+      onTap: () {},
       child: Row(
         children: [
           _Cell(
