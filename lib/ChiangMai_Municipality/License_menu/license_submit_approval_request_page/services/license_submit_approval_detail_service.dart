@@ -65,7 +65,12 @@ class LicenseSubmitApprovalDetailService {
     if (list.isEmpty) {
       return const SubmitApprovalDetail();
     }
-    final first = list.first;
+    // ⚠️ API `?uuid=` ไม่ filter — filter เอง เพื่อกัน list.first = record อื่น
+    final match = list.firstWhere(
+      (it) => it is Map && (it['uuid']?.toString() == uuid),
+      orElse: () => null,
+    );
+    final first = match ?? list.first;
     if (first is! Map) return const SubmitApprovalDetail();
     return SubmitApprovalDetail.fromJson(Map<String, dynamic>.from(first));
   }
