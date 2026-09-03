@@ -509,22 +509,21 @@ class _HistoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final roundNo = entry.round ?? '-';
     final state = entry.status ?? '';
-    final stepName = entry.stepName ?? '';
     final actedBy = entry.actedBy ?? '-';
     final actedAt = entry.actedAt ?? '';
     final remark = entry.remark ?? '';
 
-    // state-based color/icon
-    Color bg = LaColors.surfaceMuted;
-    Color fg = LaColors.textSecondary;
-    IconData icon = Icons.help_outline_rounded;
+    // state-based color/icon (mapping ตาม step 2)
+    Color bg = LaColors.primaryLight.withOpacity(.35);
+    Color fg = LaColors.primaryDark;
+    IconData icon = Icons.folder_open_rounded;
     String stateLabel = state.isEmpty ? 'ไม่ระบุ' : state;
     final s = state.toLowerCase();
     if (s.contains('approve') || s.contains('pass') || s.contains('อนุมัติ')) {
       bg = LaColors.statusApprovedBg;
       fg = LaColors.statusApprovedFg;
       icon = Icons.check_circle_rounded;
-      stateLabel = 'อนุมัติ';
+      stateLabel = state.isEmpty ? 'ผ่าน' : state;
     } else if (s.contains('ปฏิเสธ') ||
         s.contains('reject') ||
         s.contains('cancel') ||
@@ -537,64 +536,44 @@ class _HistoryRow extends StatelessWidget {
       bg = LaColors.statusRejectedBg;
       fg = LaColors.statusRejectedFg;
       icon = Icons.cancel_rounded;
-      stateLabel = 'ไม่อนุมัติ';
+      stateLabel = state.isEmpty ? 'ไม่ผ่าน' : state;
     } else if (s.contains('pending') || s.contains('รอ') || s.contains('progress')) {
       bg = LaColors.statusPendingBg;
       fg = LaColors.statusPendingFg;
       icon = Icons.hourglass_top_rounded;
-      stateLabel = 'รอ';
+      stateLabel = state.isEmpty ? 'รอดำเนินการ' : state;
+    } else {
+      bg = LaColors.statusInfoBg;
+      fg = LaColors.statusInfoFg;
+      icon = Icons.assignment_rounded;
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(LaSpace.md),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(LaRadius.md),
+        border: Border.all(color: fg.withOpacity(.25)),
+      ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // bullet icon
-          Container(
-            width: 24,
-            height: 24,
-            margin: const EdgeInsets.only(top: 2, right: 12),
-            decoration: BoxDecoration(
-              color: bg,
-              shape: BoxShape.circle,
-              border: Border.all(color: fg.withOpacity(.30)),
-            ),
-            child: Icon(icon, size: 14, color: fg),
-          ),
+          Icon(icon, color: fg, size: 20),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'รอบที่ $roundNo — $stateLabel',
-                      style: LaText.body.copyWith(
-                        fontFamily: LaText.fontBold,
-                        fontWeight: FontWeight.w700,
-                        color: fg,
-                      ),
-                    ),
-                    if (stepName.isNotEmpty) ...[
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          '• $stepName',
-                          overflow: TextOverflow.ellipsis,
-                          style: LaText.caption,
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  'รอบที่ $roundNo — $stateLabel',
+                  style: LaText.h2.copyWith(fontSize: 14, color: fg),
                 ),
-                const SizedBox(height: 4),
-                if (actedAt.isNotEmpty)
-                  Text(
-                    'เปิดเมื่อ $actedAt • โดย $actedBy',
-                    style: LaText.caption,
-                  ),
+                const SizedBox(height: 2),
+                Text(
+                  'เปิดเมื่อ $actedAt • โดย $actedBy',
+                  style: LaText.caption,
+                ),
                 if (remark.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
