@@ -238,17 +238,19 @@ class _AreaPageBodyState extends State<_AreaPageBody>
   Future<bool?> _confirm(String title, String body) async {
     return showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      // ✅ ใช้ dialogCtx แทน outer context — showDialog ดีฟault ใช้ rootNavigator
+      // ถ้าใช้ context ของ area_page มันจะ pop area_page (เด้งไป setting hub) ไม่ใช่ dialog
+      builder: (dialogCtx) => AlertDialog(
         title: Text(title),
         content: Text(body),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(dialogCtx).pop(false),
             child: const Text('ยกเลิก'),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(dialogCtx).pop(true),
             child: const Text('ยืนยัน'),
           ),
         ],
@@ -342,11 +344,22 @@ class _TabBarHeader extends StatelessWidget {
       ),
       child: TabBar(
         controller: controller,
-        labelColor: AeaColors.primaryDark,
+        labelColor: Colors.white,
         unselectedLabelColor: AeaColors.textSecondary,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(AeaRadius.md),
-          color: AeaColors.primary.withValues(alpha: .10),
+          gradient: const LinearGradient(
+            colors: [AeaColors.primary, AeaColors.primaryDark],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AeaColors.primary.withValues(alpha: .35),
+              blurRadius: 8,
+              offset: const Offset(0, 3),
+            ),
+          ],
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         indicatorPadding: const EdgeInsets.all(4),
@@ -363,19 +376,19 @@ class _TabBarHeader extends StatelessWidget {
         ),
         tabs: const [
           Tab(
-            icon: Icon(Icons.map_outlined, size: 18),
+            icon: Icon(Icons.map_outlined, size: 20),
             text: 'พื้นที่เช่า',
-            iconMargin: EdgeInsets.only(bottom: 4),
+            iconMargin: EdgeInsets.only(bottom: 6),
           ),
           Tab(
-            icon: Icon(Icons.layers_outlined, size: 18),
+            icon: Icon(Icons.layers_outlined, size: 20),
             text: 'หมวดพื้นที่',
-            iconMargin: EdgeInsets.only(bottom: 4),
+            iconMargin: EdgeInsets.only(bottom: 6),
           ),
           Tab(
-            icon: Icon(Icons.place_outlined, size: 18),
+            icon: Icon(Icons.place_outlined, size: 20),
             text: 'โซน',
-            iconMargin: EdgeInsets.only(bottom: 4),
+            iconMargin: EdgeInsets.only(bottom: 6),
           ),
         ],
       ),
