@@ -108,7 +108,7 @@ class LicensePaymentTable extends StatelessWidget {
           _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
           // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
           // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
-          _HeaderCell(label: 'ชำระ', flex: 2),
+          _HeaderCell(label: 'การชำระ', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
           _HeaderCell(label: 'รหัสรายการ', flex: 2),
         ],
@@ -561,7 +561,11 @@ class _PaymentProgress extends StatelessWidget {
     final allOk = allDone;
     final tip = hasAny
         ? 'ชำระแล้ว $paid / $total รายการ (รอ $pending)'
-        : 'ไม่มีรายการชำระ';
+        : 'ยังไม่เริ่ม — ยังไม่มีรายการชำระ';
+    // ✅ 0/0 → โชว์ "ยังไม่เริ่ม" (เหมือน step ใน approval)
+    final labelText = hasAny ? '$paid/$total' : 'ยังไม่เริ่ม';
+    final labelColor =
+        hasAny ? (allOk ? const Color(0xFF15803D) : LaColors.textPrimary) : LaColors.textMuted;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       child: Align(
@@ -577,20 +581,16 @@ class _PaymentProgress extends StatelessWidget {
                     ? Icons.check_box_rounded
                     : Icons.check_box_outline_blank_rounded,
                 size: 16,
-                color: allOk
-                    ? const Color(0xFF15803D)
-                    : LaColors.textMuted,
+                color: allOk ? const Color(0xFF15803D) : LaColors.textMuted,
               ),
               const SizedBox(width: 6),
               Text(
-                '$paid/$total',
+                labelText,
                 style: LaText.tableCell.copyWith(
-                  fontFamily: 'monospace',
+                  fontFamily: hasAny ? 'monospace' : LaText.fontRegular,
                   fontFamilyFallback: const [LaText.fontRegular],
                   fontWeight: FontWeight.w700,
-                  color: allOk
-                      ? const Color(0xFF15803D)
-                      : LaColors.textPrimary,
+                  color: labelColor,
                 ),
               ),
               if (pending > 0) ...[
@@ -671,8 +671,7 @@ class _CopyCell extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 6),
         child: Tooltip(
-          message:
-              fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
+          message: fullValue.isEmpty ? '-' : 'คลิกเพื่อคัดลอก: $fullValue',
           waitDuration: const Duration(milliseconds: 300),
           child: Material(
             color: Colors.transparent,
@@ -681,8 +680,7 @@ class _CopyCell extends StatelessWidget {
               onTap: fullValue.isEmpty ? null : () => _copy(context),
               borderRadius: BorderRadius.circular(4),
               child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    vertical: 4, horizontal: 2),
+                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

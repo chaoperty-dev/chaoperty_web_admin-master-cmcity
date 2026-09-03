@@ -337,8 +337,7 @@ class _PaymentInfoTab extends StatelessWidget {
                         SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                            'สำหรับตรวจสอบเบื้องต้น — รายละเอียดเพิ่มเติมจะแสดงใน Step ถัดไป',
+                            'ตรวจสอบรายการให้ครบถ้วนก่อนกด "เริ่มทำรายการรับชำระ"',
                             style: LaText.caption,
                             maxLines: 2,
                           ),
@@ -698,7 +697,7 @@ class _PaymentSummaryCard extends StatelessWidget {
               const Spacer(),
               _PillIcon(
                 icon: Icons.tag_rounded,
-                text: 'UUID: ${_short(d.uuid)}',
+                text: 'รหัสรายการ: ${_short(d.uuid)}',
                 muted: true,
               ),
             ],
@@ -711,7 +710,7 @@ class _PaymentSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลส่วนบุคคล',
+                  title: 'ข้อมูลคำขอ',
                   items: [
                     _InfoItem(
                       icon: Icons.location_on_rounded,
@@ -734,12 +733,12 @@ class _PaymentSummaryCard extends StatelessWidget {
                   items: [
                     _InfoItem(
                       icon: Icons.person_rounded,
-                      label: 'ชื่อ',
+                      label: 'ชื่อผู้ติดต่อ',
                       value: d.payerName,
                     ),
                     _InfoItem(
                       icon: Icons.confirmation_number_rounded,
-                      label: 'เลขบัตร',
+                      label: 'เลขประจำตัวผู้เสียภาษี',
                       value: d.clientTax,
                       mono: true,
                     ),
@@ -747,6 +746,31 @@ class _PaymentSummaryCard extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+          // ─── Footer note ───
+          const SizedBox(height: LaSpace.lg),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: LaSpace.md, vertical: LaSpace.sm),
+            decoration: BoxDecoration(
+              color: LaColors.surfaceMuted,
+              borderRadius: BorderRadius.circular(LaRadius.sm),
+            ),
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline_rounded,
+                    size: 14, color: LaColors.textMuted),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
+                    'สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด โปรดไปที่แท็บ "ข้อมูลคำขอ"',
+                    style: LaText.caption,
+                    maxLines: 2,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
