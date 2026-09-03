@@ -1,10 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 
 import '../ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
 import '../ChiangMai_Municipality/unity/SecurePrefs_helper.dart';
 import '../ChiangMai_Municipality/unity/auth_token_store.dart';
+import '../Constant/Myconstant.dart';
 
 /// Notifier สำหรับ GoRouter — แจ้งเตือนเมื่อ auth state เปลี่ยน
 ///
@@ -35,8 +37,30 @@ class AuthStateNotifier extends ChangeNotifier {
     }
   }
 
-  /// ออกจากระบบ — ลบ token และ notify GoRouter redirect ไป /login
+  /// ออกจากระบบ — revoke token ที่ backend แล้วลบ local
+  /// 1) POST /admin/auth/logout → 200 = server ลบ token แล้ว
+  /// 2) clearAllAuthStores() + ลบ legacy keys
+  /// 3) notify router → redirect /login
   Future<void> signOut() async {
+    final token = await AuthTokenStore.read();
+    if (token != null) {
+      try {
+        final headers = await MyHeaders.build();
+        final uri = Uri.parse(
+          '${MyConstant().domain_v2}/admin/auth/logout',
+        );
+        final response = await http
+            .post(uri, headers: headers)
+            .timeout(const Duration(seconds: 10));
+        if (kDebugMode) {
+          debugPrint('🚪 [signOut] status=${response.statusCode} body=${response.body}');
+        }
+      } catch (e) {
+        // network down → clear local ต่อ ไม่ block logout
+        if (kDebugMode) debugPrint('🚪 [signOut] revoke failed: $e');
+      }
+    }
+
     // ลบ auth data ทั้งหมด (sessionStorage บนเว็บ / SecurePrefs บน native)
     await clearAllAuthStores();
     await Future.wait([
