@@ -513,18 +513,23 @@ class _HistoryRow extends StatelessWidget {
     final actedAt = entry.actedAt ?? '';
     final remark = entry.remark ?? '';
 
-    // state-based color/icon (mapping ตาม step 2)
+    // โชว์ state เป็น raw value (เหมือน step 2 _RoundSummaryBanner)
+    final stateLabel = state.isEmpty ? '-' : state;
+
+    // state-based color/icon (เหมือน step 2 _TimelineItem)
     Color bg = LaColors.primaryLight.withOpacity(.35);
     Color fg = LaColors.primaryDark;
     IconData icon = Icons.folder_open_rounded;
-    String stateLabel = state.isEmpty ? 'ไม่ระบุ' : state;
     final s = state.toLowerCase();
-    if (s.contains('approve') || s.contains('pass') || s.contains('อนุมัติ')) {
+    if (s.contains('approve') ||
+        s.contains('pass') ||
+        s.contains('ผ่าน') ||
+        s.contains('อนุมัติ')) {
       bg = LaColors.statusApprovedBg;
       fg = LaColors.statusApprovedFg;
       icon = Icons.check_circle_rounded;
-      stateLabel = state.isEmpty ? 'ผ่าน' : state;
     } else if (s.contains('ปฏิเสธ') ||
+        s.contains('ไม่ผ่าน') ||
         s.contains('reject') ||
         s.contains('cancel') ||
         s.contains('ยกเลิก') ||
@@ -536,12 +541,10 @@ class _HistoryRow extends StatelessWidget {
       bg = LaColors.statusRejectedBg;
       fg = LaColors.statusRejectedFg;
       icon = Icons.cancel_rounded;
-      stateLabel = state.isEmpty ? 'ไม่ผ่าน' : state;
     } else if (s.contains('pending') || s.contains('รอ') || s.contains('progress')) {
       bg = LaColors.statusPendingBg;
       fg = LaColors.statusPendingFg;
       icon = Icons.hourglass_top_rounded;
-      stateLabel = state.isEmpty ? 'รอดำเนินการ' : state;
     } else {
       bg = LaColors.statusInfoBg;
       fg = LaColors.statusInfoFg;
