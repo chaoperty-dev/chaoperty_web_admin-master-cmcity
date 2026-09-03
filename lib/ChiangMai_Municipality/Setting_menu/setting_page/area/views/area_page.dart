@@ -299,6 +299,11 @@ class _AreaPageBodyState extends State<_AreaPageBody>
               child: TabBarView(
                 controller: _tab,
                 children: [
+                  _AreaTab(
+                    onAdd: () => _openAddAreaPage(),
+                    onEdit: (a) => _openAddAreaPage(area: a),
+                    onDelete: _confirmDeleteArea,
+                  ),
                   _GroupTab(
                     onAdd: _openAddGroupPage,
                     onEdit: _openEditGroupPage,
@@ -308,11 +313,6 @@ class _AreaPageBodyState extends State<_AreaPageBody>
                     onAdd: _openAddZonePage,
                     onEdit: _openEditZonePage,
                     onDelete: _confirmDeleteZone,
-                  ),
-                  _AreaTab(
-                    onAdd: () => _openAddAreaPage(),
-                    onEdit: (a) => _openAddAreaPage(area: a),
-                    onDelete: _confirmDeleteArea,
                   ),
                 ],
               ),
@@ -351,9 +351,9 @@ class _TabBarHeader extends StatelessWidget {
         ),
         unselectedLabelStyle: AeaText.body.copyWith(fontSize: 13),
         tabs: const [
+          Tab(icon: Icon(Icons.map_outlined, size: 16), text: 'พื้นที่เช่า'),
           Tab(icon: Icon(Icons.layers_outlined, size: 16), text: 'หมวดพื้นที่'),
           Tab(icon: Icon(Icons.place_outlined, size: 16), text: 'โซน'),
-          Tab(icon: Icon(Icons.map_outlined, size: 16), text: 'พื้นที่เช่า'),
         ],
       ),
     );
@@ -960,7 +960,7 @@ class _ZoneList extends StatelessWidget {
 }
 
 // ============================================================================
-// Tab 3 — จัดการพื้นที่
+// Tab 1 — จัดการพื้นที่
 // ============================================================================
 class _AreaTab extends StatelessWidget {
   final VoidCallback onAdd;
@@ -978,6 +978,9 @@ class _AreaTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        // ── filter row: หมวด + โซน ──
+        const _AreaFilterRow(),
+        const SizedBox(height: AeaSpace.md),
         Row(
           children: [
             const Expanded(child: _ToolbarAreaFilters()),
@@ -1002,6 +1005,130 @@ class _AreaTab extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─── Filter row: หมวด + โซน ─────────────────────────────────────────────────
+class _AreaFilterRow extends StatelessWidget {
+  const _AreaFilterRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<AreaViewModel>();
+    final zoneEnabled =
+        vm.selectedGroupSer != null && vm.selectedGroupSer != '0';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AeaSpace.md, vertical: AeaSpace.sm),
+      decoration: AeaDecor.card(),
+      child: Row(
+        children: [
+          const Icon(Icons.filter_alt_rounded,
+              size: 18, color: AeaColors.primaryDark),
+          const SizedBox(width: AeaSpace.sm),
+          const SizedBox(
+            width: 110,
+            child: Text('หมวด:', style: AeaText.bodyMuted),
+          ),
+          Expanded(child: _AreaGroupDropdown()),
+          const SizedBox(width: AeaSpace.md),
+          const SizedBox(
+            width: 60,
+            child: Text('โซน:', style: AeaText.bodyMuted),
+          ),
+          Expanded(
+            flex: 2,
+            child: Opacity(
+              opacity: zoneEnabled ? 1 : .55,
+              child: _AreaZoneDropdown(enabled: zoneEnabled),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AreaGroupDropdown extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<AreaViewModel>();
+    final groups = vm.groups;
+    // กัน assertion fail: ถ้า current value ไม่ตรง item ใด → null
+    final valid = groups.any((g) => g.ser == vm.selectedGroupSer);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AeaRadius.sm),
+        border: Border.all(color: AeaColors.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: valid ? vm.selectedGroupSer : null,
+          hint: const Text('เลือกหมวด', style: AeaText.body),
+          items: groups
+              .map((g) => DropdownMenuItem<String>(
+                    value: g.ser,
+                    child: Text(g.zn.isEmpty ? '-' : g.zn, style: AeaText.body),
+                  ))
+              .toList(),
+          onChanged: (v) {
+            final name = groups
+                .where((g) => g.ser == v)
+                .map((g) => g.zn)
+                .firstOrNull;
+            vm.onGroupChanged(v, name);
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _AreaZoneDropdown extends StatelessWidget {
+  final bool enabled;
+  const _AreaZoneDropdown({required this.enabled});
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<AreaViewModel>();
+    final zones = vm.zones.where((z) => z.ser != '0').toList();
+    final valid = vm.selectedZoneSer != null &&
+        zones.any((z) => z.ser == vm.selectedZoneSer);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AeaRadius.sm),
+        border: Border.all(color: AeaColors.border),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: valid ? vm.selectedZoneSer : null,
+          hint: Text(
+            enabled ? 'เลือกโซน' : 'เลือกหมวดก่อน',
+            style: AeaText.body.copyWith(
+              color: enabled ? AeaText.body.color : AeaColors.textMuted,
+            ),
+          ),
+          items: enabled
+              ? zones
+                  .map((z) => DropdownMenuItem<String>(
+                        value: z.ser,
+                        child: Text(z.zn, style: AeaText.body),
+                      ))
+                  .toList()
+              : null,
+          onChanged:
+              enabled ? (v) => vm.onZoneChanged(v, null) : null,
+        ),
+      ),
     );
   }
 }
