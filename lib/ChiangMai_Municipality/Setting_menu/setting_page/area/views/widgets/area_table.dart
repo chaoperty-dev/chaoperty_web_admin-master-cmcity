@@ -117,12 +117,13 @@ class _AreaListTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: 'รหัสพื้นที่', flex: 3),
-          _HeaderCell(label: 'ชื่อพื้นที่', flex: 3),
+          _HeaderCell(label: 'เริ่มต้น', flex: 0, width: 180),
+          _HeaderCell(label: 'ชื่อ', flex: 3),
+          _HeaderCell(label: 'โซน', flex: 2),
+          _HeaderCell(label: 'หมวด', flex: 2),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
           _HeaderCell(label: 'ค่าเช่า', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
-          _HeaderCell(label: 'จัดการ', flex: 0, width: 180),
         ],
       ),
     );
@@ -145,6 +146,13 @@ class _AreaListTable extends StatelessWidget {
     // ✅ Row tap = select เพื่อให้ popup "จัดการพื้นที่" enabled แก้ไข/ลบ
     //    (ถ้าไม่มี onRowTap จะ fallback เป็น edit แบบเดิม — back-compat)
     final isSelected = selectedSer != null && selectedSer == a.ser;
+    // ✅ Lookup โซน/หมวด จาก VM (เพราะ AreaAreaModel เก็บแค่ zone ser)
+    final vm = Provider.of<AreaViewModel>(context, listen: false);
+    final zoneName = _lookupZoneName(vm, a.zone);
+    final groupName = _lookupGroupName(vm, a.zone);
+    final code = a.lncode.isEmpty ? '-' : a.lncode;
+    final name = a.ln.isEmpty ? '-' : a.ln;
+    final fullName = '$code · $name';
     return _HoverableRow(
       index: index,
       isSelected: isSelected,
@@ -157,28 +165,7 @@ class _AreaListTable extends StatelessWidget {
       },
       child: Row(
         children: [
-          _Cell(
-              value: a.lncode.isEmpty ? '-' : a.lncode, flex: 3, isMono: true),
-          _Cell(
-              value: a.ln.isEmpty ? '-' : a.ln,
-              tooltip: a.ln.isEmpty ? '-' : a.ln,
-              flex: 3),
-          _Cell(
-              value: '${a.area.isEmpty ? '0.00' : a.area}',
-              flex: 2,
-              isMono: true),
-          _Cell(
-              value: '${a.rent.isEmpty ? '0.00' : a.rent}',
-              flex: 2,
-              isMono: true),
-          Expanded(
-            flex: 2,
-            child: _StatusPillBox(
-              label: status.label,
-              palette: palette,
-            ),
-          ),
-          // ── Action column (pill edit + delete) — อยู่หลัง สถานะ ──
+          // ✅ เริ่มต้น — pill แก้ไข/ลบ (อยู่หัวแถวตามสไตล์)
           SizedBox(
             width: 180,
             child: Row(
@@ -207,9 +194,48 @@ class _AreaListTable extends StatelessWidget {
               ],
             ),
           ),
+          _Cell(
+              value: fullName,
+              tooltip: fullName,
+              flex: 3),
+          _Cell(value: zoneName, flex: 2),
+          _Cell(value: groupName, flex: 2),
+          _Cell(
+              value: '${a.area.isEmpty ? '0.00' : a.area}',
+              flex: 2,
+              isMono: true),
+          _Cell(
+              value: '${a.rent.isEmpty ? '0.00' : a.rent}',
+              flex: 2,
+              isMono: true),
+          Expanded(
+            flex: 2,
+            child: _StatusPillBox(
+              label: status.label,
+              palette: palette,
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  /// Lookup ชื่อโซนจาก vm.zones โดยใช้ ser
+  String _lookupZoneName(AreaViewModel vm, String zoneSer) {
+    if (zoneSer.isEmpty || zoneSer == '0') return '-';
+    final z = vm.zones.where((x) => x.ser == zoneSer).firstOrNull;
+    if (z == null || z.zn.isEmpty) return '-';
+    return z.zn;
+  }
+
+  /// Lookup ชื่อหมวดจาก vm.groups (ผ่าน zone.groupSer)
+  String _lookupGroupName(AreaViewModel vm, String zoneSer) {
+    if (zoneSer.isEmpty || zoneSer == '0') return '-';
+    final z = vm.zones.where((x) => x.ser == zoneSer).firstOrNull;
+    if (z == null || z.groupSer == null || z.groupSer!.isEmpty) return '-';
+    final g = vm.groups.where((x) => x.ser == z.groupSer).firstOrNull;
+    if (g == null || g.zn.isEmpty) return '-';
+    return g.zn;
   }
 }
 
