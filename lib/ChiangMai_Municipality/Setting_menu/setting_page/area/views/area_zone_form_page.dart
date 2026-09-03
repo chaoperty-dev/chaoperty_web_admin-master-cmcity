@@ -52,7 +52,6 @@ class AreaZoneFormPage extends StatefulWidget {
 
 class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
   final _zn = TextEditingController();
-  final _qty = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _submitting = false;
 
@@ -64,31 +63,27 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
     final init = widget.initial;
     if (init != null) {
       _zn.text = init.zn;
-      _qty.text = init.qty == '0' ? '' : init.qty;
     }
   }
 
   @override
   void dispose() {
     _zn.dispose();
-    _qty.dispose();
     super.dispose();
   }
 
   Future<void> _onSave() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
-    final qty = int.tryParse(_qty.text.trim()) ?? 0;
+    // ✅ backend API จัดการจำนวนเอง — ไม่ส่ง qty
     final ok = widget.mode == AreaZoneFormMode.edit
         ? await _vm.updateZone(
             ser: widget.initial!.ser,
             zn: _zn.text.trim(),
-            qty: qty,
           )
         : await _vm.addZone(
             groupSer: widget.groupSer,
             zn: _zn.text.trim(),
-            qty: qty,
           );
     if (!mounted) return;
     setState(() => _submitting = false);
@@ -169,21 +164,6 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
                         return 'กรุณากรอกชื่อโซน';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: AeaSpace.lg),
-                  const _Label('จำนวนพื้นที่ (ไม่บังคับ)'),
-                  TextFormField(
-                    controller: _qty,
-                    style: AeaText.body,
-                    keyboardType: TextInputType.number,
-                    decoration: _inputDeco(hint: 'เช่น 5'),
-                    validator: (v) {
-                      if (v == null || v.trim().isEmpty) return null;
-                      if (int.tryParse(v.trim()) == null) {
-                        return 'กรุณากรอกตัวเลข';
                       }
                       return null;
                     },

@@ -43,7 +43,6 @@ class AreaGroupFormPage extends StatefulWidget {
 
 class _AreaGroupFormPageState extends State<AreaGroupFormPage> {
   final _zn = TextEditingController();
-  final _qty = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _submitting = false;
 
@@ -55,28 +54,25 @@ class _AreaGroupFormPageState extends State<AreaGroupFormPage> {
     final init = widget.initial;
     if (init != null) {
       _zn.text = init.zn;
-      _qty.text = init.qty == '0' ? '' : init.qty;
     }
   }
 
   @override
   void dispose() {
     _zn.dispose();
-    _qty.dispose();
     super.dispose();
   }
 
   Future<void> _onSave() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
-    final qty = int.tryParse(_qty.text.trim()) ?? 0;
+    // ✅ backend API จัดการจำนวนเอง — ไม่ส่ง qty
     final ok = widget.mode == AreaGroupFormMode.edit
         ? await _vm.updateGroup(
             ser: widget.initial!.ser,
             zn: _zn.text.trim(),
-            qty: qty,
           )
-        : await _vm.addGroup(zn: _zn.text.trim(), qty: qty);
+        : await _vm.addGroup(zn: _zn.text.trim());
     if (!mounted) return;
     setState(() => _submitting = false);
     if (ok) Navigator.of(context).pop(true);
@@ -137,21 +133,6 @@ class _AreaGroupFormPageState extends State<AreaGroupFormPage> {
                           validator: (v) {
                             if (v == null || v.trim().isEmpty) {
                               return 'กรุณากรอกชื่อหมวดโซน';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: AeaSpace.lg),
-                        const _Label('จำนวนโซน (ไม่บังคับ)'),
-                        TextFormField(
-                          controller: _qty,
-                          style: AeaText.body,
-                          keyboardType: TextInputType.number,
-                          decoration: _inputDeco(hint: 'เช่น 5'),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return null;
-                            if (int.tryParse(v.trim()) == null) {
-                              return 'กรุณากรอกตัวเลข';
                             }
                             return null;
                           },
