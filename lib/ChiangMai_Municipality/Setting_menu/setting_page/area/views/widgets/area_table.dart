@@ -118,7 +118,7 @@ class _AreaListTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: 'เริ่มต้น', flex: 0, width: 120),
-          _HeaderCell(label: 'ชื่อ', flex: 3),
+          _HeaderCell(label: 'โซน', flex: 3),
           _HeaderCell(label: 'โซน', flex: 2),
           _HeaderCell(label: 'หมวด', flex: 2),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
@@ -165,14 +165,13 @@ class _AreaListTable extends StatelessWidget {
       },
       child: Row(
         children: [
-          // ✅ เริ่มต้น — pill เดียว เปิด detail (แก้ไข/ลบ ย้ายเข้าไปใน form)
+          // ✅ เริ่มต้น — pill เดียว เปิด detail (สไตล์ _ViewButton: hover → primary + white text)
           SizedBox(
             width: 120,
-            child: Center(child: _RowPillAction(
-              icon: Icons.visibility_rounded,
-              bg: AeaColors.primaryLight,
-              fg: AeaColors.primaryDark,
-              label: 'เริ่มต้น',
+            child: Center(
+                child: _HoverPillAction(
+              icon: Icons.visibility_outlined,
+              label: 'เรียกดู',
               onTap: () {
                 if (onRowTapCb != null) {
                   onRowTapCb(a);
@@ -955,6 +954,71 @@ class _RowPillActionState extends State<_RowPillAction> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// _HoverPillAction — pill with hover swap (bg → primary, text → white)
+//   ใช้สำหรับ "เริ่มต้น" ใน area table (สไตล์เดียวกับ area_menu_table._ViewButton)
+// ============================================================================
+class _HoverPillAction extends StatefulWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  const _HoverPillAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  @override
+  State<_HoverPillAction> createState() => _HoverPillActionState();
+}
+
+class _HoverPillActionState extends State<_HoverPillAction> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hover ? AeaColors.primary : AeaColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(AeaRadius.pill),
+            border: Border.all(
+              color: _hover ? AeaColors.primary : AeaColors.border,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                widget.icon,
+                size: 13,
+                color: _hover ? Colors.white : AeaColors.textSecondary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: AeaText.fontBold,
+                  fontSize: 11,
+                  color: _hover ? Colors.white : AeaColors.textSecondary,
+                ),
+              ),
+            ],
           ),
         ),
       ),
