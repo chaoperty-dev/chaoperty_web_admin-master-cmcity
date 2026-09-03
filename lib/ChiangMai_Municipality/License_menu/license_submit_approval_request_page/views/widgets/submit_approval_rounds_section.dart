@@ -71,16 +71,12 @@ class _SubmitApprovalRoundsSectionState
       padding: const EdgeInsets.all(LaSpace.lg),
       child: Consumer<LicenseSubmitApprovalRoundsViewModel>(
         builder: (ctx, roundsVm, _) {
-          // สถานะ "ส่งแล้ว" ได้จาก 3 แหล่ง:
+          // สถานะ "ส่งแล้ว" ได้จาก 2 แหล่ง:
           // 1. server-driven: hasPendingApproval (approval_pending=true)
-          // 2. server-driven: submittedAt != null (เคยส่งครั้งหนึ่งแล้ว)
-          // 3. local: roundsVm.lastRound (หลังกด startRound สำเร็จ)
-          // ⚠️ ถ้า submitted_at=null + approval_pending=false → ยังไม่เคยส่ง (โชว์ปุ่ม)
-          final hasSubmittedAt =
-              widget.submittedAt != null && widget.submittedAt!.isNotEmpty;
-          final isSubmitted = widget.hasPendingApproval ||
-              hasSubmittedAt ||
-              roundsVm.lastRound != null;
+          // 2. local: roundsVm.lastRound (หลังกด startRound สำเร็จ)
+          // ⚠️ submitted_at + approval_pending=false → ไม่ถือว่า submitted (อนุญาตให้ submit ใหม่ได้)
+          final isSubmitted =
+              widget.hasPendingApproval || roundsVm.lastRound != null;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
