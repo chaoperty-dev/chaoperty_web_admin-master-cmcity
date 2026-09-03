@@ -117,7 +117,7 @@ class _AreaListTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: 'เริ่มต้น', flex: 0, width: 180),
+          _HeaderCell(label: 'เริ่มต้น', flex: 0, width: 120),
           _HeaderCell(label: 'ชื่อ', flex: 3),
           _HeaderCell(label: 'โซน', flex: 2),
           _HeaderCell(label: 'หมวด', flex: 2),
@@ -165,39 +165,22 @@ class _AreaListTable extends StatelessWidget {
       },
       child: Row(
         children: [
-          // ✅ เริ่มต้น — pill แก้ไข/ลบ (อยู่หัวแถวตามสไตล์)
+          // ✅ เริ่มต้น — pill เดียว เปิด detail (แก้ไข/ลบ ย้ายเข้าไปใน form)
           SizedBox(
-            width: 180,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _RowPillAction(
-                  icon: Icons.edit_outlined,
-                  bg: AeaColors.statusApprovedBg,
-                  fg: AeaColors.statusApprovedFg,
-                  label: 'แก้ไข',
-                  onTap: () {
-                    if (onEditCb != null) onEditCb(a);
-                  },
-                ),
-                const SizedBox(width: 6),
-                _RowPillAction(
-                  icon: Icons.delete_outline_rounded,
-                  bg: AeaColors.statusInfoBg,
-                  fg: AeaColors.statusInfoFg,
-                  label: 'ลบ',
-                  enabled: !a.isOccupied,
-                  onTap: () {
-                    if (onDeleteCb != null) onDeleteCb(a);
-                  },
-                ),
-              ],
+            width: 120,
+            child: Center(
+              child: _RowPillAction(
+                icon: Icons.visibility_rounded,
+                bg: AeaColors.primaryLight,
+                fg: AeaColors.primaryDark,
+                label: 'เรียกดู',
+                onTap: () {
+                  if (onEditCb != null) onEditCb(a);
+                },
+              ),
             ),
           ),
-          _Cell(
-              value: fullName,
-              tooltip: fullName,
-              flex: 3),
+          _Cell(value: fullName, tooltip: fullName, flex: 3),
           _Cell(value: zoneName, flex: 2),
           _Cell(value: groupName, flex: 2),
           _Cell(

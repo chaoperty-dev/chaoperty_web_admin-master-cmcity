@@ -349,6 +349,17 @@ class _AreaFormPageState extends State<AreaFormPage> {
       ),
       child: Row(
         children: [
+          // ✅ ปุ่มลบ (โชว์เฉพาะ edit mode + ไม่ถูก occupied)
+          if (widget.mode == AreaFormMode.edit &&
+              widget.initial?.isOccupied == false) ...[
+            _FooterButton(
+              label: 'ลบ',
+              icon: Icons.delete_outline_rounded,
+              onTap: _submitting ? null : _confirmDeleteArea,
+              isPrimary: false,
+            ),
+            const SizedBox(width: AeaSpace.sm),
+          ],
           const Spacer(),
           _FooterButton(
             label: 'ยกเลิก',
@@ -363,6 +374,50 @@ class _AreaFormPageState extends State<AreaFormPage> {
             onTap: _submitting ? null : _onSave,
             isPrimary: true,
             loading: _submitting,
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// ✅ ยืนยันการลบ — ใช้จาก footer ของ edit form
+  Future<void> _confirmDeleteArea() async {
+    final a = widget.initial;
+    if (a == null) return;
+    final ok = await _showConfirm(
+      title: 'ยืนยันการลบพื้นที่',
+      body: 'ต้องการลบ "${a.lncode.isNotEmpty ? a.lncode : a.ln}" หรือไม่?',
+      confirmLabel: 'ลบ',
+    );
+    if (ok == true) {
+      final vm = _vm;
+      final result = await vm.deleteArea(a);
+      if (!mounted) return;
+      if (result) {
+        Navigator.of(context).pop(true);
+      }
+    }
+  }
+
+  /// Confirm dialog — ถ้าไม่มีในไฟล์ ใช้ตัวนี้แทน
+  Future<bool?> _showConfirm({
+    required String title,
+    required String body,
+    required String confirmLabel,
+  }) async {
+    return showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(title),
+        content: Text(body),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(confirmLabel),
           ),
         ],
       ),
