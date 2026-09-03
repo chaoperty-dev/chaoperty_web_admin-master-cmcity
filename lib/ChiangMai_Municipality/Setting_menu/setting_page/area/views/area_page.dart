@@ -941,8 +941,8 @@ class _GroupList extends StatelessWidget {
                             const SizedBox(width: 6),
                             _RowActionIcon(
                               icon: Icons.delete_outline_rounded,
-                              bg: AeaColors.primaryLight,
-                              fg: AeaColors.primaryDark,
+                              bg: AeaColors.statusRejectedBg,
+                              fg: AeaColors.statusRejectedFg,
                               label: 'ลบ',
                               enabled: allowActions && onDelete != null,
                               onTap: () => onDelete?.call(g),
@@ -1184,8 +1184,8 @@ class _ZoneList extends StatelessWidget {
                             const SizedBox(width: 4),
                             _RowActionIcon(
                               icon: Icons.delete_outline_rounded,
-                              bg: AeaColors.primaryLight,
-                              fg: AeaColors.primaryDark,
+                              bg: AeaColors.statusRejectedBg,
+                              fg: AeaColors.statusRejectedFg,
                               label: 'ลบ',
                               enabled: onDelete != null,
                               onTap: () => onDelete?.call(z),
