@@ -317,17 +317,6 @@ class _AreaFormPageState extends State<AreaFormPage> {
                         number: true,
                       ),
                       const SizedBox(height: AeaSpace.md),
-                      _sectionHeader('โซน', Icons.place_outlined),
-                      const SizedBox(height: AeaSpace.sm),
-                      _ZoneDropdown(
-                        zones: _vm.zones,
-                        value: _zoneSer,
-                        enabled: widget.mode == AreaFormMode.create,
-                        onChanged: widget.mode == AreaFormMode.create
-                            ? (v) => setState(() => _zoneSer = v)
-                            : null,
-                      ),
-                      const SizedBox(height: AeaSpace.md),
                       _sectionHeader('ค่าบริการ', Icons.payments_outlined),
                       const SizedBox(height: AeaSpace.sm),
                       _field(
@@ -433,83 +422,6 @@ class _AreaFormPageState extends State<AreaFormPage> {
               return null;
             }
           : null,
-    );
-  }
-}
-
-// ============================================================================
-// Zone dropdown (read from vm.zonesOfGroup)
-// ============================================================================
-class _ZoneDropdown extends StatelessWidget {
-  final List<AreaZoneModel> zones;
-  final String? value;
-  final bool enabled;
-  final ValueChanged<String?>? onChanged;
-
-  const _ZoneDropdown({
-    required this.zones,
-    required this.value,
-    required this.enabled,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final items = zones
-        .where((z) => z.ser.isNotEmpty && z.ser != '0')
-        .map((z) => DropdownMenuItem<String>(
-              value: z.ser,
-              child: Text(
-                z.zn.isEmpty ? z.ser : z.zn,
-                style: AeaText.body,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ))
-        .toList();
-
-    if (items.isEmpty) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
-        decoration: BoxDecoration(
-          color: AeaColors.surfaceMuted,
-          borderRadius: BorderRadius.circular(AeaRadius.sm),
-          border: Border.all(color: AeaColors.border),
-        ),
-        child: Row(
-          children: const [
-            Icon(Icons.info_outline_rounded,
-                size: 16, color: AeaColors.textMuted),
-            SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                'ยังไม่มีโซน — กรุณาเลือกหมวดและเพิ่มโซนก่อน',
-                style: AeaText.bodyMuted,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      decoration: BoxDecoration(
-        color: enabled ? Colors.white : AeaColors.surfaceMuted,
-        borderRadius: BorderRadius.circular(AeaRadius.sm),
-        border: Border.all(color: AeaColors.border),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: items.any((it) => it.value == value) ? value : null,
-          isExpanded: true,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AeaColors.textSecondary,
-          ),
-          items: items,
-          onChanged: enabled ? onChanged : null,
-        ),
-      ),
     );
   }
 }
