@@ -50,6 +50,7 @@ class SubmitApprovalDetail {
   final double? amountReceived;
   final String? paidAt;
   final String? createdAt;
+  final String? submittedAt; // v2 list endpoint: submitted_at
   final List<SubmitApprovalAddon> addons;
 
   // ─── list endpoint extras ───
@@ -77,6 +78,7 @@ class SubmitApprovalDetail {
     this.amountReceived,
     this.paidAt,
     this.createdAt,
+    this.submittedAt,
     this.addons = const [],
     this.moduleName = '',
     this.moduleCode = '',
@@ -182,6 +184,7 @@ class SubmitApprovalDetail {
           double.tryParse((json['amount_received'] ?? '').toString()),
       paidAt: (json['paid_at'] ?? json['paidAt'] ?? '').toString(),
       createdAt: (json['created_at'] ?? json['createdAt'] ?? '').toString(),
+      submittedAt: json['submitted_at']?.toString(),
       addons: addons,
       moduleName: moduleName,
       moduleCode: moduleCode,

@@ -336,6 +336,7 @@ class _SubmitApprovalInfoTab extends StatelessWidget {
               SubmitApprovalRoundsSection(
                 requestUuid: step1State.widget.requestUuid,
                 hasPendingApproval: step1State._detail!.approvalPending,
+                submittedAt: step1State._detail!.submittedAt,
               ),
 
               const SizedBox(height: LaSpace.lg),

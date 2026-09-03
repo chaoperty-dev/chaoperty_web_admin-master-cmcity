@@ -23,10 +23,15 @@ class SubmitApprovalRoundsSection extends StatefulWidget {
   /// เมื่อ widget แรกโหลด (ยังไม่เคยกดปุ่ม)
   final bool hasPendingApproval;
 
+  /// submitted_at จาก API (string nullable) — ถ้ามี timestamp แสดงว่า "เคยส่งแล้ว"
+  /// ใช้เป็น primary check เพื่อแยก "ยังไม่เคยส่ง" vs "ส่งแล้ว"
+  final String? submittedAt;
+
   const SubmitApprovalRoundsSection({
     super.key,
     this.requestUuid,
     this.hasPendingApproval = false,
+    this.submittedAt,
   });
 
   @override
@@ -66,11 +71,16 @@ class _SubmitApprovalRoundsSectionState
       padding: const EdgeInsets.all(LaSpace.lg),
       child: Consumer<LicenseSubmitApprovalRoundsViewModel>(
         builder: (ctx, roundsVm, _) {
-          // สถานะ "ส่งแล้ว" ได้จาก 2 แหล่ง:
-          // 1. server-driven: hasPendingApproval (จาก API ตอนโหลด)
-          // 2. local: roundsVm.lastRound (หลังกด startRound สำเร็จ)
-          final isSubmitted =
-              widget.hasPendingApproval || roundsVm.lastRound != null;
+          // สถานะ "ส่งแล้ว" ได้จาก 3 แหล่ง:
+          // 1. server-driven: hasPendingApproval (approval_pending=true)
+          // 2. server-driven: submittedAt != null (เคยส่งครั้งหนึ่งแล้ว)
+          // 3. local: roundsVm.lastRound (หลังกด startRound สำเร็จ)
+          // ⚠️ ถ้า submitted_at=null + approval_pending=false → ยังไม่เคยส่ง (โชว์ปุ่ม)
+          final hasSubmittedAt =
+              widget.submittedAt != null && widget.submittedAt!.isNotEmpty;
+          final isSubmitted = widget.hasPendingApproval ||
+              hasSubmittedAt ||
+              roundsVm.lastRound != null;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
