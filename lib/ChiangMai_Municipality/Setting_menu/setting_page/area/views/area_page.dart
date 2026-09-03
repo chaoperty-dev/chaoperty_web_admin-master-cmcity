@@ -462,22 +462,11 @@ class _TabBarHeader extends StatelessWidget {
       ),
       child: TabBar(
         controller: controller,
-        labelColor: Colors.white,
+        labelColor: AeaColors.primaryDark,
         unselectedLabelColor: AeaColors.textSecondary,
         indicator: BoxDecoration(
           borderRadius: BorderRadius.circular(AeaRadius.md),
-          gradient: const LinearGradient(
-            colors: [AeaColors.primary, AeaColors.primaryDark],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AeaColors.primary.withValues(alpha: .35),
-              blurRadius: 8,
-              offset: const Offset(0, 3),
-            ),
-          ],
+          color: AeaColors.primary.withValues(alpha: .12),
         ),
         indicatorSize: TabBarIndicatorSize.tab,
         indicatorPadding: const EdgeInsets.all(4),
