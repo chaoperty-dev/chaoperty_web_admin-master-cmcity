@@ -2,15 +2,13 @@
 // area_zone_form_page.dart
 // ============================================================================
 // Full-page form — เพิ่ม/แก้ไข "โซน" (zone) ผ่าน v2 API
-// - 2-step wizard
-// - groupSer required (parent group)
+// Single-step: กรอกข้อมูล + กดบันทึก
+// groupSer required (parent group)
 // ============================================================================
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
 import '../models/area_zone_model.dart';
-import '../viewmodels/area_detail_step_view_model.dart';
 import '../viewmodels/area_view_model.dart';
 import 'theme/area_theme.dart';
 
@@ -39,15 +37,12 @@ class AreaZoneFormPage extends StatefulWidget {
     String? groupName,
     AreaZoneModel? initial,
   }) {
-    return ChangeNotifierProvider<AreaDetailStepViewModel>(
-      create: (_) => AreaDetailStepViewModel(),
-      child: AreaZoneFormPage(
-        viewModel: viewModel,
-        mode: initial == null ? AreaZoneFormMode.create : AreaZoneFormMode.edit,
-        groupSer: groupSer,
-        groupName: groupName,
-        initial: initial,
-      ),
+    return AreaZoneFormPage(
+      viewModel: viewModel,
+      mode: initial == null ? AreaZoneFormMode.create : AreaZoneFormMode.edit,
+      groupSer: groupSer,
+      groupName: groupName,
+      initial: initial,
     );
   }
 
@@ -102,9 +97,6 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final stepVm = context.watch<AreaDetailStepViewModel>();
-    final step = stepVm.currentDetailStep;
-    final total = stepVm.totalDetailSteps;
     final isEdit = widget.mode == AreaZoneFormMode.edit;
     final title = isEdit ? 'แก้ไขโซน' : 'เพิ่มโซน';
 
@@ -114,27 +106,16 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _Header(
-              title: title,
-              step: step,
-              total: total,
-              groupName: widget.groupName,
-            ),
-            Expanded(child: step == 1 ? _buildStep1() : _buildStep2()),
-            _Footer(
-              stepVm: stepVm,
-              step: step,
-              total: total,
-              submitting: _submitting,
-              onSave: _onSave,
-            ),
+            _Header(title: title, groupName: widget.groupName),
+            Expanded(child: _buildForm()),
+            _Footer(submitting: _submitting, onSave: _onSave),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStep1() {
+  Widget _buildForm() {
     final groupName = widget.groupName ?? widget.groupSer;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AeaSpace.lg),
@@ -215,51 +196,6 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
       ),
     );
   }
-
-  Widget _buildStep2() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AeaSpace.lg),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 700),
-          child: Container(
-            decoration: AeaDecor.card(),
-            padding: const EdgeInsets.all(AeaSpace.xl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AeaColors.primaryLight,
-                        borderRadius: BorderRadius.circular(AeaRadius.sm),
-                      ),
-                      child: const Icon(
-                        Icons.preview_rounded,
-                        color: AeaColors.primaryDark,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: AeaSpace.sm),
-                    const Text('ตรวจสอบข้อมูล', style: AeaText.h2),
-                  ],
-                ),
-                const SizedBox(height: AeaSpace.lg),
-                _ReviewRow(label: 'ชื่อโซน', value: _zn.text.trim()),
-                _ReviewRow(
-                  label: 'จำนวนพื้นที่',
-                  value: _qty.text.trim().isEmpty ? '-' : _qty.text.trim(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 // ---- helpers --------------------------------------------------------------
@@ -302,43 +238,11 @@ class _Label extends StatelessWidget {
   }
 }
 
-class _ReviewRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _ReviewRow({required this.label, required this.value});
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 200,
-            child: Text(
-              label,
-              style: AeaText.bodyMuted.copyWith(fontFamily: AeaText.fontBold),
-            ),
-          ),
-          const SizedBox(width: AeaSpace.md),
-          Expanded(child: Text(value, style: AeaText.body)),
-        ],
-      ),
-    );
-  }
-}
-
 class _Header extends StatelessWidget {
   final String title;
-  final int step;
-  final int total;
   final String? groupName;
-  const _Header({
-    required this.title,
-    required this.step,
-    required this.total,
-    this.groupName,
-  });
+  const _Header({required this.title, this.groupName});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -379,34 +283,12 @@ class _Header extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'ZONE',
-                      style: AeaText.label.copyWith(
-                        color: AeaColors.primaryAccent.withOpacity(.9),
-                        letterSpacing: 1.6,
-                      ),
-                    ),
-                    const SizedBox(width: AeaSpace.sm),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.10),
-                        borderRadius: BorderRadius.circular(AeaRadius.pill),
-                        border: Border.all(color: Colors.white.withOpacity(.18)),
-                      ),
-                      child: Text(
-                        'ขั้นตอนที่ $step/$total',
-                        style: AeaText.caption.copyWith(
-                          color: Colors.white,
-                          fontFamily: AeaText.fontBold,
-                          fontSize: 10,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  'ZONE',
+                  style: AeaText.label.copyWith(
+                    color: AeaColors.primaryAccent.withOpacity(.9),
+                    letterSpacing: 1.6,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -426,23 +308,16 @@ class _Header extends StatelessWidget {
 }
 
 class _Footer extends StatelessWidget {
-  final AreaDetailStepViewModel stepVm;
-  final int step;
-  final int total;
   final bool submitting;
   final VoidCallback onSave;
 
   const _Footer({
-    required this.stepVm,
-    required this.step,
-    required this.total,
     required this.submitting,
     required this.onSave,
   });
 
   @override
   Widget build(BuildContext context) {
-    final isLast = step >= total;
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: AeaSpace.lg, vertical: AeaSpace.md),
@@ -452,44 +327,20 @@ class _Footer extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            isLast ? Icons.task_alt_rounded : Icons.edit_note_rounded,
-            size: 14,
-            color: AeaColors.textMuted,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isLast ? 'พร้อมบันทึก' : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
-            style: AeaText.caption,
-          ),
           const Spacer(),
           _FooterBtn(
-            label: step > 1 ? 'ย้อนกลับ' : 'ยกเลิก',
-            icon: step > 1 ? Icons.arrow_back_rounded : Icons.close_rounded,
+            label: 'ยกเลิก',
+            icon: Icons.close_rounded,
             primary: false,
-            onTap: () {
-              if (step > 1) {
-                stepVm.previousDetailStep();
-              } else {
-                Navigator.of(context).maybePop();
-              }
-            },
+            onTap: () => Navigator.of(context).maybePop(),
           ),
           const SizedBox(width: AeaSpace.sm),
           _FooterBtn(
-            label: isLast ? 'บันทึก' : 'ถัดไป',
-            icon: isLast
-                ? Icons.check_circle_rounded
-                : Icons.arrow_forward_rounded,
+            label: 'บันทึก',
+            icon: Icons.check_circle_rounded,
             primary: true,
             loading: submitting,
-            onTap: () {
-              if (!isLast) {
-                stepVm.nextDetailStep();
-              } else {
-                onSave();
-              }
-            },
+            onTap: submitting ? null : onSave,
           ),
         ],
       ),
