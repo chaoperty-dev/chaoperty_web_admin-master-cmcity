@@ -857,7 +857,7 @@ class _GroupList extends StatelessWidget {
                       style: AeaText.tableHeader, textAlign: TextAlign.right),
                 ),
                 SizedBox(
-                  width: 90,
+                  width: 180,
                   child: Text('จัดการ',
                       style: AeaText.tableHeader, textAlign: TextAlign.center),
                 ),
@@ -926,25 +926,24 @@ class _GroupList extends StatelessWidget {
                       ),
                       // ✅ action icons (อยู่นอก InkWell → คลิกไม่ trigger เลือกแถว)
                       SizedBox(
-                        width: 90,
+                        width: 180,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             _RowActionIcon(
                               icon: Icons.edit_outlined,
-                              color: AeaColors.primary,
-                              tooltip: allowActions
-                                  ? 'แก้ไข'
-                                  : 'ไม่สามารถแก้ไข "ทั้งหมด"',
+                              bg: AeaColors.statusApprovedBg,
+                              fg: AeaColors.statusApprovedFg,
+                              label: 'แก้ไข',
                               enabled: allowActions && onEdit != null,
                               onTap: () => onEdit?.call(g),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 6),
                             _RowActionIcon(
                               icon: Icons.delete_outline_rounded,
-                              color: AeaColors.statusRejectedFg,
-                              tooltip:
-                                  allowActions ? 'ลบ' : 'ไม่สามารถลบ "ทั้งหมด"',
+                              bg: AeaColors.primaryLight,
+                              fg: AeaColors.primaryDark,
+                              label: 'ลบ',
                               enabled: allowActions && onDelete != null,
                               onTap: () => onDelete?.call(g),
                             ),
@@ -1106,7 +1105,7 @@ class _ZoneList extends StatelessWidget {
                       style: AeaText.tableHeader, textAlign: TextAlign.right),
                 ),
                 SizedBox(
-                  width: 90,
+                  width: 180,
                   child: Text('จัดการ',
                       style: AeaText.tableHeader, textAlign: TextAlign.center),
                 ),
@@ -1170,22 +1169,24 @@ class _ZoneList extends StatelessWidget {
                       ),
                       // ✅ action icons (อยู่นอก InkWell → คลิกไม่ trigger เลือกแถว)
                       SizedBox(
-                        width: 90,
+                        width: 180,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             _RowActionIcon(
                               icon: Icons.edit_outlined,
-                              color: AeaColors.primary,
-                              tooltip: 'แก้ไข',
+                              bg: AeaColors.statusApprovedBg,
+                              fg: AeaColors.statusApprovedFg,
+                              label: 'แก้ไข',
                               enabled: onEdit != null,
                               onTap: () => onEdit?.call(z),
                             ),
                             const SizedBox(width: 4),
                             _RowActionIcon(
                               icon: Icons.delete_outline_rounded,
-                              color: AeaColors.statusRejectedFg,
-                              tooltip: 'ลบ',
+                              bg: AeaColors.primaryLight,
+                              fg: AeaColors.primaryDark,
+                              label: 'ลบ',
                               enabled: onDelete != null,
                               onTap: () => onDelete?.call(z),
                             ),
@@ -1403,14 +1404,22 @@ class _DangerBtnState extends State<_DangerBtn> {
 // ============================================================================
 class _RowActionIcon extends StatefulWidget {
   final IconData icon;
-  final Color color;
-  final String tooltip;
+
+  /// สีพื้นของ pill
+  final Color bg;
+
+  /// สีไอคอน + ข้อความ
+  final Color fg;
+
+  /// ข้อความบนปุ่ม (เช่น 'แก้ไข' / 'ลบ')
+  final String label;
   final VoidCallback onTap;
   final bool enabled;
   const _RowActionIcon({
     required this.icon,
-    required this.color,
-    required this.tooltip,
+    required this.bg,
+    required this.fg,
+    required this.label,
     required this.onTap,
     this.enabled = true,
   });
@@ -1428,37 +1437,40 @@ class _RowActionIconState extends State<_RowActionIcon> {
           disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
       onEnter: disabled ? null : (_) => setState(() => _hover = true),
       onExit: disabled ? null : (_) => setState(() => _hover = false),
-      child: Tooltip(
-        message: widget.tooltip,
-        waitDuration: const Duration(milliseconds: 300),
-        child: GestureDetector(
-          onTap: disabled ? null : widget.onTap,
+      child: GestureDetector(
+        onTap: disabled ? null : widget.onTap,
+        child: Opacity(
+          opacity: disabled ? .45 : 1,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
-            width: 30,
-            height: 30,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
             decoration: BoxDecoration(
-              color: disabled
-                  ? Colors.transparent
-                  : (_hover
-                      ? widget.color.withOpacity(.10)
-                      : Colors.transparent),
-              borderRadius: BorderRadius.circular(AeaRadius.sm),
-              border: Border.all(
-                color: disabled
-                    ? AeaColors.border.withOpacity(.4)
-                    : (_hover
-                        ? widget.color.withOpacity(.45)
-                        : AeaColors.border),
-                width: 1,
-              ),
+              color: widget.bg,
+              borderRadius: BorderRadius.circular(AeaRadius.pill),
+              boxShadow: (_hover && !disabled)
+                  ? [
+                      BoxShadow(
+                        color: widget.fg.withValues(alpha: .28),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
+                  : const [],
             ),
-            child: Icon(
-              widget.icon,
-              size: 15,
-              color: disabled
-                  ? AeaColors.textMuted.withOpacity(.35)
-                  : (_hover ? widget.color : AeaColors.textSecondary),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(widget.icon, size: 14, color: widget.fg),
+                const SizedBox(width: 5),
+                Text(
+                  widget.label,
+                  style: TextStyle(
+                    color: widget.fg,
+                    fontSize: 12,
+                    fontFamily: AeaText.fontBold,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

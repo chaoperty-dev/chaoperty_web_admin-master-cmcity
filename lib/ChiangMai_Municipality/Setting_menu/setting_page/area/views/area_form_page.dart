@@ -128,11 +128,10 @@ class _AreaFormPageState extends State<AreaFormPage> {
 
     final zones =
         vm.zones.where((z) => z.ser.isNotEmpty && z.ser != '0').toList();
-    final fallbackZone = (_zoneSer != null &&
-            _zoneSer!.isNotEmpty &&
-            _zoneSer != '0')
-        ? _zoneSer!
-        : (zones.isNotEmpty ? zones.first.ser : '');
+    final fallbackZone =
+        (_zoneSer != null && _zoneSer!.isNotEmpty && _zoneSer != '0')
+            ? _zoneSer!
+            : (zones.isNotEmpty ? zones.first.ser : '');
 
     if (fallbackZone.isEmpty) {
       _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
