@@ -28,8 +28,17 @@ class AreaZone {
   final String? zn;
   final int? qty;
   final int? zonesCount; // groups เท่านั้น
+  final String? dataUpdate; // จาก data_update
+  final String? datex; // fallback date-only
 
-  const AreaZone({this.ser, this.zn, this.qty, this.zonesCount});
+  const AreaZone({
+    this.ser,
+    this.zn,
+    this.qty,
+    this.zonesCount,
+    this.dataUpdate,
+    this.datex,
+  });
 
   factory AreaZone.fromJson(Map<String, dynamic> j) {
     int? toInt(dynamic v) {
@@ -43,7 +52,22 @@ class AreaZone {
       zn: j['zn']?.toString(),
       qty: toInt(j['qty']),
       zonesCount: toInt(j['zones_count']),
+      dataUpdate:
+          j['data_update']?.toString().isNotEmpty == true
+              ? j['data_update'].toString()
+              : null,
+      datex:
+          j['datex']?.toString().isNotEmpty == true
+              ? j['datex'].toString()
+              : null,
     );
+  }
+
+  /// รวม data_update + datex fallback
+  String? get effectiveDataUpdate {
+    if (dataUpdate != null) return dataUpdate;
+    if (datex != null) return '${datex}T00:00:00';
+    return null;
   }
 }
 

@@ -60,7 +60,8 @@ class AreaService {
           'ser': row.ser ?? '0',
           'zn': row.zn ?? '',
           'qty': '${row.qty ?? 0}',
-          'data_update': '',
+          'data_update': row.effectiveDataUpdate ?? '',
+          'zones_count': row.zonesCount ?? 0,
         }));
       }
       return list;
@@ -82,7 +83,7 @@ class AreaService {
           'group_ser': groupSer,
           'zn': row.zn ?? '',
           'qty': '${row.qty ?? 0}',
-          'data_update': '',
+          'data_update': row.effectiveDataUpdate ?? '',
         }));
       }
       return list;
