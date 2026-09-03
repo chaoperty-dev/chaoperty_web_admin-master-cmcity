@@ -105,9 +105,8 @@ class _AreaListTable extends StatelessWidget {
       child: const Row(
         children: [
           _HeaderCell(label: 'จัดการ', flex: 0, width: 120),
-          _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 3),
-          _HeaderCell(label: 'ชื่อพื้นที่', flex: 2),
+          _HeaderCell(label: 'ชื่อพื้นที่', flex: 3),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
           _HeaderCell(label: 'ค่าเช่า', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
@@ -156,6 +155,7 @@ class _AreaListTable extends StatelessWidget {
                     icon: Icons.delete_outline_rounded,
                     color: AeaColors.statusRejectedFg,
                     tooltip: 'ลบ',
+                    enabled: !a.isOccupied,
                     onTap: () {
                       if (onDeleteCb != null) onDeleteCb(a);
                     },
@@ -164,9 +164,8 @@ class _AreaListTable extends StatelessWidget {
               ),
             ),
           ),
-          _Cell(value: a.zn, flex: 2, muted: true),
           _Cell(
-              value: a.lncode.isEmpty ? '-' : a.lncode, flex: 2, isMono: true),
+              value: a.lncode.isEmpty ? '-' : a.lncode, flex: 3, isMono: true),
           _Cell(
               value: a.ln.isEmpty ? '-' : a.ln,
               tooltip: a.ln.isEmpty ? '-' : a.ln,
@@ -412,10 +411,10 @@ class _ViewButtonState extends State<_ViewButton> {
           duration: AeaAnimations.fast,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
-            color: _hover ? AeaColors.primary : AeaColors.surfaceMuted,
+            color: _hover ? AeaColors.textSecondary.withOpacity(.10) : AeaColors.surfaceMuted,
             borderRadius: BorderRadius.circular(AeaRadius.pill),
             border: Border.all(
-              color: _hover ? AeaColors.primary : AeaColors.border,
+              color: _hover ? AeaColors.textSecondary.withOpacity(.35) : AeaColors.border,
               width: 1,
             ),
           ),
@@ -423,9 +422,9 @@ class _ViewButtonState extends State<_ViewButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.visibility_outlined,
+                Icons.visibility_rounded,
                 size: 13,
-                color: _hover ? Colors.white : AeaColors.textSecondary,
+                color: _hover ? AeaColors.textPrimary : AeaColors.textSecondary,
               ),
               const SizedBox(width: 4),
               Text(
@@ -433,7 +432,7 @@ class _ViewButtonState extends State<_ViewButton> {
                 style: TextStyle(
                   fontFamily: AeaText.fontBold,
                   fontSize: 11,
-                  color: _hover ? Colors.white : AeaColors.textSecondary,
+                  color: _hover ? AeaColors.textPrimary : AeaColors.textSecondary,
                 ),
               ),
             ],
@@ -452,11 +451,13 @@ class _RowIconBtn extends StatefulWidget {
   final Color color;
   final String tooltip;
   final VoidCallback onTap;
+  final bool enabled;
   const _RowIconBtn({
     required this.icon,
     required this.color,
     required this.tooltip,
     required this.onTap,
+    this.enabled = true,
   });
   @override
   State<_RowIconBtn> createState() => _RowIconBtnState();
@@ -466,35 +467,44 @@ class _RowIconBtnState extends State<_RowIconBtn> {
   bool _hover = false;
   @override
   Widget build(BuildContext context) {
+    final disabled = !widget.enabled;
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
+      cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+      onEnter: disabled ? null : (_) => setState(() => _hover = true),
+      onExit: disabled ? null : (_) => setState(() => _hover = false),
       child: Tooltip(
-        message: widget.tooltip,
+        message: disabled ? 'ไม่สามารถลบได้ (พื้นที่ไม่ว่าง)' : widget.tooltip,
         waitDuration: const Duration(milliseconds: 300),
         child: GestureDetector(
-          onTap: widget.onTap,
+          onTap: disabled ? null : widget.onTap,
           child: AnimatedContainer(
             duration: AeaAnimations.fast,
             width: 30,
             height: 30,
             decoration: BoxDecoration(
-              color: _hover
-                  ? widget.color.withOpacity(.10)
-                  : Colors.transparent,
+              color: disabled
+                  ? Colors.transparent
+                  : _hover
+                      ? widget.color.withOpacity(.10)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(AeaRadius.sm),
               border: Border.all(
-                color: _hover
-                    ? widget.color.withOpacity(.45)
-                    : AeaColors.border,
+                color: disabled
+                    ? AeaColors.border.withOpacity(.4)
+                    : _hover
+                        ? widget.color.withOpacity(.45)
+                        : AeaColors.border,
                 width: 1,
               ),
             ),
             child: Icon(
               widget.icon,
               size: 15,
-              color: _hover ? widget.color : AeaColors.textSecondary,
+              color: disabled
+                  ? AeaColors.textMuted.withOpacity(.35)
+                  : _hover
+                      ? widget.color
+                      : AeaColors.textSecondary,
             ),
           ),
         ),
@@ -656,31 +666,6 @@ class _AreaCardState extends State<_AreaCard> {
                 ],
               ),
               const SizedBox(height: AeaSpace.sm),
-              // ── Zone chip ──
-              if (a.zn.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AeaSpace.sm),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.place_outlined,
-                        size: 14,
-                        color: AeaColors.textMuted,
-                      ),
-                      const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          a.zn,
-                          style: AeaText.caption.copyWith(
-                            color: AeaColors.textSecondary,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               // ── Name ──
               Text(
                 a.sname.isEmpty ? a.ln : a.sname,
@@ -718,7 +703,10 @@ class _AreaCardState extends State<_AreaCard> {
                     child: _EditButton(onTap: widget.onEdit),
                   ),
                   const SizedBox(width: AeaSpace.sm),
-                  _DeleteIconBtn(onTap: widget.onDelete),
+                  _DeleteIconBtn(
+                    onTap: widget.onDelete,
+                    enabled: !a.isOccupied,
+                  ),
                 ],
               ),
             ],
@@ -802,17 +790,24 @@ class _EditButtonState extends State<_EditButton> {
           duration: AeaAnimations.fast,
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
-            color: _hover ? AeaColors.primary : AeaColors.primaryLight,
+            color: _hover
+                ? AeaColors.textSecondary.withOpacity(.10)
+                : AeaColors.surfaceMuted,
             borderRadius: BorderRadius.circular(AeaRadius.sm),
-            border: Border.all(color: AeaColors.primary, width: 1),
+            border: Border.all(
+              color: _hover
+                  ? AeaColors.textSecondary.withOpacity(.35)
+                  : AeaColors.border,
+              width: 1,
+            ),
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
-                Icons.edit_rounded,
+                Icons.visibility_rounded,
                 size: 14,
-                color: _hover ? Colors.white : AeaColors.primaryDark,
+                color: _hover ? AeaColors.textPrimary : AeaColors.textSecondary,
               ),
               const SizedBox(width: 6),
               Text(
@@ -821,7 +816,7 @@ class _EditButtonState extends State<_EditButton> {
                   fontFamily: AeaText.fontBold,
                   fontSize: 12,
                   fontWeight: FontWeight.w700,
-                  color: _hover ? Colors.white : AeaColors.primaryDark,
+                  color: _hover ? AeaColors.textPrimary : AeaColors.textSecondary,
                 ),
               ),
             ],
@@ -837,7 +832,8 @@ class _EditButtonState extends State<_EditButton> {
 // ============================================================================
 class _DeleteIconBtn extends StatefulWidget {
   final VoidCallback onTap;
-  const _DeleteIconBtn({required this.onTap});
+  final bool enabled;
+  const _DeleteIconBtn({required this.onTap, this.enabled = true});
 
   @override
   State<_DeleteIconBtn> createState() => _DeleteIconBtnState();
@@ -847,37 +843,44 @@ class _DeleteIconBtnState extends State<_DeleteIconBtn> {
   bool _hover = false;
   @override
   Widget build(BuildContext context) {
+    final disabled = !widget.enabled;
     return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
+      cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
+      onEnter: disabled ? null : (_) => setState(() => _hover = true),
+      onExit: disabled ? null : (_) => setState(() => _hover = false),
       child: Tooltip(
-        message: 'ลบพื้นที่',
+        message: disabled ? 'ไม่สามารถลบได้ (พื้นที่ไม่ว่าง)' : 'ลบพื้นที่',
         waitDuration: const Duration(milliseconds: 300),
         child: GestureDetector(
-          onTap: widget.onTap,
+          onTap: disabled ? null : widget.onTap,
           child: AnimatedContainer(
             duration: AeaAnimations.fast,
             width: 38,
             height: 38,
             decoration: BoxDecoration(
-              color: _hover
-                  ? AeaColors.statusRejectedFg.withOpacity(.10)
-                  : Colors.white,
+              color: disabled
+                  ? AeaColors.surfaceMuted.withOpacity(.5)
+                  : _hover
+                      ? AeaColors.statusRejectedFg.withOpacity(.10)
+                      : Colors.white,
               borderRadius: BorderRadius.circular(AeaRadius.sm),
               border: Border.all(
-                color: _hover
-                    ? AeaColors.statusRejectedFg.withOpacity(.45)
-                    : AeaColors.border,
+                color: disabled
+                    ? AeaColors.border.withOpacity(.4)
+                    : _hover
+                        ? AeaColors.statusRejectedFg.withOpacity(.45)
+                        : AeaColors.border,
                 width: 1,
               ),
             ),
             child: Icon(
               Icons.delete_outline_rounded,
               size: 16,
-              color: _hover
-                  ? AeaColors.statusRejectedFg
-                  : AeaColors.textSecondary,
+              color: disabled
+                  ? AeaColors.textMuted.withOpacity(.35)
+                  : _hover
+                      ? AeaColors.statusRejectedFg
+                      : AeaColors.textSecondary,
             ),
           ),
         ),
