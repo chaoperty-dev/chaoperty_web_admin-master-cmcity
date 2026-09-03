@@ -2,8 +2,7 @@
 // area_form_page.dart
 // ============================================================================
 // Full-page form — เพิ่ม/แก้ไข "Area" (lock) ผ่าน v2 API
-// - Step 1: กรอกข้อมูล
-// - Step 2: ตรวจสอบ + บันทึก
+// Single-step: กรอกข้อมูล + กดบันทึก
 //
 // ✅ v2 signature:
 //    add    → {zone_ser, lncode, ln, area, rent}
@@ -14,11 +13,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 
 import '../models/area_area_model.dart';
 import '../models/area_zone_model.dart';
-import '../viewmodels/area_detail_step_view_model.dart';
 import '../viewmodels/area_view_model.dart';
 import 'theme/area_theme.dart';
 
@@ -40,7 +37,7 @@ class AreaFormPage extends StatefulWidget {
     this.preselectedZoneSer,
   });
 
-  /// Factory — wrap Provider (Step VM) + ส่ง ViewModel เข้าไป
+  /// Factory — ส่ง ViewModel เข้าไป (single-step, ไม่ต้อง wrap Provider)
   static Widget create({
     Key? key,
     required AreaViewModel viewModel,
@@ -48,18 +45,11 @@ class AreaFormPage extends StatefulWidget {
     AreaAreaModel? initial,
     String? preselectedZoneSer,
   }) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider<AreaDetailStepViewModel>(
-          create: (_) => AreaDetailStepViewModel(),
-        ),
-      ],
-      child: AreaFormPage(
-        viewModel: viewModel,
-        mode: mode,
-        initial: initial,
-        preselectedZoneSer: preselectedZoneSer,
-      ),
+    return AreaFormPage(
+      viewModel: viewModel,
+      mode: mode,
+      initial: initial,
+      preselectedZoneSer: preselectedZoneSer,
     );
   }
 
@@ -184,10 +174,7 @@ class _AreaFormPageState extends State<AreaFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final stepVm = context.watch<AreaDetailStepViewModel>();
-    final step = stepVm.currentDetailStep;
-    final total = stepVm.totalDetailSteps;
-    final subtitle = step == 1 ? 'กรอกข้อมูล Area' : 'ตรวจสอบข้อมูลก่อนบันทึก';
+    final subtitle = 'กรอกข้อมูล Area';
     final title =
         widget.mode == AreaFormMode.create ? 'เพิ่ม Area' : 'แก้ไข Area';
 
@@ -197,11 +184,8 @@ class _AreaFormPageState extends State<AreaFormPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _buildHeader(title: title, subtitle: subtitle, step: step),
-            Expanded(
-              child: step == 1 ? _buildStep1() : _buildStep2(),
-            ),
-            _buildFooter(stepVm, step, total, title),
+            _buildHeader(title: title, subtitle: subtitle),
+            Expanded(child: _buildStep1()),
           ],
         ),
       ),
@@ -211,7 +195,6 @@ class _AreaFormPageState extends State<AreaFormPage> {
   Widget _buildHeader({
     required String title,
     required String subtitle,
-    required int step,
   }) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -261,18 +244,12 @@ class _AreaFormPageState extends State<AreaFormPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      'AREA',
-                      style: AeaText.label.copyWith(
-                        color: AeaColors.primaryAccent.withOpacity(.9),
-                        letterSpacing: 1.6,
-                      ),
-                    ),
-                    const SizedBox(width: AeaSpace.sm),
-                    _StepBadge(step: step, total: 2),
-                  ],
+                Text(
+                  'AREA',
+                  style: AeaText.label.copyWith(
+                    color: AeaColors.primaryAccent.withOpacity(.9),
+                    letterSpacing: 1.6,
+                  ),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -299,168 +276,80 @@ class _AreaFormPageState extends State<AreaFormPage> {
   }
 
   Widget _buildStep1() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AeaSpace.lg),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1200),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _sectionHeader('ข้อมูลทั่วไป', Icons.info_outline_rounded),
-                const SizedBox(height: AeaSpace.sm),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _field(
-                        _ln,
-                        'รหัสพื้นที่ (ln)',
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AeaSpace.lg),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1200),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _sectionHeader(
+                          'ข้อมูลทั่วไป', Icons.info_outline_rounded),
+                      const SizedBox(height: AeaSpace.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _field(
+                              _ln,
+                              'รหัสพื้นที่ (ln)',
+                              required: true,
+                            ),
+                          ),
+                          const SizedBox(width: AeaSpace.sm),
+                          Expanded(
+                            child: _field(
+                              _lncode,
+                              'รหัสพื้นที่ (lncode)',
+                              required: widget.mode == AreaFormMode.create,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AeaSpace.sm),
+                      _field(
+                        _area,
+                        'ขนาดพื้นที่ (ตร.ม.)',
+                        number: true,
+                      ),
+                      const SizedBox(height: AeaSpace.md),
+                      _sectionHeader('โซน', Icons.place_outlined),
+                      const SizedBox(height: AeaSpace.sm),
+                      _ZoneDropdown(
+                        zones: _vm.zones,
+                        value: _zoneSer,
+                        enabled: widget.mode == AreaFormMode.create,
+                        onChanged: widget.mode == AreaFormMode.create
+                            ? (v) => setState(() => _zoneSer = v)
+                            : null,
+                      ),
+                      const SizedBox(height: AeaSpace.md),
+                      _sectionHeader('ค่าบริการ', Icons.payments_outlined),
+                      const SizedBox(height: AeaSpace.sm),
+                      _field(
+                        _rent,
+                        'ค่าเช่า (บาท/งวด)',
+                        number: true,
                         required: true,
                       ),
-                    ),
-                    const SizedBox(width: AeaSpace.sm),
-                    Expanded(
-                      child: _field(
-                        _lncode,
-                        'รหัสพื้นที่ (lncode)',
-                        required: widget.mode == AreaFormMode.create,
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const SizedBox(height: AeaSpace.sm),
-                _field(
-                  _area,
-                  'ขนาดพื้นที่ (ตร.ม.)',
-                  number: true,
-                ),
-                const SizedBox(height: AeaSpace.md),
-                _sectionHeader('โซน', Icons.place_outlined),
-                const SizedBox(height: AeaSpace.sm),
-                _ZoneDropdown(
-                  zones: _vm.zones,
-                  value: _zoneSer,
-                  enabled: widget.mode == AreaFormMode.create,
-                  onChanged: widget.mode == AreaFormMode.create
-                      ? (v) => setState(() => _zoneSer = v)
-                      : null,
-                ),
-                const SizedBox(height: AeaSpace.md),
-                _sectionHeader('ค่าบริการ', Icons.payments_outlined),
-                const SizedBox(height: AeaSpace.sm),
-                _field(
-                  _rent,
-                  'ค่าเช่า (บาท/งวด)',
-                  number: true,
-                  required: true,
-                ),
-                const SizedBox(height: AeaSpace.lg),
-                const Row(
-                  children: [
-                    Icon(Icons.info_outline_rounded,
-                        size: 14, color: AeaColors.textMuted),
-                    SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        'กรอกข้อมูลให้ครบถ้วนก่อนกด "ถัดไป"',
-                        style: AeaText.caption,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
         ),
-      ),
+        _buildFooter(),
+      ],
     );
   }
 
-  Widget _buildStep2() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(AeaSpace.lg),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 800),
-          child: Container(
-            decoration: AeaDecor.card(),
-            padding: const EdgeInsets.all(AeaSpace.xl),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AeaColors.primaryLight,
-                        borderRadius: BorderRadius.circular(AeaRadius.sm),
-                      ),
-                      child: const Icon(
-                        Icons.preview_rounded,
-                        color: AeaColors.primaryDark,
-                        size: 20,
-                      ),
-                    ),
-                    const SizedBox(width: AeaSpace.sm),
-                    const Text('ตรวจสอบข้อมูล Area', style: AeaText.h2),
-                  ],
-                ),
-                const SizedBox(height: AeaSpace.lg),
-                _reviewRow('รหัสพื้นที่ (ln)', _ln.text),
-                _reviewRow('รหัสพื้นที่ (lncode)', _lncode.text),
-                _reviewRow('ขนาดพื้นที่ (ตร.ม.)', _area.text),
-                _reviewRow('โซน', _zoneName(_zoneSer)),
-                _reviewRow('ค่าเช่า (บาท/งวด)', _rent.text),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _zoneName(String? ser) {
-    if (ser == null || ser.isEmpty || ser == '0') return '-';
-    final match =
-        _vm.zones.where((z) => z.ser == ser).map((z) => z.zn).firstOrNull;
-    return match ?? ser;
-  }
-
-  Widget _reviewRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 200,
-            child: Text(label,
-                style:
-                    AeaText.bodyMuted.copyWith(fontFamily: AeaText.fontBold)),
-          ),
-          const SizedBox(width: AeaSpace.md),
-          Expanded(
-            child: Text(
-              value.isEmpty ? '-' : value,
-              style: AeaText.body,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFooter(
-    AreaDetailStepViewModel stepVm,
-    int step,
-    int total,
-    String title,
-  ) {
-    final isLast = step >= total;
+  Widget _buildFooter() {
     return Container(
       padding: const EdgeInsets.symmetric(
           horizontal: AeaSpace.lg, vertical: AeaSpace.md),
@@ -472,44 +361,18 @@ class _AreaFormPageState extends State<AreaFormPage> {
       ),
       child: Row(
         children: [
-          Icon(
-            isLast ? Icons.task_alt_rounded : Icons.edit_note_rounded,
-            size: 14,
-            color: AeaColors.textMuted,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            isLast ? 'พร้อมบันทึก' : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
-            style: AeaText.caption,
-          ),
           const Spacer(),
           _FooterButton(
-            label: step > 1 ? 'ย้อนกลับ' : 'ยกเลิก',
-            icon: step > 1 ? Icons.arrow_back_rounded : Icons.close_rounded,
-            onTap: () {
-              if (step > 1) {
-                stepVm.previousDetailStep();
-              } else {
-                Navigator.of(context).maybePop();
-              }
-            },
+            label: 'ยกเลิก',
+            icon: Icons.close_rounded,
+            onTap: () => Navigator.of(context).maybePop(),
             isPrimary: false,
           ),
           const SizedBox(width: AeaSpace.sm),
           _FooterButton(
-            label: isLast ? 'บันทึก' : 'ถัดไป',
-            icon: isLast
-                ? Icons.check_circle_rounded
-                : Icons.arrow_forward_rounded,
-            onTap: _submitting
-                ? null
-                : () {
-                    if (!isLast) {
-                      stepVm.nextDetailStep();
-                    } else {
-                      _onSave();
-                    }
-                  },
+            label: 'บันทึก',
+            icon: Icons.check_circle_rounded,
+            onTap: _submitting ? null : _onSave,
             isPrimary: true,
             loading: _submitting,
           ),
@@ -646,34 +509,6 @@ class _ZoneDropdown extends StatelessWidget {
           ),
           items: items,
           onChanged: enabled ? onChanged : null,
-        ),
-      ),
-    );
-  }
-}
-
-class _StepBadge extends StatelessWidget {
-  final int step;
-  final int total;
-  const _StepBadge({required this.step, required this.total});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(.10),
-        borderRadius: BorderRadius.circular(AeaRadius.pill),
-        border: Border.all(
-          color: Colors.white.withOpacity(.18),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        'ขั้นตอนที่ $step/$total',
-        style: AeaText.caption.copyWith(
-          color: Colors.white,
-          fontFamily: AeaText.fontBold,
-          fontSize: 10,
         ),
       ),
     );
