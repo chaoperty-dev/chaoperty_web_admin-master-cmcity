@@ -562,10 +562,23 @@ class _PaymentProgress extends StatelessWidget {
     final tip = hasAny
         ? 'ชำระแล้ว $paid / $total รายการ (รอ $pending)'
         : 'ยังไม่เริ่ม — ยังไม่มีรายการชำระ';
-    // ✅ 0/0 → โชว์ "ยังไม่เริ่ม" (เหมือน step ใน approval)
+    // ✅ 0/0 → โชว์ "ยังไม่เริ่ม" (subtle, caption style)
     final labelText = hasAny ? '$paid/$total' : 'ยังไม่เริ่ม';
-    final labelColor =
-        hasAny ? (allOk ? const Color(0xFF15803D) : LaColors.textPrimary) : LaColors.textMuted;
+    final labelColor = hasAny
+        ? (allOk ? const Color(0xFF15803D) : LaColors.textPrimary)
+        : LaColors.textMuted;
+    final labelStyle = hasAny
+        ? LaText.tableCell.copyWith(
+            fontFamily: 'monospace',
+            fontFamilyFallback: const [LaText.fontRegular],
+            fontWeight: FontWeight.w700,
+            color: labelColor,
+          )
+        : LaText.caption.copyWith(
+            color: labelColor,
+            fontWeight: FontWeight.w500,
+            fontSize: 11,
+          );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
       child: Align(
@@ -586,12 +599,7 @@ class _PaymentProgress extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 labelText,
-                style: LaText.tableCell.copyWith(
-                  fontFamily: hasAny ? 'monospace' : LaText.fontRegular,
-                  fontFamilyFallback: const [LaText.fontRegular],
-                  fontWeight: FontWeight.w700,
-                  color: labelColor,
-                ),
+                style: labelStyle,
               ),
               if (pending > 0) ...[
                 const SizedBox(width: 6),
