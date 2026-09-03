@@ -171,8 +171,8 @@ class _AreaListTable extends StatelessWidget {
             child: Center(
               child: _RowPillAction(
                 icon: Icons.visibility_rounded,
-                bg: AeaColors.statusInfoBg,
-                fg: AeaColors.statusInfoFg,
+                bg: AeaColors.surfaceMuted,
+                fg: AeaColors.textPrimary,
                 label: 'เริ่มต้น',
                 onTap: () {
                   if (onEditCb != null) onEditCb(a);
