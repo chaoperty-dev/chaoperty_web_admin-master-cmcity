@@ -73,6 +73,31 @@ class AreaViewModel extends ChangeNotifier {
     );
   }
 
+  // ---------- Area selection (ใช้กับ popup แก้ไข/ลบ ใน _AreaTab) ----------
+  String? _selectedAreaSer;
+  String? get selectedAreaSer => _selectedAreaSer;
+
+  AreaAreaModel? get selectedArea {
+    if (_selectedAreaSer == null) return null;
+    return _areas.firstWhere(
+      (a) => a.ser == _selectedAreaSer,
+      orElse: () => const AreaAreaModel(
+        ser: '',
+        ln: '',
+        sn: '',
+        sname: '',
+        sw: '',
+        zone: '',
+      ),
+    );
+  }
+
+  void onAreaChanged(String? ser) {
+    if (_selectedAreaSer == ser) return;
+    _selectedAreaSer = ser;
+    notifyListeners();
+  }
+
   // ---------- Data: areas (locks) ----------
   List<AreaAreaModel> _areas = [];
   List<AreaAreaModel> get areas => _areas;

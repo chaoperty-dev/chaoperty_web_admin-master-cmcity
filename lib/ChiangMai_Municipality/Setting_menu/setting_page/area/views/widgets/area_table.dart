@@ -20,7 +20,8 @@ import '../../viewmodels/area_view_model.dart';
 class AreaTable extends StatelessWidget {
   final void Function(AreaAreaModel area)? onEdit;
   final void Function(AreaAreaModel area)? onDelete;
-  const AreaTable({super.key, this.onEdit, this.onDelete});
+  final void Function(AreaAreaModel area)? onRowTap;
+  const AreaTable({super.key, this.onEdit, this.onDelete, this.onRowTap});
 
   @override
   Widget build(BuildContext context) {
@@ -51,6 +52,8 @@ class AreaTable extends StatelessWidget {
             rows: rows,
             onEdit: onEdit,
             onDelete: onDelete,
+            onRowTap: onRowTap,
+            selectedSer: vm.selectedAreaSer,
           )
         else
           _AreaGrid(
@@ -67,10 +70,14 @@ class _AreaListTable extends StatelessWidget {
   final List<AreaAreaModel> rows;
   final void Function(AreaAreaModel area)? onEdit;
   final void Function(AreaAreaModel area)? onDelete;
+  final void Function(AreaAreaModel area)? onRowTap;
+  final String? selectedSer;
   const _AreaListTable({
     required this.rows,
     required this.onEdit,
     required this.onDelete,
+    this.onRowTap,
+    this.selectedSer,
   });
 
   @override
@@ -82,7 +89,8 @@ class _AreaListTable extends StatelessWidget {
           _headerRow(),
           const Divider(height: 1, color: AeaColors.border),
           for (int i = 0; i < rows.length; i++)
-            _dataRow(context, rows[i], i, onEdit, onDelete),
+            _dataRow(
+                context, rows[i], i, onEdit, onDelete, onRowTap, selectedSer),
         ],
       ),
     );
@@ -124,13 +132,23 @@ class _AreaListTable extends StatelessWidget {
     int index,
     void Function(AreaAreaModel)? onEditCb,
     void Function(AreaAreaModel)? onDeleteCb,
+    void Function(AreaAreaModel)? onRowTapCb,
+    String? selectedSer,
   ) {
     final status = _deriveStatus(a);
     final palette = status.palette;
+    // ✅ Row tap = select (toggle/เลือก) เพื่อให้ popup "จัดการพื้นที่" ทำงานได้
+    //    (ถ้าไม่มี onRowTap จาก VM จะ fallback เป็น edit แบบเดิม — back-compat)
+    final isSelected = selectedSer != null && selectedSer == a.ser;
     return _HoverableRow(
       index: index,
+      isSelected: isSelected,
       onTap: () {
-        if (onEditCb != null) onEditCb(a);
+        if (onRowTapCb != null) {
+          onRowTapCb(a);
+        } else if (onEditCb != null) {
+          onEditCb(a);
+        }
       },
       child: Row(
         children: [
@@ -330,10 +348,12 @@ class _HoverableRow extends StatefulWidget {
   final int index;
   final Widget child;
   final VoidCallback onTap;
+  final bool isSelected;
   const _HoverableRow({
     required this.index,
     required this.child,
     required this.onTap,
+    this.isSelected = false,
   });
 
   @override
@@ -354,6 +374,7 @@ class _HoverableRowState extends State<_HoverableRow> {
   @override
   Widget build(BuildContext context) {
     final base = widget.index.isEven ? Colors.white : AeaColors.surfaceMuted;
+    final selectedBg = AeaColors.primaryLight.withValues(alpha: .4);
     final hoverColor = widget.index.isEven
         ? AeaColors.primary.withOpacity(.05)
         : AeaColors.primary.withOpacity(.08);
@@ -376,9 +397,16 @@ class _HoverableRowState extends State<_HoverableRow> {
           padding: const EdgeInsets.symmetric(
               horizontal: AeaSpace.md, vertical: AeaSpace.md),
           decoration: BoxDecoration(
-            color: _hover ? null : base,
-            border: const Border(
-              bottom: BorderSide(color: AeaColors.border, width: 1),
+            // ✅ priority: selected > hover > even/odd stripe
+            color: widget.isSelected
+                ? selectedBg
+                : (_hover ? null : base),
+            border: Border(
+              bottom: const BorderSide(color: AeaColors.border, width: 1),
+              // indicator ซ้าย ตอนเลือกแถว
+              left: widget.isSelected
+                  ? const BorderSide(color: AeaColors.primary, width: 3)
+                  : BorderSide.none,
             ),
           ),
           child: widget.child,

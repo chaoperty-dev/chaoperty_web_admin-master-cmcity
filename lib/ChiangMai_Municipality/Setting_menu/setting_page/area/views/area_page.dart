@@ -1118,32 +1118,40 @@ class _AreaTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AreaViewModel>();
+    final sel = vm.selectedArea;
+    final hasSel = sel != null && sel.ser.isNotEmpty;
+    // ✅ canDelete เช็ค isOccupied ป้องกันลบพื้นที่ที่มีผู้เช่า
+    final canDelete = sel?.isOccupied == false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── filter row: หมวด + โซน (copy pattern จาก LicenseApproveZoneFilter) ──
-        const AreaZoneFilter(),
-        const SizedBox(height: AeaSpace.md),
-        Row(
-          children: [
-            const Expanded(child: _ToolbarAreaFilters()),
-            const SizedBox(width: AeaSpace.md),
-            _ManageMenu(
-              label: 'จัดการพื้นที่',
-              canEdit: false,
-              canDelete: false,
-              onAdd: onAdd,
-              onEdit: () {},
-              onDelete: () {},
-            ),
-          ],
+        // ── Row 1: filter card — dropdowns + popup "จัดการพื้นที่ ▼" อยู่ในการ์ดเดียวกัน ──
+        AreaZoneFilter(
+          trailing: _ManageMenu(
+            label: 'จัดการพื้นที่',
+            canEdit: hasSel,
+            canDelete: canDelete,
+            onAdd: onAdd,
+            onEdit: () {
+              // defense-in-depth — popup กันแล้วด้วย enabled: canEdit
+              if (sel != null && sel.ser.isNotEmpty) onEdit(sel);
+            },
+            onDelete: () {
+              if (sel != null && !sel.isOccupied) onDelete(sel);
+            },
+          ),
         ),
+        const SizedBox(height: AeaSpace.md),
+        // ── Row 2: search + view-mode + pagination ──
+        const _ToolbarAreaFilters(),
         const SizedBox(height: AeaSpace.md),
         Expanded(
           child: SingleChildScrollView(
             child: AreaTable(
               onEdit: onEdit,
               onDelete: onDelete,
+              // ✅ tap row = select (popup จะ enabled แก้ไข/ลบ ให้ทันที)
+              onRowTap: (a) => vm.onAreaChanged(a.ser),
             ),
           ),
         ),

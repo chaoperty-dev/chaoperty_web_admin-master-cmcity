@@ -16,7 +16,11 @@ import '../../viewmodels/area_view_model.dart';
 import '../theme/area_theme.dart';
 
 class AreaZoneFilter extends StatefulWidget {
-  const AreaZoneFilter({super.key});
+  /// Widget ที่จะแสดงฝั่งขวาของ card (เช่น ปุ่ม popup "จัดการพื้นที่ ▼")
+  /// null = ไม่แสดง (default — เดิม)
+  final Widget? trailing;
+
+  const AreaZoneFilter({super.key, this.trailing});
 
   @override
   State<AreaZoneFilter> createState() => _AreaZoneFilterState();
@@ -46,24 +50,35 @@ class _AreaZoneFilterState extends State<AreaZoneFilter> {
       decoration: AeaDecor.card(),
       child: LayoutBuilder(
         builder: (context, c) {
-          final body = c.maxWidth < 900
-              ? Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _groupSection(vm),
-                    const SizedBox(height: AeaSpace.md),
-                    _zoneSection(vm),
-                  ],
-                )
-              : Row(
+          final wide = c.maxWidth >= 900;
+          // ── body: dropdowns (ใช้ทั้ง 2 layouts) ──
+          final dropdownBody = wide
+              ? Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Expanded(flex: 5, child: _groupSection(vm)),
                     _divider(),
                     Expanded(flex: 5, child: _zoneSection(vm)),
+                    // ✅ trailing อยู่ในการ์ดเดียวกัน (เช่น ปุ่ม popup "จัดการพื้นที่")
+                    if (widget.trailing != null) ...[
+                      const SizedBox(width: AeaSpace.md),
+                      widget.trailing!,
+                    ],
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _groupSection(vm),
+                    const SizedBox(height: AeaSpace.md),
+                    _zoneSection(vm),
+                    if (widget.trailing != null) ...[
+                      const SizedBox(height: AeaSpace.md),
+                      widget.trailing!,
+                    ],
                   ],
                 );
-          if (c.maxWidth >= 900) return body;
+          if (wide) return dropdownBody;
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -72,7 +87,7 @@ class _AreaZoneFilterState extends State<AreaZoneFilter> {
                 firstChild: const SizedBox.shrink(),
                 secondChild: Padding(
                   padding: const EdgeInsets.only(top: AeaSpace.sm),
-                  child: body,
+                  child: dropdownBody,
                 ),
                 crossFadeState: _collapsed
                     ? CrossFadeState.showFirst
