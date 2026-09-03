@@ -941,8 +941,8 @@ class _GroupList extends StatelessWidget {
                                   const SizedBox(width: 6),
                                   _RowPillAction(
                                     icon: Icons.delete_outline_rounded,
-                                    bg: AeaColors.statusRejectedBg,
-                                    fg: AeaColors.statusRejectedFg,
+                                    bg: AeaColors.statusInfoBg,
+                                    fg: AeaColors.statusInfoFg,
                                     label: 'ลบ',
                                     onTap: () => onDelete?.call(g),
                                   ),
@@ -1183,8 +1183,8 @@ class _ZoneList extends StatelessWidget {
                             const SizedBox(width: 6),
                             _RowPillAction(
                               icon: Icons.delete_outline_rounded,
-                              bg: AeaColors.statusRejectedBg,
-                              fg: AeaColors.statusRejectedFg,
+                              bg: AeaColors.statusInfoBg,
+                              fg: AeaColors.statusInfoFg,
                               label: 'ลบ',
                               onTap: () => onDelete?.call(z),
                             ),

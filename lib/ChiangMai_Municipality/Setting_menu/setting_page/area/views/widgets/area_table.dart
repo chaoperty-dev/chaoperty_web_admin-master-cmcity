@@ -196,8 +196,8 @@ class _AreaListTable extends StatelessWidget {
                 const SizedBox(width: 6),
                 _RowPillAction(
                   icon: Icons.delete_outline_rounded,
-                  bg: AeaColors.statusRejectedBg,
-                  fg: AeaColors.statusRejectedFg,
+                  bg: AeaColors.statusInfoBg,
+                  fg: AeaColors.statusInfoFg,
                   label: 'ลบ',
                   enabled: !a.isOccupied,
                   onTap: () {
@@ -676,8 +676,8 @@ class _AreaCardState extends State<_AreaCard> {
                   Expanded(
                     child: _RowPillAction(
                       icon: Icons.delete_outline_rounded,
-                      bg: AeaColors.statusRejectedBg,
-                      fg: AeaColors.statusRejectedFg,
+                      bg: AeaColors.statusInfoBg,
+                      fg: AeaColors.statusInfoFg,
                       label: 'ลบ',
                       enabled: !a.isOccupied,
                       onTap: widget.onDelete,
