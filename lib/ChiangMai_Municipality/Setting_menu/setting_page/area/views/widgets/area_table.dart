@@ -18,10 +18,7 @@ import '../../models/area_area_model.dart';
 import '../../viewmodels/area_view_model.dart';
 
 class AreaTable extends StatelessWidget {
-  final void Function(AreaAreaModel area)? onEdit;
-  final void Function(AreaAreaModel area)? onDelete;
-  final void Function(AreaAreaModel area)? onRowTap;
-  const AreaTable({super.key, this.onEdit, this.onDelete, this.onRowTap});
+  const AreaTable({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -50,17 +47,10 @@ class AreaTable extends StatelessWidget {
         if (vm.viewMode == AreaViewMode.table)
           _AreaListTable(
             rows: rows,
-            onEdit: onEdit,
-            onDelete: onDelete,
-            onRowTap: onRowTap,
             selectedSer: vm.selectedAreaSer,
           )
         else
-          _AreaGrid(
-            rows: rows,
-            onEdit: onEdit,
-            onDelete: onDelete,
-          ),
+          _AreaGrid(rows: rows),
       ],
     );
   }
@@ -68,15 +58,9 @@ class AreaTable extends StatelessWidget {
 
 class _AreaListTable extends StatelessWidget {
   final List<AreaAreaModel> rows;
-  final void Function(AreaAreaModel area)? onEdit;
-  final void Function(AreaAreaModel area)? onDelete;
-  final void Function(AreaAreaModel area)? onRowTap;
   final String? selectedSer;
   const _AreaListTable({
     required this.rows,
-    required this.onEdit,
-    required this.onDelete,
-    this.onRowTap,
     this.selectedSer,
   });
 
@@ -89,8 +73,7 @@ class _AreaListTable extends StatelessWidget {
           _headerRow(),
           const Divider(height: 1, color: AeaColors.border),
           for (int i = 0; i < rows.length; i++)
-            _dataRow(
-                context, rows[i], i, onEdit, onDelete, onRowTap, selectedSer),
+            _dataRow(context, rows[i], i, selectedSer),
         ],
       ),
     );
@@ -112,7 +95,6 @@ class _AreaListTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: 'จัดการ', flex: 0, width: 120),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 3),
           _HeaderCell(label: 'ชื่อพื้นที่', flex: 3),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
@@ -130,58 +112,17 @@ class _AreaListTable extends StatelessWidget {
     BuildContext context,
     AreaAreaModel a,
     int index,
-    void Function(AreaAreaModel)? onEditCb,
-    void Function(AreaAreaModel)? onDeleteCb,
-    void Function(AreaAreaModel)? onRowTapCb,
     String? selectedSer,
   ) {
     final status = _deriveStatus(a);
     final palette = status.palette;
-    // ✅ Row tap = select (toggle/เลือก) เพื่อให้ popup "จัดการพื้นที่" ทำงานได้
-    //    (ถ้าไม่มี onRowTap จาก VM จะ fallback เป็น edit แบบเดิม — back-compat)
     final isSelected = selectedSer != null && selectedSer == a.ser;
     return _HoverableRow(
       index: index,
       isSelected: isSelected,
-      onTap: () {
-        if (onRowTapCb != null) {
-          onRowTapCb(a);
-        } else if (onEditCb != null) {
-          onEditCb(a);
-        }
-      },
+      onTap: null,
       child: Row(
         children: [
-          // Action — fixed width 120 (edit + delete icons)
-          SizedBox(
-            width: 120,
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _RowIconBtn(
-                    icon: Icons.edit_outlined,
-                    color: AeaColors.primary,
-                    tooltip: 'แก้ไข',
-                    onTap: () {
-                      if (onEditCb != null) onEditCb(a);
-                    },
-                  ),
-                  const SizedBox(width: 4),
-                  _RowIconBtn(
-                    icon: Icons.delete_outline_rounded,
-                    color: AeaColors.statusRejectedFg,
-                    tooltip: 'ลบ',
-                    enabled: !a.isOccupied,
-                    onTap: () {
-                      if (onDeleteCb != null) onDeleteCb(a);
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ),
           _Cell(
               value: a.lncode.isEmpty ? '-' : a.lncode, flex: 3, isMono: true),
           _Cell(
@@ -472,88 +413,12 @@ class _ViewButtonState extends State<_ViewButton> {
 }
 
 // ============================================================================
-// Row icon button (edit/delete inline)
-// ============================================================================
-class _RowIconBtn extends StatefulWidget {
-  final IconData icon;
-  final Color color;
-  final String tooltip;
-  final VoidCallback onTap;
-  final bool enabled;
-  const _RowIconBtn({
-    required this.icon,
-    required this.color,
-    required this.tooltip,
-    required this.onTap,
-    this.enabled = true,
-  });
-  @override
-  State<_RowIconBtn> createState() => _RowIconBtnState();
-}
-
-class _RowIconBtnState extends State<_RowIconBtn> {
-  bool _hover = false;
-  @override
-  Widget build(BuildContext context) {
-    final disabled = !widget.enabled;
-    return MouseRegion(
-      cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
-      onEnter: disabled ? null : (_) => setState(() => _hover = true),
-      onExit: disabled ? null : (_) => setState(() => _hover = false),
-      child: Tooltip(
-        message: disabled ? 'ไม่สามารถลบได้ (พื้นที่ไม่ว่าง)' : widget.tooltip,
-        waitDuration: const Duration(milliseconds: 300),
-        child: GestureDetector(
-          onTap: disabled ? null : widget.onTap,
-          child: AnimatedContainer(
-            duration: AeaAnimations.fast,
-            width: 30,
-            height: 30,
-            decoration: BoxDecoration(
-              color: disabled
-                  ? Colors.transparent
-                  : _hover
-                      ? widget.color.withOpacity(.10)
-                      : Colors.transparent,
-              borderRadius: BorderRadius.circular(AeaRadius.sm),
-              border: Border.all(
-                color: disabled
-                    ? AeaColors.border.withOpacity(.4)
-                    : _hover
-                        ? widget.color.withOpacity(.45)
-                        : AeaColors.border,
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              widget.icon,
-              size: 15,
-              color: disabled
-                  ? AeaColors.textMuted.withOpacity(.35)
-                  : _hover
-                      ? widget.color
-                      : AeaColors.textSecondary,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
 // Card widget (Grid view)
 // ============================================================================
 
 class _AreaGrid extends StatelessWidget {
   final List<AreaAreaModel> rows;
-  final void Function(AreaAreaModel area)? onEdit;
-  final void Function(AreaAreaModel area)? onDelete;
-  const _AreaGrid({
-    required this.rows,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _AreaGrid({required this.rows});
 
   @override
   Widget build(BuildContext context) {
@@ -574,15 +439,7 @@ class _AreaGrid extends StatelessWidget {
             mainAxisExtent: 200,
           ),
           itemCount: rows.length,
-          itemBuilder: (_, i) => _AreaCard(
-            area: rows[i],
-            onEdit: () {
-              if (onEdit != null) onEdit!(rows[i]);
-            },
-            onDelete: () {
-              if (onDelete != null) onDelete!(rows[i]);
-            },
-          ),
+          itemBuilder: (_, i) => _AreaCard(area: rows[i]),
         );
       },
     );
@@ -591,13 +448,7 @@ class _AreaGrid extends StatelessWidget {
 
 class _AreaCard extends StatefulWidget {
   final AreaAreaModel area;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-  const _AreaCard({
-    required this.area,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _AreaCard({required this.area});
 
   @override
   State<_AreaCard> createState() => _AreaCardState();
@@ -723,20 +574,6 @@ class _AreaCardState extends State<_AreaCard> {
                   ),
                 ],
               ),
-              const SizedBox(height: AeaSpace.sm),
-              // ── Action row: edit + delete ──
-              Row(
-                children: [
-                  Expanded(
-                    child: _EditButton(onTap: widget.onEdit),
-                  ),
-                  const SizedBox(width: AeaSpace.sm),
-                  _DeleteIconBtn(
-                    onTap: widget.onDelete,
-                    enabled: !a.isOccupied,
-                  ),
-                ],
-              ),
             ],
           ),
         ),
@@ -791,127 +628,6 @@ class _MiniStat extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _EditButton extends StatefulWidget {
-  final VoidCallback onTap;
-  const _EditButton({required this.onTap});
-
-  @override
-  State<_EditButton> createState() => _EditButtonState();
-}
-
-class _EditButtonState extends State<_EditButton> {
-  bool _hover = false;
-  @override
-  Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: AeaAnimations.fast,
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          decoration: BoxDecoration(
-            color: _hover
-                ? AeaColors.textSecondary.withOpacity(.10)
-                : AeaColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(AeaRadius.sm),
-            border: Border.all(
-              color: _hover
-                  ? AeaColors.textSecondary.withOpacity(.35)
-                  : AeaColors.border,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.visibility_rounded,
-                size: 14,
-                color: _hover ? AeaColors.textPrimary : AeaColors.textSecondary,
-              ),
-              const SizedBox(width: 6),
-              Text(
-                'เรียกดู',
-                style: TextStyle(
-                  fontFamily: AeaText.fontBold,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: _hover ? AeaColors.textPrimary : AeaColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// Delete icon button (used inside card view)
-// ============================================================================
-class _DeleteIconBtn extends StatefulWidget {
-  final VoidCallback onTap;
-  final bool enabled;
-  const _DeleteIconBtn({required this.onTap, this.enabled = true});
-
-  @override
-  State<_DeleteIconBtn> createState() => _DeleteIconBtnState();
-}
-
-class _DeleteIconBtnState extends State<_DeleteIconBtn> {
-  bool _hover = false;
-  @override
-  Widget build(BuildContext context) {
-    final disabled = !widget.enabled;
-    return MouseRegion(
-      cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
-      onEnter: disabled ? null : (_) => setState(() => _hover = true),
-      onExit: disabled ? null : (_) => setState(() => _hover = false),
-      child: Tooltip(
-        message: disabled ? 'ไม่สามารถลบได้ (พื้นที่ไม่ว่าง)' : 'ลบพื้นที่',
-        waitDuration: const Duration(milliseconds: 300),
-        child: GestureDetector(
-          onTap: disabled ? null : widget.onTap,
-          child: AnimatedContainer(
-            duration: AeaAnimations.fast,
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: disabled
-                  ? AeaColors.surfaceMuted.withOpacity(.5)
-                  : _hover
-                      ? AeaColors.statusRejectedFg.withOpacity(.10)
-                      : Colors.white,
-              borderRadius: BorderRadius.circular(AeaRadius.sm),
-              border: Border.all(
-                color: disabled
-                    ? AeaColors.border.withOpacity(.4)
-                    : _hover
-                        ? AeaColors.statusRejectedFg.withOpacity(.45)
-                        : AeaColors.border,
-                width: 1,
-              ),
-            ),
-            child: Icon(
-              Icons.delete_outline_rounded,
-              size: 16,
-              color: disabled
-                  ? AeaColors.textMuted.withOpacity(.35)
-                  : _hover
-                      ? AeaColors.statusRejectedFg
-                      : AeaColors.textSecondary,
-            ),
-          ),
-        ),
       ),
     );
   }

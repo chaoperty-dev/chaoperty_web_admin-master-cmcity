@@ -117,31 +117,17 @@ class _AreaPageBodyState extends State<_AreaPageBody>
   }
 
   // ─── Navigate: Area (lock) ───
-  Future<void> _openAddAreaPage({AreaAreaModel? area}) async {
+  Future<void> _openAddAreaPage() async {
     final vm = context.read<AreaViewModel>();
     await Navigator.of(context).push(
       MaterialPageRoute(
         fullscreenDialog: true,
         builder: (_) => AreaFormPage.create(
           viewModel: vm,
-          mode: area == null ? AreaFormMode.create : AreaFormMode.edit,
-          initial: area,
+          mode: AreaFormMode.create,
         ),
       ),
     );
-  }
-
-  Future<void> _confirmDeleteArea(AreaAreaModel area) async {
-    final vm = context.read<AreaViewModel>();
-    final label = area.lncode.isNotEmpty ? area.lncode : area.ln;
-    final ok = await _confirmDanger(
-      title: 'ยืนยันการลบพื้นที่',
-      body: 'ต้องการลบ "$label" หรือไม่?',
-      confirmLabel: 'ลบพื้นที่',
-    );
-    if (ok == true) {
-      await vm.deleteArea(area);
-    }
   }
 
   // ─── Navigate: Group ───
@@ -153,38 +139,6 @@ class _AreaPageBodyState extends State<_AreaPageBody>
         builder: (_) => AreaGroupFormPage.create(viewModel: vm),
       ),
     );
-  }
-
-  Future<void> _openEditGroupPage({AreaZoneModel? group}) async {
-    final vm = context.read<AreaViewModel>();
-    final g = group ?? vm.selectedGroup;
-    if (g == null || g.ser.isEmpty || g.ser == '0') {
-      _showSnack('กรุณาเลือกหมวดก่อน', AeaColors.statusRejectedFg);
-      return;
-    }
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => AreaGroupFormPage.create(viewModel: vm, initial: g),
-      ),
-    );
-  }
-
-  Future<void> _confirmDeleteGroup({AreaZoneModel? group}) async {
-    final vm = context.read<AreaViewModel>();
-    final g = group ?? vm.selectedGroup;
-    if (g == null || g.ser.isEmpty || g.ser == '0') {
-      _showSnack('กรุณาเลือกหมวดก่อน', AeaColors.statusRejectedFg);
-      return;
-    }
-    final ok = await _confirmDanger(
-      title: 'ยืนยันการลบหมวด',
-      body: 'ต้องการลบหมวด "${g.zn}" หรือไม่?',
-      confirmLabel: 'ลบหมวด',
-    );
-    if (ok == true) {
-      await vm.deleteGroup(ser: g.ser, name: g.zn);
-    }
   }
 
   // ─── Navigate: Zone ───
@@ -205,44 +159,6 @@ class _AreaPageBodyState extends State<_AreaPageBody>
         ),
       ),
     );
-  }
-
-  Future<void> _openEditZonePage({AreaZoneModel? zone}) async {
-    final vm = context.read<AreaViewModel>();
-    final z = zone ?? vm.selectedZone;
-    if (z == null || z.ser.isEmpty) {
-      _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
-      return;
-    }
-    final gs = vm.selectedGroupSer ?? '';
-    await Navigator.of(context).push(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => AreaZoneFormPage.create(
-          viewModel: vm,
-          groupSer: gs,
-          groupName: vm.selectedGroupName,
-          initial: z,
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmDeleteZone({AreaZoneModel? zone}) async {
-    final vm = context.read<AreaViewModel>();
-    final z = zone ?? vm.selectedZone;
-    if (z == null || z.ser.isEmpty) {
-      _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
-      return;
-    }
-    final ok = await _confirmDanger(
-      title: 'ยืนยันการลบโซน',
-      body: 'ต้องการลบโซน "${z.zn}" หรือไม่?',
-      confirmLabel: 'ลบโซน',
-    );
-    if (ok == true) {
-      await vm.deleteZone(ser: z.ser, name: z.zn);
-    }
   }
 
   // ─── Confirm dialog (custom Danger style) ────────────────────────────
@@ -421,18 +337,12 @@ class _AreaPageBodyState extends State<_AreaPageBody>
                 children: [
                   _AreaTab(
                     onAdd: () => _openAddAreaPage(),
-                    onEdit: (a) => _openAddAreaPage(area: a),
-                    onDelete: _confirmDeleteArea,
                   ),
                   _GroupTab(
                     onAdd: _openAddGroupPage,
-                    onEdit: (g) => _openEditGroupPage(group: g),
-                    onDelete: (g) => _confirmDeleteGroup(group: g),
                   ),
                   _ZoneTab(
                     onAdd: _openAddZonePage,
-                    onEdit: (z) => _openEditZonePage(zone: z),
-                    onDelete: (z) => _confirmDeleteZone(zone: z),
                   ),
                 ],
               ),
@@ -503,23 +413,15 @@ class _TabBarHeader extends StatelessWidget {
 }
 
 // ============================================================================
-// Manage button — popup menu (เพิ่ม/แก้ไข/ลบ) รวมเป็นปุ่มเดียว
+// Manage button — popup menu (เพิ่มเท่านั้น)
 // ============================================================================
 class _ManageMenu extends StatefulWidget {
   final String label;
-  final bool canEdit;
-  final bool canDelete;
   final VoidCallback onAdd;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const _ManageMenu({
     required this.label,
-    required this.canEdit,
-    required this.canDelete,
     required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -540,51 +442,14 @@ class _ManageMenuState extends State<_ManageMenu> {
         offset: const Offset(0, 40),
         onSelected: (v) {
           if (v == 'add') widget.onAdd();
-          if (v == 'edit') widget.onEdit();
-          if (v == 'delete') widget.onDelete();
         },
-        itemBuilder: (_) => [
-          const PopupMenuItem(
+        itemBuilder: (_) => const [
+          PopupMenuItem(
             value: 'add',
             child: Row(children: [
               Icon(Icons.add_rounded, size: 16, color: AeaColors.primary),
               SizedBox(width: 8),
               Text('เพิ่มใหม่', style: TextStyle(fontSize: 13)),
-            ]),
-          ),
-          PopupMenuItem(
-            value: 'edit',
-            enabled: widget.canEdit,
-            child: Row(children: [
-              Icon(Icons.edit_outlined,
-                  size: 16,
-                  color:
-                      widget.canEdit ? AeaColors.primary : AeaColors.textMuted),
-              const SizedBox(width: 8),
-              Text('แก้ไข',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: widget.canEdit
-                          ? AeaColors.textPrimary
-                          : AeaColors.textMuted)),
-            ]),
-          ),
-          PopupMenuItem(
-            value: 'delete',
-            enabled: widget.canDelete,
-            child: Row(children: [
-              Icon(Icons.delete_outline_rounded,
-                  size: 16,
-                  color: widget.canDelete
-                      ? AeaColors.statusRejectedFg
-                      : AeaColors.textMuted),
-              const SizedBox(width: 8),
-              Text('ลบ',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: widget.canDelete
-                          ? AeaColors.textPrimary
-                          : AeaColors.textMuted)),
             ]),
           ),
         ],
@@ -768,20 +633,10 @@ class _ToggleBtnState extends State<_ToggleBtn> {
 // ============================================================================
 class _GroupTab extends StatelessWidget {
   final VoidCallback onAdd;
-  final void Function(AreaZoneModel) onEdit;
-  final void Function(AreaZoneModel) onDelete;
-  const _GroupTab({
-    required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _GroupTab({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreaViewModel>();
-    final sel = vm.selectedGroup;
-    final canEditDelete = sel != null && sel.ser.isNotEmpty && sel.ser != '0';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -789,36 +644,23 @@ class _GroupTab extends StatelessWidget {
           children: [
             const Expanded(
               child: Text(
-                'เลือกหมวดเพื่อจัดการ — เพิ่มได้โดยไม่ต้องเลือก, แก้ไข/ลบต้องเลือกก่อน',
+                'จัดการหมวดพื้นที่ — เพิ่มหมวดใหม่ได้จากปุ่มด้านขวา',
                 style: AeaText.caption,
               ),
             ),
             const SizedBox(width: AeaSpace.md),
-            _ManageMenu(
-              label: 'จัดการหมวด',
-              canEdit: canEditDelete,
-              canDelete: canEditDelete,
-              onAdd: onAdd,
-              onEdit: () {
-                if (canEditDelete) onEdit(sel);
-              },
-              onDelete: () {
-                if (canEditDelete) onDelete(sel);
-              },
-            ),
+            _ManageMenu(label: 'จัดการหมวด', onAdd: onAdd),
           ],
         ),
         const SizedBox(height: AeaSpace.md),
-        Expanded(child: _GroupList(onEdit: onEdit, onDelete: onDelete)),
+        Expanded(child: _GroupList()),
       ],
     );
   }
 }
 
 class _GroupList extends StatelessWidget {
-  final void Function(AreaZoneModel)? onEdit;
-  final void Function(AreaZoneModel)? onDelete;
-  const _GroupList({this.onEdit, this.onDelete});
+  const _GroupList();
 
   @override
   Widget build(BuildContext context) {
@@ -856,11 +698,6 @@ class _GroupList extends StatelessWidget {
                   child: Text('จำนวนโซน',
                       style: AeaText.tableHeader, textAlign: TextAlign.right),
                 ),
-                SizedBox(
-                  width: 180,
-                  child: Text('จัดการ',
-                      style: AeaText.tableHeader, textAlign: TextAlign.center),
-                ),
               ],
             ),
           ),
@@ -877,8 +714,6 @@ class _GroupList extends StatelessWidget {
                 final isSel = vm.selectedGroupSer == g.ser;
                 final base = i.isEven ? Colors.white : AeaColors.surfaceMuted;
                 final hoverBg = AeaColors.primary.withOpacity(.06);
-                // ✅ "ทั้งหมด" (ser=0) ห้าม edit/delete inline
-                final allowActions = g.ser != '0';
                 return AnimatedContainer(
                   duration: AeaAnimations.fast,
                   padding: const EdgeInsets.symmetric(
@@ -924,34 +759,6 @@ class _GroupList extends StatelessWidget {
                           ),
                         ),
                       ),
-                      // ✅ action icons (อยู่นอก InkWell → คลิกไม่ trigger เลือกแถว)
-                      SizedBox(
-                        width: 180,
-                        child: allowActions
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  _RowActionIcon(
-                                    icon: Icons.edit_outlined,
-                                    bg: AeaColors.statusApprovedBg,
-                                    fg: AeaColors.statusApprovedFg,
-                                    label: 'แก้ไข',
-                                    enabled: onEdit != null,
-                                    onTap: () => onEdit?.call(g),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  _RowActionIcon(
-                                    icon: Icons.delete_outline_rounded,
-                                    bg: AeaColors.statusRejectedBg,
-                                    fg: AeaColors.statusRejectedFg,
-                                    label: 'ลบ',
-                                    enabled: onDelete != null,
-                                    onTap: () => onDelete?.call(g),
-                                  ),
-                                ],
-                              )
-                            : const SizedBox.shrink(),
-                      ),
                     ],
                   ),
                 );
@@ -969,20 +776,10 @@ class _GroupList extends StatelessWidget {
 // ============================================================================
 class _ZoneTab extends StatelessWidget {
   final VoidCallback onAdd;
-  final void Function(AreaZoneModel) onEdit;
-  final void Function(AreaZoneModel) onDelete;
-  const _ZoneTab({
-    required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _ZoneTab({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreaViewModel>();
-    final zoneSel = vm.selectedZoneSer != null;
-    final sel = vm.selectedZone;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1002,23 +799,12 @@ class _ZoneTab extends StatelessWidget {
               ),
               Expanded(child: _GroupDropdownInline()),
               const SizedBox(width: AeaSpace.md),
-              _ManageMenu(
-                label: 'จัดการโซน',
-                canEdit: zoneSel,
-                canDelete: zoneSel,
-                onAdd: onAdd,
-                onEdit: () {
-                  if (zoneSel && sel != null) onEdit(sel);
-                },
-                onDelete: () {
-                  if (zoneSel && sel != null) onDelete(sel);
-                },
-              ),
+              _ManageMenu(label: 'จัดการโซน', onAdd: onAdd),
             ],
           ),
         ),
         const SizedBox(height: AeaSpace.md),
-        Expanded(child: _ZoneList(onEdit: onEdit, onDelete: onDelete)),
+        Expanded(child: _ZoneList()),
       ],
     );
   }
@@ -1059,9 +845,7 @@ class _GroupDropdownInline extends StatelessWidget {
 }
 
 class _ZoneList extends StatelessWidget {
-  final void Function(AreaZoneModel)? onEdit;
-  final void Function(AreaZoneModel)? onDelete;
-  const _ZoneList({this.onEdit, this.onDelete});
+  const _ZoneList();
 
   @override
   Widget build(BuildContext context) {
@@ -1105,11 +889,6 @@ class _ZoneList extends StatelessWidget {
                   width: 80,
                   child: Text('จำนวนพื้นที่',
                       style: AeaText.tableHeader, textAlign: TextAlign.right),
-                ),
-                SizedBox(
-                  width: 180,
-                  child: Text('จัดการ',
-                      style: AeaText.tableHeader, textAlign: TextAlign.center),
                 ),
               ],
             ),
@@ -1169,32 +948,6 @@ class _ZoneList extends StatelessWidget {
                           ),
                         ),
                       ),
-                      // ✅ action icons (อยู่นอก InkWell → คลิกไม่ trigger เลือกแถว)
-                      SizedBox(
-                        width: 180,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _RowActionIcon(
-                              icon: Icons.edit_outlined,
-                              bg: AeaColors.statusApprovedBg,
-                              fg: AeaColors.statusApprovedFg,
-                              label: 'แก้ไข',
-                              enabled: onEdit != null,
-                              onTap: () => onEdit?.call(z),
-                            ),
-                            const SizedBox(width: 4),
-                            _RowActionIcon(
-                              icon: Icons.delete_outline_rounded,
-                              bg: AeaColors.statusRejectedBg,
-                              fg: AeaColors.statusRejectedFg,
-                              label: 'ลบ',
-                              enabled: onDelete != null,
-                              onTap: () => onDelete?.call(z),
-                            ),
-                          ],
-                        ),
-                      ),
                     ],
                   ),
                 );
@@ -1212,21 +965,10 @@ class _ZoneList extends StatelessWidget {
 // ============================================================================
 class _AreaTab extends StatelessWidget {
   final VoidCallback onAdd;
-  final void Function(AreaAreaModel) onEdit;
-  final void Function(AreaAreaModel) onDelete;
-  const _AreaTab({
-    required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
-  });
+  const _AreaTab({required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreaViewModel>();
-    final sel = vm.selectedArea;
-    final hasSel = sel != null && sel.ser.isNotEmpty;
-    // ✅ canDelete เช็ค isOccupied ป้องกันลบพื้นที่ที่มีผู้เช่า
-    final canDelete = sel?.isOccupied == false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1234,16 +976,7 @@ class _AreaTab extends StatelessWidget {
         AreaZoneFilter(
           trailing: _ManageMenu(
             label: 'จัดการพื้นที่',
-            canEdit: hasSel,
-            canDelete: canDelete,
             onAdd: onAdd,
-            onEdit: () {
-              // defense-in-depth — popup กันแล้วด้วย enabled: canEdit
-              if (sel != null && sel.ser.isNotEmpty) onEdit(sel);
-            },
-            onDelete: () {
-              if (sel != null && !sel.isOccupied) onDelete(sel);
-            },
           ),
         ),
         const SizedBox(height: AeaSpace.md),
@@ -1252,12 +985,7 @@ class _AreaTab extends StatelessWidget {
         const SizedBox(height: AeaSpace.md),
         Expanded(
           child: SingleChildScrollView(
-            child: AreaTable(
-              onEdit: onEdit,
-              onDelete: onDelete,
-              // ✅ tap row = select (popup จะ enabled แก้ไข/ลบ ให้ทันที)
-              onRowTap: (a) => vm.onAreaChanged(a.ser),
-            ),
+            child: const AreaTable(),
           ),
         ),
       ],
@@ -1394,86 +1122,6 @@ class _DangerBtnState extends State<_DangerBtn> {
                 ),
               ),
             ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// _RowActionIcon — inline edit/delete button (shared by _GroupList + _ZoneList)
-// ============================================================================
-class _RowActionIcon extends StatefulWidget {
-  final IconData icon;
-
-  /// สีพื้นของ pill
-  final Color bg;
-
-  /// สีไอคอน + ข้อความ
-  final Color fg;
-
-  /// ข้อความบนปุ่ม (เช่น 'แก้ไข' / 'ลบ')
-  final String label;
-  final VoidCallback onTap;
-  final bool enabled;
-  const _RowActionIcon({
-    required this.icon,
-    required this.bg,
-    required this.fg,
-    required this.label,
-    required this.onTap,
-    this.enabled = true,
-  });
-  @override
-  State<_RowActionIcon> createState() => _RowActionIconState();
-}
-
-class _RowActionIconState extends State<_RowActionIcon> {
-  bool _hover = false;
-  @override
-  Widget build(BuildContext context) {
-    final disabled = !widget.enabled;
-    return MouseRegion(
-      cursor:
-          disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.click,
-      onEnter: disabled ? null : (_) => setState(() => _hover = true),
-      onExit: disabled ? null : (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: disabled ? null : widget.onTap,
-        child: Opacity(
-          opacity: disabled ? .45 : 1,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 120),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-            decoration: BoxDecoration(
-              color: widget.bg,
-              borderRadius: BorderRadius.circular(AeaRadius.pill),
-              boxShadow: (_hover && !disabled)
-                  ? [
-                      BoxShadow(
-                        color: widget.fg.withValues(alpha: .28),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ]
-                  : const [],
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(widget.icon, size: 14, color: widget.fg),
-                const SizedBox(width: 5),
-                Text(
-                  widget.label,
-                  style: TextStyle(
-                    color: widget.fg,
-                    fontSize: 12,
-                    fontFamily: AeaText.fontBold,
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
