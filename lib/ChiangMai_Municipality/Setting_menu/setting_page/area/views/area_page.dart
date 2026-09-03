@@ -335,26 +335,48 @@ class _TabBarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: AeaDecor.card(),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(AeaRadius.md),
+        border: Border.all(color: AeaColors.border),
+      ),
       child: TabBar(
         controller: controller,
-        labelColor: AeaColors.primary,
+        labelColor: AeaColors.primaryDark,
         unselectedLabelColor: AeaColors.textSecondary,
-        indicator: UnderlineTabIndicator(
-          borderSide:
-              const BorderSide(color: AeaColors.primary, width: 2.5),
-          insets: const EdgeInsets.symmetric(horizontal: 24),
+        indicator: BoxDecoration(
+          borderRadius: BorderRadius.circular(AeaRadius.md),
+          color: AeaColors.primary.withValues(alpha: .10),
         ),
-        labelStyle: AeaText.body.copyWith(
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.all(4),
+        dividerColor: Colors.transparent,
+        labelStyle: const TextStyle(
           fontFamily: AeaText.fontBold,
-          fontWeight: FontWeight.w700,
           fontSize: 13,
+          fontWeight: FontWeight.w700,
         ),
-        unselectedLabelStyle: AeaText.body.copyWith(fontSize: 13),
+        unselectedLabelStyle: const TextStyle(
+          fontFamily: AeaText.fontRegular,
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
         tabs: const [
-          Tab(icon: Icon(Icons.map_outlined, size: 16), text: 'พื้นที่เช่า'),
-          Tab(icon: Icon(Icons.layers_outlined, size: 16), text: 'หมวดพื้นที่'),
-          Tab(icon: Icon(Icons.place_outlined, size: 16), text: 'โซน'),
+          Tab(
+            icon: Icon(Icons.map_outlined, size: 18),
+            text: 'พื้นที่เช่า',
+            iconMargin: EdgeInsets.only(bottom: 4),
+          ),
+          Tab(
+            icon: Icon(Icons.layers_outlined, size: 18),
+            text: 'หมวดพื้นที่',
+            iconMargin: EdgeInsets.only(bottom: 4),
+          ),
+          Tab(
+            icon: Icon(Icons.place_outlined, size: 18),
+            text: 'โซน',
+            iconMargin: EdgeInsets.only(bottom: 4),
+          ),
         ],
       ),
     );
