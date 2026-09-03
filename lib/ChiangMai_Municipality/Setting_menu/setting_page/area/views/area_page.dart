@@ -503,23 +503,15 @@ class _TabBarHeader extends StatelessWidget {
 }
 
 // ============================================================================
-// Manage button — popup menu (เพิ่ม/แก้ไข/ลบ) รวมเป็นปุ่มเดียว
+// Manage button — popup menu (เพิ่มเท่านั้น) — edit/delete ย้ายไปอยู่ใน pill ของแถว
 // ============================================================================
 class _ManageMenu extends StatefulWidget {
   final String label;
-  final bool canEdit;
-  final bool canDelete;
   final VoidCallback onAdd;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
 
   const _ManageMenu({
     required this.label,
-    required this.canEdit,
-    required this.canDelete,
     required this.onAdd,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -540,51 +532,14 @@ class _ManageMenuState extends State<_ManageMenu> {
         offset: const Offset(0, 40),
         onSelected: (v) {
           if (v == 'add') widget.onAdd();
-          if (v == 'edit') widget.onEdit();
-          if (v == 'delete') widget.onDelete();
         },
-        itemBuilder: (_) => [
-          const PopupMenuItem(
+        itemBuilder: (_) => const [
+          PopupMenuItem(
             value: 'add',
             child: Row(children: [
               Icon(Icons.add_rounded, size: 16, color: AeaColors.primary),
               SizedBox(width: 8),
               Text('เพิ่มใหม่', style: TextStyle(fontSize: 13)),
-            ]),
-          ),
-          PopupMenuItem(
-            value: 'edit',
-            enabled: widget.canEdit,
-            child: Row(children: [
-              Icon(Icons.edit_outlined,
-                  size: 16,
-                  color:
-                      widget.canEdit ? AeaColors.primary : AeaColors.textMuted),
-              const SizedBox(width: 8),
-              Text('แก้ไข',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: widget.canEdit
-                          ? AeaColors.textPrimary
-                          : AeaColors.textMuted)),
-            ]),
-          ),
-          PopupMenuItem(
-            value: 'delete',
-            enabled: widget.canDelete,
-            child: Row(children: [
-              Icon(Icons.delete_outline_rounded,
-                  size: 16,
-                  color: widget.canDelete
-                      ? AeaColors.statusRejectedFg
-                      : AeaColors.textMuted),
-              const SizedBox(width: 8),
-              Text('ลบ',
-                  style: TextStyle(
-                      fontSize: 13,
-                      color: widget.canDelete
-                          ? AeaColors.textPrimary
-                          : AeaColors.textMuted)),
             ]),
           ),
         ],
@@ -778,10 +733,6 @@ class _GroupTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreaViewModel>();
-    final sel = vm.selectedGroup;
-    final canEditDelete = sel != null && sel.ser.isNotEmpty && sel.ser != '0';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -796,15 +747,7 @@ class _GroupTab extends StatelessWidget {
             const SizedBox(width: AeaSpace.md),
             _ManageMenu(
               label: 'จัดการหมวด',
-              canEdit: canEditDelete,
-              canDelete: canEditDelete,
               onAdd: onAdd,
-              onEdit: () {
-                if (canEditDelete) onEdit(sel);
-              },
-              onDelete: () {
-                if (canEditDelete) onDelete(sel);
-              },
             ),
           ],
         ),
@@ -977,10 +920,6 @@ class _ZoneTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final vm = context.watch<AreaViewModel>();
-    final zoneSel = vm.selectedZoneSer != null;
-    final sel = vm.selectedZone;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1002,15 +941,7 @@ class _ZoneTab extends StatelessWidget {
               const SizedBox(width: AeaSpace.md),
               _ManageMenu(
                 label: 'จัดการโซน',
-                canEdit: zoneSel,
-                canDelete: zoneSel,
                 onAdd: onAdd,
-                onEdit: () {
-                  if (zoneSel && sel != null) onEdit(sel);
-                },
-                onDelete: () {
-                  if (zoneSel && sel != null) onDelete(sel);
-                },
               ),
             ],
           ),
@@ -1219,10 +1150,6 @@ class _AreaTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AreaViewModel>();
-    final sel = vm.selectedArea;
-    final hasSel = sel != null && sel.ser.isNotEmpty;
-    // ✅ canDelete เช็ค isOccupied ป้องกันลบพื้นที่ที่มีผู้เช่า
-    final canDelete = sel?.isOccupied == false;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -1230,15 +1157,7 @@ class _AreaTab extends StatelessWidget {
         AreaZoneFilter(
           trailing: _ManageMenu(
             label: 'จัดการพื้นที่',
-            canEdit: hasSel,
-            canDelete: canDelete,
             onAdd: onAdd,
-            onEdit: () {
-              if (sel != null && sel.ser.isNotEmpty) onEdit(sel);
-            },
-            onDelete: () {
-              if (sel != null && !sel.isOccupied) onDelete(sel);
-            },
           ),
         ),
         const SizedBox(height: AeaSpace.md),
