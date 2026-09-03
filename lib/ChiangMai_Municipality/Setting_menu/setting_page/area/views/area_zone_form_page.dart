@@ -168,6 +168,40 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
                       return null;
                     },
                   ),
+                  const SizedBox(height: AeaSpace.sm),
+                  const Text(
+                    'ตั้งชื่อโซนให้จดจำง่าย — ควรตั้งตามหมายเลข อาคาร หรือจุดสังเกต',
+                    style: AeaText.caption,
+                  ),
+                  if (widget.initial != null) ...[
+                    const SizedBox(height: AeaSpace.lg),
+                    Container(
+                      padding: const EdgeInsets.all(AeaSpace.md),
+                      decoration: BoxDecoration(
+                        color: AeaColors.surfaceMuted,
+                        borderRadius: BorderRadius.circular(AeaRadius.sm),
+                        border: Border.all(color: AeaColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.history_rounded,
+                              size: 16, color: AeaColors.textSecondary),
+                          const SizedBox(width: 8),
+                          Text(
+                            'อัปเดตล่าสุด: ${widget.initial!.dataUpdate.isEmpty ? "-" : widget.initial!.dataUpdate}',
+                            style: AeaText.caption,
+                          ),
+                          const Spacer(),
+                          Text(
+                            'ID: ${widget.initial!.ser}',
+                            style: AeaText.caption.copyWith(
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

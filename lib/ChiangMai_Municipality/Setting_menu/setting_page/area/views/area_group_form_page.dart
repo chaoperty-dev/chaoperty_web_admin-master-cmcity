@@ -137,6 +137,40 @@ class _AreaGroupFormPageState extends State<AreaGroupFormPage> {
                             return null;
                           },
                         ),
+                        const SizedBox(height: AeaSpace.sm),
+                        const Text(
+                          'ตั้งชื่อหมวดให้จำง่าย — ควรตั้งตามชื่ออาคาร ถนน หรือโซนที่ตั้ง',
+                          style: AeaText.caption,
+                        ),
+                        if (widget.initial != null) ...[
+                          const SizedBox(height: AeaSpace.lg),
+                          Container(
+                            padding: const EdgeInsets.all(AeaSpace.md),
+                            decoration: BoxDecoration(
+                              color: AeaColors.surfaceMuted,
+                              borderRadius: BorderRadius.circular(AeaRadius.sm),
+                              border: Border.all(color: AeaColors.border),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.history_rounded,
+                                    size: 16, color: AeaColors.textSecondary),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'อัปเดตล่าสุด: ${widget.initial!.dataUpdate.isEmpty ? "-" : widget.initial!.dataUpdate}',
+                                  style: AeaText.caption,
+                                ),
+                                const Spacer(),
+                                Text(
+                                  'ID: ${widget.initial!.ser}',
+                                  style: AeaText.caption.copyWith(
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),
