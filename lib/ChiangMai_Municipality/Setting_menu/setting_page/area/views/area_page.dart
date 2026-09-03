@@ -927,28 +927,30 @@ class _GroupList extends StatelessWidget {
                       // ✅ action icons (อยู่นอก InkWell → คลิกไม่ trigger เลือกแถว)
                       SizedBox(
                         width: 180,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            _RowActionIcon(
-                              icon: Icons.edit_outlined,
-                              bg: AeaColors.statusApprovedBg,
-                              fg: AeaColors.statusApprovedFg,
-                              label: 'แก้ไข',
-                              enabled: allowActions && onEdit != null,
-                              onTap: () => onEdit?.call(g),
-                            ),
-                            const SizedBox(width: 6),
-                            _RowActionIcon(
-                              icon: Icons.delete_outline_rounded,
-                              bg: AeaColors.statusRejectedBg,
-                              fg: AeaColors.statusRejectedFg,
-                              label: 'ลบ',
-                              enabled: allowActions && onDelete != null,
-                              onTap: () => onDelete?.call(g),
-                            ),
-                          ],
-                        ),
+                        child: allowActions
+                            ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  _RowActionIcon(
+                                    icon: Icons.edit_outlined,
+                                    bg: AeaColors.statusApprovedBg,
+                                    fg: AeaColors.statusApprovedFg,
+                                    label: 'แก้ไข',
+                                    enabled: onEdit != null,
+                                    onTap: () => onEdit?.call(g),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  _RowActionIcon(
+                                    icon: Icons.delete_outline_rounded,
+                                    bg: AeaColors.statusRejectedBg,
+                                    fg: AeaColors.statusRejectedFg,
+                                    label: 'ลบ',
+                                    enabled: onDelete != null,
+                                    onTap: () => onDelete?.call(g),
+                                  ),
+                                ],
+                              )
+                            : const SizedBox.shrink(),
                       ),
                     ],
                   ),
