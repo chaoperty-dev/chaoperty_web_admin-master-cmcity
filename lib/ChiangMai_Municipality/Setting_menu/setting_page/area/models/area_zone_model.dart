@@ -22,6 +22,9 @@ class AreaZoneModel {
   /// จำนวน (qty)
   final String qty;
 
+  /// ✅ จำนวนพื้นที่ (areas_count) — นับจาก lock ในโซนนี้
+  final int areasCount;
+
   /// path รูป (เก็บไว้ ไม่ใช้งานในหน้านี้)
   final String img;
 
@@ -34,6 +37,7 @@ class AreaZoneModel {
     required this.zn,
     this.groupSer,
     this.qty = '0',
+    this.areasCount = 0,
     this.img = '0',
     this.dataUpdate = '',
   });
@@ -45,6 +49,7 @@ class AreaZoneModel {
       rser: (json['ser'] ?? '0').toString(),
       zn: (json['zn'] ?? '').toString(),
       qty: (json['qty'] ?? '0').toString(),
+      areasCount: _parseCount(json['areas_count']),
       img: (json['img'] ?? '0').toString(),
       dataUpdate: (json['data_update'] ?? '').toString(),
     );
@@ -58,9 +63,18 @@ class AreaZoneModel {
       rser: (json['group_ser'] ?? '0').toString(),
       zn: (json['zn'] ?? '').toString(),
       qty: (json['qty'] ?? '0').toString(),
+      areasCount: _parseCount(json['areas_count']),
       img: (json['img'] ?? '0').toString(),
       dataUpdate: (json['data_update'] ?? '').toString(),
     );
+  }
+
+  /// Parse ค่า count — รับทั้ง int และ String (กัน API ส่ง dtype ไม่นิ่ง)
+  static int _parseCount(dynamic v) {
+    if (v == null) return 0;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    return int.tryParse(v.toString()) ?? 0;
   }
 
   /// Fallback JSON — รองรับทั้ง group และ zone shape

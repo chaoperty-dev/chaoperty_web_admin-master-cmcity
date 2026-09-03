@@ -1101,6 +1101,11 @@ class _ZoneList extends StatelessWidget {
               children: [
                 Expanded(child: Text('ชื่อโซน', style: AeaText.tableHeader)),
                 SizedBox(
+                  width: 80,
+                  child: Text('จำนวนพื้นที่',
+                      style: AeaText.tableHeader, textAlign: TextAlign.right),
+                ),
+                SizedBox(
                   width: 90,
                   child: Text('จัดการ',
                       style: AeaText.tableHeader, textAlign: TextAlign.center),
@@ -1148,6 +1153,18 @@ class _ZoneList extends StatelessWidget {
                                     style: AeaText.body),
                               ),
                             ],
+                          ),
+                        ),
+                      ),
+                      // ✅ จำนวนพื้นที่ (areas_count) — count จาก lock ทั้งหมดในโซนนี้
+                      SizedBox(
+                        width: 80,
+                        child: Text(
+                          z.areasCount.toString(),
+                          textAlign: TextAlign.right,
+                          style: AeaText.bodyMuted.copyWith(
+                            fontFamily: AeaText.fontBold,
+                            fontSize: 12,
                           ),
                         ),
                       ),
