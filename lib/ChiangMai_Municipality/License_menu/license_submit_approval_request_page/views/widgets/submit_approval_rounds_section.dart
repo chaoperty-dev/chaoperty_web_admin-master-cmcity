@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../theme/license_submit_approval_theme.dart';
+import '../../models/submit_approval_detail_extended.dart';
 import '../../viewmodels/license_submit_approval_rounds_view_model.dart';
 
 class SubmitApprovalRoundsSection extends StatefulWidget {
@@ -44,7 +45,10 @@ class _SubmitApprovalRoundsSectionState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _ensureReset());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureReset();
+      _loadHistoryIfNeeded();
+    });
   }
 
   @override
@@ -52,7 +56,15 @@ class _SubmitApprovalRoundsSectionState
     super.didUpdateWidget(old);
     if (old.requestUuid != widget.requestUuid) {
       _ensureReset();
+      _loadHistoryIfNeeded();
     }
+  }
+
+  void _loadHistoryIfNeeded() {
+    final uuid = widget.requestUuid;
+    if (uuid == null || uuid.isEmpty) return;
+    // ignore: discarded_futures
+    context.read<LicenseSubmitApprovalRoundsViewModel>().loadHistory(uuid);
   }
 
   void _ensureReset() {
@@ -103,6 +115,16 @@ class _SubmitApprovalRoundsSectionState
                       ? null
                       : () => _onSubmit(ctx, roundsVm, uuid),
                 ),
+              // ─── ประวัติ rounds (โหลดจาก detail endpoint) ───
+              if (roundsVm.history.isNotEmpty) ...[
+                const SizedBox(height: LaSpace.lg),
+                const _HistoryDivider(),
+                const SizedBox(height: LaSpace.md),
+                _HistorySection(history: roundsVm.history),
+              ] else if (roundsVm.isLoadingHistory) ...[
+                const SizedBox(height: LaSpace.lg),
+                const _HistoryLoading(),
+              ],
             ],
           );
         },
@@ -403,6 +425,183 @@ class _ErrorBanner extends StatelessWidget {
               Icons.close_rounded,
               size: 16,
               color: LaColors.statusRejectedFg,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// History section — แสดงประวัติ rounds ที่เคยเปิด
+// ============================================================================
+
+class _HistoryDivider extends StatelessWidget {
+  const _HistoryDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.history_rounded,
+            size: 14, color: LaColors.textSecondary),
+        const SizedBox(width: 6),
+        Text('ประวัติการส่งคำร้อง (รอบการอนุมัติ)',
+            style: LaText.caption),
+      ],
+    );
+  }
+}
+
+class _HistoryLoading extends StatelessWidget {
+  const _HistoryLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: LaSpace.md),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox(
+            width: 14,
+            height: 14,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 8),
+          Text('กำลังโหลดประวัติ...', style: LaText.caption),
+        ],
+      ),
+    );
+  }
+}
+
+class _HistorySection extends StatelessWidget {
+  final List<ApprovalHistoryEntry> history;
+  const _HistorySection({required this.history});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (int i = 0; i < history.length; i++) ...[
+          _HistoryRow(entry: history[i], isFirst: i == 0),
+          if (i < history.length - 1)
+            const Padding(
+              padding: EdgeInsets.only(left: 22),
+              child: Divider(
+                  height: 1, thickness: 1, color: LaColors.border),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+class _HistoryRow extends StatelessWidget {
+  final ApprovalHistoryEntry entry;
+  final bool isFirst;
+  const _HistoryRow({required this.entry, required this.isFirst});
+
+  @override
+  Widget build(BuildContext context) {
+    final roundNo = entry.round ?? '-';
+    final state = entry.status ?? '';
+    final stepName = entry.stepName ?? '';
+    final actedBy = entry.actedBy ?? '-';
+    final actedAt = entry.actedAt ?? '';
+    final remark = entry.remark ?? '';
+
+    // state-based color/icon
+    Color bg = LaColors.surfaceMuted;
+    Color fg = LaColors.textSecondary;
+    IconData icon = Icons.help_outline_rounded;
+    String stateLabel = state.isEmpty ? 'ไม่ระบุ' : state;
+    final s = state.toLowerCase();
+    if (s.contains('approve') || s.contains('pass') || s.contains('อนุมัติ')) {
+      bg = LaColors.statusApprovedBg;
+      fg = LaColors.statusApprovedFg;
+      icon = Icons.check_circle_rounded;
+      stateLabel = 'อนุมัติ';
+    } else if (s.contains('reject') ||
+        s.contains('cancel') ||
+        s.contains('ปฏิเสธ') ||
+        s.contains('ยกเลิก')) {
+      bg = LaColors.statusRejectedBg;
+      fg = LaColors.statusRejectedFg;
+      icon = Icons.cancel_rounded;
+      stateLabel = 'ปฏิเสธ';
+    } else if (s.contains('pending') || s.contains('รอ')) {
+      bg = LaColors.statusPendingBg;
+      fg = LaColors.statusPendingFg;
+      icon = Icons.hourglass_top_rounded;
+      stateLabel = 'รอ';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // bullet icon
+          Container(
+            width: 24,
+            height: 24,
+            margin: const EdgeInsets.only(top: 2, right: 12),
+            decoration: BoxDecoration(
+              color: bg,
+              shape: BoxShape.circle,
+              border: Border.all(color: fg.withOpacity(.30)),
+            ),
+            child: Icon(icon, size: 14, color: fg),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      'รอบที่ $roundNo — $stateLabel',
+                      style: LaText.body.copyWith(
+                        fontFamily: LaText.fontBold,
+                        fontWeight: FontWeight.w700,
+                        color: fg,
+                      ),
+                    ),
+                    if (stepName.isNotEmpty) ...[
+                      const SizedBox(width: 6),
+                      Flexible(
+                        child: Text(
+                          '• $stepName',
+                          overflow: TextOverflow.ellipsis,
+                          style: LaText.caption,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 4),
+                if (actedAt.isNotEmpty)
+                  Text(
+                    'เปิดเมื่อ $actedAt • โดย $actedBy',
+                    style: LaText.caption,
+                  ),
+                if (remark.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 2),
+                    child: Text(
+                      'หมายเหตุ: $remark',
+                      style: LaText.caption.copyWith(
+                        color: LaColors.textSecondary,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
         ],

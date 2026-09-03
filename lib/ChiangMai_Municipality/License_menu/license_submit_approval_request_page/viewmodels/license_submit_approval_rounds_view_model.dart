@@ -7,6 +7,7 @@
 
 import 'package:flutter/foundation.dart';
 
+import '../models/submit_approval_detail_extended.dart';
 import '../models/submit_approval_rounds_models.dart';
 import '../services/license_submit_approval_detail_service.dart';
 
@@ -25,10 +26,16 @@ class LicenseSubmitApprovalRoundsViewModel extends ChangeNotifier {
   ApprovalRound? _lastRound;
   String? _checkedUuid;
 
+  /// ประวัติ rounds (โหลดจาก detail endpoint)
+  List<ApprovalHistoryEntry> _history = const [];
+  bool _isLoadingHistory = false;
+
   bool get isStartingRound => _isStartingRound;
   bool? get canOpenRound => _canOpenRound;
   String? get roundError => _roundError;
   ApprovalRound? get lastRound => _lastRound;
+  List<ApprovalHistoryEntry> get history => _history;
+  bool get isLoadingHistory => _isLoadingHistory;
 
   /// เรียกหลัง loadApprovalDetail เสร็จ → อ่าน can_open_round จาก response
   void syncCanOpenRound(String uuid, bool canOpen) {
@@ -45,7 +52,26 @@ class LicenseSubmitApprovalRoundsViewModel extends ChangeNotifier {
     if (_checkedUuid != uuid) {
       _canOpenRound = null;
       _lastRound = null;
+      _history = const [];
       _checkedUuid = uuid;
+    }
+  }
+
+  /// โหลดประวัติ rounds (GET /v2/admin/approvals/{uuid}) — เรียกใน step1
+  Future<void> loadHistory(String requestUuid) async {
+    if (requestUuid.isEmpty) return;
+    if (_isLoadingHistory) return;
+    _isLoadingHistory = true;
+    notifyListeners();
+    try {
+      final detail =
+          await _service.fetchApprovalDetail(requestUuid: requestUuid);
+      _history = detail.history;
+    } catch (_) {
+      // ไม่ทำให้หน้า crash — ปล่อย history เดิม
+    } finally {
+      _isLoadingHistory = false;
+      notifyListeners();
     }
   }
 
@@ -63,6 +89,9 @@ class LicenseSubmitApprovalRoundsViewModel extends ChangeNotifier {
       final round = await _service.startRound(requestUuid: requestUuid);
       _lastRound = round;
       _canOpenRound = false; // เปิดแล้ว → ปิดไม่ให้เปิดอีก
+      // refresh history หลังเปิดรอบใหม่
+      // ignore: discarded_futures
+      loadHistory(requestUuid);
       return round;
     } catch (e) {
       _roundError = e.toString();
