@@ -181,7 +181,7 @@ class _AreaGroupFormPageState extends State<AreaGroupFormPage> {
 
 // ---- helpers --------------------------------------------------------------
 
-/// Format data_update ("2026-09-02 15:09:39" or "2026-09-02") → "02/09/2569 15:09"
+/// Format data_update ("2026-09-02 15:09:39" or "2026-09-02") → "02-09-2026 15:09"
 String _formatDateTime(String raw) {
   if (raw.isEmpty) return '-';
   // Try to parse as DateTime — accept both date+time and date-only
@@ -193,15 +193,15 @@ String _formatDateTime(String raw) {
   }
   if (dt == null) return raw;
   // Convert to Buddhist year (พ.ศ. = ค.ศ. + 543)
-  final buddhistYear = dt.year + 543;
+  final yyyy = dt.year.toString();
   final dd = dt.day.toString().padLeft(2, '0');
   final mm = dt.month.toString().padLeft(2, '0');
   final hh = dt.hour.toString().padLeft(2, '0');
   final min = dt.minute.toString().padLeft(2, '0');
   if (dt.hour == 0 && dt.minute == 0 && dt.second == 0) {
-    return '$dd/$mm/$buddhistYear';
+    return "$dd-$mm-$yyyy";
   }
-  return '$dd/$mm/$buddhistYear $hh:$min';
+  return '$dd-$mm-$yyyy $hh:$min';
 }
 
 InputDecoration _inputDeco({required String hint}) {

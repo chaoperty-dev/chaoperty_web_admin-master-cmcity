@@ -209,7 +209,7 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
 
 // ---- helpers --------------------------------------------------------------
 
-/// Format data_update ("2026-09-02 15:09:39" or "2026-09-02") → "02/09/2569 15:09"
+/// Format data_update ("2026-09-02 15:09:39" or "2026-09-02") → "02-09-2026 15:09"
 String _formatDateTime(String raw) {
   if (raw.isEmpty) return '-';
   DateTime? dt = DateTime.tryParse(raw);
@@ -218,15 +218,15 @@ String _formatDateTime(String raw) {
     dt = DateTime.tryParse(parts.first);
   }
   if (dt == null) return raw;
-  final buddhistYear = dt.year + 543;
   final dd = dt.day.toString().padLeft(2, '0');
   final mm = dt.month.toString().padLeft(2, '0');
+  final yyyy = dt.year.toString();
   final hh = dt.hour.toString().padLeft(2, '0');
   final min = dt.minute.toString().padLeft(2, '0');
   if (dt.hour == 0 && dt.minute == 0 && dt.second == 0) {
-    return '$dd/$mm/$buddhistYear';
+    return '$dd-$mm-$yyyy';
   }
-  return '$dd/$mm/$buddhistYear $hh:$min';
+  return '$dd-$mm-$yyyy $hh:$min';
 }
 
 InputDecoration _inputDeco({required String hint}) {
