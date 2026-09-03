@@ -57,6 +57,8 @@ class _SubmitApprovalDetailStep1State extends State<SubmitApprovalDetailStep1> {
 
   Future<void> _loadIfNeeded() async {
     final uuid = widget.requestUuid;
+    // ignore: avoid_print
+    print('🔵 [Step1._loadIfNeeded] uuid=$uuid  loadedUuid=$_loadedUuid  hasDetail=${_detail != null}');
     if (uuid == null || uuid.isEmpty) return;
     if (_loadedUuid == uuid && _detail != null) return;
 

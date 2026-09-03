@@ -40,11 +40,11 @@ class LicenseSubmitApprovalDetailService {
     }
 
     final headers = await MyHeaders.build();
+    final url = _uriV2('v2/admin/requests/tasks/approvals?uuid=$uuid');
+    // ignore: avoid_print
+    print('🟡 [fetchSubmitApprovalDetail] url=$url');
     final res = await http
-        .get(
-          _uriV2('v2/admin/requests/tasks/approvals?uuid=$uuid'),
-          headers: headers,
-        )
+        .get(url, headers: headers)
         .timeout(const Duration(seconds: 15));
 
     if (res.statusCode != 200) {

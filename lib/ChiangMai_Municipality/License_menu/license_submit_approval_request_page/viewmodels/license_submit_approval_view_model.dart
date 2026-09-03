@@ -456,6 +456,8 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
   // ===============================================================
   /// ผู้ใช้กดปุ่ม "ดู" ในแถว → เปิด detail page
   void onViewPayment(SubmitApprovalDetail payment) {
+    // ignore: avoid_print
+    print('🟢 [onViewPayment] uuid=${payment.uuid} ln=${payment.ln}');
     _eventController.add(
       LicenseSubmitApprovalNavigateDetailEvent(
         paymentUuid: payment.uuid,
