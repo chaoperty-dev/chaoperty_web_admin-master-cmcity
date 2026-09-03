@@ -187,15 +187,10 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
                           const Icon(Icons.history_rounded,
                               size: 16, color: AeaColors.textSecondary),
                           const SizedBox(width: 8),
-                          Text(
-                            'อัปเดตล่าสุด: ${widget.initial!.dataUpdate.isEmpty ? "-" : widget.initial!.dataUpdate}',
-                            style: AeaText.caption,
-                          ),
-                          const Spacer(),
-                          Text(
-                            'ID: ${widget.initial!.ser}',
-                            style: AeaText.caption.copyWith(
-                              fontFamily: 'monospace',
+                          Expanded(
+                            child: Text(
+                              'อัปเดตล่าสุด: ${_formatDateTime(widget.initial!.dataUpdate)}',
+                              style: AeaText.caption,
                             ),
                           ),
                         ],
@@ -213,6 +208,26 @@ class _AreaZoneFormPageState extends State<AreaZoneFormPage> {
 }
 
 // ---- helpers --------------------------------------------------------------
+
+/// Format data_update ("2026-09-02 15:09:39" or "2026-09-02") → "02/09/2569 15:09"
+String _formatDateTime(String raw) {
+  if (raw.isEmpty) return '-';
+  DateTime? dt = DateTime.tryParse(raw);
+  if (dt == null) {
+    final parts = raw.split(' ');
+    dt = DateTime.tryParse(parts.first);
+  }
+  if (dt == null) return raw;
+  final buddhistYear = dt.year + 543;
+  final dd = dt.day.toString().padLeft(2, '0');
+  final mm = dt.month.toString().padLeft(2, '0');
+  final hh = dt.hour.toString().padLeft(2, '0');
+  final min = dt.minute.toString().padLeft(2, '0');
+  if (dt.hour == 0 && dt.minute == 0 && dt.second == 0) {
+    return '$dd/$mm/$buddhistYear';
+  }
+  return '$dd/$mm/$buddhistYear $hh:$min';
+}
 
 InputDecoration _inputDeco({required String hint}) {
   return InputDecoration(

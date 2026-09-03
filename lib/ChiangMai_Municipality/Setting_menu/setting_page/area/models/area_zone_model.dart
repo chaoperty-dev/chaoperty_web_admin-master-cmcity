@@ -49,9 +49,9 @@ class AreaZoneModel {
       rser: (json['ser'] ?? '0').toString(),
       zn: (json['zn'] ?? '').toString(),
       qty: (json['qty'] ?? '0').toString(),
-      areasCount: _parseCount(json['areas_count']),
+      areasCount: _parseCount(json['zones_count'] ?? json['areas_count']),
       img: (json['img'] ?? '0').toString(),
-      dataUpdate: (json['data_update'] ?? '').toString(),
+      dataUpdate: _resolveDataUpdate(json),
     );
   }
 
@@ -65,8 +65,17 @@ class AreaZoneModel {
       qty: (json['qty'] ?? '0').toString(),
       areasCount: _parseCount(json['areas_count']),
       img: (json['img'] ?? '0').toString(),
-      dataUpdate: (json['data_update'] ?? '').toString(),
+      dataUpdate: _resolveDataUpdate(json),
     );
+  }
+
+  /// อ่าน data_update — fallback ไป datex (เผื่อ API เก่า)
+  static String _resolveDataUpdate(Map<String, dynamic> json) {
+    final u = json['data_update'];
+    if (u != null && u.toString().isNotEmpty) return u.toString();
+    final x = json['datex'];
+    if (x != null && x.toString().isNotEmpty) return '${x}T00:00:00';
+    return '';
   }
 
   /// Parse ค่า count — รับทั้ง int และ String (กัน API ส่ง dtype ไม่นิ่ง)
