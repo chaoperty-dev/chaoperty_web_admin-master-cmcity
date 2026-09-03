@@ -525,15 +525,20 @@ class _HistoryRow extends StatelessWidget {
       fg = LaColors.statusApprovedFg;
       icon = Icons.check_circle_rounded;
       stateLabel = 'อนุมัติ';
-    } else if (s.contains('reject') ||
+    } else if (s.contains('ปฏิเสธ') ||
+        s.contains('reject') ||
         s.contains('cancel') ||
-        s.contains('ปฏิเสธ') ||
-        s.contains('ยกเลิก')) {
+        s.contains('ยกเลิก') ||
+        s.contains('ไม่อนุมัติ') ||
+        s.contains('failed') ||
+        s.contains('fail') ||
+        s.contains('หมดอายุ') ||
+        s.contains('expired')) {
       bg = LaColors.statusRejectedBg;
       fg = LaColors.statusRejectedFg;
       icon = Icons.cancel_rounded;
-      stateLabel = 'ปฏิเสธ';
-    } else if (s.contains('pending') || s.contains('รอ')) {
+      stateLabel = 'ไม่อนุมัติ';
+    } else if (s.contains('pending') || s.contains('รอ') || s.contains('progress')) {
       bg = LaColors.statusPendingBg;
       fg = LaColors.statusPendingFg;
       icon = Icons.hourglass_top_rounded;
