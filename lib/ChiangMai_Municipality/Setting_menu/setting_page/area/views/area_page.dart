@@ -134,7 +134,11 @@ class _AreaPageBodyState extends State<_AreaPageBody>
   Future<void> _confirmDeleteArea(AreaAreaModel area) async {
     final vm = context.read<AreaViewModel>();
     final label = area.lncode.isNotEmpty ? area.lncode : area.ln;
-    final ok = await _confirm('ยืนยันการลบพื้นที่', 'ต้องการลบ "$label" หรือไม่?');
+    final ok = await _confirmDanger(
+      title: 'ยืนยันการลบพื้นที่',
+      body: 'ต้องการลบ "$label" หรือไม่?',
+      confirmLabel: 'ลบพื้นที่',
+    );
     if (ok == true) {
       await vm.deleteArea(area);
     }
@@ -174,7 +178,11 @@ class _AreaPageBodyState extends State<_AreaPageBody>
       _showSnack('กรุณาเลือกหมวดก่อน', AeaColors.statusRejectedFg);
       return;
     }
-    final ok = await _confirm('ยืนยันการลบหมวด', 'ต้องการลบหมวด "${g.zn}" หรือไม่?');
+    final ok = await _confirmDanger(
+      title: 'ยืนยันการลบหมวด',
+      body: 'ต้องการลบหมวด "${g.zn}" หรือไม่?',
+      confirmLabel: 'ลบหมวด',
+    );
     if (ok == true) {
       await vm.deleteGroup(ser: g.ser, name: g.zn);
     }
@@ -228,32 +236,142 @@ class _AreaPageBodyState extends State<_AreaPageBody>
       _showSnack('กรุณาเลือกโซนก่อน', AeaColors.statusRejectedFg);
       return;
     }
-    final ok = await _confirm('ยืนยันการลบโซน', 'ต้องการลบโซน "${z.zn}" หรือไม่?');
+    final ok = await _confirmDanger(
+      title: 'ยืนยันการลบโซน',
+      body: 'ต้องการลบโซน "${z.zn}" หรือไม่?',
+      confirmLabel: 'ลบโซน',
+    );
     if (ok == true) {
       await vm.deleteZone(ser: z.ser, name: z.zn);
     }
   }
 
-  // ─── Confirm dialog helper ───
-  Future<bool?> _confirm(String title, String body) async {
+  // ─── Confirm dialog (custom Danger style) ────────────────────────────
+  Future<bool?> _confirmDanger({
+    required String title,
+    required String body,
+    required String confirmLabel,
+    String cancelLabel = 'ยกเลิก',
+  }) {
     return showDialog<bool>(
       context: context,
-      // ✅ ใช้ dialogCtx แทน outer context — showDialog ดีฟault ใช้ rootNavigator
+      // ✅ ใช้ dialogCtx แทน outer context — showDialog default ใช้ rootNavigator
       // ถ้าใช้ context ของ area_page มันจะ pop area_page (เด้งไป setting hub) ไม่ใช่ dialog
-      builder: (dialogCtx) => AlertDialog(
-        title: Text(title),
-        content: Text(body),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogCtx).pop(false),
-            child: const Text('ยกเลิก'),
+      builder: (dialogCtx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 420),
+          decoration: BoxDecoration(
+            color: AeaColors.surface,
+            borderRadius: BorderRadius.circular(AeaRadius.lg),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: .14),
+                blurRadius: 28,
+                offset: const Offset(0, 12),
+              ),
+            ],
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.of(dialogCtx).pop(true),
-            child: const Text('ยืนยัน'),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // ── Header: gradient red + icon badge ──
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AeaColors.statusRejectedFg, Color(0xFFC62828)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(AeaRadius.lg),
+                    topRight: Radius.circular(AeaRadius.lg),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .18),
+                        borderRadius: BorderRadius.circular(AeaRadius.md),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: .30),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                    const SizedBox(width: AeaSpace.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontFamily: AeaText.fontBold,
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'การดำเนินการนี้ไม่สามารถยกเลิกได้',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: .85),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // ── Body ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 22, 24, 14),
+                child: Text(
+                  body,
+                  style: AeaText.body.copyWith(fontSize: 14, height: 1.5),
+                ),
+              ),
+              // ── Actions ──
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _DangerBtn(
+                        label: cancelLabel,
+                        icon: Icons.close_rounded,
+                        primary: false,
+                        onTap: () => Navigator.of(dialogCtx).pop(false),
+                      ),
+                    ),
+                    const SizedBox(width: AeaSpace.sm),
+                    Expanded(
+                      child: _DangerBtn(
+                        label: confirmLabel,
+                        icon: Icons.delete_sweep_outlined,
+                        primary: true,
+                        onTap: () => Navigator.of(dialogCtx).pop(true),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1063,6 +1181,123 @@ class _ToolbarAreaFilters extends StatelessWidget {
           const SizedBox(width: AeaSpace.md),
           const AreaPagination(),
         ],
+      ),
+    );
+  }
+}
+
+// ============================================================================
+// _DangerBtn — confirm dialog action button (cancel + red gradient confirm)
+// ============================================================================
+class _DangerBtn extends StatefulWidget {
+  final String label;
+  final IconData icon;
+  final bool primary;
+  final VoidCallback onTap;
+  const _DangerBtn({
+    required this.label,
+    required this.icon,
+    required this.primary,
+    required this.onTap,
+  });
+  @override
+  State<_DangerBtn> createState() => _DangerBtnState();
+}
+
+class _DangerBtnState extends State<_DangerBtn> {
+  bool _hover = false;
+  @override
+  Widget build(BuildContext context) {
+    if (widget.primary) {
+      return MouseRegion(
+        cursor: SystemMouseCursors.click,
+        onEnter: (_) => setState(() => _hover = true),
+        onExit: (_) => setState(() => _hover = false),
+        child: GestureDetector(
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 120),
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: _hover
+                    ? [const Color(0xFFC62828), AeaColors.statusRejectedFg]
+                    : [AeaColors.statusRejectedFg, const Color(0xFFC62828)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(AeaRadius.md),
+              boxShadow: [
+                BoxShadow(
+                  color: AeaColors.statusRejectedFg
+                      .withValues(alpha: _hover ? .45 : .30),
+                  blurRadius: _hover ? 14 : 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(widget.icon, size: 17, color: Colors.white),
+                const SizedBox(width: 6),
+                Text(
+                  widget.label,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontFamily: AeaText.fontBold,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          decoration: BoxDecoration(
+            color: _hover ? AeaColors.surfaceMuted : Colors.white,
+            borderRadius: BorderRadius.circular(AeaRadius.md),
+            border: Border.all(
+              color:
+                  _hover ? AeaColors.textSecondary : AeaColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                widget.icon,
+                size: 17,
+                color: _hover
+                    ? AeaColors.textPrimary
+                    : AeaColors.textSecondary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  color: _hover
+                      ? AeaColors.textPrimary
+                      : AeaColors.textSecondary,
+                  fontFamily: AeaText.fontBold,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
