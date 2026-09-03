@@ -168,17 +168,19 @@ class _AreaListTable extends StatelessWidget {
           // ✅ เริ่มต้น — pill เดียว เปิด detail (แก้ไข/ลบ ย้ายเข้าไปใน form)
           SizedBox(
             width: 120,
-            child: Center(
-              child: _RowPillAction(
-                icon: Icons.visibility_rounded,
-                bg: AeaColors.primaryLight,
-                fg: AeaColors.primaryDark,
-                label: 'เริ่มต้น',
-                onTap: () {
-                  if (onEditCb != null) onEditCb(a);
-                },
-              ),
-            ),
+            child: Center(child: _RowPillAction(
+              icon: Icons.visibility_rounded,
+              bg: AeaColors.primaryLight,
+              fg: AeaColors.primaryDark,
+              label: 'เริ่มต้น',
+              onTap: () {
+                if (onRowTapCb != null) {
+                  onRowTapCb(a);
+                } else if (onEditCb != null) {
+                  onEditCb(a);
+                }
+              },
+            )),
           ),
           _Cell(value: fullName, tooltip: fullName, flex: 3),
           _Cell(value: zoneName, flex: 2),
