@@ -7,7 +7,7 @@
 //
 // Endpoints (v1 + v2 + v3):
 //   GET  {domain_v1}/admin/know                                       → admin signature meta
-//   GET  {domain_v1}/admin/users/signatures/{uuid}/preview            → signature image bytes
+//   GET  {domain_v2}/signatures/{uuid}/preview                        → signature image bytes
 //   GET  {domain_v1}/admin/approvals/{requestUuid}/flow               → flow uuid list
 //   POST {domain_v1}/admin/approvals/{requestUuid}/flow/{flowUuid}/approve  → approve
 //   POST {domain_v2}/admin/approvals/bulk/approve                     → bulk approve (≤50/round)
@@ -34,14 +34,14 @@ class LicenseLegacyApprovalService {
     }
   }
 
-  /// GET /admin/users/signatures/{uuid}/preview → image bytes
+  /// GET /v2/signatures/{uuid}/preview → image bytes
   Future<http.Response?> loadSignatureImage({
     required String? signatureUuid,
   }) async {
     if (signatureUuid == null || signatureUuid.isEmpty) return null;
     final headers = await MyHeaders.build();
     final url = Uri.parse(
-      '${MyConstant().domain_v1}/admin/users/signatures/$signatureUuid/preview',
+      '${MyConstant().domain_v2}/signatures/$signatureUuid/preview',
     );
     try {
       final response = await http.get(url, headers: headers);

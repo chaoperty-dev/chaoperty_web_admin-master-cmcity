@@ -41,7 +41,7 @@ Future<http.Response?> img_signatureUuid(
   final headers = await MyHeaders.build(); // 🔐 สร้าง headers พร้อม token
 
   final url = Uri.parse(
-    '${MyConstant().domain_v1}/admin/users/signatures/${signatureUuid}/preview',
+    '${MyConstant().domain_v2}/signatures/${signatureUuid}/preview',
   );
 
   print('[API_AdminSignature] 📤 GET Image: $url');

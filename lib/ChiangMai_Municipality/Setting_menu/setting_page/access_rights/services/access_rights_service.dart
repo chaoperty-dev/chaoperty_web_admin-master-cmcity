@@ -256,12 +256,13 @@ class AccessRightsService {
     }
   }
 
-  /// โหลดรูปลายเซ็นเป็น bytes (ใช้แสดง preview)
+  /// โหลดรูปลายเซ็นเป็น bytes (ใช้แสดง preview) — v2: /signatures/{uuid}/preview
   Future<Uint8List?> fetchSignatureImage(String signatureUuid) async {
     if (signatureUuid.isEmpty) return null;
     final headers = await MyHeaders.build();
-    final uri =
-        Uri.parse('$_base/users/signatures/$signatureUuid/preview');
+    final uri = Uri.parse(
+      '${MyConstant().domain_v2}/signatures/$signatureUuid/preview',
+    );
     try {
       final response = await http.get(uri, headers: headers);
       if (response.statusCode != 200) return null;
