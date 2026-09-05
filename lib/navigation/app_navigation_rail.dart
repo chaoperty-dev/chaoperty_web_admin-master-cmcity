@@ -42,6 +42,7 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
   Set<String> _pinnedRoutes = <String>{};
   Set<String> _allowedPermissions = <String>{};
   int? _currentRoleId;
+  Map<String, int> _routeRoleIds = <String, int>{};
 
   @override
   void initState() {
@@ -82,6 +83,10 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
     final roleId = await _readRoleId();
     if (!mounted) return;
     setState(() => _currentRoleId = roleId);
+    // 4) map route → role_id ของเมนูตัวเอง (pin ต้องส่ง role_id ให้ถูก role)
+    final routeIds = await FavoriteMenuService.fetchRouteRoleIds();
+    if (!mounted) return;
+    setState(() => _routeRoleIds = routeIds);
   }
 
   Future<int?> _readRoleId() async {
@@ -249,20 +254,21 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
                   ),
                 ),
 
+                // ── ⭐ Favorites box (คงที่ — ไม่ scroll ตามเมนู) ──
+                FavoritesSection(
+                  menu: menu,
+                  pinnedRoutes: _pinnedRoutes,
+                  allowedPermissions: _allowedPermissions,
+                  activeRoute: _location,
+                  onTapRoute: _go,
+                  onRemoveRoute: _togglePin,
+                ),
+
                 // ── Menu list ──
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
-                      // ⭐ Favorites box (เหนือสุด, ถ้ามี)
-                      FavoritesSection(
-                        menu: menu,
-                        pinnedRoutes: _pinnedRoutes,
-                        allowedPermissions: _allowedPermissions,
-                        activeRoute: _location,
-                        onTapRoute: _go,
-                        onRemoveRoute: _togglePin,
-                      ),
                       for (int i = 0; i < menu.items.length; i++) ...[
                         if (i > 0) const SizedBox(height: 4),
                         _buildMenuItem(menu.items[i]),
@@ -369,8 +375,9 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
   }
 
   /// ⭐ toggle pin สำหรับ route (optimistic + sync)
+  /// role_id เอาจาก map ของเมนูนั้นก่อน — ไม่มีค่อย fallback เป็น role แรก
   Future<void> _togglePin(String route) async {
-    final roleId = _currentRoleId;
+    final roleId = _routeRoleIds[route] ?? _currentRoleId;
     if (roleId == null) {
       // ไม่มี role id → toggle cache เฉยๆ (fallback)
       final current = {..._pinnedRoutes};

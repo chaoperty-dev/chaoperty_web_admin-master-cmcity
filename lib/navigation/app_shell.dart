@@ -123,6 +123,7 @@ class _MobileDrawerState extends State<_MobileDrawer> {
   Set<String> _pinnedRoutes = <String>{};
   Set<String> _allowedPermissions = <String>{};
   int? _currentRoleId;
+  Map<String, int> _routeRoleIds = <String, int>{};
 
   @override
   void initState() {
@@ -158,6 +159,10 @@ class _MobileDrawerState extends State<_MobileDrawer> {
     final roleId = await _readRoleId();
     if (!mounted) return;
     setState(() => _currentRoleId = roleId);
+    // map route → role_id ของเมนูตัวเอง (pin ต้องส่ง role_id ให้ถูก role)
+    final routeIds = await FavoriteMenuService.fetchRouteRoleIds();
+    if (!mounted) return;
+    setState(() => _routeRoleIds = routeIds);
   }
 
   Future<int?> _readRoleId() async {
@@ -179,7 +184,8 @@ class _MobileDrawerState extends State<_MobileDrawer> {
   }
 
   Future<void> _togglePin(String route) async {
-    final roleId = _currentRoleId;
+    // role_id เอาจาก map ของเมนูนั้นก่อน — ไม่มีค่อย fallback เป็น role แรก
+    final roleId = _routeRoleIds[route] ?? _currentRoleId;
     if (roleId == null) {
       final current = {..._pinnedRoutes};
       if (current.contains(route)) {

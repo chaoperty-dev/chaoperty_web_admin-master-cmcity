@@ -24,7 +24,7 @@ class _FavoriteEntry {
   });
 }
 
-class FavoritesSection extends StatelessWidget {
+class FavoritesSection extends StatefulWidget {
   final NavigationMenuModel menu;
   final Set<String> pinnedRoutes;
   final Set<String> allowedPermissions;
@@ -42,10 +42,24 @@ class FavoritesSection extends StatelessWidget {
     this.activeRoute,
   });
 
+  @override
+  State<FavoritesSection> createState() => _FavoritesSectionState();
+}
+
+class _FavoritesSectionState extends State<FavoritesSection> {
+  /// เกินกี่รายการถึงหุบได้
+  static const int _collapseAfter = 2;
+
+  bool _expanded = false;
+
   /// รวม leaf items (ทั้ง top-level item และ group children) แล้ว filter:
   /// - route ต้องอยู่ใน pinnedRoutes
   /// - permission (ถ้ามี) ต้องอยู่ใน allowedPermissions
-  List<_FavoriteEntry> _buildEntries() {
+  List<_FavoriteEntry> _buildEntries(
+    NavigationMenuModel menu,
+    Set<String> pinnedRoutes,
+    Set<String> allowedPermissions,
+  ) {
     final out = <_FavoriteEntry>[];
     for (final item in menu.items) {
       if (item.isGroup) {
@@ -80,55 +94,107 @@ class FavoritesSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final entries = _buildEntries();
+    final entries = _buildEntries(
+      widget.menu,
+      widget.pinnedRoutes,
+      widget.allowedPermissions,
+    );
     if (entries.isEmpty) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFEFF6FF),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFBFDBFE)),
-      ),
+    final collapsible = entries.length > _collapseAfter;
+    final visible =
+        collapsible && !_expanded ? entries.take(_collapseAfter) : entries;
+
+    return Material(
+      type: MaterialType.transparency,
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+        decoration: BoxDecoration(
+          color: const Color(0xFFEFF6FF),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: const Color(0xFFBFDBFE)),
+        ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // header label
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.push_pin_rounded,
-                  size: 14,
-                  color: Color(0xFF1E40AF),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  'เมนูโปรด',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF1E40AF),
-                    decoration: TextDecoration.none,
-                    decorationThickness: 0,
-                    letterSpacing: 0.4,
-                    height: 1.2,
+          // header label — เกิน 2 รายการ → กดหุบ/กางได้
+          InkWell(
+            onTap: collapsible
+                ? () => setState(() => _expanded = !_expanded)
+                : null,
+            borderRadius: BorderRadius.circular(6),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(4, 2, 4, 6),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.push_pin_rounded,
+                    size: 14,
+                    color: Color(0xFF1E40AF),
                   ),
-                ),
+                  const SizedBox(width: 6),
+                  const Text(
+                    'เมนูโปรด',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF1E40AF),
+                      decoration: TextDecoration.none,
+                      decorationThickness: 0,
+                      letterSpacing: 0.4,
+                      height: 1.2,
+                    ),
+                  ),
+                  if (collapsible) ...[
+                    const SizedBox(width: 4),
+                    Text(
+                      '${entries.length}',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: const Color(0xFF1E40AF).withValues(alpha: .7),
+                        decoration: TextDecoration.none,
+                        decorationThickness: 0,
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                  const Spacer(),
+                  if (collapsible)
+                    AnimatedRotation(
+                      turns: _expanded ? 0 : -.5,
+                      duration: const Duration(milliseconds: 180),
+                      child: const Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        size: 16,
+                        color: Color(0xFF1E40AF),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+          // rows — ตอนหุบโชว์แค่ _collapseAfter ตัวแรก
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            alignment: Alignment.topCenter,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final entry in visible)
+                  _FavoriteRow(
+                    entry: entry,
+                    isActive: widget.activeRoute == entry.route,
+                    onTap: () => widget.onTapRoute(entry.route),
+                    onRemove: () => widget.onRemoveRoute(entry.route),
+                  ),
               ],
             ),
           ),
-          // rows
-          for (final entry in entries)
-            _FavoriteRow(
-              entry: entry,
-              isActive: activeRoute == entry.route,
-              onTap: () => onTapRoute(entry.route),
-              onRemove: () => onRemoveRoute(entry.route),
-            ),
         ],
+      ),
       ),
     );
   }
