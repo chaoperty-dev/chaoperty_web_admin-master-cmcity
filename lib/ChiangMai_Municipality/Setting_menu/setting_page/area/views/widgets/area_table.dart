@@ -117,11 +117,11 @@ class _AreaListTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: 'เริ่มต้น', flex: 0, width: 120),
+          _HeaderCell(label: '', flex: 0, width: 120),
+          _HeaderCell(label: 'หมวดโซนพื้นที่', flex: 2),
+          _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
           _HeaderCell(label: 'ชื่อพื้นที่', flex: 3),
-          _HeaderCell(label: 'โซน', flex: 2),
-          _HeaderCell(label: 'หมวด', flex: 2),
           _HeaderCell(label: 'ขนาด(ตร.ม.)', flex: 2),
           _HeaderCell(label: 'ค่าเช่า', flex: 2),
           _HeaderCell(label: 'สถานะ', flex: 2),
@@ -147,10 +147,12 @@ class _AreaListTable extends StatelessWidget {
     // ✅ Row tap = select เพื่อให้ popup "จัดการพื้นที่" enabled แก้ไข/ลบ
     //    (ถ้าไม่มี onRowTap จะ fallback เป็น edit แบบเดิม — back-compat)
     final isSelected = selectedSer != null && selectedSer == a.ser;
-    // ✅ Lookup โซน/หมวด จาก VM (เพราะ AreaAreaModel เก็บแค่ zone ser)
+    // ✅ ใช้ชื่อจาก API (nested zone.zn / zone.group.zn) ก่อน — ไม่มีค่อย lookup จาก VM
+    //    (vm.zones มีแค่โซนของหมวดที่เลือก — ตอน "ทั้งหมด" จะว่าง)
     final vm = Provider.of<AreaViewModel>(context, listen: false);
-    final zoneName = _lookupZoneName(vm, a.zone);
-    final groupName = _lookupGroupName(vm, a.zone);
+    final zoneName = a.zn.isNotEmpty ? a.zn : _lookupZoneName(vm, a.zone);
+    final groupName =
+        a.groupName.isNotEmpty ? a.groupName : _lookupGroupName(vm, a.zone);
     final code = a.lncode.isEmpty ? '-' : a.lncode;
     final name = a.ln.isEmpty ? '-' : a.ln;
     return _HoverableRow(
@@ -181,10 +183,10 @@ class _AreaListTable extends StatelessWidget {
               },
             )),
           ),
+          _Cell(value: groupName, flex: 2),
+          _Cell(value: zoneName, flex: 2),
           _Cell(value: code, tooltip: code, flex: 2, isMono: true),
           _Cell(value: name, tooltip: name, flex: 3),
-          _Cell(value: zoneName, flex: 2),
-          _Cell(value: groupName, flex: 2),
           _Cell(
               value: '${a.area.isEmpty ? '0.00' : a.area}',
               flex: 2,

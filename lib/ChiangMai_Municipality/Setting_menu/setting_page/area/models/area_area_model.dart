@@ -39,6 +39,12 @@ class AreaAreaModel {
   /// ชื่อโซน (zn) — เช่น "UATV4"
   final String zn;
 
+  /// id หมวดโซน (group) — จาก zone.group.ser (ถ้า API ส่งมา)
+  final String groupSer;
+
+  /// ชื่อหมวดโซน (group.zn) — เช่น "Chaoperty"
+  final String groupName;
+
   /// id ประเภท area
   final String typeId;
 
@@ -72,6 +78,8 @@ class AreaAreaModel {
     this.rentMaket = '0',
     required this.zone,
     this.zn = '',
+    this.groupSer = '',
+    this.groupName = '',
     this.typeId = '',
     this.typeName = '',
     this.rser = '0',
@@ -82,6 +90,41 @@ class AreaAreaModel {
   });
 
   factory AreaAreaModel.fromJson(Map<String, dynamic> json) {
+    // ✅ API v2 ส่ง zone เป็น object: {ser, zn, group: {ser, zn}}
+    //    (ถ้า .toString() ตรง ๆ จะได้ "{ser: 7, zn: ...}" → lookup โซนพัง)
+    final zoneRaw = json['zone'];
+    final zoneMap = (zoneRaw is Map)
+        ? Map<String, dynamic>.from(zoneRaw)
+        : null;
+    final groupRaw = zoneMap?['group'] ?? json['group'];
+    final groupMap = (groupRaw is Map)
+        ? Map<String, dynamic>.from(groupRaw)
+        : null;
+
+    String zoneIdOf() {
+      if (zoneMap != null && zoneMap['ser'] != null) {
+        return zoneMap['ser'].toString();
+      }
+      final direct = json['zone_ser'] ?? json['zser'] ?? zoneRaw;
+      return (direct ?? '0').toString();
+    }
+
+    String znOf() {
+      final z = zoneMap?['zn']?.toString() ?? '';
+      if (z.isNotEmpty) return z;
+      return (json['zn'] ?? '').toString();
+    }
+
+    String groupNameOf() {
+      final g = groupMap?['zn']?.toString() ?? '';
+      if (g.isNotEmpty) return g;
+      final direct = json['group_zn']?.toString() ?? '';
+      if (direct.isNotEmpty) return direct;
+      // fallback: API เก่าส่ง group เป็น string ตรง ๆ
+      if (json['group'] is String) return json['group'] as String;
+      return '';
+    }
+
     return AreaAreaModel(
       ser: (json['ser'] ?? '0').toString(),
       ln: (json['ln'] ?? '').toString(),
@@ -92,8 +135,10 @@ class AreaAreaModel {
       area: (json['area'] ?? '').toString(),
       rent: (json['rent'] ?? '0').toString(),
       rentMaket: (json['rent_maket'] ?? json['rentMaket'] ?? '0').toString(),
-      zone: (json['zone'] ?? json['zone_ser'] ?? json['zser'] ?? '0').toString(),
-      zn: (json['zn'] ?? '').toString(),
+      zone: zoneIdOf(),
+      zn: znOf(),
+      groupSer: (groupMap?['ser'] ?? json['group_ser'] ?? '').toString(),
+      groupName: groupNameOf(),
       typeId:
           (json['type_id'] ?? json['typeId'] ?? json['tser'] ?? '').toString(),
       typeName: (json['type_name'] ??
