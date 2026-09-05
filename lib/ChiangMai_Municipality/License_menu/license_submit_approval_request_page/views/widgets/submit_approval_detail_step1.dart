@@ -58,7 +58,8 @@ class _SubmitApprovalDetailStep1State extends State<SubmitApprovalDetailStep1> {
   Future<void> _loadIfNeeded() async {
     final uuid = widget.requestUuid;
     // ignore: avoid_print
-    print('🔵 [Step1._loadIfNeeded] uuid=$uuid  loadedUuid=$_loadedUuid  hasDetail=${_detail != null}');
+    print(
+        '🔵 [Step1._loadIfNeeded] uuid=$uuid  loadedUuid=$_loadedUuid  hasDetail=${_detail != null}');
     if (uuid == null || uuid.isEmpty) return;
     if (_loadedUuid == uuid && _detail != null) return;
 
@@ -351,7 +352,7 @@ class _SubmitApprovalInfoTab extends StatelessWidget {
                   SizedBox(width: 6),
                   Expanded(
                     child: Text(
-                      'ตรวจสอบรายการให้ครบถ้วนก่อนกด "ถัดไป"',
+                      'ตรวจสอบรายการให้ครบถ้วนก่อนกด "เริ่มส่งคำร้องขออนุมัติ"',
                       style: LaText.caption,
                     ),
                   ),
@@ -699,7 +700,7 @@ class _RequestSummaryCard extends StatelessWidget {
               const Spacer(),
               _PillIcon(
                 icon: Icons.tag_rounded,
-                text: 'UUID: ${_short(model.uuid)}',
+                text: 'รหัสรายการ: ${_short(model.uuid)}',
                 muted: true,
               ),
             ],
@@ -791,7 +792,7 @@ class _RequestSummaryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                    'สำหรับตรวจสอบเบื้องต้น — รายละเอียดเพิ่มเติมจะแสดงใน Step ถัดไป',
+                    'สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด โปรดไปที่แท็บ "ข้อมูลคำขอ"',
                     style: LaText.caption,
                     maxLines: 2,
                   ),

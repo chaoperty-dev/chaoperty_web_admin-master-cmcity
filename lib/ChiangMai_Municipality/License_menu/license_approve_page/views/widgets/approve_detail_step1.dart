@@ -336,26 +336,26 @@ class _ApproveInfoTab extends StatelessWidget {
                   // ─── Section: ลายเซ็นผู้อนุมัติ (read-only, โหมด V1) ───
                   const ApproveLegacySignatureSection(),
 
-              const SizedBox(height: LaSpace.lg),
+                  const SizedBox(height: LaSpace.lg),
 
-              const Row(
-                children: [
-                  Icon(Icons.info_outline_rounded,
-                      size: 14, color: LaColors.textMuted),
-                  SizedBox(width: 6),
-                  Expanded(
-                    child: Text(
-                      'ตรวจสอบคำขอให้ครบถ้วนก่อนกด "ถัดไป"',
-                      style: LaText.caption,
-                    ),
+                  const Row(
+                    children: [
+                      Icon(Icons.info_outline_rounded,
+                          size: 14, color: LaColors.textMuted),
+                      SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'ตรวจสอบคำขอให้ครบถ้วนก่อนกด "ถัดไป"',
+                          style: LaText.caption,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
+        );
       },
     );
   }
@@ -695,7 +695,7 @@ class _RequestSummaryCard extends StatelessWidget {
               const Spacer(),
               _PillIcon(
                 icon: Icons.tag_rounded,
-                text: 'UUID: ${_short(model.uuid)}',
+                text: 'รหัสรายการ: ${_short(model.uuid)}',
                 muted: true,
               ),
             ],
@@ -784,8 +784,7 @@ class _RequestSummaryCard extends StatelessWidget {
                 Expanded(
                   child: AutoSizeText(
                     'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                    'สำหรับตรวจสอบเบื้องต้น — รายละเอียดเพิ่มเติมจะแสดงใน Step ถัดไป',
-                    style: LaText.caption,
+                    'สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด โปรดไปที่แท็บ "ข้อมูลคำขอ"',
                     maxLines: 2,
                   ),
                 ),

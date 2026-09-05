@@ -167,12 +167,8 @@ class _Header extends StatelessWidget {
     return Row(
       children: [
         Icon(
-          submitted
-              ? Icons.check_circle_rounded
-              : Icons.send_rounded,
-          color: submitted
-              ? LaColors.statusApprovedFg
-              : LaColors.primaryDark,
+          submitted ? Icons.check_circle_rounded : Icons.send_rounded,
+          color: submitted ? LaColors.statusApprovedFg : LaColors.primaryDark,
         ),
         const SizedBox(width: LaSpace.sm),
         Text(
@@ -248,7 +244,7 @@ class _PrimaryActionButton extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(LaRadius.md),
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 18),
+              padding: const EdgeInsets.symmetric(vertical: 14),
               alignment: Alignment.center,
               child: isLoading
                   ? const SizedBox(
@@ -256,8 +252,7 @@ class _PrimaryActionButton extends StatelessWidget {
                       height: 22,
                       child: CircularProgressIndicator(
                         strokeWidth: 2.5,
-                        valueColor:
-                            AlwaysStoppedAnimation<Color>(Colors.white),
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                       ),
                     )
                   : const Row(
@@ -265,7 +260,7 @@ class _PrimaryActionButton extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
-                          Icons.add_circle_rounded,
+                          Icons.send_rounded,
                           color: Colors.white,
                           size: 22,
                         ),
@@ -447,8 +442,7 @@ class _HistoryDivider extends StatelessWidget {
         const Icon(Icons.history_rounded,
             size: 14, color: LaColors.textSecondary),
         const SizedBox(width: 6),
-        Text('ประวัติการส่งคำร้อง (รอบการอนุมัติ)',
-            style: LaText.caption),
+        Text('ประวัติการส่งคำร้อง (รอบการอนุมัติ)', style: LaText.caption),
       ],
     );
   }
@@ -491,8 +485,7 @@ class _HistorySection extends StatelessWidget {
           if (i < history.length - 1)
             const Padding(
               padding: EdgeInsets.only(left: 22),
-              child: Divider(
-                  height: 1, thickness: 1, color: LaColors.border),
+              child: Divider(height: 1, thickness: 1, color: LaColors.border),
             ),
         ],
       ],
@@ -541,7 +534,9 @@ class _HistoryRow extends StatelessWidget {
       bg = LaColors.statusRejectedBg;
       fg = LaColors.statusRejectedFg;
       icon = Icons.cancel_rounded;
-    } else if (s.contains('pending') || s.contains('รอ') || s.contains('progress')) {
+    } else if (s.contains('pending') ||
+        s.contains('รอ') ||
+        s.contains('progress')) {
       bg = LaColors.statusPendingBg;
       fg = LaColors.statusPendingFg;
       icon = Icons.hourglass_top_rounded;
