@@ -386,9 +386,10 @@ class _AreaPageBodyState extends State<_AreaPageBody>
   Widget build(BuildContext context) {
     final vm = context.watch<AreaViewModel>();
 
-    return Container(
-      color: AeaColors.surface,
-      child: Column(
+    // ✅ ต้องมี Scaffold — ScaffoldMessenger.showSnackBar assert ว่ามี descendant Scaffold
+    return Scaffold(
+      backgroundColor: AeaColors.surface,
+      body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(

@@ -157,9 +157,10 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<AccessRightsViewModel>();
-    return Container(
-      color: ArColors.surface,
-      child: Padding(
+    // ✅ ต้องมี Scaffold — ScaffoldMessenger.showSnackBar assert ว่ามี descendant Scaffold
+    return Scaffold(
+      backgroundColor: ArColors.surface,
+      body: Padding(
         padding: const EdgeInsets.all(ArSpace.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
