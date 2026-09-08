@@ -944,6 +944,31 @@ class _DocumentRow extends StatelessWidget {
     final rawText = _displayText(titleDoc['ser'] ?? '');
     final displayText = isName ? '${index + 1}. $rawText' : rawText;
 
+    if (isName) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: Row(
+          children: [
+            Flexible(
+              child: AutoSizeText(
+                displayText,
+                minFontSize: 11,
+                maxFontSize: 13,
+                maxLines: 1,
+                textAlign: TextAlign.left,
+                overflow: TextOverflow.ellipsis,
+                style: LaText.tableCell,
+              ),
+            ),
+            if (doc.isRequired) ...[
+              const SizedBox(width: 5),
+              const _RequiredBadge(),
+            ],
+          ],
+        ),
+      );
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: AutoSizeText(
@@ -951,7 +976,7 @@ class _DocumentRow extends StatelessWidget {
         minFontSize: 11,
         maxFontSize: 13,
         maxLines: 1,
-        textAlign: isName ? TextAlign.left : TextAlign.center,
+        textAlign: TextAlign.center,
         overflow: TextOverflow.ellipsis,
         style: LaText.tableCell,
       ),
@@ -995,7 +1020,7 @@ class _DocumentRow extends StatelessWidget {
   }
 
   String _statusLabel(LicenseAttachDocument doc) {
-    if (!_hasFile) return 'ยังไม่แนบ';
+    if (!_hasFile) return doc.isRequired ? 'จำเป็น • ยังไม่แนบ' : 'ยังไม่แนบ';
     final s = doc.attachments!.first.status_label?.toString().trim() ?? '';
     if (s.isEmpty || s == 'null') return 'รอตรวจสอบ';
     return s;
@@ -1161,7 +1186,7 @@ class _DocumentCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: LaSpace.sm),
-              Expanded(
+              Flexible(
                 child: Text(
                   (doc.nameTh ?? '-').toString(),
                   style: LaText.tableCell.copyWith(
@@ -1172,6 +1197,10 @@ class _DocumentCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              if (doc.isRequired) ...[
+                const SizedBox(width: 6),
+                const _RequiredBadge(),
+              ],
             ],
           ),
           const SizedBox(height: LaSpace.xs),
@@ -1276,7 +1305,7 @@ class _DocumentCard extends StatelessWidget {
   }
 
   String _statusLabel(LicenseAttachDocument doc) {
-    if (!_hasFile) return 'ยังไม่แนบ';
+    if (!_hasFile) return doc.isRequired ? 'จำเป็น • ยังไม่แนบ' : 'ยังไม่แนบ';
     final s = doc.attachments!.first.status_label?.toString().trim() ?? '';
     if (s.isEmpty || s == 'null') return 'รอตรวจสอบ';
     return s;
@@ -1380,6 +1409,66 @@ class _DocumentCard extends StatelessWidget {
 // =============================================================================
 // ปุ่ม "เรียกดูไฟล์" (เปิด preview)
 // =============================================================================
+class _RequiredBadge extends StatelessWidget {
+  const _RequiredBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    const bg = LaColors.statusPendingBg;
+    const fg = LaColors.statusPendingFg;
+    const borderColor = Color(0xFFFDE68A); // amber-200
+    return Tooltip(
+      message: 'เอกสารจำเป็น ต้องแนบไฟล์',
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // ─── ตัวบับเบิล ───
+          Container(
+            margin: const EdgeInsets.only(left: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+            decoration: BoxDecoration(
+              color: bg,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: borderColor),
+            ),
+            child: const Text(
+              'จำเป็น',
+              style: TextStyle(
+                fontFamily: LaText.fontBold,
+                fontSize: 9,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
+            ),
+          ),
+          // ─── หาง bubble ชี้ซ้าย (เข้าหาชื่อเอกสาร) ───
+          Positioned(
+            left: 1,
+            top: 0,
+            bottom: 0,
+            child: Center(
+              child: Transform.rotate(
+                angle: 0.7853981633974483, // 45°
+                child: Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: bg,
+                    border: Border(
+                      left: BorderSide(color: borderColor),
+                      bottom: BorderSide(color: borderColor),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FileButton extends StatelessWidget {
   final LicenseAttachDocument doc;
   final bool enabled;
@@ -1701,7 +1790,7 @@ class _DocumentGridCard extends StatelessWidget {
   }
 
   String _statusLabel(LicenseAttachDocument doc) {
-    if (!_hasFile) return 'ยังไม่แนบ';
+    if (!_hasFile) return doc.isRequired ? 'จำเป็น • ยังไม่แนบ' : 'ยังไม่แนบ';
     final s = doc.attachments!.first.status_label?.toString().trim() ?? '';
     if (s.isEmpty || s == 'null') return 'รอตรวจสอบ';
     return s;
@@ -1791,7 +1880,7 @@ class _DocumentGridCard extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Expanded(
+                      Flexible(
                         child: Text(
                           (doc.nameTh ?? '-').toString(),
                           style: const TextStyle(
@@ -1802,6 +1891,10 @@ class _DocumentGridCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
+                      if (doc.isRequired) ...[
+                        const SizedBox(width: 4),
+                        const _RequiredBadge(),
+                      ],
                     ],
                   ),
                   const SizedBox(height: 6),

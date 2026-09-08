@@ -32,24 +32,48 @@ class LicenseAttachDocument {
   }) : attachments = attachments ?? [];
 
   factory LicenseAttachDocument.fromJson(Map<String, dynamic> json) {
+    // รองรับทั้ง direct document และ shape {document: {...}, attachment: {...}}
+    final document = json['document'] is Map
+        ? Map<String, dynamic>.from(json['document'] as Map)
+        : json;
+
+    final attachments = <LicenseAttachAttachment>[];
+    final rawAttachments = json['attachments'] ?? document['attachments'];
+    if (rawAttachments is List) {
+      attachments.addAll(
+        rawAttachments.whereType<Map>().map(
+              (x) => LicenseAttachAttachment.fromJson(
+                Map<String, dynamic>.from(x),
+              ),
+            ),
+      );
+    } else if (json['attachment'] is Map) {
+      attachments.add(
+        LicenseAttachAttachment.fromJson(
+          Map<String, dynamic>.from(json['attachment'] as Map),
+        ),
+      );
+    }
+
     return LicenseAttachDocument(
-      id: json['id'],
-      uuid: json['uuid'],
-      code: json['code'],
-      nameTh: json['name_th'] ?? json['nameTh'],
-      required: json['required'],
-      description: json['description'],
-      active: json['active'],
-      createdAt: json['created_at'] ?? json['createdAt'],
-      updatedAt: json['updated_at'] ?? json['updatedAt'],
-      attachments: json['attachments'] != null
-          ? List<LicenseAttachAttachment>.from(
-              (json['attachments'] as List)
-                  .map((x) => LicenseAttachAttachment.fromJson(
-                      Map<String, dynamic>.from(x as Map))),
-            )
-          : <LicenseAttachAttachment>[],
+      id: document['id'],
+      uuid: document['uuid'],
+      code: document['code'],
+      nameTh: document['name_th'] ?? document['nameTh'],
+      required: document['required'],
+      description: document['description'],
+      active: document['active'],
+      createdAt: document['created_at'] ?? document['createdAt'],
+      updatedAt: document['updated_at'] ?? document['updatedAt'],
+      attachments: attachments,
     );
+  }
+
+  /// API ส่ง required ได้ทั้ง 1 / true / "1" / "true"
+  bool get isRequired {
+    if (required == true || required == 1) return true;
+    final value = required?.toString().trim().toLowerCase();
+    return value == '1' || value == 'true';
   }
 
   Map<String, dynamic> toJson() {
@@ -66,6 +90,16 @@ class LicenseAttachDocument {
       'attachments': attachments.map((x) => x.toJson()).toList(),
     };
   }
+}
+
+bool? _parseApiBool(dynamic value) {
+  if (value == null) return null;
+  if (value == true || value == 1) return true;
+  if (value == false || value == 0) return false;
+  final text = value.toString().trim().toLowerCase();
+  if (text == '1' || text == 'true') return true;
+  if (text == '0' || text == 'false') return false;
+  return null;
 }
 
 /// ClientDocument (ข้อมูลประเภทเอกสาร — embedded ใน attachment)
@@ -96,9 +130,9 @@ class LicenseAttachClientDocument {
       uuid: json['uuid'],
       code: json['code'],
       nameTh: json['name_th'] ?? json['nameTh'],
-      required: json['required'] as bool?,
+      required: _parseApiBool(json['required']),
       description: json['description'],
-      active: json['active'] as bool?,
+      active: _parseApiBool(json['active']),
       createdAt: json['created_at'] ?? json['createdAt'],
     );
   }
