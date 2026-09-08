@@ -111,9 +111,10 @@ class _FavoritesSectionState extends State<FavoritesSection> {
         margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFEFF6FF),
+          // ✅ UX: กล่องปักหมุด = secondary — monochrome เบา ๆ
+          color: const Color(0xFFFAFAFA),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: const Color(0xFFBFDBFE)),
+          border: Border.all(color: const Color(0xFFF1F5F9)),
         ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -131,15 +132,15 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                   const Icon(
                     Icons.push_pin_rounded,
                     size: 14,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFF9CA3AF),
                   ),
                   const SizedBox(width: 6),
                   const Text(
-                    'เมนูโปรด',
+                    'เมนูปักหมุด',
                     style: TextStyle(
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFF1E40AF),
+                      color: Color(0xFF9CA3AF),
                       decoration: TextDecoration.none,
                       decorationThickness: 0,
                       letterSpacing: 0.4,
@@ -150,10 +151,10 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                     const SizedBox(width: 4),
                     Text(
                       '${entries.length}',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: const Color(0xFF1E40AF).withValues(alpha: .7),
+                        color: Color(0xFFC4CAD3),
                         decoration: TextDecoration.none,
                         decorationThickness: 0,
                         height: 1.2,
@@ -168,7 +169,7 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                       child: const Icon(
                         Icons.keyboard_arrow_down_rounded,
                         size: 16,
-                        color: Color(0xFF1E40AF),
+                        color: Color(0xFF9CA3AF),
                       ),
                     ),
                 ],
@@ -186,7 +187,6 @@ class _FavoritesSectionState extends State<FavoritesSection> {
                 for (final entry in visible)
                   _FavoriteRow(
                     entry: entry,
-                    isActive: widget.activeRoute == entry.route,
                     onTap: () => widget.onTapRoute(entry.route),
                     onRemove: () => widget.onRemoveRoute(entry.route),
                   ),
@@ -202,21 +202,21 @@ class _FavoritesSectionState extends State<FavoritesSection> {
 
 class _FavoriteRow extends StatelessWidget {
   final _FavoriteEntry entry;
-  final bool isActive;
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
   const _FavoriteRow({
     required this.entry,
-    required this.isActive,
     required this.onTap,
     required this.onRemove,
   });
 
   @override
   Widget build(BuildContext context) {
+    // ✅ UX: กล่องปักหมุดไม่ไฮไลต์ตาม active — "ตำแหน่งปัจจุบัน" มีจุดเดียว
+    //    คือเมนูหลัก (ถ้าปัจจุบันตรงกับรายการปักหมุด ให้เมนูหลักไฮไลต์แทน)
     return Material(
-      color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -228,7 +228,7 @@ class _FavoriteRow extends StatelessWidget {
               Icon(
                 entry.icon,
                 size: 16,
-                color: const Color(0xFF1E40AF),
+                color: const Color(0xFF6B7280),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -236,11 +236,10 @@ class _FavoriteRow extends StatelessWidget {
                   entry.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 13,
-                    fontWeight:
-                        isActive ? FontWeight.w600 : FontWeight.w500,
-                    color: const Color(0xFF1E40AF),
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4B5563),
                     decoration: TextDecoration.none,
                     decorationThickness: 0,
                     height: 1.2,
@@ -256,7 +255,7 @@ class _FavoriteRow extends StatelessWidget {
                   child: Icon(
                     Icons.push_pin_rounded,
                     size: 14,
-                    color: Color(0xFF1E40AF),
+                    color: Color(0xFFC4CAD3),
                   ),
                 ),
               ),

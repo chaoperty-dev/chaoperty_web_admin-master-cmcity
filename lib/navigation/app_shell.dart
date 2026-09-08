@@ -521,7 +521,7 @@ class _DrawerMenuItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasPin = onTogglePin != null;
     return Material(
-      color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
+      color: isActive ? const Color(0xFFEFF6FF) : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: ListTile(
         leading: Icon(
@@ -551,7 +551,10 @@ class _DrawerMenuItem extends StatelessWidget {
                         ? Icons.push_pin_rounded
                         : Icons.push_pin_outlined,
                     size: 18,
-                    color: const Color(0xFF1E40AF),
+                    // ✅ UX: ปักแล้ว = เทาเข้ม ไม่แย่ง active (จอสัมผัสไม่มี hover)
+                    color: isPinned
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFFD1D5DB),
                   ),
                 ),
               ),
@@ -586,7 +589,7 @@ class _DrawerSubItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
+      color: isActive ? const Color(0xFFEFF6FF) : Colors.transparent,
       borderRadius: BorderRadius.circular(6),
       child: InkWell(
         onTap: onTap,
@@ -628,7 +631,10 @@ class _DrawerSubItem extends StatelessWidget {
                         ? Icons.push_pin_rounded
                         : Icons.push_pin_outlined,
                     size: 16,
-                    color: const Color(0xFF1E40AF),
+                    // ✅ UX: ปักแล้ว = เทาเข้ม ไม่แย่ง active
+                    color: isPinned
+                        ? const Color(0xFF9CA3AF)
+                        : const Color(0xFFD1D5DB),
                   ),
                 ),
               ),
@@ -647,8 +653,9 @@ class _DrawerLogoutButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ✅ UX: แถวเทาเรียบ — logout ไม่แย่งสายตา (จอสัมผัสไม่มี hover)
     return Material(
-      color: const Color(0xFFFEE2E2),
+      color: Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -660,7 +667,7 @@ class _DrawerLogoutButton extends StatelessWidget {
               Icon(
                 Icons.logout,
                 size: 20,
-                color: Color(0xFFDC2626),
+                color: Color(0xFF4B5563),
               ),
               SizedBox(width: 12),
               Expanded(
@@ -669,7 +676,7 @@ class _DrawerLogoutButton extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: Color(0xFFDC2626),
+                    color: Color(0xFF4B5563),
                   ),
                 ),
               ),

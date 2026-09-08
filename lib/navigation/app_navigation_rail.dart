@@ -2,9 +2,11 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 
 import '../ChiangMai_Municipality/unity/auth_token_store.dart';
+import '../Constant/Myconstant.dart';
 import '../router/auth_state_notifier.dart';
 import 'models/navigation_menu_model.dart';
 import 'services/favorite_menu_service.dart';
@@ -26,7 +28,11 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
   static const double _kWidth = 240;
 
   // สีตามภาพตัวอย่าง
+  // ✅ theme: เรียบหรูเทา + navy (สีหลักระบบ) เฉพาะตำแหน่ง active
   static const Color _primary = Color(0xFF1E40AF);
+  static const Color _activeBg = Color(0xFFEFF6FF);
+  static const Color _activeFg = Color(0xFF1E40AF);
+  static const Color _pinMuted = Color(0xFFD1D5DB);
   static const Color _border = Color(0xFFE5E7EB);
 
   bool get _isWideScreen =>
@@ -37,6 +43,13 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
   Future<NavigationMenuModel?>? _menuFuture;
   final Map<String, bool> _expandedGroups = {};
   String _userDisplayName = '';
+  String _userEmail = '';
+
+  /// สถานะลายเซ็นของ user ปัจจุบัน — null = กำลังโหลด, true = มี, false = ยังไม่มี
+  bool? _hasSignature;
+
+  /// การ์ดบัญชีด้านล่าง — กางเพื่อโชว์ปุ่มออกจากระบบ
+  bool _accountExpanded = false;
 
   // ⭐ favorites state
   Set<String> _pinnedRoutes = <String>{};
@@ -49,6 +62,40 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
     super.initState();
     _menuFuture = _loadMenu();
     _loadUserName();
+    _loadSignatureStatus();
+  }
+
+  /// ✍️ GET /admin/know → เช็คว่า user ปัจจุบันมีลายเซ็นหรือยัง
+  /// - มี signature_uuid → _hasSignature = true (โชว์ ✓)
+  /// - ไม่มี → false (โชว์ ⚠️ warning)
+  Future<void> _loadSignatureStatus() async {
+    try {
+      final headers = await MyHeaders.build();
+      final url = Uri.parse('${MyConstant().domain_v1}/admin/know');
+      final response = await http.get(url, headers: headers);
+      if (response.statusCode != 200) {
+        if (mounted) setState(() => _hasSignature = false);
+        return;
+      }
+      final jsonRes = jsonDecode(response.body);
+      final data = jsonRes is Map ? jsonRes['data'] : null;
+      String? uuid;
+      if (data is Map) {
+        uuid = data['signature_uuid']?.toString();
+        if (uuid == null || uuid.isEmpty) {
+          final sigs = data['signatures'];
+          if (sigs is List && sigs.isNotEmpty) {
+            final first = sigs.first;
+            if (first is Map) uuid = first['uuid']?.toString();
+          }
+        }
+      }
+      if (!mounted) return;
+      setState(
+          () => _hasSignature = (uuid != null && uuid.isNotEmpty));
+    } catch (_) {
+      if (mounted) setState(() => _hasSignature = false);
+    }
   }
 
   Future<NavigationMenuModel?> _loadMenu() async {
@@ -108,13 +155,8 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
   }
 
   Future<void> _loadUserName() async {
-    final name = await _getUserDisplayName();
-    if (mounted) {
-      setState(() => _userDisplayName = name);
-    }
-  }
-
-  Future<String> _getUserDisplayName() async {
+    var name = '';
+    var email = '';
     try {
       final userJson = await AuthUserStore.read();
       if (userJson != null && userJson.isNotEmpty) {
@@ -127,46 +169,42 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
               profile['full_name'] ??
               '';
           final lname = user['lname'] ?? user['last_name'] ?? '';
-          final name = user['name'] ?? '';
-          final email = user['email'] ?? '';
+          final name_ = user['name'] ?? '';
+          email = user['email']?.toString() ?? '';
 
-          String raw = '';
           if (fname.toString().isNotEmpty || lname.toString().isNotEmpty) {
-            raw =
+            name =
                 '${fname.toString().trim()} ${lname.toString().trim()}'.trim();
-          } else if (name.toString().isNotEmpty) {
-            raw = name.toString().trim();
-          } else if (email.toString().isNotEmpty) {
-            raw = email.toString().trim();
+          } else if (name_.toString().isNotEmpty) {
+            name = name_.toString().trim();
           }
-
-          return _maskName(raw);
         }
       }
+      if (email.isEmpty) {
+        email = (await AuthEmailStore.read()) ?? '';
+      }
+      // fallback: ไม่มีชื่อ → ใช้ email แทน
+      if (name.isEmpty && email.isNotEmpty) name = email;
+    } catch (_) {}
 
-      final email = await AuthEmailStore.read();
-      if (email != null && email.isNotEmpty) return _maskName(email);
-
-      return '';
-    } catch (e) {
-      return '';
+    if (mounted) {
+      setState(() {
+        _userDisplayName = name;
+        _userEmail = email;
+      });
     }
-  }
-
-  /// ปิดชื่อบางส่วนด้วย ****
-  /// - ถ้ามีช่องว่าง: แสดงคำแรกเต็มที่ + คำที่เหลือเป็น ****
-  /// - ถ้าไม่มีช่องว่าง: แสดงครึ่งแรก + ****
-  String _maskName(String raw) {
-    if (raw.isEmpty) return raw;
-    final parts = raw.split(RegExp(r'\s+'))..removeWhere((e) => e.isEmpty);
-    if (parts.length > 1) {
-      return '${parts.first} ****';
-    }
-    final half = (raw.length / 2).ceil();
-    return '${raw.substring(0, half)}****';
   }
 
   void _go(String route) => context.go(route);
+
+  /// อักษรย่อสำหรับอวาตาร — เอาตัวแรกของคำแรก + คำสุดท้าย (สูงสุด 2 ตัว)
+  String _avatarInitials(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'))..removeWhere((e) => e.isEmpty);
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
 
   bool _isRouteActive(String route) => _location == route;
 
@@ -277,48 +315,87 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
                   ),
                 ),
 
-                // ── Footer: User + Logout ──
+                // ── Footer: การ์ดบัญชี — กดกางเพื่อเห็นออกจากระบบ ──
+                // ✍️ ยังไม่มีลายเซ็น → การ์ดออกโทนเหลืองเตือน
                 Container(
                   margin: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(6),
                   decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _border),
+                    color: _hasSignature == false
+                        ? const Color(0xFFFFFBEB) // amber-50
+                        : const Color(0xFFF9FAFB),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: _hasSignature == false
+                          ? const Color(0xFFFDE68A) // amber-200
+                          : _border,
+                    ),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      if (_userDisplayName.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                  child: Material(
+                    // ✅ InkWell ต้องมี Material ancestor
+                    type: MaterialType.transparency,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // ── แถวบัญชี (กดกาง/หุบ) ──
+                        InkWell(
+                        onTap: () => setState(
+                            () => _accountExpanded = !_accountExpanded),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(6, 4, 6, 4),
                           child: Row(
                             children: [
-                              Container(
-                                width: 32,
-                                height: 32,
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFDBEAFE),
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: const Icon(
-                                  Icons.person_outline,
-                                  size: 18,
-                                  color: Color(0xFF1E40AF),
-                                ),
+                              // อวาตารอักษรย่อ + badge ลายเซ็นมุมล่างขวา
+                              Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  CircleAvatar(
+                                    radius: 16,
+                                    backgroundColor: const Color(0xFF1E40AF),
+                                    child: Text(
+                                      _avatarInitials(_userDisplayName),
+                                      style: _noUnderlineTextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  // ✍️ verified badge เกาะมุมอวาตาร
+                                  if (_hasSignature != null)
+                                    Positioned(
+                                      right: -2,
+                                      bottom: -2,
+                                      child: Tooltip(
+                                        message: _hasSignature!
+                                            ? 'มีลายเซ็นในระบบแล้ว'
+                                            : 'ยังไม่มีลายเซ็น — ไปที่ จัดการข้อมูลส่วนตัว เพื่อเพิ่ม',
+                                        child: Container(
+                                          padding: const EdgeInsets.all(1),
+                                          decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: Icon(
+                                            _hasSignature!
+                                                ? Icons.verified
+                                                : Icons.warning_amber_rounded,
+                                            size: 13,
+                                            color: _hasSignature!
+                                                ? const Color(0xFF16A34A)
+                                                : const Color(0xFFB45309),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                              const SizedBox(width: 10),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      'ผู้ใช้งาน',
-                                      style: _noUnderlineTextStyle(
-                                        fontSize: 11,
-                                        color: const Color(0xFF9CA3AF),
-                                      ),
-                                    ),
                                     Text(
                                       _userDisplayName,
                                       maxLines: 1,
@@ -329,16 +406,53 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
                                         color: const Color(0xFF111827),
                                       ),
                                     ),
+                                    if (_userEmail.isNotEmpty)
+                                      Text(
+                                        _userEmail,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: _noUnderlineTextStyle(
+                                          fontSize: 11,
+                                          color: const Color(0xFF6B7280),
+                                        ),
+                                      ),
                                   ],
+                                ),
+                              ),
+                              const SizedBox(width: 2),
+                              AnimatedRotation(
+                                turns: _accountExpanded ? 0.5 : 0,
+                                duration: const Duration(milliseconds: 180),
+                                child: const Icon(
+                                  Icons.keyboard_arrow_down_rounded,
+                                  size: 18,
+                                  color: Color(0xFF6B7280),
                                 ),
                               ),
                             ],
                           ),
                         ),
-                      _LogoutButton(
-                        onTap: () => _handleLogout(context),
                       ),
-                    ],
+                      // ── เมนูกาง: ออกจากระบบ ──
+                      AnimatedCrossFade(
+                        firstChild: const SizedBox(width: double.infinity),
+                        secondChild: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const Divider(height: 1, color: _border),
+                            const SizedBox(height: 4),
+                            _LogoutButton(
+                              onTap: () => _handleLogout(context),
+                            ),
+                          ],
+                        ),
+                        crossFadeState: _accountExpanded
+                            ? CrossFadeState.showSecond
+                            : CrossFadeState.showFirst,
+                        duration: const Duration(milliseconds: 180),
+                      ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -480,12 +594,18 @@ class _MenuItemState extends State<_MenuItem> {
   @override
   Widget build(BuildContext context) {
     final showStar = _hover || widget.isPinned;
-    final fg = widget.isActive ? const Color(0xFF1E40AF) : const Color(0xFF6B7280);
+    final fg = widget.isActive
+        ? _AppNavigationRailState._activeFg
+        : const Color(0xFF6B7280);
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      child: Material(
-        color: widget.isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
+      child: Stack(
+        children: [
+          Material(
+        color: widget.isActive
+            ? _AppNavigationRailState._activeBg
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: widget.onTap,
@@ -525,7 +645,10 @@ class _MenuItemState extends State<_MenuItem> {
                               ? Icons.push_pin_rounded
                               : Icons.push_pin_outlined,
                           size: 16,
-                          color: const Color(0xFF1E40AF),
+                          // ✅ UX: pin ที่ปักไว้ = เทาอ่อน — hover ถึงเข้ม
+                          color: widget.isPinned && !_hover
+                              ? _AppNavigationRailState._pinMuted
+                              : _AppNavigationRailState._activeFg,
                         ),
                       ),
                     ),
@@ -534,6 +657,22 @@ class _MenuItemState extends State<_MenuItem> {
             ),
           ),
         ),
+          ),
+          // ✅ UX: leading indicator — แถบ navy ซ้าย ชี้ตาตำแหน่งปัจจุบัน
+          if (widget.isActive)
+            Positioned(
+              left: 0,
+              top: 8,
+              bottom: 8,
+              child: Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: _AppNavigationRailState._activeFg,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -565,7 +704,9 @@ class _MenuGroup extends StatelessWidget {
       children: [
         // หัวกลุ่ม
         Material(
-          color: isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
+          color: isActive
+              ? _AppNavigationRailState._activeBg
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           child: InkWell(
             onTap: onToggle,
@@ -578,7 +719,7 @@ class _MenuGroup extends StatelessWidget {
                     isActive ? activeIcon : icon,
                     size: 20,
                     color: isActive
-                        ? const Color(0xFF1E40AF)
+                        ? _AppNavigationRailState._activeFg
                         : const Color(0xFF6B7280),
                   ),
                   const SizedBox(width: 12),
@@ -590,7 +731,7 @@ class _MenuGroup extends StatelessWidget {
                         fontWeight:
                             isActive ? FontWeight.w600 : FontWeight.w500,
                         color: isActive
-                            ? const Color(0xFF1E40AF)
+                            ? _AppNavigationRailState._activeFg
                             : const Color(0xFF6B7280),
                       ),
                     ),
@@ -602,7 +743,7 @@ class _MenuGroup extends StatelessWidget {
                       Icons.keyboard_arrow_down,
                       size: 18,
                       color: isActive
-                          ? const Color(0xFF1E40AF)
+                          ? _AppNavigationRailState._activeFg
                           : const Color(0xFF6B7280),
                     ),
                   ),
@@ -658,13 +799,18 @@ class _SubMenuItemState extends State<_SubMenuItem> {
   @override
   Widget build(BuildContext context) {
     final showStar = _hover || widget.isPinned;
-    final fg =
-        widget.isActive ? const Color(0xFF1E40AF) : const Color(0xFF6B7280);
+    final fg = widget.isActive
+        ? _AppNavigationRailState._activeFg
+        : const Color(0xFF6B7280);
     return MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
-      child: Material(
-        color: widget.isActive ? const Color(0xFFDBEAFE) : Colors.transparent,
+      child: Stack(
+        children: [
+          Material(
+        color: widget.isActive
+            ? _AppNavigationRailState._activeBg
+            : Colors.transparent,
         borderRadius: BorderRadius.circular(6),
         child: InkWell(
           onTap: widget.onTap,
@@ -680,7 +826,7 @@ class _SubMenuItemState extends State<_SubMenuItem> {
                   margin: const EdgeInsets.only(left: 6, right: 14),
                   decoration: BoxDecoration(
                     color: widget.isActive
-                        ? const Color(0xFF1E40AF)
+                        ? _AppNavigationRailState._activeFg
                         : const Color(0xFF9CA3AF),
                     shape: BoxShape.circle,
                   ),
@@ -709,7 +855,10 @@ class _SubMenuItemState extends State<_SubMenuItem> {
                             ? Icons.push_pin_rounded
                             : Icons.push_pin_outlined,
                         size: 14,
-                        color: const Color(0xFF1E40AF),
+                        // ✅ UX: pin ที่ปักไว้ = เทาอ่อน — hover ถึงเข้ม
+                        color: widget.isPinned && !_hover
+                            ? _AppNavigationRailState._pinMuted
+                            : _AppNavigationRailState._activeFg,
                       ),
                     ),
                   ),
@@ -718,45 +867,75 @@ class _SubMenuItemState extends State<_SubMenuItem> {
             ),
           ),
         ),
+          ),
+          // ✅ UX: leading indicator ของ sub-item
+          if (widget.isActive)
+            Positioned(
+              left: 0,
+              top: 6,
+              bottom: 6,
+              child: Container(
+                width: 3,
+                decoration: BoxDecoration(
+                  color: _AppNavigationRailState._activeFg,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
-class _LogoutButton extends StatelessWidget {
+class _LogoutButton extends StatefulWidget {
   final VoidCallback onTap;
 
   const _LogoutButton({required this.onTap});
 
   @override
+  State<_LogoutButton> createState() => _LogoutButtonState();
+}
+
+class _LogoutButtonState extends State<_LogoutButton> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Material(
-      color: const Color(0xFFFEE2E2),
-      borderRadius: BorderRadius.circular(8),
-      child: InkWell(
-        onTap: onTap,
+    // ✅ UX: ปกติ = เทาเรียบ ไม่แย่งสายตา (logout เป็น action ถี่น้อย)
+    //    hover ค่อยเป็นแดง — แจ้งความเสี่ยงตอนกำลังจะกด
+    final fg = _hover ? const Color(0xFFDC2626) : const Color(0xFF4B5563);
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Material(
+        color: _hover ? const Color(0xFFFEF2F2) : Colors.transparent,
         borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              const Icon(
-                Icons.logout,
-                size: 18,
-                color: Color(0xFFDC2626),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'ออกจากระบบ',
-                  style: _AppNavigationRailState._noUnderlineTextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFFDC2626),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.logout,
+                  size: 18,
+                  color: fg,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'ออกจากระบบ',
+                    style: _AppNavigationRailState._noUnderlineTextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: fg,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
