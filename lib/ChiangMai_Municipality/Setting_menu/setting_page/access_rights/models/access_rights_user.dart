@@ -99,13 +99,38 @@ class AccessRightsUser {
       positionName = p['name_th']?.toString() ?? p['nameTh']?.toString() ?? '';
     }
 
-    // ลายเซ็น
+    // ลายเซ็น — รองรับ response หลาย shape ทั้ง list/detail API
     String? sigUuid;
-    if (json['signatures'] is List &&
+
+    String? nonEmpty(dynamic value) {
+      final text = value?.toString().trim() ?? '';
+      return text.isEmpty || text == 'null' ? null : text;
+    }
+
+    // 1) flat field: signature_uuid / signatureUuid
+    sigUuid = nonEmpty(json['signature_uuid']) ??
+        nonEmpty(json['signatureUuid']) ??
+        nonEmpty(profile['signature_uuid']);
+
+    // 2) object: signature: {uuid: ...}
+    if (sigUuid == null && json['signature'] is Map) {
+      final signature = json['signature'] as Map;
+      sigUuid = nonEmpty(signature['uuid']) ??
+          nonEmpty(signature['signature_uuid']) ??
+          nonEmpty(signature['id']);
+    }
+
+    // 3) array: signatures: [{uuid: ...}]
+    if (sigUuid == null &&
+        json['signatures'] is List &&
         (json['signatures'] as List).isNotEmpty) {
       final first = (json['signatures'] as List).first;
       if (first is Map) {
-        sigUuid = first['uuid']?.toString();
+        sigUuid = nonEmpty(first['uuid']) ??
+            nonEmpty(first['signature_uuid']) ??
+            nonEmpty(first['id']);
+      } else {
+        sigUuid = nonEmpty(first);
       }
     }
 

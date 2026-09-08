@@ -45,7 +45,6 @@ class AccessRightsTable extends StatelessWidget {
                 ),
               for (int i = 0; i < rows.length; i++) ...[
                 _UserCard(
-                  index: i,
                   model: rows[i],
                   onEdit: () => vm.onEdit(rows[i].uuid),
                   onSignature: () => vm.onSignature(rows[i].uuid),
@@ -54,6 +53,9 @@ class AccessRightsTable extends StatelessWidget {
               ],
             ],
           );
+        }
+        if (vm.viewMode == AccessRightsViewMode.card) {
+          return _UserCardGrid(rows: rows, vm: vm);
         }
         return Container(
           decoration: ArDecor.card(),
@@ -160,7 +162,13 @@ class AccessRightsTable extends StatelessWidget {
           children: [
             Expanded(
               flex: 2,
-              child: _Cell(value: model.username),
+              child: Row(
+                children: [
+                  _UserAvatar(model: model),
+                  const SizedBox(width: 8),
+                  Expanded(child: _Cell(value: model.username)),
+                ],
+              ),
             ),
             Expanded(
               flex: 3,
@@ -226,6 +234,71 @@ class _ActionHeader extends StatelessWidget {
       'จัดการ',
       textAlign: TextAlign.center,
       style: ArText.tableHeader.copyWith(letterSpacing: .4),
+    );
+  }
+}
+
+class _UserAvatar extends StatelessWidget {
+  final AccessRightsUser model;
+  final double radius;
+
+  const _UserAvatar({required this.model, this.radius = 15});
+
+  String get _initials {
+    final source = model.fullName.trim().isNotEmpty
+        ? model.fullName.trim()
+        : model.username.trim();
+    final parts = source.split(RegExp(r'\s+'))..removeWhere((e) => e.isEmpty);
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final hasSignature =
+        model.signatureUuid != null && model.signatureUuid!.trim().isNotEmpty;
+    return Tooltip(
+      message: hasSignature
+          ? '${model.fullName} — มีลายเซ็นในระบบแล้ว'
+          : '${model.fullName} — ยังไม่มีลายเซ็น',
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            radius: radius,
+            backgroundColor: const Color(0xFF1E40AF),
+            child: Text(
+              _initials,
+              style: TextStyle(
+                fontFamily: ArText.fontBold,
+                fontSize: radius * .68,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+              ),
+            ),
+          ),
+          Positioned(
+            right: -2,
+            bottom: -2,
+            child: Container(
+              padding: const EdgeInsets.all(1),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                hasSignature ? Icons.verified : Icons.warning_amber_rounded,
+                size: radius * .85,
+                color: hasSignature
+                    ? const Color(0xFF16A34A)
+                    : const Color(0xFFB45309),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -419,15 +492,218 @@ class _EmptyState extends StatelessWidget {
 }
 
 // ============================================================================
+// Card grid layout (desktop)
+// ============================================================================
+class _UserCardGrid extends StatelessWidget {
+  final List<AccessRightsUser> rows;
+  final AccessRightsViewModel vm;
+
+  const _UserCardGrid({required this.rows, required this.vm});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = constraints.maxWidth >= 1180
+            ? 3
+            : constraints.maxWidth >= 760
+                ? 2
+                : 1;
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: columns,
+            crossAxisSpacing: ArSpace.md,
+            mainAxisSpacing: ArSpace.md,
+            mainAxisExtent: 250,
+          ),
+          itemCount: rows.length,
+          itemBuilder: (_, index) {
+            final user = rows[index];
+            return _DesktopUserCard(
+              model: user,
+              onEdit: () => vm.onEdit(user.uuid),
+              onSignature: () => vm.onSignature(user.uuid),
+            );
+          },
+        );
+      },
+    );
+  }
+}
+
+class _DesktopUserCard extends StatelessWidget {
+  final AccessRightsUser model;
+  final VoidCallback onEdit;
+  final VoidCallback onSignature;
+
+  const _DesktopUserCard({
+    required this.model,
+    required this.onEdit,
+    required this.onSignature,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final rolesText = model.roles.isEmpty
+        ? '-'
+        : model.roles.map((role) => role.nameTh).join(', ');
+    final levelText =
+        model.roles.isEmpty ? '-' : model.roles.first.level.toString();
+
+    return Container(
+      decoration: ArDecor.card(),
+      padding: const EdgeInsets.all(ArSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _UserAvatar(model: model, radius: 19),
+              const SizedBox(width: ArSpace.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      model.fullName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ArText.tableCell.copyWith(
+                        fontFamily: ArText.fontBold,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      model.username.isEmpty ? '-' : model.username,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: ArText.caption,
+                    ),
+                  ],
+                ),
+              ),
+              if (levelText != '-')
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: ArDecor.pill(
+                    ArColors.primaryLight,
+                    ArColors.primaryDark,
+                  ),
+                  child: Text(
+                    'ลำดับ $levelText',
+                    style: ArText.label.copyWith(
+                      color: ArColors.primaryDark,
+                      letterSpacing: 0,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const Divider(height: ArSpace.lg, color: ArColors.border),
+          _CardInfoLine(
+            icon: Icons.email_outlined,
+            value: model.email.isEmpty ? '-' : model.email,
+          ),
+          const SizedBox(height: 6),
+          _CardInfoLine(
+            icon: Icons.badge_outlined,
+            value: model.positionName.isEmpty ? '-' : model.positionName,
+          ),
+          const SizedBox(height: 6),
+          Tooltip(
+            message: rolesText,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 1),
+                  child: Icon(
+                    Icons.admin_panel_settings_outlined,
+                    size: 15,
+                    color: ArColors.textMuted,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    rolesText,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: ArText.tableCell.copyWith(
+                      fontSize: 12,
+                      color: ArColors.textSecondary,
+                      height: 1.25,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              _MiniButton(
+                icon: Icons.edit_rounded,
+                label: 'แก้ไข',
+                onTap: onEdit,
+              ),
+              const SizedBox(width: 8),
+              _MiniButton(
+                icon: Icons.draw_rounded,
+                label: 'ลายเซ็น',
+                onTap: onSignature,
+                color: ArColors.statusInfoFg,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardInfoLine extends StatelessWidget {
+  final IconData icon;
+  final String value;
+
+  const _CardInfoLine({required this.icon, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 15, color: ArColors.textMuted),
+        const SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: ArText.tableCell.copyWith(
+              fontSize: 12,
+              color: ArColors.textSecondary,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
 // Card layout (mobile / narrow screen)
 // ============================================================================
 class _UserCard extends StatelessWidget {
-  final int index;
   final AccessRightsUser model;
   final VoidCallback onEdit;
   final VoidCallback onSignature;
   const _UserCard({
-    required this.index,
     required this.model,
     required this.onEdit,
     required this.onSignature,
@@ -449,22 +725,7 @@ class _UserCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: ArColors.primaryLight,
-                  borderRadius: BorderRadius.circular(ArRadius.pill),
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: ArText.tableCell.copyWith(
-                    color: ArColors.primaryDark,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+              _UserAvatar(model: model, radius: 16),
               const SizedBox(width: ArSpace.sm),
               Expanded(
                 child: Text(

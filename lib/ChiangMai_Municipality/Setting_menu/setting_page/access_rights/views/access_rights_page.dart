@@ -31,7 +31,7 @@ import 'widgets/access_rights_user_dialog.dart';
 /// Public API
 /// ═══════════════════════════════════════════════════════════════════════
 class AccessRightsPage extends StatefulWidget {
-  const AccessRightsPage._({super.key});
+  const AccessRightsPage._();
 
   /// Factory สร้าง Page พร้อม Provider (ใช้ใน setting_page)
   static Widget create({
@@ -177,22 +177,149 @@ class _AccessRightsPageBodyState extends State<_AccessRightsPageBody> {
               onCreate: vm.onCreate,
             ),
             const SizedBox(height: ArSpace.lg),
-            // Search + Pagination row (pagination inline)
-            const Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(child: AccessRightsSearchBar()),
-                SizedBox(width: ArSpace.md),
-                AccessRightsPagination(),
-              ],
-            ),
+            const _AccessRightsToolbar(),
             const SizedBox(height: ArSpace.lg),
-            Expanded(
+            const Expanded(
               child: SingleChildScrollView(
-                child: const AccessRightsTable(),
+                child: AccessRightsTable(),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccessRightsToolbar extends StatelessWidget {
+  const _AccessRightsToolbar();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = context.watch<AccessRightsViewModel>();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final mobile = constraints.maxWidth < kAccessRightsMobileBreakpoint;
+        final compact = constraints.maxWidth < 720;
+        if (compact) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const AccessRightsSearchBar(),
+              const SizedBox(height: ArSpace.sm),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  if (!mobile) ...[
+                    _AccessRightsViewModeToggle(
+                      mode: vm.viewMode,
+                      onChanged: vm.setViewMode,
+                    ),
+                    const Spacer(),
+                  ],
+                  const AccessRightsPagination(),
+                ],
+              ),
+            ],
+          );
+        }
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Expanded(child: AccessRightsSearchBar()),
+            const SizedBox(width: ArSpace.md),
+            _AccessRightsViewModeToggle(
+              mode: vm.viewMode,
+              onChanged: vm.setViewMode,
+            ),
+            const SizedBox(width: ArSpace.md),
+            const AccessRightsPagination(),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _AccessRightsViewModeToggle extends StatelessWidget {
+  final AccessRightsViewMode mode;
+  final ValueChanged<AccessRightsViewMode> onChanged;
+
+  const _AccessRightsViewModeToggle({
+    required this.mode,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: ArColors.surfaceMuted,
+        borderRadius: BorderRadius.circular(ArRadius.pill),
+        border: Border.all(color: ArColors.border),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ViewModeButton(
+            icon: Icons.grid_view_rounded,
+            label: 'การ์ด',
+            active: mode == AccessRightsViewMode.card,
+            onTap: () => onChanged(AccessRightsViewMode.card),
+          ),
+          _ViewModeButton(
+            icon: Icons.table_rows_rounded,
+            label: 'ตาราง',
+            active: mode == AccessRightsViewMode.table,
+            onTap: () => onChanged(AccessRightsViewMode.table),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ViewModeButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _ViewModeButton({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color = active ? ArColors.primaryDark : ArColors.textSecondary;
+    return Material(
+      color: active ? ArColors.cardBg : Colors.transparent,
+      borderRadius: BorderRadius.circular(ArRadius.pill),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(ArRadius.pill),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 15, color: color),
+              const SizedBox(width: 5),
+              Text(
+                label,
+                style: TextStyle(
+                  fontFamily: ArText.fontBold,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

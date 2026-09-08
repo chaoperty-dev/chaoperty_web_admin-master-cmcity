@@ -19,6 +19,9 @@ import '../models/access_rights_role_position.dart';
 import '../models/access_rights_user.dart';
 import '../services/access_rights_service.dart';
 
+/// รูปแบบการแสดงผลรายการผู้ใช้
+enum AccessRightsViewMode { table, card }
+
 class AccessRightsViewModel extends ChangeNotifier {
   AccessRightsViewModel({
     required AccessRightsConfig config,
@@ -78,6 +81,16 @@ class AccessRightsViewModel extends ChangeNotifier {
   bool _sortAscending = true;
   String get sortColumn => _sortColumn;
   bool get sortAscending => _sortAscending;
+
+  // ---------- View mode (table / card) ----------
+  AccessRightsViewMode _viewMode = AccessRightsViewMode.table;
+  AccessRightsViewMode get viewMode => _viewMode;
+
+  void setViewMode(AccessRightsViewMode mode) {
+    if (_viewMode == mode) return;
+    _viewMode = mode;
+    notifyListeners();
+  }
 
   // ---------- Config getters ----------
   String get title => _config.title;
