@@ -9,6 +9,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/access_rights/views/access_rights_page.dart';
+import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/position/views/position_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/area/views/area_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/general_data/views/general_data_page.dart';
 import 'package:chaoperty/ChiangMai_Municipality/Setting_menu/setting_page/payment/views/payment_page.dart';
@@ -132,6 +133,13 @@ class SettingPage extends StatelessWidget {
         color: SetColors.menuAccessRights,
         route: _MenuRoute.accessRights,
       ),
+      _MenuItem(
+        title: 'จัดการตำแหน่ง',
+        subtitle: 'จัดการตำแหน่งในองค์กร',
+        icon: Icons.badge_outlined,
+        color: SetColors.menuPosition,
+        route: _MenuRoute.position,
+      ),
     ];
 
     return Container(
@@ -195,6 +203,12 @@ class SettingPage extends StatelessWidget {
       case _MenuRoute.accessRights:
         openAccessRights(context);
         break;
+      case _MenuRoute.position:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => PositionPage.create()),
+        );
+        break;
     }
   }
 }
@@ -208,6 +222,7 @@ enum _MenuRoute {
   document,
   payment,
   accessRights,
+  position,
 }
 
 class _MenuItem {

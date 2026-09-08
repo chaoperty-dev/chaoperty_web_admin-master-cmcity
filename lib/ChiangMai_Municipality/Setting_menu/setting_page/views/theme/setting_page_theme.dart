@@ -42,6 +42,7 @@ class SetColors {
   static const Color menuDocument = Color(0xFF2563EB); // blue-600
   static const Color menuPayment = Color(0xFFEA580C); // orange-600
   static const Color menuAccessRights = Color(0xFF0F172A); // slate-900
+  static const Color menuPosition = Color(0xFF2563EB); // blue-600
 }
 
 /// 📐 Spacing & Radius
