@@ -7,7 +7,7 @@ import '../tenant_license_detail_page.dart';
 import '../theme/tenant_license_theme.dart';
 
 class TenantLicenseTable extends StatelessWidget {
-  const TenantLicenseTable({super.key});
+  const TenantLicenseTable({super.key});  
 
   @override
   Widget build(BuildContext context) {
