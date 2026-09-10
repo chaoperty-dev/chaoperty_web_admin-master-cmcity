@@ -255,6 +255,7 @@ class LicenseAttachChecklistService {
   /// submit checklist หลังจากผู้ใช้กดบันทึกใน step 2
   static Future<LicenseAttachChecklistSubmitResult> submitChecklist(
     String? requestUuid, {
+    required List<int> documentIds,
     Map<String, String>? extraHeaders,
   }) async {
     final uuid = requestUuid ?? '';
@@ -262,16 +263,27 @@ class LicenseAttachChecklistService {
     final headers = <String, String>{
       ...baseHeaders,
       'Accept': 'application/json',
+      'Content-Type': 'application/json',
       if (extraHeaders != null) ...extraHeaders,
     };
 
     final url =
         Uri.parse('${MyConstant().domain_v1}/admin/requests/$uuid/checklist');
-    final request = http.Request('POST', url)..headers.addAll(headers);
+    final requestBody = json.encode({
+      'document_ids': documentIds,
+    });
+    debugPrint('[AttachChecklist][submit] POST $url');
+    debugPrint('[AttachChecklist][submit] body=$requestBody');
+
+    final request = http.Request('POST', url)
+      ..headers.addAll(headers)
+      ..body = requestBody;
 
     try {
       final streamed = await request.send();
       final body = await streamed.stream.bytesToString();
+      debugPrint(
+          '[AttachChecklist][submit] status=${streamed.statusCode} body=$body');
       // รับทั้ง 200 OK และ 201 Created
       final ok = streamed.statusCode >= 200 && streamed.statusCode < 300;
       String? message;

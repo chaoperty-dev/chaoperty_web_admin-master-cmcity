@@ -244,7 +244,7 @@ class _Step1Scaffold extends StatelessWidget {
                   physics: const BouncingScrollPhysics(),
                   children: [
                     // Tab 1: ข้อมูลเอกสาร (เนื้อหาเดิม)
-                    const _VerifyInfoTab(),
+                    _VerifyInfoTab(requestUuid: requestUuid),
                     // Tab 2: ข้อมูลคำขอ
                     _RequestInfoTab(requestUuid: requestUuid),
                   ],
@@ -416,7 +416,8 @@ class _TabLabel extends StatelessWidget {
 // Tab 1: ข้อมูลเอกสาร (เนื้อหาเดิม)
 // =============================================================================
 class _VerifyInfoTab extends StatelessWidget {
-  const _VerifyInfoTab();
+  final String? requestUuid;
+  const _VerifyInfoTab({this.requestUuid});
 
   @override
   Widget build(BuildContext context) {
@@ -429,7 +430,10 @@ class _VerifyInfoTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ─── Section: เลือกเอกสาร (เดิม) ───
+              // ─── ภาพรวมคำขอ ───
+              _RequestOverviewCard(requestUuid: context.findAncestorWidgetOfExactType<_Step1Scaffold>()?.requestUuid),
+              const SizedBox(height: LaSpace.md),
+              // ─── Section: เลือกเอกสาร ───
               const _SectionHeader(),
               const SizedBox(height: LaSpace.md),
               // ─── Section: ตารางแนบเอกสาร (เดิม) ───
@@ -910,44 +914,400 @@ class _ColumnHeaderRow extends StatelessWidget {
   }
 }
 
-class _TableHeaderBar extends StatelessWidget {
+class _TableHeaderBar extends StatefulWidget {
   final List<LicenseverifyDocument> documents;
   const _TableHeaderBar({required this.documents});
 
   @override
+  State<_TableHeaderBar> createState() => _TableHeaderBarState();
+}
+
+class _TableHeaderBarState extends State<_TableHeaderBar> {
+  bool _processing = false;
+  int _done = 0;
+  int _total = 0;
+
+  List<LicenseverifyDocument> get _pendingDocuments =>
+      widget.documents.where((doc) {
+        if (doc.attachments.isEmpty) return false;
+        final attachment = doc.attachments.first;
+        final label = attachment.status_label?.toString().trim() ?? '';
+        final status = attachment.status?.toString().trim().toLowerCase() ?? '';
+        return !_isFinalStatus(label) &&
+            status != 'approved' &&
+            status != 'rejected' &&
+            status != 'needs_update';
+      }).toList();
+
+  int _documentId(LicenseverifyDocument doc) =>
+      doc.id is int ? doc.id as int : int.tryParse('${doc.id}') ?? 0;
+
+  Future<void> _approveAll() async {
+    final pending = _pendingDocuments;
+    if (pending.isEmpty || _processing) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('อนุมัติเอกสารทั้งหมด'),
+        content: Text(
+          'ยืนยันอนุมัติเอกสารที่รอตรวจสอบ ${pending.length} รายการ?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('อนุมัติทั้งหมด'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _runBulk(
+      pending,
+      (vm, docId) => vm.approveDocument(documentId: docId),
+      successLabel: 'อนุมัติ',
+    );
+  }
+
+  Future<void> _rejectAll() async {
+    final pending = _pendingDocuments;
+    if (pending.isEmpty || _processing) return;
+    final reason = await promptReviewReason(
+      context,
+      title: 'เหตุผลการปฏิเสธทั้งหมด',
+      submitLabel: 'ปฏิเสธทั้งหมด',
+      docName: '${pending.length} รายการ',
+    );
+    if (reason == null || !mounted) return;
+    await _runBulk(
+      pending,
+      (vm, docId) => vm.rejectDocument(
+        documentId: docId,
+        description: reason,
+      ),
+      successLabel: 'ปฏิเสธ',
+    );
+  }
+
+  Future<void> _runBulk(
+    List<LicenseverifyDocument> documents,
+    Future<bool> Function(VerifyDocumentsViewModel vm, int docId) action, {
+    required String successLabel,
+  }) async {
+    final vm = context.read<VerifyDocumentsViewModel>();
+    setState(() {
+      _processing = true;
+      _done = 0;
+      _total = documents.length;
+    });
+
+    var success = 0;
+    for (final doc in documents) {
+      final docId = _documentId(doc);
+      final ok = docId > 0 && await action(vm, docId);
+      if (ok) success++;
+      if (!mounted) return;
+      setState(() => _done++);
+    }
+
+    if (!mounted) return;
+    setState(() => _processing = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          '$successLabelสำเร็จ $success/${documents.length} รายการ',
+        ),
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: success == documents.length
+            ? LaColors.statusApprovedFg
+            : LaColors.statusPendingFg,
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final vm = context.watch<VerifyDocumentsViewModel>();
-    final hasAny = documents.isNotEmpty;
     final mobile = _isMobile(context);
+    final pendingCount = _pendingDocuments.length;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: LaSpace.sm),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.folder_open_rounded,
-              size: mobile ? 16 : 18, color: LaColors.primaryDark),
-          SizedBox(width: mobile ? 4 : 6),
-          Expanded(
-            child: Text(
-              'เอกสารทั้งหมด (${documents.length} รายการ)',
-              style: LaText.h2.copyWith(fontSize: mobile ? 13 : 14),
-              overflow: TextOverflow.ellipsis,
+          Row(
+            children: [
+              Icon(Icons.folder_open_rounded,
+                  size: mobile ? 16 : 18, color: LaColors.primaryDark),
+              SizedBox(width: mobile ? 4 : 6),
+              Expanded(
+                child: Text(
+                  'เอกสารทั้งหมด (${widget.documents.length} รายการ)',
+                  style: LaText.h2.copyWith(fontSize: mobile ? 13 : 14),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              _ViewModeToggle(
+                isGrid: vm.isGridView,
+                onTap: _processing ? () {} : vm.toggleViewMode,
+              ),
+              IconButton(
+                tooltip: 'รีเฟรช',
+                visualDensity:
+                    mobile ? VisualDensity.compact : VisualDensity.standard,
+                onPressed: vm.isLoading || _processing ? null : vm.refresh,
+                icon:
+                    const Icon(Icons.refresh_rounded, color: LaColors.primary),
+              ),
+            ],
+          ),
+          const SizedBox(height: LaSpace.sm),
+          // Bulk actions แยกเป็นการ์ด ไม่ปนกับ header รายการเอกสาร
+          Container(
+            padding: const EdgeInsets.all(LaSpace.sm),
+            decoration: BoxDecoration(
+              color: LaColors.surfaceMuted.withValues(alpha: .55),
+              borderRadius: BorderRadius.circular(LaRadius.md),
+              border: Border.all(color: LaColors.border),
+            ),
+            child: mobile
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _BulkReviewSummary(
+                        processing: _processing,
+                        done: _done,
+                        total: _total,
+                        pendingCount: pendingCount,
+                      ),
+                      const SizedBox(height: LaSpace.sm),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _BulkRejectButton(
+                              enabled: pendingCount > 0 && !_processing,
+                              onPressed: _rejectAll,
+                            ),
+                          ),
+                          const SizedBox(width: LaSpace.sm),
+                          Expanded(
+                            child: _BulkApproveButton(
+                              enabled: pendingCount > 0 && !_processing,
+                              processing: _processing,
+                              onPressed: _approveAll,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: LaColors.statusInfoBg,
+                          borderRadius: BorderRadius.circular(LaRadius.sm),
+                        ),
+                        child: const Icon(
+                          Icons.fact_check_outlined,
+                          size: 17,
+                          color: LaColors.statusInfoFg,
+                        ),
+                      ),
+                      const SizedBox(width: LaSpace.sm),
+                      Expanded(
+                        child: _BulkReviewSummary(
+                          processing: _processing,
+                          done: _done,
+                          total: _total,
+                          pendingCount: pendingCount,
+                        ),
+                      ),
+                      _BulkRejectButton(
+                        enabled: pendingCount > 0 && !_processing,
+                        onPressed: _rejectAll,
+                      ),
+                      const SizedBox(width: LaSpace.sm),
+                      _BulkApproveButton(
+                        enabled: pendingCount > 0 && !_processing,
+                        processing: _processing,
+                        onPressed: _approveAll,
+                      ),
+                    ],
+                  ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BulkReviewSummary extends StatelessWidget {
+  final bool processing;
+  final int done;
+  final int total;
+  final int pendingCount;
+
+  const _BulkReviewSummary({
+    required this.processing,
+    required this.done,
+    required this.total,
+    required this.pendingCount,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text(
+          'จัดการเอกสารทั้งหมด',
+          style: TextStyle(
+            fontFamily: LaText.fontBold,
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: LaColors.textPrimary,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          processing
+              ? 'กำลังดำเนินการ $done/$total รายการ...'
+              : 'มีเอกสารรอตรวจสอบ $pendingCount รายการ',
+          style: LaText.caption,
+        ),
+      ],
+    );
+  }
+}
+
+class _BulkRejectButton extends StatelessWidget {
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  const _BulkRejectButton({
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _BulkToolButton(
+      icon: Icons.close_rounded,
+      label: 'ปฏิเสธทั้งหมด',
+      color: LaColors.statusRejectedFg,
+      bg: LaColors.statusRejectedBg,
+      outlined: true,
+      enabled: enabled,
+      onTap: onPressed,
+    );
+  }
+}
+
+class _BulkApproveButton extends StatelessWidget {
+  final bool enabled;
+  final bool processing;
+  final VoidCallback onPressed;
+
+  const _BulkApproveButton({
+    required this.enabled,
+    required this.processing,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _BulkToolButton(
+      icon: Icons.check_rounded,
+      label: processing ? 'กำลังดำเนินการ...' : 'อนุมัติทั้งหมด',
+      color: LaColors.statusApprovedFg,
+      bg: LaColors.statusApprovedBg,
+      filled: true,
+      enabled: enabled,
+      loading: processing,
+      onTap: onPressed,
+    );
+  }
+}
+
+/// รูปแบบเดียวกับ _ToolButton ใน fact_check_detail_step1.dart
+class _BulkToolButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final Color bg;
+  final bool filled;
+  final bool outlined;
+  final bool enabled;
+  final bool loading;
+  final VoidCallback onTap;
+
+  const _BulkToolButton({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.bg,
+    this.filled = false,
+    this.outlined = false,
+    this.enabled = true,
+    this.loading = false,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = filled ? Colors.white : color;
+    final bgColor = filled ? color : bg;
+    return Opacity(
+      opacity: enabled || loading ? 1 : .45,
+      child: MouseRegion(
+        cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+        child: GestureDetector(
+          onTap: enabled ? onTap : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+            decoration: BoxDecoration(
+              color: bgColor,
+              borderRadius: BorderRadius.circular(10),
+              border: outlined || !filled
+                  ? Border.all(color: color.withValues(alpha: .4))
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (loading)
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                else
+                  Icon(icon, color: fg, size: 16),
+                const SizedBox(width: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 12.5,
+                  ),
+                ),
+              ],
             ),
           ),
-          // Toggle: List / Grid view
-          _ViewModeToggle(
-            isGrid: vm.isGridView,
-            onTap: vm.toggleViewMode,
-          ),
-          IconButton(
-            tooltip: 'รีเฟรช',
-            visualDensity:
-                mobile ? VisualDensity.compact : VisualDensity.standard,
-            onPressed: vm.isLoading ? null : vm.refresh,
-            icon: const Icon(Icons.refresh_rounded, color: LaColors.primary),
-          ),
-          SizedBox(width: mobile ? 0 : 4),
-        ],
+        ),
       ),
     );
   }
@@ -1034,9 +1394,8 @@ class _DocumentRow extends StatelessWidget {
                 ? LaColors.statusPendingFg
                 : LaColors.textPrimary,
             fontSize: 11,
-            fontWeight: doc.isRequired && !_hasFile
-                ? FontWeight.w700
-                : FontWeight.w400,
+            fontWeight:
+                doc.isRequired && !_hasFile ? FontWeight.w700 : FontWeight.w400,
           ),
         ),
       );
@@ -2180,4 +2539,160 @@ class _DocumentPreview extends StatelessWidget {
       );
     }
   }
+}
+
+class _RequestOverviewCard extends StatefulWidget {
+  final String? requestUuid;
+
+  const _RequestOverviewCard({this.requestUuid});
+
+  @override
+  State<_RequestOverviewCard> createState() => _RequestOverviewCardState();
+}
+
+class _RequestOverviewCardState extends State<_RequestOverviewCard> {
+  late final LicenseRequestDetailStep1ViewModel _vm;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = LicenseRequestDetailStep1ViewModel().init();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final uuid = widget.requestUuid?.trim() ?? '';
+    if (uuid.isEmpty) {
+      if (mounted) setState(() { _loading = false; _error = 'ไม่พบ UUID ของคำขอ'; });
+      return;
+    }
+    try {
+      await _vm.loadFromUuid(uuid);
+      if (mounted) setState(() { _loading = false; _error = _vm.errorMessage; });
+    } catch (e) {
+      if (mounted) setState(() { _loading = false; _error = '$e'; });
+    }
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  String _value(String keyword) {
+    final field = _vm.dataPerson.where((x) => x.title.contains(keyword)).firstOrNull;
+    return field?.detail.trim() ?? '';
+  }
+
+  String _shopValue(String keyword) {
+    final field = _vm.dataShop.where((x) => x.title.contains(keyword)).firstOrNull;
+    return field?.detail.trim() ?? '';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const _RequestOverviewLoading();
+    if (_error != null) return _RequestOverviewError(message: _error!, onRetry: () { setState(() { _loading = true; _error = null; }); _load(); });
+
+    final zone = _vm.selectedZn?.trim() ?? '';
+    final subZone = _vm.selectedSubZone?.trim() ?? '';
+    final zoneLabel = [subZone, zone].where((x) => x.isNotEmpty && x != 'null').join(' / ');
+    final area = _vm.selectedLn?.trim() ?? '';
+    final contact = _value('ชื่อ-นามสกุล');
+    final tax = _value('เลขบัตรประจำตัว');
+    final status = _vm.status.trim().isEmpty ? 'กำลังรอตรวจสอบ' : _vm.status;
+    final uuid = widget.requestUuid ?? '';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+      decoration: LaDecor.card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _OverviewStatus(label: status),
+              const Spacer(),
+              _OverviewPill(icon: Icons.tag_rounded, label: 'รหัสรายการ: ${_short(uuid)}'),
+            ],
+          ),
+          const SizedBox(height: 14),
+          LayoutBuilder(builder: (context, c) {
+            final narrow = c.maxWidth < 650;
+            final left = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const _OverviewHeading('ข้อมูลคำขอ'),
+              const SizedBox(height: 6),
+              _OverviewInfo(icon: Icons.location_on_rounded, label: 'บริเวณ / โซน', value: zoneLabel),
+              const SizedBox(height: 5),
+              _OverviewInfo(icon: Icons.tag_rounded, label: 'รหัสพื้นที่', value: area),
+            ]);
+            final right = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const _OverviewHeading('ข้อมูลลูกค้า'),
+              const SizedBox(height: 6),
+              _OverviewInfo(icon: Icons.person_rounded, label: 'ชื่อผู้ติดต่อ', value: contact),
+              const SizedBox(height: 5),
+              _OverviewInfo(icon: Icons.badge_outlined, label: 'เลขประจำตัวผู้เสียภาษี', value: tax),
+            ]);
+            return narrow ? Column(children: [left, const SizedBox(height: 12), right]) : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: left), const SizedBox(width: 32), Expanded(child: right)]);
+          }),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(color: LaColors.surfaceMuted, borderRadius: BorderRadius.circular(LaRadius.sm)),
+            child: const Row(children: [Icon(Icons.info_outline_rounded, size: 14, color: LaColors.textMuted), SizedBox(width: 6), Expanded(child: Text('ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด ไปที่แท็บ "ข้อมูลคำขอ"', style: LaText.caption))]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _short(String value) => value.length <= 12 ? value : '${value.substring(0, 8)}…';
+}
+
+class _OverviewHeading extends StatelessWidget {
+  final String text;
+  const _OverviewHeading(this.text);
+  @override
+  Widget build(BuildContext context) => Text(text, style: LaText.label.copyWith(color: LaColors.primaryDark, letterSpacing: .8));
+}
+
+class _OverviewInfo extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _OverviewInfo({required this.icon, required this.label, required this.value});
+  @override
+  Widget build(BuildContext context) => Row(children: [Container(width: 28, height: 28, decoration: BoxDecoration(color: LaColors.primaryLight, borderRadius: BorderRadius.circular(7)), child: Icon(icon, size: 15, color: LaColors.primaryDark)), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: LaText.caption), Text(value.isEmpty ? '-' : value, maxLines: 1, overflow: TextOverflow.ellipsis, style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600))]))]);
+}
+
+class _OverviewPill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _OverviewPill({required this.icon, required this.label});
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: LaColors.surfaceMuted, borderRadius: BorderRadius.circular(999), border: Border.all(color: LaColors.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 13, color: LaColors.textSecondary), const SizedBox(width: 5), Text(label, style: LaText.caption.copyWith(color: LaColors.textSecondary, fontWeight: FontWeight.w600))]));
+}
+
+class _OverviewStatus extends StatelessWidget {
+  final String label;
+  const _OverviewStatus({required this.label});
+  @override
+  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: LaColors.statusPendingBg, borderRadius: BorderRadius.circular(999)), child: Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: LaColors.statusPendingFg, shape: BoxShape.circle)), const SizedBox(width: 6), Text(label, style: LaText.label.copyWith(color: LaColors.statusPendingFg))]));
+}
+
+class _RequestOverviewLoading extends StatelessWidget {
+  const _RequestOverviewLoading();
+  @override
+  Widget build(BuildContext context) => Container(decoration: LaDecor.card(), padding: const EdgeInsets.all(24), child: const Center(child: CircularProgressIndicator(strokeWidth: 2)));
+}
+
+class _RequestOverviewError extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _RequestOverviewError({required this.message, required this.onRetry});
+  @override
+  Widget build(BuildContext context) => Container(decoration: LaDecor.card(), padding: const EdgeInsets.all(14), child: Row(children: [const Icon(Icons.error_outline_rounded, color: LaColors.statusRejectedFg), const SizedBox(width: 8), Expanded(child: Text(message, style: LaText.caption)), TextButton(onPressed: onRetry, child: const Text('ลองใหม่'))]));
 }

@@ -2370,16 +2370,16 @@ class _RequestSummaryCard extends StatelessWidget {
                 child: _InfoColumn(
                   title: 'ข้อมูลคำขอ',
                   items: [
-                    _InfoItem(
-                      icon: Icons.receipt_long_rounded,
-                      label: 'เลขที่สัญญา',
-                      value: nr?.leaseNumber,
-                    ),
-                    _InfoItem(
-                      icon: Icons.calendar_today_rounded,
-                      label: 'วันที่สิ้นสุด',
-                      value: _formatDate(nr?.ldate),
-                    ),
+                    // _InfoItem(
+                    //   icon: Icons.receipt_long_rounded,
+                    //   label: 'เลขที่สัญญา',
+                    //   value: nr?.leaseNumber,
+                    // ),
+                    // _InfoItem(
+                    //   icon: Icons.calendar_today_rounded,
+                    //   label: 'วันที่สิ้นสุด',
+                    //   value: _formatDate(nr?.ldate),
+                    // ),
                     _InfoItem(
                       icon: Icons.location_on_rounded,
                       label: 'บริเวณ / โซน',
@@ -2404,23 +2404,23 @@ class _RequestSummaryCard extends StatelessWidget {
                       label: 'ชื่อผู้ติดต่อ',
                       value: client?.cname ?? client?.scname,
                     ),
-                    _InfoItem(
-                      icon: Icons.phone_rounded,
-                      label: 'เบอร์โทร',
-                      value: formatPhoneNumber(client?.tel ?? ''),
-                      mono: true,
-                    ),
+                    // _InfoItem(
+                    //   icon: Icons.phone_rounded,
+                    //   label: 'เบอร์โทร',
+                    //   value: formatPhoneNumber(client?.tel ?? ''),
+                    //   mono: true,
+                    // ),
                     _InfoItem(
                       icon: Icons.confirmation_number_rounded,
                       label: 'เลขประจำตัวผู้เสียภาษี',
                       value: client?.tax,
                       mono: true,
                     ),
-                    _InfoItem(
-                      icon: Icons.place_rounded,
-                      label: 'ที่อยู่',
-                      value: client?.addr1,
-                    ),
+                    // _InfoItem(
+                    //   icon: Icons.place_rounded,
+                    //   label: 'ที่อยู่',
+                    //   value: client?.addr1,
+                    // ),
                   ],
                 ),
               ),

@@ -23,6 +23,31 @@ import '../../models/license_attach_document.dart';
 import '../../services/attach_documents_service.dart';
 import '../theme/license_attach_theme.dart';
 
+class _BatchRequiredBubble extends StatelessWidget {
+  const _BatchRequiredBubble();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: LaColors.statusPendingBg,
+        borderRadius: BorderRadius.circular(7),
+        border: Border.all(color: const Color(0xFFFDE68A)),
+      ),
+      child: const Text(
+        'จำเป็น',
+        style: TextStyle(
+          fontFamily: LaText.fontBold,
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: LaColors.statusPendingFg,
+        ),
+      ),
+    );
+  }
+}
+
 // =============================================================================
 // Public entry point
 // =============================================================================
@@ -38,6 +63,12 @@ Future<Map<int, LicenseAttachAttachment>?> showAttachBatchUploadSheet({
     context: context,
     isScrollControlled: true,
     enableDrag: false,
+    // ✅ Desktop: บังคับความกว้างเต็มจอ เพื่อให้ workspace แบ่งซ้าย/ขวาจริง
+    //    (Material 3 มี default max-width 640px ถ้าไม่กำหนด minWidth)
+    constraints: BoxConstraints(
+      minWidth: MediaQuery.sizeOf(context).width,
+      maxWidth: MediaQuery.sizeOf(context).width,
+    ),
     backgroundColor: Colors.transparent,
     builder: (ctx) => AttachBatchUploadSheet(
       documents: documents,
@@ -64,38 +95,15 @@ class AttachBatchUploadSheet extends StatefulWidget {
   State<AttachBatchUploadSheet> createState() => _AttachBatchUploadSheetState();
 }
 
-class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
-    with SingleTickerProviderStateMixin {
-  List<PlatformFile> _pickedFiles = [];
-  Map<int, PlatformFile> _assignments = {};
-  Map<int, LicenseAttachAttachment> _uploaded = {};
+class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet> {
+  final List<PlatformFile> _pickedFiles = [];
+  final Map<int, PlatformFile> _assignments = {};
+  final Map<int, LicenseAttachAttachment> _uploaded = {};
 
   bool _uploading = false;
   double _progress = 0;
 
-  /// Tab index สำหรับ mobile (0 = ไฟล์, 1 = หัวข้อ)
-  int _tabIndex = 0;
-
-  late final TabController _tabController;
-
   static const int _kMaxBytes = 10 * 1024 * 1024;
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-    _tabController.addListener(() {
-      if (!_tabController.indexIsChanging) {
-        setState(() => _tabIndex = _tabController.index);
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   // ---------------------------------------------------------------------------
   // Helpers
@@ -108,8 +116,11 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
   bool _hasAttachment(LicenseAttachDocument d) =>
       d.attachments != null && d.attachments!.isNotEmpty;
 
-  bool _isMobile(BuildContext context) =>
-      MediaQuery.of(context).size.width < 700;
+  int get _missingRequiredCount => widget.documents.where((doc) {
+        if (!doc.isRequired || _hasAttachment(doc)) return false;
+        final id = _docId(doc);
+        return !_assignments.containsKey(id) && !_uploaded.containsKey(id);
+      }).length;
 
   // ---------------------------------------------------------------------------
   // File picker
@@ -159,10 +170,6 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
     setState(() {
       _assignments[docId] = file;
     });
-    // บน mobile สลับไปแท็บ "หัวข้อ" ทันทีเพื่อให้เห็นผล
-    if (_isMobile(context) && _tabIndex == 0) {
-      _tabController.animateTo(1);
-    }
   }
 
   void _onUnassign(int docId) {
@@ -267,8 +274,7 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
         expand: false,
         builder: (ctx, scrollController) {
           // ใช้ LayoutBuilder ตรวจสอบขนาด sheet จริง (ไม่ใช่หน้าจอทั้งหมด)
-          // → ถ้า sheet กว้าง < 700px → mobile layout (TabBar)
-          // → ถ้า ≥ 700px → desktop layout (2 คอลัมน์)
+          // → หน้าเดียวทุกขนาด: mobile เรียงแนวตั้ง / desktop 2 แผง
           return LayoutBuilder(
             builder: (layoutCtx, constraints) {
               final isMobile = constraints.maxWidth < 700;
@@ -281,10 +287,9 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
                 child: Column(
                   children: [
                     _buildHeader(isMobile),
-                    if (isMobile) _buildTabBar(),
                     Expanded(
                       child: isMobile
-                          ? _buildMobileBody(scrollController)
+                          ? _buildMobileWorkspace(scrollController)
                           : _buildDesktopBody(scrollController),
                     ),
                     _buildFooter(isMobile),
@@ -362,82 +367,37 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
     );
   }
 
-  /// TabBar (mobile only)
-  Widget _buildTabBar() {
-    final docsWithFile = _assignments.length;
-    return Container(
-      decoration: BoxDecoration(
-        color: LaColors.surfaceMuted,
-        border: Border(
-          bottom: BorderSide(color: LaColors.border, width: 1),
-        ),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        labelColor: LaColors.primaryDark,
-        unselectedLabelColor: LaColors.textSecondary,
-        indicatorColor: LaColors.primary,
-        indicatorWeight: 3,
-        labelStyle: const TextStyle(
-          fontFamily: LaText.fontBold,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-        ),
-        tabs: [
-          Tab(
-            icon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.folder_outlined, size: 16),
-                const SizedBox(width: 6),
-                Text('ไฟล์ (${_pickedFiles.length})'),
-              ],
-            ),
-          ),
-          Tab(
-            icon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.assignment_outlined, size: 16),
-                const SizedBox(width: 6),
-                Text('หัวข้อ${docsWithFile > 0 ? ' • $docsWithFile' : ''}'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Mobile body — ใช้ TabBarView (ไม่ต้องเลื่อนจอ)
-  Widget _buildMobileBody(ScrollController scrollController) {
-    return TabBarView(
-      controller: _tabController,
+  /// Mobile workspace — หน้าเดียว: ไฟล์ด้านบน + หัวข้อเอกสารด้านล่าง
+  Widget _buildMobileWorkspace(ScrollController scrollController) {
+    return Column(
       children: [
-        _buildFilePanel(scrollController, isMobile: true),
-        _buildDocsPanel(0, isMobile: true),
+        SizedBox(
+          height: 180,
+          child: _buildFilePanel(scrollController, isMobile: true),
+        ),
+        Container(height: 1, color: LaColors.border),
+        Expanded(child: _buildDocsPanel(0, isMobile: true)),
       ],
     );
   }
 
-  /// Desktop body — 2 คอลัมน์
+  /// Desktop body — แบ่ง workspace ซ้าย/ขวาชัดเจน (ไฟล์ 25% | เอกสาร 75%)
+  /// - แผงซ้าย: รายการไฟล์ที่เลือก + drag source
+  /// - แผงขวา: หัวข้อเอกสาร 2 คอลัมน์คงที่ + drop target
   Widget _buildDesktopBody(ScrollController scrollController) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          width: 240,
+        Expanded(
+          flex: 1,
           child: _buildFilePanel(scrollController, isMobile: false),
         ),
         Container(width: 1, color: LaColors.border),
         Expanded(
-          child: LayoutBuilder(
-            builder: (ctx, constraints) {
-              // ส่งความกว้างจริงของ docs panel
-              return _buildDocsPanel(
-                constraints.maxWidth,
-                isMobile: false,
-              );
-            },
+          flex: 3,
+          child: _buildDocsPanel(
+            0,
+            isMobile: false,
           ),
         ),
       ],
@@ -590,28 +550,12 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
   }
 
   Widget _buildDocsPanel(double availableWidth, {required bool isMobile}) {
-    final docsToShow =
-        widget.documents.where((d) => !_hasAttachment(d)).toList();
+    // แสดงเอกสารครบทุกหัวข้อ รวมรายการที่มีไฟล์แนบแล้ว
+    final docsToShow = widget.documents;
 
-    // คำนวณจำนวนคอลัมน์ตามความกว้าง (สูงสุด 4)
-    // - < 400px → 1 คอลัมน์ (mobile/narrow)
-    // - 400-600px → 2 คอลัมน์
-    // - 600-800px → 3 คอลัมน์
-    // - ≥ 800px → 4 คอลัมน์
-    int crossAxisCount = 1;
-    double aspectRatio = 5.0; // row แบน
-    if (!isMobile) {
-      if (availableWidth >= 800) {
-        crossAxisCount = 4;
-        aspectRatio = 3.5;
-      } else if (availableWidth >= 600) {
-        crossAxisCount = 3;
-        aspectRatio = 4.0;
-      } else if (availableWidth >= 400) {
-        crossAxisCount = 2;
-        aspectRatio = 4.5;
-      }
-    }
+    // Desktop = 2 คอลัมน์คงที่ตาม workspace ref; mobile = 1 คอลัมน์
+    final crossAxisCount = isMobile ? 1 : 2;
+    final aspectRatio = isMobile ? 5.0 : 5.2;
 
     return Container(
       color: Colors.white,
@@ -671,8 +615,12 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
                             return _docDropTarget(
                               docId: _docId(doc),
                               name: _docName(doc),
+                              isRequired: doc.isRequired,
                               assigned: _assignments[_docId(doc)],
-                              uploaded: _uploaded[_docId(doc)],
+                              uploaded: _uploaded[_docId(doc)] ??
+                                  (_hasAttachment(doc)
+                                      ? doc.attachments.first
+                                      : null),
                               isMobile: false,
                             );
                           },
@@ -692,8 +640,12 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
                             return _docDropTarget(
                               docId: _docId(doc),
                               name: _docName(doc),
+                              isRequired: doc.isRequired,
                               assigned: _assignments[_docId(doc)],
-                              uploaded: _uploaded[_docId(doc)],
+                              uploaded: _uploaded[_docId(doc)] ??
+                                  (_hasAttachment(doc)
+                                      ? doc.attachments.first
+                                      : null),
                               isMobile: isMobile,
                             );
                           },
@@ -707,6 +659,7 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
   Widget _docDropTarget({
     required int docId,
     required String name,
+    required bool isRequired,
     required PlatformFile? assigned,
     required LicenseAttachAttachment? uploaded,
     required bool isMobile,
@@ -733,14 +686,18 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
                 ? LaColors.statusApprovedBg.withOpacity(.4)
                 : isHovering
                     ? LaColors.primaryLight.withOpacity(.5)
-                    : LaColors.surfaceMuted.withOpacity(.5),
+                    : isRequired && !hasFile
+                        ? LaColors.statusPendingBg.withOpacity(.45)
+                        : LaColors.surfaceMuted.withOpacity(.5),
             borderRadius: BorderRadius.circular(LaRadius.md),
             border: Border.all(
               color: isUploaded
                   ? LaColors.statusApprovedFg
                   : isHovering
                       ? LaColors.primary
-                      : LaColors.border,
+                      : isRequired && !hasFile
+                          ? LaColors.statusPendingFg.withOpacity(.35)
+                          : LaColors.border,
               width: isHovering || isUploaded ? 2 : 1,
             ),
           ),
@@ -776,14 +733,24 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            name,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 13,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (isRequired) ...[
+                          const SizedBox(width: 5),
+                          const _BatchRequiredBubble(),
+                        ],
+                      ],
                     ),
                     const SizedBox(height: 2),
                     if (isUploaded)
@@ -922,12 +889,31 @@ class _AttachBatchUploadSheetState extends State<AttachBatchUploadSheet>
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    'จับคู่แล้ว ${_assignments.length} ไฟล์',
-                    style: TextStyle(
-                      color: LaColors.textSecondary,
-                      fontSize: isMobile ? 11 : 12,
-                    ),
+                  child: Row(
+                    children: [
+                      Text(
+                        'จับคู่แล้ว ${_assignments.length} ไฟล์',
+                        style: TextStyle(
+                          color: LaColors.textSecondary,
+                          fontSize: isMobile ? 11 : 12,
+                        ),
+                      ),
+                      if (_missingRequiredCount > 0) ...[
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            '• เอกสารจำเป็นยังขาด $_missingRequiredCount รายการ',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: LaColors.statusPendingFg,
+                              fontSize: isMobile ? 10 : 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
                 TextButton(

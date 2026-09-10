@@ -171,7 +171,7 @@ class _TenantLicenseZoneFilterState extends State<TenantLicenseZoneFilter> {
   Widget _statusSection(TenantLicenseViewModel vm) {
     return _FilterField(
       icon: Icons.flag_outlined,
-      label: 'สถานะ',
+      label: 'สถานะใบอนุญาต',
       child: _statusDropdown(vm),
     );
   }
@@ -476,7 +476,7 @@ extension on _TenantLicenseZoneFilterState {
           ],
         ),
         hint: AutoSizeText(
-          vm.selectedStatus,
+          vm.statusLabel(vm.selectedStatus),
           style: LaText.body.copyWith(
             color: LaColors.textPrimary,
           ),
@@ -504,7 +504,7 @@ extension on _TenantLicenseZoneFilterState {
                       ),
                       Expanded(
                         child: AutoSizeText(
-                          status,
+                          vm.statusLabel(vm.statusApiValue(status)),
                           style: LaText.body,
                           maxFontSize: 14,
                           minFontSize: 11,

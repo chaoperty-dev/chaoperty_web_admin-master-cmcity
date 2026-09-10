@@ -8,92 +8,227 @@
 // ============================================================================
 
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 
 import 'package:chaoperty/Constant/Myconstant.dart';
-import 'package:chaoperty/Constant/api_cache.dart';
 import 'package:chaoperty/Constant/global_http.dart';
 import 'package:chaoperty/Model/GetSubZone_Model.dart';
-import 'package:chaoperty/Model/GetTeNant_Model.dart';
 import 'package:chaoperty/Model/GetZone_Model.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../unity/area_zones_api.dart';
+import '../models/tenant_permit_models.dart';
 
 class TenantLicenseService {
-  TenantLicenseService({ApiCache? cache})
-      : _cache = cache ?? ApiCache(ttl: const Duration(seconds: 60));
+  TenantLicenseService();
 
-  final ApiCache _cache;
   final AreaZonesApi _zonesApi = AreaZonesApi();
 
-  // ---------- Tenants ----------
-  /// โหลดรายการ "ผู้เช่า" ตาม zone ที่เลือก
-  /// [zone] = null / '0' / 'ทั้งหมด' → ดึงทั้งหมด
-  /// [zone] = อื่นๆ → ดึงเฉพาะโซน
-  /// [status] = null / 'ทั้งหมด' → ไม่กรองสถานะ
-  ///            'ปัจจุบัน' → '1', 'หมดสัญญา' → '2', 'ใกล้หมดสัญญา' → '3'
-  Future<List<TeNantModel>> fetchTenants({
-    String? zone,
-    String? status,
+  // ---------- Permits (Admin v1) ----------
+  /// โหลดรายการใบอนุญาต พร้อม pagination จาก meta
+  /// สถานะ "ทั้งหมด" ส่งโดยไม่ใส่ status ใน query
+  Future<TenantPermitListResult> fetchPermits({
+    int page = 1,
+    int perPage = 50,
+    String status = '',
+    String search = '',
+    String zser = '',
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final rawRen = prefs.getString('renTalSer');
-    // API ต้องการ ren=null เมื่อไม่มีค่า ไม่ใช่ ren=0
-    final ren =
-        (rawRen == null || rawRen.isEmpty || rawRen == '0') ? 'null' : rawRen;
-    final statusParam = _statusParam(status);
-    final cacheKey =
-        'tenant_license_tenants_${ren}_${zone ?? 'all'}_${statusParam ?? 'all'}';
-
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      if (cached != null) return _buildTenantList(cached);
+    final params = <String, String>{
+      'per_page': '$perPage',
+      'page': '$page',
+    };
+    if (status.isNotEmpty && status != 'ทั้งหมด') params['status'] = status;
+    if (search.trim().isNotEmpty) params['search'] = search.trim();
+    if (zser.isNotEmpty && zser != '0' && zser != 'ทั้งหมด') {
+      params['zser'] = zser;
     }
 
-    final baseUrl = (zone == null || zone == '0' || zone == 'ทั้งหมด')
-        ? '${MyConstant().domain}/GC_tenantAll_V2.php?isAdd=true&ren=$ren&zone=0'
-        : '${MyConstant().domain}/GC_tenantAll_V2.php?isAdd=true&ren=$ren&zone=$zone';
-
-    final url = statusParam != null ? '$baseUrl&status=$statusParam' : baseUrl;
-    print(url);
-
+    final uri = Uri.parse('${MyConstant().domain_v1}/admin/permits')
+        .replace(queryParameters: params);
     try {
-      final response = await httpClient.get(Uri.parse(url));
-      final result = json.decode(response.body);
-      if (result != null && result is Map && result['data'] is List) {
-        _cache.set(cacheKey, result['data']);
-        return _buildTenantList(result['data'] as List);
-      }
-      if (result != null && result is List) {
-        _cache.set(cacheKey, result);
-        return _buildTenantList(result);
-      }
-      return <TeNantModel>[];
+      final headers = await MyHeaders.build();
+      debugPrint('[TenantLicenseService] GET permits $uri');
+      final response = await httpClient.get(uri, headers: headers);
+      print('[TenantLicenseService] permits status=${response.statusCode}');
+      if (response.statusCode != 200) return const TenantPermitListResult(
+        items: [], currentPage: 1, lastPage: 1, total: 0,
+      );
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) return const TenantPermitListResult(
+        items: [], currentPage: 1, lastPage: 1, total: 0,
+      );
+      return TenantPermitListResult.fromJson(
+        Map<String, dynamic>.from(decoded),
+      );
     } catch (e) {
-      print('TenantLicenseService.fetchTenants error: $e');
-      return <TeNantModel>[];
+      print('[TenantLicenseService] fetchPermits error: $e');
+      return const TenantPermitListResult(
+        items: [], currentPage: 1, lastPage: 1, total: 0,
+      );
     }
   }
 
-  String? _statusParam(String? status) {
-    switch (status) {
-      case 'ปัจจุบัน':
-        return '1';
-      case 'หมดสัญญา':
-        return '2';
-      case 'ใกล้หมดสัญญา':
-        return '3';
-      case 'ทั้งหมด':
-      default:
-        return null;
+  /// โหลดรายละเอียดใบอนุญาต
+  Future<TenantPermitDetail?> fetchPermitDetail(String permitUuid) async {
+    if (permitUuid.trim().isEmpty) return null;
+    final uri = Uri.parse(
+      '${MyConstant().domain_v1}/admin/permits/${permitUuid.trim()}',
+    );
+    try {
+      final headers = await MyHeaders.build();
+      print('[TenantLicenseService] GET permit detail $uri');
+      final response = await httpClient.get(uri, headers: headers);
+      print('[TenantLicenseService] permit detail status=${response.statusCode}');
+      if (response.statusCode != 200) return null;
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map) return null;
+      final data = decoded['data'];
+      if (data is! Map) return null;
+      // API คืน `request` เป็น sibling ของ `data` — merge เข้าไปใน data
+      // เพื่อให้ TenantPermitDetail.request อ่านได้ (ไม่กระทบ endpoint อื่น)
+      final merged = Map<String, dynamic>.from(data);
+      if (decoded['request'] is Map) {
+        merged['request'] = Map<String, dynamic>.from(decoded['request']);
+      }
+      return TenantPermitDetail.fromJson(merged);
+    } catch (e) {
+      print('[TenantLicenseService] fetchPermitDetail error: $e');
+      return null;
     }
   }
 
-  List<TeNantModel> _buildTenantList(List<dynamic> rawList) {
-    return rawList
-        .whereType<Map<String, dynamic>>()
-        .map(TeNantModel.fromJson)
-        .toList();
+  /// โหลดรายการชำระเงินล่าสุดของใบอนุญาต
+  Future<List<Map<String, dynamic>>> fetchPermitPayments(
+      String permitUuid) async {
+    final data = await _fetchPermitListEndpoint(
+      '$permitUuid/payments',
+    );
+    return _extractList(data);
+  }
+
+  /// โหลดรายละเอียดใบเสร็จของ payment
+  Future<Map<String, dynamic>?> fetchReceiptDetail({
+    required String permitUuid,
+    required String paymentUuid,
+  }) async {
+    final data = await _fetchPermitEndpoint(
+      '$permitUuid/payments/$paymentUuid/receipt',
+    );
+    final value = data?['data'];
+    return value is Map ? Map<String, dynamic>.from(value) : null;
+  }
+
+  /// โหลดรอบตรวจของใบอนุญาต
+  Future<List<Map<String, dynamic>>> fetchInspections(String permitUuid) async {
+    final data = await _fetchPermitListEndpoint('$permitUuid/inspections');
+    return _extractList(data);
+  }
+
+  Future<List<Map<String, dynamic>>> fetchInspectionImages({
+    required String permitUuid,
+    required String inspectionUuid,
+  }) async {
+    final data = await _fetchPermitListEndpoint(
+      '$permitUuid/inspections/$inspectionUuid/images',
+    );
+    return _extractList(data);
+  }
+
+  Future<Uint8List?> fetchPermitBytes({
+    required String permitUuid,
+    required String path,
+  }) async {
+    final uri = Uri.parse(
+      '${MyConstant().domain_v1}/admin/permits/$permitUuid/$path',
+    );
+    try {
+      final headers = await MyHeaders.build();
+      headers['Accept'] = 'application/pdf';
+      final response = await httpClient.get(uri, headers: headers);
+      return response.statusCode == 200 && response.bodyBytes.isNotEmpty
+          ? response.bodyBytes
+          : null;
+    } catch (e) {
+      print('[TenantLicenseService] fetchPermitBytes error: $e');
+      return null;
+    }
+  }
+
+  Future<Uint8List?> fetchPermitAttachmentBytes({
+    required String permitUuid,
+    required String attachmentUuid,
+  }) async {
+    final uri = Uri.parse(
+      '${MyConstant().domain_v1}/admin/permits/$permitUuid/attachments/$attachmentUuid/preview',
+    );
+    try {
+      final headers = await MyHeaders.build();
+      final response = await httpClient.get(uri, headers: headers);
+      return response.statusCode == 200 && response.bodyBytes.isNotEmpty
+          ? response.bodyBytes
+          : null;
+    } catch (e) {
+      print('[TenantLicenseService] fetchPermitAttachmentBytes error: $e');
+      return null;
+    }
+  }
+
+  Future<Uint8List?> fetchInspectionImageBytes({
+    required String permitUuid,
+    required String inspectionUuid,
+    required String imageUuid,
+  }) async {
+    final uri = Uri.parse(
+      '${MyConstant().domain_v1}/admin/permits/$permitUuid/inspections/$inspectionUuid/images/$imageUuid/preview',
+    );
+    try {
+      final headers = await MyHeaders.build();
+      final response = await httpClient.get(uri, headers: headers);
+      return response.statusCode == 200 && response.bodyBytes.isNotEmpty
+          ? response.bodyBytes
+          : null;
+    } catch (e) {
+      print('[TenantLicenseService] fetchInspectionImageBytes error: $e');
+      return null;
+    }
+  }
+
+  Future<bool> retryPermit(String permitUuid) async {
+    final uri = Uri.parse(
+      '${MyConstant().domain_v1}/admin/permits/$permitUuid/retry',
+    );
+    try {
+      final headers = await MyHeaders.build();
+      final response = await httpClient.post(uri, headers: headers);
+      return response.statusCode >= 200 && response.statusCode < 300;
+    } catch (e) {
+      print('[TenantLicenseService] retryPermit error: $e');
+      return false;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchPermitEndpoint(String path) async {
+    final uri = Uri.parse('${MyConstant().domain_v1}/admin/permits/$path');
+    try {
+      final headers = await MyHeaders.build();
+      final response = await httpClient.get(uri, headers: headers);
+      if (response.statusCode != 200) return null;
+      final decoded = jsonDecode(response.body);
+      return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> _fetchPermitListEndpoint(String path) =>
+      _fetchPermitEndpoint(path);
+
+  List<Map<String, dynamic>> _extractList(Map<String, dynamic>? body) {
+    final data = body?['data'];
+    if (data is List) {
+      return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+    }
+    return <Map<String, dynamic>>[];
   }
 
   // ---------- Zones ----------
@@ -105,7 +240,6 @@ class TenantLicenseService {
     });
     final zones = <ZoneModel>[defaultZone];
     for (final row in raw) {
-      if (row is! AreaZone) continue;
       zones.add(ZoneModel.fromJson({
         'ser': row.ser ?? '0',
         'rser': row.ser ?? '0',
@@ -132,7 +266,6 @@ class TenantLicenseService {
     };
     final subs = <SubZoneModel>[SubZoneModel.fromJson(defaultMap)];
     for (final row in raw) {
-      if (row is! AreaZone) continue;
       subs.add(SubZoneModel.fromJson({
         'ser': row.ser ?? '0',
         'rser': row.ser ?? '0',

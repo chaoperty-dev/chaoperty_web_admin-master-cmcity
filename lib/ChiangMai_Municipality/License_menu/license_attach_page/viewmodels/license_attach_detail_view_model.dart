@@ -11,6 +11,15 @@ import '../models/license_attach_checklist_model.dart';
 import '../services/license_attach_checklist_service.dart';
 
 class LicenseAttachDetailViewModel extends ChangeNotifier {
+  bool _disposed = false;
+
+  /// ป้องกัน async callback แจ้งเตือนหลัง Provider dispose ViewModel แล้ว
+  @override
+  void notifyListeners() {
+    if (_disposed) return;
+    super.notifyListeners();
+  }
+
   /// Step ของหน้า detail:
   ///   1 = เลือกเอกสาร (Step 1)
   ///   2 = สรุปการแนบเอกสาร (Step 2)
@@ -214,6 +223,12 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
   LicenseAttachChecklistSubmitResult? _submitResult;
   LicenseAttachChecklistSubmitResult? get submitResult => _submitResult;
 
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+
   Future<LicenseAttachChecklistSubmitResult?> submitChecklist() async {
     if (_isSubmitting) return _submitResult;
     _isSubmitting = true;
@@ -241,18 +256,24 @@ class LicenseAttachDetailViewModel extends ChangeNotifier {
         await Future.delayed(const Duration(milliseconds: 1500));
       }
 
+      // บันทึก snapshot เฉพาะเอกสารที่ API ระบุ required = true
+      final requiredDocumentIds = mergedAttachments
+          .where((doc) => doc.required)
+          .map((doc) => doc.clientDocumentId)
+          .where((id) => id > 0)
+          .toSet()
+          .toList();
+      debugPrint(
+          '[AttachChecklist][submit] requiredDocumentIds=$requiredDocumentIds');
+
       final result = await LicenseAttachChecklistService.submitChecklist(
         requestUuid,
+        documentIds: requiredDocumentIds,
       );
       _submitResult = result;
-      // ✅ ถ้าบันทึกสำเร็จ → รอ 1.5s ให้ backend commit เสร็จ แล้ว refresh list
-      if (result.success) {
-        await Future.delayed(const Duration(milliseconds: 1500));
-        // ✅ refresh แบบ fire-and-forget (ไม่ block pop)
-        // version/checked_at ใหม่จะมาทันตอนเปิดหน้านี้ครั้งหน้า
-        // ignore: unawaited_futures
-        loadChecklist();
-      }
+      // หลังบันทึกสำเร็จ หน้าจะ pop(true) ให้ list page refresh อยู่แล้ว
+      // ห้ามเรียก loadChecklist แบบ fire-and-forget เพราะ Provider อาจ dispose
+      // ViewModel ก่อน HTTP จบ แล้ว notifyListeners จะเกิด use-after-dispose
       return result;
     } catch (e) {
       debugPrint('SubmitChecklist error: $e');

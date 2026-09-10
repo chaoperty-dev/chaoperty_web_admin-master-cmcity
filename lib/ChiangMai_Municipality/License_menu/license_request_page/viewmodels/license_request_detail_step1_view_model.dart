@@ -89,7 +89,7 @@ class LicenseRequestDetailStep1ViewModel extends ChangeNotifier {
       {'ser': '1', 'title': 'วันที่เริ่มต้น', 'detail': ''},
       {'ser': '2', 'title': 'วันที่สิ้นสุด', 'detail': ''},
       {'ser': '3', 'title': 'ประเภทสัญญา', 'detail': ''},
-      {'ser': '4', 'title': 'ระยะเวลาเช่า (เดือน)', 'detail': ''},
+      {'ser': '4', 'title': 'ระยะเวลาเช่า', 'detail': ''},
     ];
 
     _controllersPerson = List.generate(
@@ -129,7 +129,12 @@ class LicenseRequestDetailStep1ViewModel extends ChangeNotifier {
   // ===============================================================
   void _applyReviewData(ReviewDetail rd) {
     final client = rd.client;
-    final addr = client.json;
+    // ✅ ที่อยู่หลักมาจาก addr_2 (object) — fallback เป็น json เดิมถ้า addr_2 ว่าง
+    final addr2 = client.addr2;
+    final addrHasData = addr2.number.isNotEmpty ||
+        addr2.tambon.isNotEmpty ||
+        addr2.province.isNotEmpty;
+    final addr = addrHasData ? addr2 : client.json;
     final nr = rd.newRequest;
 
     // ─── Status (สำหรับ shared VM) ───

@@ -132,7 +132,7 @@ class _TenantLicenseSearchBarState extends State<TenantLicenseSearchBar> {
                 border: InputBorder.none,
                 hintText: hasText
                     ? 'ค้นหา "${_controller.text}"'
-                    : 'ค้นหา... (ชื่อผู้ติดต่อ, รหัสรายการ, เบอร์โทร)',
+                    : 'ค้นหา... (เลขใบอนุญาต, ชื่อผู้ถือ, รหัสคำขอ)',
                 hintStyle: LaText.bodyMuted.copyWith(
                   color: LaColors.textMuted,
                 ),

@@ -142,7 +142,8 @@ class _LicenseVerifyPageBodyState extends State<_LicenseVerifyPageBody> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const VerifyHeader(
-              subtitle: 'ตรวจสอบหลักฐาน/เอกสารคำขออนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
+              subtitle:
+                  'ตรวจสอบหลักฐาน/เอกสารคำขออนุญาต — การตรวจสอบเอกสารที่เกี่ยวข้อง',
             ),
             const SizedBox(height: LaSpace.lg),
             const VerifyZoneFilter(),

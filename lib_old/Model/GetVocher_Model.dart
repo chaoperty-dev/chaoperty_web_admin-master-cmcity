@@ -1,0 +1,251 @@
+class VocherModel {
+  String? ser;
+  String? daterec;
+  String? date;
+  String? dateacc;
+  String? dtype;
+  String? mrp;
+  String? docno;
+  String? showdate;
+  String? billno;
+  String? custno;
+  String? supno;
+  String? refno;
+  String? descr;
+  String? billdate;
+  String? ovalue;
+  String? nvalue;
+  String? qty;
+  String? pri;
+  String? pvat;
+  String? vat;
+  String? nvat;
+  String? wht;
+  String? nwht;
+  String? camt;
+  String? wtax;
+  String? wamt;
+  String? dis;
+  String? disendbillper;
+  String? disendbill;
+  String? deposit;
+  String? cn;
+  String? amt;
+  String? remark;
+  String? note;
+  String? meter;
+  String? ptser;
+  String? ptname;
+  String? bno;
+  String? bank;
+  String? img;
+  String? btype;
+  String? c_ln;
+  String? c_zn;
+  String? cid;
+  String? user;
+  String? amtall;
+  String? vatall;
+  String? whtall;
+  String? vser;
+  String? inv;
+  String? con_remark;
+
+  String? round_p;
+  String? paper;
+  String? paper_run;
+
+  String? refapi;
+  String? ref1;
+  String? ref2;
+  String? ser_noti;
+
+  VocherModel({
+    this.ser,
+    this.daterec,
+    this.date,
+    this.dateacc,
+    this.dtype,
+    this.mrp,
+    this.docno,
+    this.showdate,
+    this.billno,
+    this.custno,
+    this.supno,
+    this.refno,
+    this.descr,
+    this.billdate,
+    this.ovalue,
+    this.nvalue,
+    this.qty,
+    this.pri,
+    this.pvat,
+    this.vat,
+    this.nvat,
+    this.wht,
+    this.nwht,
+    this.camt,
+    this.wtax,
+    this.wamt,
+    this.dis,
+    this.disendbillper,
+    this.disendbill,
+    this.deposit,
+    this.cn,
+    this.amt,
+    this.remark,
+    this.note,
+    this.meter,
+    this.ptser,
+    this.ptname,
+    this.bno,
+    this.bank,
+    this.img,
+    this.btype,
+    this.c_ln,
+    this.c_zn,
+    this.cid,
+    this.user,
+    this.amtall,
+    this.vatall,
+    this.whtall,
+    this.vser,
+    this.inv,
+    this.con_remark,
+    this.round_p,
+    this.paper,
+    this.paper_run,
+    this.refapi,
+    this.ref1,
+    this.ref2,
+    this.ser_noti,
+  });
+
+  VocherModel.fromJson(Map<String, dynamic> json) {
+    ser = json['ser'];
+    daterec = json['daterec'];
+    date = json['date'];
+    dateacc = json['dateacc'];
+    dtype = json['dtype'];
+    mrp = json['mrp'];
+    docno = json['docno'];
+    showdate = json['showdate'];
+    billno = json['billno'];
+    custno = json['custno'];
+    supno = json['supno'];
+    refno = json['refno'];
+    descr = json['descr'];
+    billdate = json['billdate'];
+    ovalue = json['ovalue'];
+    nvalue = json['nvalue'];
+    qty = json['qty'];
+    pri = json['pri'];
+    pvat = json['pvat'];
+    vat = json['vat'];
+    nvat = json['nvat'];
+    wht = json['wht'];
+    nwht = json['nwht'];
+    camt = json['camt'];
+    wtax = json['wtax'];
+    wamt = json['wamt'];
+    dis = json['dis'];
+    disendbillper = json['disendbillper'];
+    disendbill = json['disendbill'];
+    deposit = json['deposit'];
+    cn = json['cn'];
+    amt = json['amt'];
+    remark = json['remark'];
+    note = json['note'];
+    meter = json['meter'];
+    ptser = json['ptser'];
+    ptname = json['ptname'];
+    bno = json['bno'];
+    bank = json['bank'];
+    img = json['img'];
+    btype = json['btype'];
+    c_ln = json['c_ln'];
+    c_zn = json['c_zn'];
+    cid = json['cid'];
+    user = json['user'];
+    amtall = json['amtall'];
+    vatall = json['vatall'];
+    whtall = json['whtall'];
+    vser = json['vser'];
+    inv = json['inv'];
+    con_remark = json['con_remark'];
+
+    round_p = json['round_p'];
+    paper = json['paper'];
+    paper_run = json['paper_run'];
+    refapi = json['refapi'];
+    ref1 = json['ref1'];
+    ref2 = json['ref2'];
+    ser_noti = json['ser_noti'];
+  }
+
+  Map<String, dynamic> toJson() {
+    final Map<String, dynamic> data = new Map<String, dynamic>();
+    data['ser'] = this.ser;
+    data['daterec'] = this.daterec;
+    data['date'] = this.date;
+    data['dateacc'] = this.dateacc;
+    data['dtype'] = this.dtype;
+    data['mrp'] = this.mrp;
+    data['docno'] = this.docno;
+    data['showdate'] = this.showdate;
+    data['billno'] = this.billno;
+    data['custno'] = this.custno;
+    data['supno'] = this.supno;
+    data['refno'] = this.refno;
+    data['descr'] = this.descr;
+    data['billdate'] = this.billdate;
+    data['ovalue'] = this.ovalue;
+    data['nvalue'] = this.nvalue;
+    data['qty'] = this.qty;
+    data['pri'] = this.pri;
+    data['pvat'] = this.pvat;
+    data['vat'] = this.vat;
+    data['nvat'] = this.nvat;
+    data['wht'] = this.wht;
+    data['nwht'] = this.nwht;
+    data['camt'] = this.camt;
+    data['wtax'] = this.wtax;
+    data['wamt'] = this.wamt;
+    data['dis'] = this.dis;
+    data['disendbillper'] = this.disendbillper;
+    data['disendbill'] = this.disendbill;
+    data['deposit'] = this.deposit;
+    data['cn'] = this.cn;
+    data['amt'] = this.amt;
+    data['remark'] = this.remark;
+    data['note'] = this.note;
+    data['meter'] = this.meter;
+    data['ptser'] = this.ptser;
+    data['ptname'] = this.ptname;
+    data['bno'] = this.bno;
+    data['bank'] = this.bank;
+    data['img'] = this.img;
+    data['btype'] = this.btype;
+    data['c_ln'] = this.c_ln;
+    data['c_zn'] = this.c_zn;
+    data['cid'] = this.cid;
+    data['user'] = this.user;
+    data['amtall'] = this.amtall;
+    data['vatall'] = this.vatall;
+    data['whtall'] = this.whtall;
+    data['vser'] = this.vser;
+    data['inv'] = this.inv;
+    data['con_remark'] = this.con_remark;
+
+    data['round_p'] = this.round_p;
+    data['paper'] = this.paper;
+    data['paper_run'] = this.paper_run;
+
+    data['refapi'] = this.refapi;
+    data['ref1'] = this.ref1;
+    data['ref2'] = this.ref2;
+    data['ser_noti'] = this.ser_noti;
+
+    return data;
+  }
+}

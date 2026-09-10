@@ -12,9 +12,9 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../Model/GetTeNant_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
+import '../models/tenant_permit_models.dart';
 import '../../../unity/zone_selection_store.dart';
 import '../models/tenant_license_config.dart';
 import '../models/tenant_license_event.dart';
@@ -47,19 +47,19 @@ class TenantLicenseViewModel extends ChangeNotifier {
     final newZone = _zoneStore.areaZone == 'ทั้งหมด'
         ? null
         : _zoneStore.areaZone;
-    final newLease = _zoneStore.areaLeaseStatus;
     final subChanged = _selectedZoneSub != newSub;
     final zoneChanged = _selectedZone != newZone;
-    final statusChanged = _selectedStatus != newLease;
-    if (!subChanged && !zoneChanged && !statusChanged) return;
-
-    final needRefresh =
-        (subChanged || zoneChanged || statusChanged);
+    if (!subChanged && !zoneChanged) return;
 
     _selectedZoneSub = newSub;
     _selectedZone = newZone;
-    _selectedZoneSer = '0';
-    _selectedStatus = newLease;
+    _selectedZoneSer = newZone == null
+        ? '0'
+        : _zoneModels
+            .where((z) => z.zn == newZone)
+            .map((z) => z.ser ?? '0')
+            .firstOrNull ?? '0';
+    final needRefresh = subChanged || zoneChanged;
 
     notifyListeners();
 
@@ -86,18 +86,18 @@ class TenantLicenseViewModel extends ChangeNotifier {
       StreamController<TenantLicenseEvent>.broadcast();
   Stream<TenantLicenseEvent> get events => _eventController.stream;
 
-  // ---------- Data ----------
-  List<TeNantModel> _allTenants = [];
-  List<TeNantModel> _filteredTenants = [];
-  List<TeNantModel> get tenants => _filteredTenants;
+  // ---------- Data: permits ----------
+  List<TenantPermitListItem> _permits = [];
+  List<TenantPermitListItem> get tenants => List.unmodifiable(_permits);
 
   // ---------- Pagination ----------
   static const int _perPage = 50;
   int _currentPage = 1;
+  int _lastPage = 1;
   int _total = 0;
 
   int get currentPage => _currentPage;
-  int get lastPage => (_total / _perPage).ceil();
+  int get lastPage => _lastPage;
   int get total => _total;
 
   // ---------- UI state ----------
@@ -112,7 +112,7 @@ class TenantLicenseViewModel extends ChangeNotifier {
   List<SubZoneModel> _subzoneModels = [];
   String? _selectedZoneSub;
   String? _selectedZone;
-  String? _selectedZoneSer; // ser ของ zone ที่เลือก
+  String? _selectedZoneSer;
 
   List<ZoneModel> get zoneModels => _zoneModels;
   List<SubZoneModel> get subzoneModels => _subzoneModels;
@@ -120,17 +120,49 @@ class TenantLicenseViewModel extends ChangeNotifier {
   String? get selectedZone => _selectedZone;
   String? get selectedZoneSer => _selectedZoneSer;
 
-  // ---------- Status filter ----------
+  // ---------- Permit status filter ----------
   static const List<String> _statusOptions = [
     'ทั้งหมด',
-    'ปัจจุบัน',
-    'หมดสัญญา',
-    'ใกล้หมดสัญญา',
+    'รอดำเนินการ',
+    'ออกใบอนุญาตแล้ว',
+    'ดำเนินการไม่สำเร็จ',
   ];
 
   String _selectedStatus = 'ทั้งหมด';
   List<String> get statusOptions => _statusOptions;
   String get selectedStatus => _selectedStatus;
+
+  String statusApiValue(String label) {
+    switch (label) {
+      case 'รอดำเนินการ':
+        return 'pending';
+      case 'ออกใบอนุญาตแล้ว':
+        return 'issued';
+      case 'ดำเนินการไม่สำเร็จ':
+        return 'failed';
+      default:
+        return '';
+    }
+  }
+
+  String zoneLabel(String zoneId) {
+    if (zoneId.isEmpty || zoneId == '0') return '-';
+    final zone = _zoneModels.where((item) => item.ser == zoneId).firstOrNull;
+    return zone?.zn?.isNotEmpty == true ? zone!.zn! : zoneId;
+  }
+
+  String statusLabel(String value) {
+    switch (value.toLowerCase()) {
+      case 'pending':
+        return 'รอดำเนินการ';
+      case 'issued':
+        return 'ออกใบอนุญาตแล้ว';
+      case 'failed':
+        return 'ดำเนินการไม่สำเร็จ';
+      default:
+        return value.isEmpty ? 'ไม่ระบุ' : value;
+    }
+  }
 
   // ---------- Config getters ----------
   String get title => _config.title;
@@ -210,121 +242,64 @@ class TenantLicenseViewModel extends ChangeNotifier {
   // ===============================================================
   // Service calls
   // ===============================================================
-  Future<void> refresh() async {
+  Future<void> refresh({int? page}) async {
     _setLoading(true);
     try {
-      _allTenants = await _service.fetchTenants(
-        zone: (_selectedZone == null ||
-                _selectedZone == '0' ||
-                _selectedZone == 'ทั้งหมด')
-            ? null
-            : _selectedZone,
-        status: _selectedStatus == 'ทั้งหมด' ? null : _selectedStatus,
+      final result = await _service.fetchPermits(
+        page: page ?? _currentPage,
+        perPage: _perPage,
+        status: statusApiValue(_selectedStatus),
+        search: _searchQuery,
+        zser: _selectedZoneSer ?? '',
       );
-      _applyFilters();
-      _currentPage = 1;
+      _permits = result.items;
+      _currentPage = result.currentPage;
+      _lastPage = result.lastPage < 1 ? 1 : result.lastPage;
+      _total = result.total;
     } catch (e) {
+      _permits = [];
+      _total = 0;
       _emitError('โหลดข้อมูลไม่สำเร็จ: $e');
     } finally {
       _setLoading(false);
     }
   }
 
-  void _applyFilters() {
-    final q = _searchQuery.trim().toLowerCase();
-    if (q.isEmpty) {
-      _filteredTenants = List<TeNantModel>.from(_allTenants);
-    } else {
-      _filteredTenants = _allTenants.where((t) {
-        final fields = [
-          t.lncode,
-          t.cid,
-          t.docno,
-          t.sname,
-          t.cname,
-          t.zn,
-          t.zser,
-          t.sdate,
-          t.fid,
-          t.sdate_q,
-          t.ldate_q,
-          t.wnote,
-        ];
-        return fields.any((f) => (f ?? '').toLowerCase().contains(q));
-      }).toList();
-    }
-    _total = _filteredTenants.length;
-  }
-
   void setSearch(String value) {
     _searchQuery = value;
-    _applyFilters();
-    _currentPage = 1;
     notifyListeners();
   }
 
   Future<void> executeSearch() async {
-    // สำหรับ tenant API ไม่ต้องยิง API ใหม่ทุกครั้ง กรอง local ได้
-    _applyFilters();
     _currentPage = 1;
-    notifyListeners();
+    await refresh(page: 1);
   }
 
   void onStatusChanged(String? value) {
     if (value == null) return;
-    // ✅ sync เข้า global store (area lease status)
-    _zoneStore.setAreaLeaseStatus(value);
-    // store listener จะ sync + refresh
+    _selectedStatus = value;
+    _currentPage = 1;
+    notifyListeners();
+    refresh(page: 1);
   }
 
-  void loadPage(int page) {
-    if (page < 1 || page > lastPage) return;
-    _currentPage = page;
-    notifyListeners();
+  Future<void> loadPage(int page) async {
+    if (page < 1 || page > lastPage || page == _currentPage) return;
+    await refresh(page: page);
   }
 
   // ===============================================================
   // User actions
   // ===============================================================
-  /// ผู้ใช้กดปุ่ม "เรียกดู" ในแถว → นำทางไป PeopleChaoScreen2 ด้วย logic เดียวกับ PeopleChao_Screen
-  void onViewRequest(TeNantModel model) {
-    final cid = model.docno ?? model.cid ?? '';
-    final nameShopIndex = model.quantity ?? '';
-    final status = _computePeopleChaoStatus(model);
-
+  /// ผู้ใช้กดปุ่ม "เรียกดู" → เปิดรายละเอียดใบอนุญาตด้วย permit UUID
+  void onViewRequest(TenantPermitListItem permit) {
     _eventController.add(
       TenantLicenseNavigateEvent(
-        'PeopleChaoScreen2',
-        routeData: cid,
-        nameShopIndex: nameShopIndex,
-        status: status,
+        'TenantPermitDetail',
+        routeData: permit.uuid,
+        status: permit.status,
       ),
     );
-  }
-
-  /// คำนวณสถานะให้ตรงกับ PeopleChao_Screen.dart
-  String _computePeopleChaoStatus(TeNantModel model) {
-    final quantity = model.quantity;
-    if (quantity == '2') return 'เสนอราคา';
-    if (quantity == '3') return 'เสนอราคา(มัดจำ)';
-
-    final ldate = model.ldate_q ?? model.ldate;
-    if (ldate == null || ldate.isEmpty || ldate == '0000-00-00') {
-      return quantity == '1' ? 'เช่าอยู่' : 'ว่าง';
-    }
-
-    try {
-      final end = DateTime.parse('$ldate 00:00:00');
-      final now = DateTime.now();
-      if (now.isAfter(end)) return 'หมดสัญญา';
-      // open_set_date ใช้ค่า default 30 วัน เหมือน PeopleChao_Screen fallback
-      if (now.isAfter(end.subtract(const Duration(days: 30)))) {
-        return 'ใกล้หมดสัญญา';
-      }
-      return 'เช่าอยู่';
-    } catch (_) {
-      return quantity == '1' ? 'เช่าอยู่' : 'ว่าง';
-    }
   }
 
   // ===============================================================

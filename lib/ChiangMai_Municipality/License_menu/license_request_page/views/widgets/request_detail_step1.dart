@@ -16,9 +16,14 @@
 //   - นำไป set ใน ViewModel ผ่าน _applyReviewData() (ภายใน VM)
 // ============================================================================
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'dart:typed_data';
 
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
+
+import '../../../../../Constant/Myconstant.dart';
 import '../../viewmodels/license_request_detail_step1_view_model.dart';
 import '../../viewmodels/license_request_detail_view_model.dart';
 import 'cancel_request_button.dart';
@@ -217,6 +222,12 @@ class _Step1Body extends StatelessWidget {
               ),
               const SizedBox(height: 16),
 
+              // ─── แบบฟอร์มคำขอ (PDF preview) ───
+              if (requestUuid != null && requestUuid!.trim().isNotEmpty) ...[
+                RequestFormPdfCard(requestUuid: requestUuid!.trim()),
+                const SizedBox(height: 16),
+              ],
+
               // ─── Zone row (read-only) ───
               const RequestDetailZoneRow(),
               const SizedBox(height: 16),
@@ -333,6 +344,200 @@ class _RejectedStatusBadge extends StatelessWidget {
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: Color(0xFF991B1B), // red-800
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+// ============================================================================
+// RequestFormPdfCard — การ์ดเรียกดูแบบฟอร์มคำขอ (PDF) ในแอป
+// URL: {domain_v3}/api/preview/req-vendor-license-2/{uuid}/pdf (Bearer auth)
+// กด "เรียกดู" → โหลด bytes → เปิด dialog SfPdfViewer (ดูอย่างเดียว ไม่พิมพ์/บันทึก)
+// ============================================================================
+class RequestFormPdfCard extends StatefulWidget {
+  final String requestUuid;
+  const RequestFormPdfCard({super.key, required this.requestUuid});
+
+  @override
+  State<RequestFormPdfCard> createState() => _RequestFormPdfCardState();
+}
+
+class _RequestFormPdfCardState extends State<RequestFormPdfCard> {
+  bool _loading = false;
+  String? _error;
+
+  String get _pdfUrl =>
+      '${MyConstant().domain_v3}/api/preview/req-vendor-license-2/${widget.requestUuid}/pdf';
+
+  Future<void> _openViewer() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    Uint8List? bytes;
+    try {
+      final headers = await MyHeaders.build();
+      final resp = await http.get(Uri.parse(_pdfUrl), headers: headers);
+      if (resp.statusCode != 200 || resp.bodyBytes.isEmpty) {
+        _error = 'โหลดแบบฟอร์มไม่สำเร็จ (HTTP ${resp.statusCode})';
+      } else {
+        bytes = resp.bodyBytes;
+      }
+    } catch (e) {
+      _error = 'โหลดแบบฟอร์มไม่สำเร็จ: $e';
+    }
+
+    if (!mounted) return;
+    setState(() => _loading = false);
+
+    if (bytes == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(_error ?? 'โหลดแบบฟอร์มไม่สำเร็จ'),
+          backgroundColor: const Color(0xFFB91C1C),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    // เปิด dialog ดู PDF (read-only)
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      barrierColor: Colors.black54,
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          // ✅ จำกัดความกว้าง ~กระดาษ A4 แนวตั้ง (สัดส่วนตรงจริงตอนอ่าน)
+          constraints: const BoxConstraints(maxWidth: 794),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+              // ─── Header: title + ปุ่มปิด ───
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F172A),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.picture_as_pdf_rounded,
+                        size: 18, color: Color(0xFFDC2626)),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'แบบฟอร์มคำขอ — คำร้องขอรับใบอนุญาต',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon:
+                          const Icon(Icons.close_rounded, color: Colors.white),
+                      tooltip: 'ปิด',
+                      onPressed: () => Navigator.of(dialogContext).pop(),
+                    ),
+                  ],
+                ),
+              ),
+              // ─── PDF viewer ───
+              Expanded(
+                child: SfPdfViewer.memory(
+                  bytes!,
+                  canShowPaginationDialog: false,
+                  canShowScrollStatus: false,
+                ),
+              ),
+            ],
+          ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 42,
+            height: 42,
+            decoration: BoxDecoration(
+              color: const Color(0xFFFEE2E2),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.picture_as_pdf_rounded,
+              size: 22,
+              color: Color(0xFFDC2626),
+            ),
+          ),
+          const SizedBox(width: 12),
+          const Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'แบบฟอร์มคำขอ (PDF)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Color(0xFF0F172A),
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'คำร้องขอรับใบอนุญาต — กดเรียกดูเพื่อเปิดอ่านในแอป',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF64748B),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          FilledButton.icon(
+            onPressed: _loading ? null : _openViewer,
+            icon: _loading
+                ? const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.visibility_rounded, size: 16),
+            label: const Text('เรียกดู'),
+            style: FilledButton.styleFrom(
+              backgroundColor: const Color(0xFF16A34A),
+              visualDensity: VisualDensity.compact,
             ),
           ),
         ],

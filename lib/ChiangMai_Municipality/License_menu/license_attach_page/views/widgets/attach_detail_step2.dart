@@ -117,7 +117,12 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
 
   Widget _buildContent(BuildContext context, LicenseAttachDetailViewModel vm) {
     final preview = vm.checklist!;
-    final docs = vm.mergedAttachments;
+    // โหมดดูประวัติที่บันทึกแล้ว: แสดง snapshot เดิมทั้งหมด
+    // สร้างครั้งแรก/แก้ไขเพื่อบันทึกเวอร์ชันใหม่: ใช้เฉพาะเอกสารจำเป็น
+    final showSavedSnapshot = preview.isSaved && !vm.isEditMode;
+    final docs = showSavedSnapshot
+        ? vm.mergedAttachments
+        : vm.mergedAttachments.where((doc) => doc.required).toList();
     final editable = _shouldAllowEdit(vm);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(LaSpace.lg),
@@ -265,7 +270,11 @@ class _AttachDetailStep2State extends State<AttachDetailStep2> {
                 thaiFont: thaiFont,
                 thaiBoldFont: thaiBoldFont,
                 preview: preview,
-                docs: vm.mergedAttachments,
+                docs: preview.isSaved && !vm.isEditMode
+                    ? vm.mergedAttachments
+                    : vm.mergedAttachments
+                        .where((doc) => doc.required)
+                        .toList(),
                 currentRemarks: currentRemarks,
                 logoImage: logoImage,
               ),
@@ -1222,8 +1231,8 @@ class _SavedChecklistBanner extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 4),
                     child: Text(
                       'โหมดแก้ไข — บันทึกจะสร้างเป็นเวอร์ชัน $nextVersion',
-                      style: LaText.caption.copyWith(
-                          color: LaColors.primaryDark, fontSize: 11),
+                      style: LaText.caption
+                          .copyWith(color: LaColors.primaryDark, fontSize: 11),
                     ),
                   ),
               ],
@@ -1263,8 +1272,7 @@ class _EditButtonState extends State<_EditButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: _hover ? LaColors.primary : LaColors.primaryLight,
             borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -1354,15 +1362,12 @@ class _CancelEditButtonState extends State<_CancelEditButton> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
           decoration: BoxDecoration(
             color: _hover ? LaColors.statusRejectedFg : Colors.white,
             borderRadius: BorderRadius.circular(LaRadius.sm),
             border: Border.all(
-              color: _hover
-                  ? LaColors.statusRejectedFg
-                  : LaColors.borderStrong,
+              color: _hover ? LaColors.statusRejectedFg : LaColors.borderStrong,
               width: 1,
             ),
           ),
@@ -1409,8 +1414,8 @@ class _MetaChip extends StatelessWidget {
         ),
         Text(
           value,
-          style: LaText.body.copyWith(
-              fontFamily: LaText.fontBold, fontSize: 13),
+          style:
+              LaText.body.copyWith(fontFamily: LaText.fontBold, fontSize: 13),
         ),
       ],
     );
@@ -1851,7 +1856,8 @@ class _RemarkField extends StatelessWidget {
     return TextField(
       controller: TextEditingController(text: value)
         ..selection = TextSelection.collapsed(offset: value.length),
-      onChanged: enabled ? (text) => vm.updateRemark(clientDocumentId, text) : null,
+      onChanged:
+          enabled ? (text) => vm.updateRemark(clientDocumentId, text) : null,
       enabled: enabled,
       style: LaText.body.copyWith(fontSize: compact ? 12 : 13),
       decoration: InputDecoration(
@@ -2001,7 +2007,8 @@ class _SignatureBox extends StatelessWidget {
                       margin: const EdgeInsets.symmetric(horizontal: 32),
                       decoration: const BoxDecoration(
                         border: Border(
-                          top: BorderSide(color: LaColors.textPrimary, width: 1),
+                          top:
+                              BorderSide(color: LaColors.textPrimary, width: 1),
                         ),
                       ),
                     ),
@@ -2041,8 +2048,8 @@ class _PositionBox extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           position,
-          style: LaText.body.copyWith(
-              fontFamily: LaText.fontBold, fontSize: 13),
+          style:
+              LaText.body.copyWith(fontFamily: LaText.fontBold, fontSize: 13),
           textAlign: TextAlign.center,
         ),
       ],

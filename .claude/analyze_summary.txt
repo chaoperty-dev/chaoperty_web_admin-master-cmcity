@@ -1,0 +1,47 @@
+
+Count Name
+----- ----
+33426 The
+22208 Unnecessary
+18917 Use
+ 3092 'withOpacity'
+ 2248 Don't
+ 2025 Unused
+ 1269 Empty
+  730 An
+  351 Statements
+  220 Duplicate
+  142 String
+  123 Uses
+  102 'MaterialStateProperty'
+   98 Import
+   91 'dart:html'
+   51 A
+   38 'LinearStrokeCap'
+   25 Invalid
+   17 'getImage'
+   16 Constructors
+   15 'WillPopScope'
+   14 'scale'
+   14 'canLaunch'
+   14 'launch'
+   11 'dart:js'
+    9 'onChanged'
+    9 This
+    9 'groupValue'
+    8 'toolbarOptions'
+    6 'MaterialStateColor'
+    4 Target
+    4 Two
+    3 Function
+    3 Type
+    2 'onAccept'
+    2 'dataRowHeight'
+    2 'MaterialStatePropertyAll'
+    1 'surfaceVariant'
+    1 Dead
+    1 'onWillAccept'
+    1 'background'
+    1 'dialogBackgroundColor'
+    1 'activeColor'
+

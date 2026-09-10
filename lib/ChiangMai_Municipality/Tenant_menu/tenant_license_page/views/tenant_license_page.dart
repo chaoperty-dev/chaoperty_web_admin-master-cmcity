@@ -14,10 +14,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+
 import 'package:provider/provider.dart';
 
-import '../../../../PeopleChao/PeopleChao_Screen2.dart' as people_chao
-    show PeopleChaoScreen2;
+import 'tenant_license_detail_page.dart';
+
+// Permit detail navigation receives UUID through TenantLicenseEvent.
 import '../models/tenant_license_config.dart';
 import '../models/tenant_license_event.dart';
 import '../viewmodels/tenant_license_view_model.dart';
@@ -32,14 +34,22 @@ import 'widgets/tenant_license_zone_filter.dart';
 /// Public API
 /// ═══════════════════════════════════════════════════════════════════════
 class TenantLicensePage extends StatefulWidget {
-  const TenantLicensePage._();
+  final String? routeData;
+  final int? serTitle;
+  final String title;
+
+  const TenantLicensePage._({
+    this.routeData,
+    this.serTitle,
+    this.title = 'ใบอนุญาต',
+  });
 
   /// Factory สร้าง Page พร้อม Provider (ใช้ใน AdminScaffold / Navigator)
   static Widget create({
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'ผู้เช่า',
+    String title = 'ใบอนุญาต',
     TenantLicenseConfig? config,
   }) {
     final cfg = config ??
@@ -65,6 +75,9 @@ class _TenantLicensePageState extends State<TenantLicensePage> {
   Widget build(BuildContext context) {
     return TenantLicensePage.create(
       key: widget.key,
+      routeData: widget.routeData,
+      serTitle: widget.serTitle,
+      title: widget.title,
     );
   }
 }
@@ -106,44 +119,13 @@ class _TenantLicensePageBodyState extends State<_TenantLicensePageBody> {
           ),
         );
         break;
-      case TenantLicenseNavigateEvent(
-          :final route,
-          :final routeData,
-          :final nameShopIndex,
-          :final status
-        ):
-        if (route == 'PeopleChaoScreen2') {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (_) => Scaffold(
-          //       backgroundColor: LaColors.surface,
-          //       body: SafeArea(
-          //         child: SingleChildScrollView(
-          //           padding: const EdgeInsets.all(LaSpace.md),
-          //           child: people_chao.PeopleChaoScreen2(
-          //             Get_Value_NameShop_index: nameShopIndex,
-          //             Get_Value_cid: routeData,
-          //             Get_Value_status: status,
-          //             Get_Value_indexpage: '0',
-          //             updateMessage:
-          //                 (dynamic newMessage, dynamic nameShop, dynamic cid) {
-          //               // ถ้า PeopleChaoScreen2 เรียก updateMessage กลับมา
-          //               // สามารถ refresh หรือนำทางกลับได้ที่นี่
-          //             },
-          //           ),
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('นำทางไป: $route (uuid: ${routeData ?? '-'})'),
-              behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(LaRadius.md),
+      case TenantLicenseNavigateEvent(:final route, :final routeData):
+        if (route == 'TenantPermitDetail' && routeData != null) {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => TenantLicenseDetailPage.create(
+                routeData: routeData,
+                title: 'ข้อมูลใบอนุญาต',
               ),
             ),
           );
@@ -171,7 +153,7 @@ class _TenantLicensePageBodyState extends State<_TenantLicensePageBody> {
             children: [
               TenantLicenseHeader(
                 title: vm.title,
-                subtitle: 'จัดการรายชื่อผู้เช่า — ตรวจสอบและค้นหาข้อมูลผู้เช่า',
+                subtitle: 'จัดการรายการใบอนุญาต — ตรวจสอบและค้นหาข้อมูล',
                 totalCount: vm.total,
               ),
               const SizedBox(height: LaSpace.lg),
@@ -210,7 +192,7 @@ class TenantLicenseHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'ผู้เช่า',
+    this.title = 'ใบอนุญาต',
   });
 
   @override

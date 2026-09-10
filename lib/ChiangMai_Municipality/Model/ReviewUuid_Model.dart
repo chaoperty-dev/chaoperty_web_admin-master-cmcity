@@ -109,7 +109,8 @@ class Client {
   final String branch;
   final String attn;
   final String addr1;
-  final String addr2;
+  /// addr_2 จาก API — เป็น object ที่อยู่ {number, moo, soi, road, tambon, amphoe, province, zip}
+  final ClientJsonAddress addr2;
   final ClientJsonAddress json;
   final String zip;
   final String tel;
@@ -185,10 +186,8 @@ class Client {
       branch: json['branch'] ?? '',
       attn: json['attn'] ?? '',
       addr1: json['addr_1'] ?? '',
-      addr2: json['addr_2'] ?? '',
-      json: json['json'] is String
-          ? ClientJsonAddress.fromJson(jsonDecode(json['json']))
-          : ClientJsonAddress.fromJson(json['json']),
+      addr2: ClientJsonAddress.fromDynamic(json['addr_2']),
+      json: ClientJsonAddress.fromDynamic(json['json']),
       zip: json['zip'] ?? '',
       tel: json['tel'] ?? '',
       tax: json['tax'] ?? '',
@@ -228,7 +227,7 @@ class Client {
       branch: '',
       attn: '',
       addr1: '',
-      addr2: '',
+      addr2: ClientJsonAddress.empty(),
       json: ClientJsonAddress.empty(),
       zip: '',
       tel: '',
@@ -271,16 +270,35 @@ class ClientJsonAddress {
     this.raw,
   });
 
+  factory ClientJsonAddress.fromDynamic(dynamic value) {
+    if (value is Map) {
+      return ClientJsonAddress.fromJson(
+        Map<String, dynamic>.from(value),
+      );
+    }
+    if (value is String && value.trim().isNotEmpty) {
+      try {
+        final decoded = jsonDecode(value);
+        if (decoded is Map) {
+          return ClientJsonAddress.fromJson(
+            Map<String, dynamic>.from(decoded),
+          );
+        }
+      } catch (_) {}
+    }
+    return ClientJsonAddress.empty();
+  }
+
   factory ClientJsonAddress.fromJson(Map<String, dynamic> json) {
     return ClientJsonAddress(
-      number: json['number'] ?? '',
-      moo: json['moo'] ?? '',
-      soi: json['soi'],
-      road: json['road'],
-      tambon: json['tambon'] ?? '',
-      amphoe: json['amphoe'] ?? '',
-      province: json['province'] ?? '',
-      raw: json['raw'],
+      number: json['number']?.toString() ?? '',
+      moo: json['moo']?.toString() ?? '',
+      soi: json['soi']?.toString(),
+      road: json['road']?.toString(),
+      tambon: json['tambon']?.toString() ?? '',
+      amphoe: json['amphoe']?.toString() ?? '',
+      province: json['province']?.toString() ?? '',
+      raw: json['raw']?.toString(),
     );
   }
 

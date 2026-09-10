@@ -81,19 +81,10 @@ class LicenseContractViewModel extends ChangeNotifier {
       loadZones(zoneSubSer: subSer);
     }
 
-    // load announcement/areas based on current zone
-    if (_selectedZn == null) {
-      _loadAnnouncement(null);
-    } else {
-      final zoneSer = _getZoneSer(_selectedZn);
-      if (zoneSer == '0' || zoneSer == null) {
-        loadAreas(null);
-        _loadAnnouncement(null);
-      } else {
-        loadAreas(zoneSer);
-        _loadAnnouncement(zoneSer);
-      }
-    }
+    // load overview/announcement using selected sub-zone and zone
+    final zoneSer = _getZoneSer(_selectedZn);
+    loadAreas(zoneSer, subzoneSer: subSer);
+    _loadAnnouncement(zoneSer ?? '');
   }
 
   // ---------- Event channel ----------
@@ -355,11 +346,13 @@ class LicenseContractViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadAreas(String? zoneSer) async {
-    // ── ใช้ API ใหม่ /admin/reports/areas/overview (ทดแทน GC_areaAll.php + properties join) ──
+  Future<void> loadAreas(String? zoneSer, {String? subzoneSer}) async {
+    // ── ใช้ API ใหม่ /admin/areas/overview ──
     try {
-      final overview =
-          await _service.fetchAreasOverview(zoneSer: zoneSer);
+      final overview = await _service.fetchAreasOverview(
+        zoneSer: zoneSer,
+        subzoneSer: subzoneSer,
+      );
       _zoneAreas = overview.items
           .map((it) => _mapOverviewToAreaModel(it))
           .toList();
@@ -371,83 +364,50 @@ class LicenseContractViewModel extends ChangeNotifier {
   }
 
   Future<void> refreshProperties() async {
-    if (_selectedZn == null) return;
-    final zoneSer = _getZoneSer(_selectedZn);
-    if (zoneSer == null || zoneSer.isEmpty) {
-      await loadAreas(null);
-      return;
+    String? subzoneSer;
+    if (_selectedSubZone != null && _selectedSubZone!.isNotEmpty) {
+      final subzone = _subzoneModels.firstWhere(
+        (sub) => sub.zn == _selectedSubZone,
+        orElse: () => SubZoneModel(),
+      );
+      subzoneSer = (subzone.ser == '0' || subzone.ser == null)
+          ? null
+          : subzone.ser;
     }
-    await loadAreas(zoneSer);
+    await loadAreas(_getZoneSer(_selectedZn), subzoneSer: subzoneSer);
   }
 
-  // ── Map helper: AreaOverviewItem → AreaModel (เพื่อให้ widget layer ไม่ต้องเปลี่ยน) ──
-  // รองรับ API ใหม่ (/admin/areas/overview): aser, requester=string, status=EN key
-  // fallback: API เก่า (requester=object, lockCode, area, rent)
+  // ── Map helper: AreaOverviewItem → AreaModel ──
+  // API ใหม่เท่านั้น (/admin/areas/overview): aser, zser, zone, lock,
+  // requester (string), customer_no, customer_tel, sdate, ldate, status (EN key)
   AreaModel _mapOverviewToAreaModel(AreaOverviewItem item) {
-    String? _str(dynamic v) {
-      if (v == null) return null;
-      final s = v.toString();
-      return s.isEmpty ? null : s;
-    }
+    final requesterName = item.requesterName;
 
-    String? lookupObj(List<String> keys) {
-      // lookup จาก requester object (API เก่า)
-      final obj = item.requesterMap;
-      if (obj == null) return null;
-      for (final k in keys) {
-        final s = _str(obj[k]);
-        if (s != null) return s;
-      }
-      return null;
-    }
-
-    // ── ser จาก aser (API ใหม่ — id จริง) fallback lockCode ──
-    final ser = item.aser ?? item.lock ?? item.lockCode ?? '';
-
-    // ── requester name ──
-    final requesterName =
-        item.requesterName ?? lookupObj(const ['name', 'scname']);
-
-    // ── เตรียม PropertiesModel stub (ถ้ามี request) ──
-    //    เพื่อให้ area_info_card / zone_dropdown_row แสดงสถานะ "กำลังดำเนินการ/Step X"
-    List<PropertiesModel> props = const [];
-    if (item.hasRequest) {
-      final stubReq = NewRequest(
-        uuid: lookupObj(const ['uuid']) ?? item.requestUuid,
-        requestUuid: item.requestUuid,
-        zn: item.zone,
-        ln: item.lock ?? item.lockCode,
-        requestStatus: item.status ?? lookupObj(const ['request_status', 'status']),
-        requestStep: lookupObj(const ['request_step', 'step']),
-        sdate: item.sdate ?? lookupObj(const ['sdate', 'desired_start_date']),
-        ldate: item.ldate ?? lookupObj(const ['ldate']),
-      );
-      final stubClient = Client(
-        uuid: item.customerUuid,
-        scname: lookupObj(const ['scname', 'client', 'name']),
-      );
-      props = [PropertiesModel(newRequest: stubReq, client: stubClient)];
-    }
-
-    // ── align กับ area page logic: occupied iff hasRequest ──
-    final hasRequester = item.hasRequest;
-    final quantity = hasRequester ? '1' : '0';
+    // ใช้ stub เพื่อให้ dropdown แสดงสถานะคำขอและล็อกที่มีคำขอเป็น unavailable
+    final props = item.hasRequest
+        ? <PropertiesModel>[
+            PropertiesModel(
+              newRequest: NewRequest(
+                zn: item.zone,
+                ln: item.lock,
+                requestStatus: item.status,
+                sdate: item.sdate,
+                ldate: item.ldate,
+              ),
+            ),
+          ]
+        : <PropertiesModel>[];
 
     return AreaModel(
-      ser: ser,
-      zser: item.zser ?? _getZoneSer(item.zone),
-      lncode: item.lncode,
-      ln: lookupObj(const ['ln', 'address']),
-      area: _str(item.area),
-      rent: _str(item.lockRent),
+      ser: item.aser ?? '',
+      zser: item.zser,
+      lncode: item.lock,
       zn: item.zone,
-      stype: lookupObj(const ['stype', 'product_type']),
-      cname: requesterName ?? lookupObj(const ['cname', 'client_name']),
-      sname: requesterName ?? lookupObj(const ['sname', 'scname']),
-      sname_q: lookupObj(const ['sname_q']),
-      sdate: item.sdate ?? lookupObj(const ['sdate', 'desired_start_date']),
-      ldate: item.ldate ?? lookupObj(const ['ldate']),
-      quantity: quantity,
+      cname: requesterName,
+      sname: requesterName,
+      sdate: item.sdate,
+      ldate: item.ldate,
+      quantity: item.hasRequest ? '1' : '0',
       properties: props,
     );
   }

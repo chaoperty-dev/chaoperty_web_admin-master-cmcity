@@ -1,24 +1,10 @@
-// ============================================================================
-// tenant_license_table.dart
-// ============================================================================
-// ตารางแสดงรายการ "ผู้เช่า" — ดีไซน์ใหม่
-// - Card-based header + alternating rows + hover state
-// - Status pill ใช้สีตามคำสถานะ
-// - ปุ่ม "เรียกดู" เป็น pill button
-// - Empty / loading state สวยงาม
-// ============================================================================
-
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../../unity/Enum.dart';
-import '../../../../unity/FormatDate.dart';
-import '../../../../unity/FormatPhone.dart';
-import '../../../../../Model/GetTeNant_Model.dart';
+import '../../models/tenant_permit_models.dart';
+import '../../viewmodels/tenant_license_view_model.dart';
 import '../tenant_license_detail_page.dart';
 import '../theme/tenant_license_theme.dart';
-import '../../viewmodels/tenant_license_view_model.dart';
 
 class TenantLicenseTable extends StatelessWidget {
   const TenantLicenseTable({super.key});
@@ -26,67 +12,49 @@ class TenantLicenseTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final vm = context.watch<TenantLicenseViewModel>();
-
-    if (vm.isLoading && vm.tenants.isEmpty) {
-      return const _LoadingState();
+    final permits = vm.tenants;
+    if (vm.isLoading && permits.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
-    if (vm.tenants.isEmpty) {
+    if (permits.isEmpty) {
       return _EmptyState(
-        hasFilter: vm.searchQuery.isNotEmpty ||
-            (vm.selectedZoneSub != null && vm.selectedZoneSub != 'ทั้งหมด') ||
-            (vm.selectedZone != null && vm.selectedZone != 'ทั้งหมด'),
-        onClear: vm.refresh,
+        filtered: vm.searchQuery.isNotEmpty || vm.selectedZoneSer != '0',
+        onRefresh: vm.refresh,
       );
     }
 
-    final pageTenants = _pagedTenants(vm);
-
     return LayoutBuilder(
-      builder: (context, c) {
-        final isMobile = c.maxWidth < 700;
-        if (isMobile) {
-          return SingleChildScrollView(
-            child: Column(
-              children: [
-                if (vm.isLoading)
-                  const LinearProgressIndicator(
-                    minHeight: 2,
-                    backgroundColor: LaColors.surfaceMuted,
-                    valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
-                  ),
-                for (int i = 0; i < pageTenants.length; i++) ...[
-                  _TenantCard(
-                    index: i,
-                    model: pageTenants[i],
-                    maskedName: _maskName(pageTenants[i].cname ?? '-'),
-                    maskedPhone: _maskPhone(
-                        formatPhoneNumber(pageTenants[i].tel ?? '')),
-                    endDate: _formatEndDate(
-                        pageTenants[i].ldate_q ?? pageTenants[i].ldate ?? '-'),
-                    status: _statusLabel(pageTenants[i]),
-                    onView: () => _openDetail(context, pageTenants[i]),
-                  ),
-                  if (i < pageTenants.length - 1)
-                    const SizedBox(height: LaSpace.sm),
-                ],
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 700) {
+          return Column(
+            children: [
+              if (vm.isLoading) const LinearProgressIndicator(minHeight: 2),
+              for (var i = 0; i < permits.length; i++) ...[
+                _PermitCard(
+                  permit: permits[i],
+                  statusLabel: vm.statusLabel(permits[i].status),
+                  onView: () => _openDetail(context, permits[i]),
+                ),
+                if (i < permits.length - 1)
+                  const SizedBox(height: LaSpace.sm),
               ],
-            ),
+            ],
           );
         }
         return Container(
           decoration: LaDecor.card(),
           child: Column(
             children: [
-              _headerRow(),
+              const _TableHeader(),
               const Divider(height: 1, color: LaColors.border),
-              if (vm.isLoading)
-                const LinearProgressIndicator(
-                  minHeight: 2,
-                  backgroundColor: LaColors.surfaceMuted,
-                  valueColor: AlwaysStoppedAnimation<Color>(LaColors.primary),
+              if (vm.isLoading) const LinearProgressIndicator(minHeight: 2),
+              for (var i = 0; i < permits.length; i++)
+                _PermitRow(
+                  permit: permits[i],
+                  index: i,
+                  statusLabel: vm.statusLabel(permits[i].status),
+                  onView: () => _openDetail(context, permits[i]),
                 ),
-              for (int i = 0; i < pageTenants.length; i++)
-                _dataRow(context, vm, pageTenants[i], i),
             ],
           ),
         );
@@ -94,21 +62,29 @@ class TenantLicenseTable extends StatelessWidget {
     );
   }
 
-  List<TeNantModel> _pagedTenants(TenantLicenseViewModel vm) {
-    const perPage = 50;
-    final start = (vm.currentPage - 1) * perPage;
-    final end = (start + perPage).clamp(0, vm.tenants.length);
-    if (start >= vm.tenants.length) return <TeNantModel>[];
-    return vm.tenants.sublist(start, end);
+  void _openDetail(BuildContext context, TenantPermitListItem permit) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TenantLicenseDetailPage.create(
+          routeData: permit.uuid,
+          title: permit.permitNo.isEmpty ? 'ข้อมูลใบอนุญาต' : permit.permitNo,
+          tenant: permit,
+        ),
+      ),
+    );
   }
+}
 
-  // ========================================================================
-  // Header
-  // ========================================================================
-  Widget _headerRow() {
+class _TableHeader extends StatelessWidget {
+  const _TableHeader();
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: LaSpace.md, vertical: LaSpace.md),
+        horizontal: LaSpace.md,
+        vertical: LaSpace.md,
+      ),
       decoration: const BoxDecoration(
         color: LaColors.surfaceMuted,
         borderRadius: BorderRadius.only(
@@ -118,214 +94,155 @@ class TenantLicenseTable extends StatelessWidget {
       ),
       child: const Row(
         children: [
-          _HeaderCell(label: '', flex: 0, width: 110),
-          _HeaderCell(label: 'เลขที่สัญญา', flex: 2),
-          _HeaderCell(label: 'บริเวณ', flex: 2),
-          _HeaderCell(label: 'โซนพื้นที่', flex: 2),
-          _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
-          _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
-          _HeaderCell(label: 'เบอร์โทร', flex: 2),
-          _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2),
-          _HeaderCell(label: 'สถานะ', flex: 2),
+          SizedBox(width: 110),
+          Expanded(flex: 3, child: Text('เลขที่ใบอนุญาต', style: LaText.tableHeader)),
+          Expanded(flex: 4, child: Text('ผู้ถือใบอนุญาต', style: LaText.tableHeader)),
+          Expanded(flex: 2, child: Text('โซน', style: LaText.tableHeader)),
+          Expanded(flex: 2, child: Text('รหัสพื้นที่', style: LaText.tableHeader)),
+          Expanded(flex: 2, child: Text('วันมีผล', style: LaText.tableHeader)),
+          Expanded(flex: 2, child: Text('วันหมดอายุ', style: LaText.tableHeader)),
+          Expanded(flex: 2, child: Text('วันที่ออก', style: LaText.tableHeader)),
+          Expanded(flex: 2, child: Text('สถานะ', style: LaText.tableHeader)),
         ],
       ),
     );
-  }
-
-  // ========================================================================
-  // Open Detail Page
-  // ========================================================================
-  void _openDetail(BuildContext context, TeNantModel model) {
-    final cid = model.docno ?? model.cid ?? model.ln ?? '';
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => TenantLicenseDetailPage.create(
-          routeData: cid,
-          title: model.cname ?? model.subzone ?? 'ข้อมูลผู้เช่า',
-          tenant: model,
-        ),
-      ),
-    );
-  }
-
-  // ========================================================================
-  // Data row
-  // ========================================================================
-  Widget _dataRow(
-    BuildContext context,
-    TenantLicenseViewModel vm,
-    TeNantModel model,
-    int index,
-  ) {
-    final status = _statusLabel(model);
-    final palette = StatusPalette.of(status);
-    return _HoverableRow(
-      index: index,
-      onTap: () => _openDetail(context, model),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 110,
-            child: Center(
-                child: _ViewButton(onTap: () => _openDetail(context, model))),
-          ),
-          _Cell(value: model.cid ?? '-', flex: 2),
-          _Cell(value: model.subzone ?? '-', flex: 2),
-          _Cell(value: model.zn ?? '-', flex: 2),
-          _Cell(value: model.ln ?? '-', flex: 2, isMono: true),
-          _Cell(
-            value: _maskName(model.cname ?? '-'),
-            tooltip: model.cname,
-            flex: 3,
-          ),
-          _Cell(
-            value: _maskPhone(formatPhoneNumber(model.tel ?? "-")),
-            tooltip: formatPhoneNumber(model.tel ?? "-"),
-            flex: 2,
-            isMono: true,
-          ),
-          _Cell(
-              value: _formatEndDate(model.ldate_q ?? model.ldate ?? '-'),
-              flex: 2,
-              isMono: true),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: _StatusPill(
-                label: status,
-                palette: palette,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  String _statusLabel(TeNantModel model) {
-    final ldate = model.ldate_q ?? model.ldate;
-    if (ldate == null || ldate.isEmpty) return 'ไม่ระบุ';
-    try {
-      final end = DateTime.parse('$ldate 00:00:00.000');
-      final now = DateTime.now();
-      if (now.isAfter(end)) return 'หมดสัญญา';
-      if (now.isAfter(end.subtract(const Duration(days: 30)))) {
-        return 'ใกล้หมดสัญญา';
-      }
-      return 'ปัจจุบัน';
-    } catch (_) {
-      return 'ไม่ระบุ';
-    }
-  }
-
-  String _formatEndDate(String raw) {
-    if (raw.isEmpty) return '-';
-    return formatDate(raw, type: DateFormatType.dmy);
-  }
-
-  /// Mask ชื่อ — ซ่อน 3 ตัวอักษรท้ายของนามสกุล
-  String _maskName(String raw) {
-    final name = raw.trim();
-    if (name.isEmpty || name == '-') return '-';
-    final words =
-        name.split(RegExp(r'\s+')).where((w) => w.isNotEmpty).toList();
-    if (words.isEmpty) return '-';
-
-    if (words.length == 1) {
-      final w = words.first;
-      if (w.length <= 3) return '***';
-      return '${w.substring(0, w.length - 3)}***';
-    }
-
-    final lastIndex = words.length - 1;
-    final last = words[lastIndex];
-    if (last.length <= 3) {
-      words[lastIndex] = '***';
-    } else {
-      words[lastIndex] = '${last.substring(0, last.length - 3)}***';
-    }
-    return words.join(' ');
-  }
-
-  /// Mask เบอร์โทร — ซ่อน 3 ตัวท้าย คงรูปแบบ xxx-xxx-xxxx
-  String _maskPhone(String raw) {
-    if (raw.isEmpty || raw == '-') return '-';
-    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.length <= 3) return raw;
-
-    final maskedDigits = digits.substring(0, digits.length - 3) + '***';
-
-    if (digits.length == 10) {
-      return '${maskedDigits.substring(0, 3)}-${maskedDigits.substring(3, 6)}-${maskedDigits.substring(6)}';
-    }
-    if (digits.length == 9) {
-      return '${maskedDigits.substring(0, 2)}-${maskedDigits.substring(2, 5)}-${maskedDigits.substring(5)}';
-    }
-    return maskedDigits;
   }
 }
 
-// ============================================================================
-// Internal widgets
-// ============================================================================
+class _PermitRow extends StatelessWidget {
+  final TenantPermitListItem permit;
+  final int index;
+  final String statusLabel;
+  final VoidCallback onView;
 
-class _HeaderCell extends StatelessWidget {
-  final String label;
-  final int flex;
-  final double? width;
-  const _HeaderCell({required this.label, this.flex = 1, this.width});
+  const _PermitRow({
+    required this.permit,
+    required this.index,
+    required this.statusLabel,
+    required this.onView,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final child = Text(
-      label,
-      style: LaText.tableHeader,
-      maxLines: 1,
-      overflow: TextOverflow.ellipsis,
+    final palette = StatusPalette.of(permit.status);
+    return Container(
+      color: index.isOdd ? LaColors.surfaceMuted : Colors.white,
+      padding: const EdgeInsets.symmetric(
+        horizontal: LaSpace.md,
+        vertical: LaSpace.md,
+      ),
+      child: Row(
+        children: [
+          SizedBox(width: 110, child: _ViewButton(onTap: onView)),
+          Expanded(flex: 3, child: _Cell(permit.permitNo, mono: true)),
+          Expanded(flex: 4, child: _Cell(permit.customerName, tooltip: permit.customerName)),
+          Expanded(flex: 2, child: _Cell(permit.zoneId)),
+          Expanded(flex: 2, child: _Cell(permit.lockCode, mono: true)),
+          Expanded(flex: 2, child: _Cell(_formatDate(permit.validFrom), mono: true)),
+          Expanded(flex: 2, child: _Cell(_formatDate(permit.validUntil), mono: true)),
+          Expanded(flex: 2, child: _Cell(_formatDate(permit.issuedAt), mono: true)),
+          Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: _StatusPill(label: statusLabel, palette: palette))),
+        ],
+      ),
     );
-    if (width != null) {
-      return SizedBox(width: width, child: Center(child: child));
-    }
-    return Expanded(flex: flex, child: child);
+  }
+}
+
+class _PermitCard extends StatelessWidget {
+  final TenantPermitListItem permit;
+  final String statusLabel;
+  final VoidCallback onView;
+
+  const _PermitCard({
+    required this.permit,
+    required this.statusLabel,
+    required this.onView,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = StatusPalette.of(permit.status);
+    return Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(LaSpace.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: LaColors.primaryLight,
+                  borderRadius: BorderRadius.circular(LaRadius.sm),
+                ),
+                child: const Icon(Icons.description_outlined, color: LaColors.primaryDark, size: 20),
+              ),
+              const SizedBox(width: LaSpace.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(permit.permitNo.isEmpty ? '-' : permit.permitNo, maxLines: 1, overflow: TextOverflow.ellipsis, style: LaText.tableCell.copyWith(fontFamily: LaText.fontBold, fontWeight: FontWeight.w700)),
+                    Text(permit.customerName.isEmpty ? '-' : permit.customerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: LaText.caption),
+                  ],
+                ),
+              ),
+              _StatusPill(label: statusLabel, palette: palette),
+            ],
+          ),
+          const Divider(height: LaSpace.lg, color: LaColors.border),
+          _InfoLine(label: 'โซน / รหัสพื้นที่', value: '${permit.zoneId.isEmpty ? '-' : permit.zoneId} / ${permit.lockCode.isEmpty ? '-' : permit.lockCode}'),
+          _InfoLine(label: 'วันมีผล - วันหมดอายุ', value: '${_formatDate(permit.validFrom)} - ${_formatDate(permit.validUntil)}'),
+          if (permit.issuedBy.isNotEmpty) _InfoLine(label: 'ออกโดย', value: permit.issuedBy),
+          if (permit.failureMessage.isNotEmpty) _InfoLine(label: 'ข้อผิดพลาด', value: permit.failureMessage),
+          const SizedBox(height: LaSpace.sm),
+          Align(alignment: Alignment.centerRight, child: _ViewButton(onTap: onView)),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  final String label;
+  final String value;
+  const _InfoLine({required this.label, required this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(width: 145, child: Text(label, style: LaText.caption)),
+          Expanded(child: Text(value.isEmpty ? '-' : value, maxLines: 2, overflow: TextOverflow.ellipsis, style: LaText.tableCell.copyWith(fontSize: 12))),
+        ],
+      ),
+    );
   }
 }
 
 class _Cell extends StatelessWidget {
   final String value;
-  final int flex;
-  final bool isMono;
-  final bool muted;
+  final bool mono;
   final String? tooltip;
-  const _Cell({
-    required this.value,
-    this.flex = 1,
-    this.isMono = false,
-    this.muted = false,
-    this.tooltip,
-  });
+  const _Cell(this.value, {this.mono = false, this.tooltip});
 
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      flex: flex,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 6),
-        child: Tooltip(
-          message: tooltip ?? value,
-          waitDuration: const Duration(milliseconds: 300),
-          child: AutoSizeText(
-            value.isEmpty ? '-' : value,
-            minFontSize: 11,
-            maxFontSize: 14,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: LaText.tableCell.copyWith(
-              color: muted ? LaColors.textSecondary : LaColors.textPrimary,
-              fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-              fontFamilyFallback: const [LaText.fontRegular],
-            ),
-          ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: Tooltip(
+        message: tooltip ?? value,
+        child: Text(
+          value.isEmpty ? '-' : value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: LaText.tableCell.copyWith(fontFamily: mono ? 'monospace' : LaText.fontRegular),
         ),
       ),
     );
@@ -339,404 +256,57 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-        decoration: LaDecor.pill(palette.bg, palette.fg),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: palette.fg,
-                shape: BoxShape.circle,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Flexible(
-              child: AutoSizeText(
-                label.isEmpty ? '-' : label,
-                minFontSize: 10,
-                maxFontSize: 12,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontFamily: LaText.fontBold,
-                  fontSize: 11,
-                  color: palette.fg,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: LaDecor.pill(palette.bg, palette.fg),
+      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: LaText.fontBold, fontSize: 11, color: palette.fg, fontWeight: FontWeight.w700)),
     );
   }
 }
 
-class _HoverableRow extends StatefulWidget {
-  final int index;
-  final Widget child;
-  final VoidCallback onTap;
-  const _HoverableRow({
-    required this.index,
-    required this.child,
-    required this.onTap,
-  });
-
-  @override
-  State<_HoverableRow> createState() => _HoverableRowState();
-}
-
-class _HoverableRowState extends State<_HoverableRow> {
-  bool _hover = false;
-
-  @override
-  void didUpdateWidget(_HoverableRow oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    // Reset hover เมื่อ data เปลี่ยน (เช่น refresh table)
-    // — ป้องกัน hover state ค้างจาก row เก่าที่ถูก rebuild
-    if (oldWidget.index != widget.index) {
-      _hover = false;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final base = widget.index.isEven ? Colors.white : LaColors.surfaceMuted;
-    // ใช้ hover ที่ subtle กว่าเดิม เพื่อไม่ให้ดูแปลกตา
-    final hoverColor = widget.index.isEven
-        ? LaColors.primary.withOpacity(.05)
-        : LaColors.primary.withOpacity(.08);
-
-    return Material(
-      type: MaterialType.transparency,
-      child: InkWell(
-        onTap: widget.onTap,
-        onHover: (hover) {
-          // onHover จาก InkWell จัดการ state ได้แม่นยำกว่า MouseRegion
-          if (hover != _hover) {
-            setState(() => _hover = hover);
-          }
-        },
-        hoverColor: hoverColor,
-        splashColor: LaColors.primary.withOpacity(.12),
-        highlightColor: Colors.transparent,
-        child: AnimatedContainer(
-          duration: LrAnimations.fast,
-          curve: Curves.easeOut,
-          padding: const EdgeInsets.symmetric(
-              horizontal: LaSpace.md, vertical: LaSpace.md),
-          decoration: BoxDecoration(
-            color: _hover ? null : base,
-            border: const Border(
-              bottom: BorderSide(color: LaColors.border, width: 1),
-            ),
-          ),
-          child: widget.child,
-        ),
-      ),
-    );
-  }
-}
-
-class _ViewButton extends StatefulWidget {
+class _ViewButton extends StatelessWidget {
   final VoidCallback onTap;
   const _ViewButton({required this.onTap});
 
   @override
-  State<_ViewButton> createState() => _ViewButtonState();
-}
-
-class _ViewButtonState extends State<_ViewButton> {
-  bool _hover = false;
-
-  @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: LrAnimations.fast,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(
-            color: _hover ? LaColors.primary : LaColors.surfaceMuted,
-            borderRadius: BorderRadius.circular(LaRadius.pill),
-            border: Border.all(
-              color: _hover ? LaColors.primary : LaColors.border,
-              width: 1,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.visibility_outlined,
-                size: 13,
-                color: _hover ? Colors.white : LaColors.textSecondary,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'เรียกดู',
-                style: TextStyle(
-                  fontFamily: LaText.fontBold,
-                  fontSize: 11,
-                  color: _hover ? Colors.white : LaColors.textSecondary,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+    return TextButton.icon(
+      onPressed: onTap,
+      icon: const Icon(Icons.visibility_outlined, size: 14),
+      label: const Text('เรียกดู'),
+      style: TextButton.styleFrom(foregroundColor: LaColors.primaryDark, visualDensity: VisualDensity.compact),
     );
   }
 }
 
 class _EmptyState extends StatelessWidget {
-  final bool hasFilter;
-  final VoidCallback onClear;
-  const _EmptyState({required this.hasFilter, required this.onClear});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: LaDecor.card(),
-      padding: const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: const BoxDecoration(
-              color: LaColors.primaryLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.inbox_outlined,
-              size: 36,
-              color: LaColors.primaryDark,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            hasFilter ? 'ไม่พบรายการที่ตรงกัน' : 'ยังไม่มีผู้เช่า',
-            style: LaText.h2,
-          ),
-          const SizedBox(height: 6),
-          Text(
-            hasFilter
-                ? 'ลองปรับตัวกรองหรือคำค้นหาใหม่อีกครั้ง'
-                : 'รายการผู้เช่าจะแสดงที่นี่เมื่อมีข้อมูล',
-            style: LaText.bodyMuted,
-            textAlign: TextAlign.center,
-          ),
-          if (hasFilter) ...[
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: onClear,
-              icon: const Icon(Icons.refresh_rounded, size: 16),
-              label: const Text('รีเฟรช'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: LaColors.primary,
-                side: BorderSide(color: LaColors.primary.withOpacity(.4)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(LaRadius.pill),
-                ),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _LoadingState extends StatelessWidget {
-  const _LoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: LaDecor.card(),
-      padding: const EdgeInsets.symmetric(vertical: 60),
-      alignment: Alignment.center,
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 36,
-            height: 36,
-            child: CircularProgressIndicator(
-              strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation(LaColors.primary),
-            ),
-          ),
-          SizedBox(height: 12),
-          Text('กำลังโหลดข้อมูล...', style: LaText.bodyMuted),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================================
-// Card layout (mobile / narrow screen)
-// ============================================================================
-class _TenantCard extends StatelessWidget {
-  final int index;
-  final TeNantModel model;
-  final String maskedName;
-  final String maskedPhone;
-  final String endDate;
-  final String status;
-  final VoidCallback onView;
-  const _TenantCard({
-    required this.index,
-    required this.model,
-    required this.maskedName,
-    required this.maskedPhone,
-    required this.endDate,
-    required this.status,
-    required this.onView,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = StatusPalette.of(status);
-    return Container(
-      decoration: LaDecor.card(),
-      padding: const EdgeInsets.all(LaSpace.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 32,
-                height: 32,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: LaColors.primaryLight,
-                  borderRadius: BorderRadius.circular(LaRadius.pill),
-                ),
-                child: Text(
-                  '${index + 1}',
-                  style: LaText.tableCell.copyWith(
-                    color: LaColors.primaryDark,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: LaSpace.sm),
-              Expanded(
-                child: Text(
-                  maskedName,
-                  style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              if ((model.cid ?? '-').isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: LaColors.primaryLight.withOpacity(.4),
-                    borderRadius: BorderRadius.circular(LaRadius.pill),
-                  ),
-                  child: Text(
-                    model.cid ?? '-',
-                    style: LaText.bodyMuted.copyWith(
-                      color: LaColors.primaryDark,
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      fontFamilyFallback: const [LaText.fontRegular],
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          const Divider(height: LaSpace.lg, color: LaColors.border),
-          _TenantCardRow(label: 'เบอร์โทร', value: maskedPhone, isMono: true),
-          if ((model.subzone ?? '').isNotEmpty)
-            _TenantCardRow(label: 'บริเวณ', value: model.subzone ?? '-'),
-          if ((model.zn ?? '').isNotEmpty)
-            _TenantCardRow(label: 'โซนพื้นที่', value: model.zn ?? '-'),
-          _TenantCardRow(
-              label: 'รหัสพื้นที่', value: model.ln ?? '-', isMono: true),
-          _TenantCardRow(
-            label: 'วันที่สิ้นสุด',
-            value: endDate,
-            isMono: true,
-          ),
-          _TenantCardRow(
-            label: 'สถานะ',
-            valueWidget: _StatusPill(label: status, palette: palette),
-          ),
-          const SizedBox(height: LaSpace.sm),
-          Align(
-            alignment: Alignment.centerRight,
-            child: _ViewButton(onTap: onView),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TenantCardRow extends StatelessWidget {
-  final String label;
-  final String? value;
-  final Widget? valueWidget;
-  final bool isMono;
-  const _TenantCardRow({
-    required this.label,
-    this.value,
-    this.valueWidget,
-    this.isMono = false,
-  }) : assert(value != null || valueWidget != null,
-            'Either value or valueWidget must be provided');
+  final bool filtered;
+  final Future<void> Function() onRefresh;
+  const _EmptyState({required this.filtered, required this.onRefresh});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 110,
-            child: Text(
-              label,
-              style: LaText.bodyMuted.copyWith(fontSize: 11),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: valueWidget ??
-                Text(
-                  (value ?? '-').isEmpty ? '-' : value!,
-                  style: LaText.tableCell.copyWith(
-                    fontSize: 12,
-                    fontFamily: isMono ? 'monospace' : LaText.fontRegular,
-                    fontFamilyFallback: const [LaText.fontRegular],
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-          ),
-        ],
+      padding: const EdgeInsets.all(48),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.description_outlined, size: 48, color: LaColors.textMuted),
+            const SizedBox(height: 8),
+            Text(filtered ? 'ไม่พบใบอนุญาตที่ตรงกัน' : 'ยังไม่มีใบอนุญาต', style: LaText.bodyMuted),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(onPressed: onRefresh, icon: const Icon(Icons.refresh_rounded), label: const Text('รีเฟรช')),
+          ],
+        ),
       ),
     );
   }
+}
+
+String _formatDate(String raw) {
+  if (raw.isEmpty) return '-';
+  final value = raw.length >= 10 ? raw.substring(0, 10) : raw;
+  final parts = value.split('-');
+  return parts.length == 3 ? '${parts[2]}-${parts[1]}-${parts[0]}' : raw;
 }

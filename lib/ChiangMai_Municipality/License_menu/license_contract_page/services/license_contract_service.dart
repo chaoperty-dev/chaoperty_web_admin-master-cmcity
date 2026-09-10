@@ -9,18 +9,14 @@ import 'dart:convert';
 
 import 'package:chaoperty/ChiangMai_Municipality/unity/area_zones_api.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../Constant/Myconstant.dart';
 import '../../../../Constant/api_cache.dart';
 import '../../../../Model/AreaOverview_Model.dart';
-import '../../../../Model/GetArea_Model.dart';
 import '../../../../Model/GetSubZone_Model.dart';
 import '../../../../Model/GetZone_Model.dart';
 import '../../../Model/AnnouncementZone_Model.dart';
-import '../../../Model/Properties_Model.dart';
 import '../unity/API_announcement.dart';
-import '../unity/API_properties.dart';
 
 
 class LicenseContractService {
@@ -91,102 +87,6 @@ class LicenseContractService {
     return subs;
   }
 
-  // ---------- Areas (ทุกล็อกทั้งหมด + join properties) ----------
-  /// โหลดล็อกทั้งหมดจาก `GC_areaAll.php` ตามโซนที่เลือก + join กับ PropertiesModel
-  /// จาก API `/admin/requests/properties` (เหมือน Data_Properties ใน ChaoArea_Screen)
-  ///
-  /// หลังจาก join แล้ว:
-  /// - `area.properties` (List<PropertiesModel>) จะมีรายการที่ join สำเร็จ
-  ///   (aser == area.ser) — ใช้บอกว่าล็อกนี้ "มี request ที่ active"
-  Future<List<AreaModel>> fetchAreas({String? zoneSer}) async {
-    final ren = await _getRenTalSer();
-    final zone = (zoneSer == null || zoneSer == '0') ? '' : zoneSer;
-    final cacheKey = 'license_contract_areas_${ren}_$zone';
-
-    // 1) โหลด Areas
-    List<dynamic> rawAreas;
-    if (_cache.isValid(cacheKey)) {
-      final cached = _cache.get(cacheKey);
-      rawAreas = (cached as List).toList();
-    } else {
-      final url = Uri.parse(
-        '${MyConstant().domain}/GC_areaAll.php'
-        '?isAdd=true&ren=$ren&zone=$zone&typecid=0',
-      );
-      try {
-        final response = await http.get(url);
-        final result = json.decode(response.body);
-        if (result == null || result is! List) return <AreaModel>[];
-        rawAreas = result;
-        _cache.set(cacheKey, result);
-      } catch (e) {
-        print('LicenseContractService.fetchAreas error: $e');
-        return <AreaModel>[];
-      }
-    }
-
-    final areas = rawAreas.map((e) => AreaModel.fromJson(e)).toList();
-
-    // 2) โหลด PropertiesModel (มี aser ที่ join กับ area.ser)
-    // key bump v3 — entry เก่า payment_json เป็น _JsonMap โดน skip → ทิ้ง cache เก่า
-    final propsKey = 'license_contract_properties_v3_${ren}_$zone';
-    List<PropertiesModel> properties;
-    if (_cache.isValid(propsKey)) {
-      final cached = _cache.get(propsKey);
-      // กัน cache เก่า schema เพี้ยน → parse ทีละตัว ข้าม entry ที่พัง
-      final tmp = <PropertiesModel>[];
-      for (final e in (cached as List)) {
-        try {
-          tmp.add(PropertiesModel.fromJson(e as Map<String, dynamic>));
-        } catch (_) {}
-      }
-      properties = tmp;
-      if (properties.isEmpty) {
-        // cache เพี้ยนทั้งชุด → fetch ใหม่
-        properties =
-            await read_GC_properties(zone.isEmpty ? null : zone, null, null);
-        _cache.set(
-            propsKey,
-            properties.map((p) {
-              return {
-                'new_request': p.newRequest?.toJson(),
-                'client': p.client?.toJson(),
-              };
-            }).toList());
-      }
-    } else {
-      properties =
-          await read_GC_properties(zone.isEmpty ? null : zone, null, null);
-      _cache.set(
-          propsKey,
-          properties.map((p) {
-            return {
-              'new_request': p.newRequest?.toJson(),
-              'client': p.client?.toJson(),
-            };
-          }).toList());
-    }
-
-    // 3) ทำ map aser -> props (O(1) lookup) — เหมือน ChaoArea_Screen บรรทัด 976-980
-    final propMap = <String, List<PropertiesModel>>{};
-    for (final p in properties) {
-      final key = p.newRequest?.aser?.toString();
-      if (key == null) continue;
-      (propMap[key] ??= []).add(p);
-    }
-    // 4) Join แล้ว set area.properties (cast dynamic เพื่อข้าม analyzer cache casing issue)
-    for (final area in areas) {
-      final key = area.ser?.toString();
-      final dynamic matched = (key != null)
-          ? (propMap[key] ?? const <PropertiesModel>[])
-          : const <PropertiesModel>[];
-      // ignore: invalid_assignment
-      area.properties = matched;
-    }
-
-    return areas;
-  }
-
   // ---------- Announcement ----------
   /// โหลดประกาศของโซนที่เลือกจาก `/admin/announcement/getzone?zoneid=$zoneSer`
   /// คืนค่า AnnouncementZone ตัวแรก (ถ้ามี) พร้อม message จาก response
@@ -242,29 +142,32 @@ class LicenseContractService {
     }
   }
 
-  // ---------- Helpers ----------
-  Future<String?> _getRenTalSer() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('renTalSer');
-  }
-
   // ---------- Areas Overview (API ใหม่ — มี aser, status EN key) ----------
-  /// โหลด "ภาพรวมพื้นที่เช่า" ทั้งหมด:
-  ///   GET {domain_v2}/admin/areas/overview?zser=<zoneSer>&sort_by=lock&sort_dir=asc&page=1
+  /// โหลด "ภาพรวมพื้นที่เช่า" 1 หน้า:
+  ///   GET {domain_v2}/admin/areas/overview
+  ///   ?subzoneser=<subzoneSer>&zser=<zoneSer>&per_page=50&page=<page>
   ///
-  /// - zser = null/0/'0' → ไม่ส่ง query (ดูทั้งหมด)
-  /// - zser อื่นๆ → filter ตามโซน
-  ///
-  /// คืน AreaOverviewResponse (items[] + totals)
-  /// ถ้า response ไม่ใช่ 200 / JSON parse พัง → throw
-  Future<AreaOverviewResponse> fetchAreasOverview({String? zoneSer}) async {
+  /// null/0/'0' ของ filter จะไม่ถูกส่ง (= ทั้งหมด)
+  /// pagination เป็น server-driven จาก data.pagination
+  Future<AreaOverviewResponse> fetchAreasOverview({
+    String? zoneSer,
+    String? subzoneSer,
+    int page = 1,
+  }) async {
     final headers = await MyHeaders.build();
+    final params = <String, String>{
+      'per_page': '50',
+      'page': '$page',
+    };
+    if (subzoneSer != null && subzoneSer.isNotEmpty && subzoneSer != '0') {
+      params['subzoneser'] = subzoneSer;
+    }
+    if (zoneSer != null && zoneSer.isNotEmpty && zoneSer != '0') {
+      params['zser'] = zoneSer;
+    }
 
-    final z = (zoneSer == null || zoneSer == '0') ? '' : zoneSer;
-    final qs = z.isEmpty ? '' : '?zser=$z&sort_by=lock&sort_dir=asc&page=1';
-    final url = Uri.parse(
-      '${MyConstant().domain_v2}/admin/areas/overview$qs',
-    );
+    final url = Uri.parse('${MyConstant().domain_v2}/admin/areas/overview')
+        .replace(queryParameters: params);
 
     // ignore: avoid_print
     print('[fetchAreasOverview] URL = $url');

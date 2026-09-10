@@ -292,6 +292,9 @@ class _DocumentsTabContent extends StatelessWidget {
                 _SavedChecklistNotice(preview: savedChecklist!),
                 const SizedBox(height: LaSpace.md),
               ],
+              // ─── ภาพรวมคำขอ ───
+              _AttachRequestOverviewCard(requestUuid: requestUuid),
+              const SizedBox(height: LaSpace.md),
               // ─── Section: ลายเซ็นผู้แนบ (ก่อนตารางเอกสาร) ───
               AttachSignatureSection(requestUuid: requestUuid),
               const SizedBox(height: LaSpace.md),
@@ -2334,4 +2337,287 @@ class _AttachInfoErrorState extends StatelessWidget {
       ),
     );
   }
+}
+
+class _AttachRequestOverviewCard extends StatefulWidget {
+  final String? requestUuid;
+
+  const _AttachRequestOverviewCard({this.requestUuid});
+
+  @override
+  State<_AttachRequestOverviewCard> createState() =>
+      _AttachRequestOverviewCardState();
+}
+
+class _AttachRequestOverviewCardState
+    extends State<_AttachRequestOverviewCard> {
+  late final LicenseRequestDetailStep1ViewModel _vm;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _vm = LicenseRequestDetailStep1ViewModel().init();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final uuid = widget.requestUuid?.trim() ?? '';
+    if (uuid.isEmpty) {
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = 'ไม่พบ UUID ของคำขอ';
+        });
+      return;
+    }
+    try {
+      await _vm.loadFromUuid(uuid);
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = _vm.errorMessage;
+        });
+    } catch (e) {
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = '$e';
+        });
+    }
+  }
+
+  @override
+  void dispose() {
+    _vm.dispose();
+    super.dispose();
+  }
+
+  String _person(String keyword) {
+    final field =
+        _vm.dataPerson.where((x) => x.title.contains(keyword)).firstOrNull;
+    return field?.detail.trim() ?? '';
+  }
+
+  String _cid(String serial) {
+    final field =
+        _vm.dataCid.where((x) => x['ser'].toString() == serial).firstOrNull;
+    return field?['detail']?.toString().trim() ?? '';
+  }
+
+  String _address() {
+    final parts = <String>[
+      if (_person('บ้านเลขที่').isNotEmpty)
+        'บ้านเลขที่ ${_person('บ้านเลขที่')}',
+      if (_person('หมู่ที่').isNotEmpty) 'หมู่ ${_person('หมู่ที่')}',
+      if (_person('ตรอก/ซอย').isNotEmpty && _person('ตรอก/ซอย') != '-')
+        'ซอย ${_person('ตรอก/ซอย')}',
+      if (_person('ถนน').isNotEmpty && _person('ถนน') != '-')
+        'ถนน ${_person('ถนน')}',
+      if (_person('ตำบล/แขวง').isNotEmpty) _person('ตำบล/แขวง'),
+      if (_person('อำเภอ/เขต').isNotEmpty) _person('อำเภอ/เขต'),
+      if (_person('จังหวัด').isNotEmpty) _person('จังหวัด'),
+    ];
+    return parts.join(' ');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) return const _AttachOverviewLoading();
+    if (_error != null)
+      return _AttachOverviewError(
+          message: _error!,
+          onRetry: () {
+            setState(() {
+              _loading = true;
+              _error = null;
+            });
+            _load();
+          });
+
+    final zone = [
+      _vm.selectedSubZone?.trim() ?? '',
+      _vm.selectedZn?.trim() ?? ''
+    ].where((x) => x.isNotEmpty && x != 'null').join(' / ');
+    final status = _vm.status.trim().isEmpty ? 'กำลังรอตรวจสอบ' : _vm.status;
+    final uuid = widget.requestUuid ?? '';
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 14),
+      decoration: LaDecor.card(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            _AttachOverviewStatus(label: status),
+            const Spacer(),
+            _AttachOverviewPill(label: 'รหัสรายการ: ${_short(uuid)}'),
+          ]),
+          const SizedBox(height: 14),
+          LayoutBuilder(builder: (context, c) {
+            final narrow = c.maxWidth < 650;
+            final request =
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const _AttachOverviewHeading('ข้อมูลคำขอ'),
+              const SizedBox(height: 6),
+              _AttachOverviewInfo(
+                  icon: Icons.location_on_rounded,
+                  label: 'บริเวณ / โซน',
+                  value: zone),
+              const SizedBox(height: 5),
+              _AttachOverviewInfo(
+                  icon: Icons.tag_rounded,
+                  label: 'รหัสพื้นที่',
+                  value: _vm.selectedLn ?? ''),
+            ]);
+            final customer =
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              const _AttachOverviewHeading('ข้อมูลลูกค้า'),
+              const SizedBox(height: 6),
+              _AttachOverviewInfo(
+                  icon: Icons.person_rounded,
+                  label: 'ชื่อผู้ติดต่อ',
+                  value: _person('ชื่อ-นามสกุล')),
+              const SizedBox(height: 5),
+              _AttachOverviewInfo(
+                  icon: Icons.badge_outlined,
+                  label: 'เลขประจำตัวผู้เสียภาษี',
+                  value: _person('เลขบัตรประจำตัว')),
+              // const SizedBox(height: 5),
+              // _AttachOverviewInfo(icon: Icons.home_outlined, label: 'ที่อยู่', value: _address()),
+              // const SizedBox(height: 5),
+              // _AttachOverviewInfo(icon: Icons.calendar_month_outlined, label: 'อายุสัญญา', value: _cid('4').isEmpty ? '' : '${_cid('4')} เดือน'),
+            ]);
+            return narrow
+                ? Column(
+                    children: [request, const SizedBox(height: 12), customer])
+                : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(child: request),
+                    const SizedBox(width: 32),
+                    Expanded(child: customer)
+                  ]);
+          }),
+          const SizedBox(height: 14),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+            decoration: BoxDecoration(
+                color: LaColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(LaRadius.sm)),
+            child: const Row(children: [
+              Icon(Icons.info_outline_rounded,
+                  size: 14, color: LaColors.textMuted),
+              SizedBox(width: 6),
+              Expanded(
+                  child: Text(
+                      'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด ไปที่แท็บ "ข้อมูลคำขอ"',
+                      style: LaText.caption))
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _short(String value) =>
+      value.length <= 12 ? value : '${value.substring(0, 8)}…';
+}
+
+class _AttachOverviewHeading extends StatelessWidget {
+  final String text;
+  const _AttachOverviewHeading(this.text);
+  @override
+  Widget build(BuildContext context) => Text(text,
+      style: LaText.label
+          .copyWith(color: LaColors.primaryDark, letterSpacing: .8));
+}
+
+class _AttachOverviewInfo extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  const _AttachOverviewInfo(
+      {required this.icon, required this.label, required this.value});
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+                color: LaColors.primaryLight,
+                borderRadius: BorderRadius.circular(7)),
+            child: Icon(icon, size: 15, color: LaColors.primaryDark)),
+        const SizedBox(width: 8),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: LaText.caption),
+          Text(value.isEmpty ? '-' : value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600))
+        ]))
+      ]);
+}
+
+class _AttachOverviewPill extends StatelessWidget {
+  final String label;
+  const _AttachOverviewPill({required this.label});
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: LaColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: LaColors.border)),
+      child: Text(label,
+          style: LaText.caption.copyWith(
+              color: LaColors.textSecondary, fontWeight: FontWeight.w600)));
+}
+
+class _AttachOverviewStatus extends StatelessWidget {
+  final String label;
+  const _AttachOverviewStatus({required this.label});
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: LaColors.statusPendingBg,
+          borderRadius: BorderRadius.circular(999)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+                color: LaColors.statusPendingFg, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(label,
+            style: LaText.label.copyWith(color: LaColors.statusPendingFg))
+      ]));
+}
+
+class _AttachOverviewLoading extends StatelessWidget {
+  const _AttachOverviewLoading();
+  @override
+  Widget build(BuildContext context) => Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(24),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)));
+}
+
+class _AttachOverviewError extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _AttachOverviewError({required this.message, required this.onRetry});
+  @override
+  Widget build(BuildContext context) => Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(14),
+      child: Row(children: [
+        const Icon(Icons.error_outline_rounded,
+            color: LaColors.statusRejectedFg),
+        const SizedBox(width: 8),
+        Expanded(child: Text(message, style: LaText.caption)),
+        TextButton(onPressed: onRetry, child: const Text('ลองใหม่'))
+      ]));
 }
