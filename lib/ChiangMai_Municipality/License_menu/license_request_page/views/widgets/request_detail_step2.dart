@@ -561,10 +561,11 @@ String _formatMoney(double v) => NumberFormat("#,##0.00", "en_US").format(v);
 String _formatDate(String raw) {
   if (raw.isEmpty) return '-';
   try {
-    final dt = DateTime.parse(raw);
-    return DateFormat('dd-MM-yyyy').format(dt);
+    final dt = DateTime.parse(raw).toLocal();
+    return '${dt.day.toString().padLeft(2, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
   } catch (_) {
-    return raw;
+    return '-';
   }
 }
 

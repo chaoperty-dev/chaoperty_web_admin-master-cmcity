@@ -6,7 +6,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/billing_models.dart';
@@ -191,10 +190,7 @@ class BillingTable extends StatelessWidget {
                                         (row.sdate == null ||
                                                 row.sdate!.isEmpty)
                                             ? 'เลือกวันที่'
-                                            : _displayDateFormat.format(
-                                                DateTime.tryParse(row.sdate!) ??
-                                                    DateTime.now(),
-                                              ),
+                                            : _displayThaiDate(row.sdate),
                                         style: LcText.tableCell.copyWith(
                                           color: (row.sdate == null ||
                                                   row.sdate!.isEmpty)
@@ -427,7 +423,13 @@ class BillingTable extends StatelessWidget {
     );
   }
 
-  static final _displayDateFormat = DateFormat('dd-MM-yyyy');
+  String _displayThaiDate(String? raw) {
+    if (raw == null || raw.isEmpty) return '-';
+    final date = DateTime.tryParse(raw);
+    if (date == null) return '-';
+    return '${date.day.toString().padLeft(2, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+  }
 
   Future<void> _pickDate(
       BuildContext context, BillingViewModel vm, LcExpTransModel row) async {

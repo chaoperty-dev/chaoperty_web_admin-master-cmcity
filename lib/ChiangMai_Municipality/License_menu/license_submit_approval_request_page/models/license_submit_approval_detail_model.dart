@@ -24,9 +24,11 @@ class SubmitApprovalAddon {
   });
 
   factory SubmitApprovalAddon.fromJson(Map<String, dynamic> json) {
-    final amount = double.tryParse((json['amount'] ?? json['total'] ?? '0').toString());
+    final amount =
+        double.tryParse((json['amount'] ?? json['total'] ?? '0').toString());
     return SubmitApprovalAddon(
-      label: (json['expname'] ?? json['label'] ?? json['name'] ?? '').toString(),
+      label:
+          (json['expname'] ?? json['label'] ?? json['name'] ?? '').toString(),
       value: (json['value'] ?? json['note'] ?? '').toString(),
       amount: amount,
     );
@@ -306,15 +308,16 @@ class SubmitApprovalReceipt {
 }
 
 /// Helper format
-String formatMoney(double v) =>
-    NumberFormat('#,##0.00', 'en_US').format(v);
+String formatMoney(double v) => NumberFormat('#,##0.00', 'en_US').format(v);
 
 String formatDate(String? raw) {
   if (raw == null || raw.isEmpty) return '-';
   try {
-    final dt = DateTime.parse(raw);
-    return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+    final dt = DateTime.parse(raw).toLocal();
+    return '${dt.day.toString().padLeft(2, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   } catch (_) {
-    return raw;
+    return '-';
   }
 }

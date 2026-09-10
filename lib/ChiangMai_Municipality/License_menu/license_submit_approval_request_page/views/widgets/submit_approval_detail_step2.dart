@@ -24,8 +24,7 @@ class SubmitApprovalDetailStep2 extends StatefulWidget {
       _SubmitApprovalDetailStep2State();
 }
 
-class _SubmitApprovalDetailStep2State
-    extends State<SubmitApprovalDetailStep2> {
+class _SubmitApprovalDetailStep2State extends State<SubmitApprovalDetailStep2> {
   @override
   void initState() {
     super.initState();
@@ -232,8 +231,7 @@ class _RoundSummaryBanner extends StatelessWidget {
           ),
           if (round.currentStepOrder != null)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: LaColors.statusPendingBg,
                 borderRadius: BorderRadius.circular(LaRadius.pill),
@@ -255,11 +253,12 @@ class _RoundSummaryBanner extends StatelessWidget {
   String _formatDateTime(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
     try {
-      final dt = DateTime.parse(raw);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return raw;
+      return '-';
     }
   }
 }
@@ -351,9 +350,7 @@ class _TimelineItem extends StatelessWidget {
         icon: Icons.check_rounded,
         label: label.isEmpty ? 'ผ่าน' : label,
       );
-    } else if (s == 'failed' ||
-        s == 'rejected' ||
-        s.contains('ไม่ผ่าน')) {
+    } else if (s == 'failed' || s == 'rejected' || s.contains('ไม่ผ่าน')) {
       return _StyleData(
         bg: LaColors.statusRejectedBg,
         fg: LaColors.statusRejectedFg,
@@ -381,7 +378,8 @@ class _TimelineItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final st = _style();
     final isCurrent = step.isCurrent;
-    final isPending = step.status.toLowerCase() == 'pending' || step.status.isEmpty;
+    final isPending =
+        step.status.toLowerCase() == 'pending' || step.status.isEmpty;
 
     return Material(
       color: Colors.white,
@@ -523,8 +521,8 @@ class _DotWithPulseState extends State<_DotWithPulse>
                 decoration: BoxDecoration(
                   color: widget.bg,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                      color: widget.fg.withOpacity(.4), width: 1.5),
+                  border:
+                      Border.all(color: widget.fg.withOpacity(.4), width: 1.5),
                   boxShadow: widget.animate
                       ? [
                           BoxShadow(
@@ -621,8 +619,7 @@ class _Content extends StatelessWidget {
           const SizedBox(width: 6),
           Flexible(
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: BoxDecoration(
                 color: LaColors.statusPendingBg,
                 borderRadius: BorderRadius.circular(LaRadius.pill),
@@ -675,7 +672,8 @@ class _Content extends StatelessWidget {
         s.contains('pending') ||
         s.contains('รอ') ||
         s.contains('progress');
-    final noActedBy = step.actedBy == null || (step.actedBy ?? '').trim().isEmpty;
+    final noActedBy =
+        step.actedBy == null || (step.actedBy ?? '').trim().isEmpty;
     return step.isCurrent && step.canAct && isPending && noActedBy;
   }
 
@@ -745,11 +743,9 @@ class _Content extends StatelessWidget {
     // ถ้า remark มีคำว่า "start collecting data" / "กำลังเก็บ" / "เริ่มเก็บ"
     // → ใช้กล่องเขียว highlight (ระบบกำลังเก็บข้อมูล)
     final isCollecting = _isCollectingRemark();
-    final bgColor = isCollecting
-        ? LaColors.statusApprovedBg
-        : LaColors.surfaceMuted;
-    final accentColor =
-        isCollecting ? LaColors.statusApprovedFg : st.fg;
+    final bgColor =
+        isCollecting ? LaColors.statusApprovedBg : LaColors.surfaceMuted;
+    final accentColor = isCollecting ? LaColors.statusApprovedFg : st.fg;
     final textColor =
         isCollecting ? LaColors.statusApprovedFg : LaColors.textSecondary;
 
@@ -782,8 +778,7 @@ class _Content extends StatelessWidget {
               style: LaText.caption.copyWith(
                 color: textColor,
                 fontStyle: FontStyle.italic,
-                fontWeight:
-                    isCollecting ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: isCollecting ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
           ),
@@ -812,8 +807,7 @@ class _Content extends StatelessWidget {
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.touch_app_rounded,
-              size: 12, color: LaColors.primaryDark),
+          Icon(Icons.touch_app_rounded, size: 12, color: LaColors.primaryDark),
           SizedBox(width: 4),
           Text(
             'คุณสามารถอนุมัติ/ปฏิเสธขั้นนี้ได้',
@@ -831,11 +825,12 @@ class _Content extends StatelessWidget {
   String _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
     try {
-      final dt = DateTime.parse(raw);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return raw;
+      return '-';
     }
   }
 

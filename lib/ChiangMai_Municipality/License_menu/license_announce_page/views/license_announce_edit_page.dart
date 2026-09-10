@@ -217,13 +217,13 @@ class _LicenseAnnounceEditPageState extends State<LicenseAnnounceEditPage> {
   @override
   Widget build(BuildContext context) {
     // Breakpoints:
-  //   mobile  : < 700
-  //   tablet  : 700..1099
-  //   desktop : >= 1100
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isMobile = screenWidth < 700;
-  final isTablet = screenWidth >= 700 && screenWidth < 1100;
-  final isCompact = isMobile || isTablet;  // single-column mode
+    //   mobile  : < 700
+    //   tablet  : 700..1099
+    //   desktop : >= 1100
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 700;
+    final isTablet = screenWidth >= 700 && screenWidth < 1100;
+    final isCompact = isMobile || isTablet; // single-column mode
     return Scaffold(
       backgroundColor: LrColors.surface,
       body: SafeArea(
@@ -540,7 +540,8 @@ class _DateField extends StatelessWidget {
       if (raw.isEmpty) return '-';
       try {
         final dt = DateTime.parse(raw).toLocal();
-        return DateFormat('dd-MM-yyyy').format(dt);
+        return '${dt.day.toString().padLeft(2, '0')}-'
+            '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
       } catch (_) {
         return raw;
       }
@@ -619,7 +620,8 @@ class _ZonePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final allZones = context.select<LicenseAnnounceViewModel, List<LicenseAnnounceZone>>(
+    final allZones =
+        context.select<LicenseAnnounceViewModel, List<LicenseAnnounceZone>>(
       (vm) => vm.zones,
     );
     return Container(

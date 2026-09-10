@@ -15,7 +15,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, Uint8List;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../unity/FormatPhone.dart';
@@ -1789,10 +1788,12 @@ class _CurrentRoundCard extends StatelessWidget {
   String _shortDate(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
     try {
-      final dt = DateTime.parse(raw);
-      return DateFormat('dd/MM HH:mm').format(dt);
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return raw;
+      return '-';
     }
   }
 
@@ -2466,10 +2467,11 @@ class _RequestSummaryCard extends StatelessWidget {
   String? _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return null;
     try {
-      final dt = DateTime.parse(raw);
-      return DateFormat('dd/MM/yyyy').format(dt);
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
-      return raw;
+      return null;
     }
   }
 

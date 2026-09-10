@@ -5,6 +5,10 @@ import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';
 
 import '../../models/tenant_permit_models.dart';
 import '../../viewmodels/tenant_license_detail_view_model.dart';
+import '../../../../License_menu/license_verify_page/models/license_verify_checklist_model.dart';
+import '../../../../License_menu/license_verify_page/viewmodels/license_verify_detail_view_model.dart';
+import '../../../../License_menu/license_verify_page/views/widgets/verify_detail_footer.dart';
+import '../../../../License_menu/license_verify_page/views/widgets/verify_detail_step2.dart';
 import '../../../../License_menu/license_payment_page/viewmodels/license_payment_detail_view_model.dart';
 import '../../../../License_menu/license_payment_page/views/widgets/payment_detail_footer.dart';
 import '../../../../License_menu/license_payment_page/views/widgets/payment_detail_header.dart';
@@ -222,9 +226,13 @@ class _Step1LicenseTab extends StatelessWidget {
   static String _date(dynamic value) {
     final text = _value(value);
     if (text == '-') return text;
-    return text.length >= 10
-        ? text.substring(0, 10).split('-').reversed.join('-')
-        : text;
+    try {
+      final date = DateTime.parse(text).toLocal();
+      return '${date.day.toString().padLeft(2, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+    } catch (_) {
+      return '-';
+    }
   }
 
   @override
@@ -348,6 +356,8 @@ class _Step1LicenseTab extends StatelessWidget {
                   color: LaColors.statusInfoFg,
                   child: _AttachmentsTable(
                     permitUuid: permit.uuid,
+                    requestUuid: permit.requestUuid,
+                    checklist: permit.checklist,
                     attachments: permit.attachments,
                   ),
                 ),
@@ -853,8 +863,14 @@ class _PermitHero extends StatelessWidget {
   }
 
   String _shortDate(String value) {
-    if (value.length < 10) return value.isEmpty ? '-' : value;
-    return value.substring(0, 10).split('-').reversed.join('-');
+    if (value.isEmpty) return '-';
+    try {
+      final date = DateTime.parse(value).toLocal();
+      return '${date.day.toString().padLeft(2, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+    } catch (_) {
+      return '-';
+    }
   }
 }
 
@@ -1012,12 +1028,40 @@ class _EntryTile extends StatelessWidget {
 
 class _AttachmentsTable extends StatelessWidget {
   final String permitUuid;
+  final String requestUuid;
+  final Map<String, dynamic> checklist;
   final List<Map<String, dynamic>> attachments;
 
   const _AttachmentsTable({
     required this.permitUuid,
+    required this.requestUuid,
+    required this.checklist,
     required this.attachments,
   });
+
+  Future<void> _openChecklist(BuildContext context) async {
+    if (checklist.isEmpty) return;
+
+    final preview = LicenseverifyChecklistPreview.fromSavedJson({
+      ...checklist,
+      if (!checklist.containsKey('request_uuid') ||
+          checklist['request_uuid'] == null ||
+          checklist['request_uuid'].toString().trim().isEmpty)
+        'request_uuid': requestUuid,
+    });
+
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => LicenseverifyDetailViewModel(
+            requestUuid: preview.requestUuid,
+            initialChecklist: preview,
+          ),
+          child: const _TenantChecklistPage(),
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1037,6 +1081,12 @@ class _AttachmentsTable extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ),
+            _TenantViewButton(
+              onTap: checklist.isEmpty ? null : () => _openChecklist(context),
+              label: 'เรียกดูเอกสารเช็กลิสต์',
+              icon: Icons.visibility_outlined,
+              loading: false,
+            ),
           ],
         ),
         const SizedBox(height: LaSpace.sm),
@@ -1053,6 +1103,144 @@ class _AttachmentsTable extends StatelessWidget {
             const Divider(height: 1, color: LaColors.border),
         ],
       ],
+    );
+  }
+}
+
+class _TenantViewButton extends StatefulWidget {
+  final VoidCallback? onTap;
+  final String label;
+  final IconData icon;
+  final bool loading;
+
+  const _TenantViewButton({
+    required this.onTap,
+    required this.label,
+    required this.icon,
+    required this.loading,
+  });
+
+  @override
+  State<_TenantViewButton> createState() => _TenantViewButtonState();
+}
+
+class _TenantViewButtonState extends State<_TenantViewButton> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = widget.onTap != null;
+    return MouseRegion(
+      cursor: enabled ? SystemMouseCursors.click : SystemMouseCursors.basic,
+      onEnter: (_) {
+        if (enabled) setState(() => _hover = true);
+      },
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 120),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hover ? LaColors.primary : LaColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(LaRadius.pill),
+            border: Border.all(
+              color: _hover ? LaColors.primary : LaColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 13,
+                height: 13,
+                child: widget.loading
+                    ? const CircularProgressIndicator(strokeWidth: 2)
+                    : Icon(
+                        widget.icon,
+                        size: 13,
+                        color: _hover ? Colors.white : LaColors.textSecondary,
+                      ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                widget.label,
+                style: TextStyle(
+                  fontFamily: LaText.fontBold,
+                  fontSize: 11,
+                  color: _hover ? Colors.white : LaColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TenantChecklistPage extends StatelessWidget {
+  const _TenantChecklistPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: LaColors.surface,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [LaColors.headerBg, LaColors.headerAccent],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: LaColors.primary.withOpacity(.15),
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    tooltip: 'กลับไปหน้ารายละเอียด',
+                    onPressed: () => Navigator.of(context).maybePop(),
+                    icon: const Icon(Icons.arrow_back_rounded,
+                        color: LaColors.textInverse),
+                  ),
+                  const SizedBox(width: LaSpace.sm),
+                  const Icon(Icons.fact_check_rounded,
+                      color: LaColors.primaryAccent),
+                  const SizedBox(width: LaSpace.sm),
+                  const Expanded(
+                    child: Text(
+                      'สรุปการแนบเอกสาร',
+                      style: TextStyle(
+                        color: LaColors.textInverse,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Expanded(child: VerifyDetailStep2()),
+            VerifyDetailFooter(
+              readOnly: true,
+              currentStep: 2,
+              totalSteps: 2,
+              onCancel: () => Navigator.of(context).maybePop(),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -1278,11 +1466,11 @@ class _AttachmentRowState extends State<_AttachmentRow> {
     final value = _text(key);
     if (value == '-') return value;
     try {
-      final date = DateTime.parse(value);
+      final date = DateTime.parse(value).toLocal();
       return '${date.day.toString().padLeft(2, '0')}-'
-          '${date.month.toString().padLeft(2, '0')}-${date.year}';
+          '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
     } catch (_) {
-      return value;
+      return '-';
     }
   }
 
@@ -1395,23 +1583,11 @@ class _AttachmentRowState extends State<_AttachmentRow> {
         ],
         SizedBox(
           width: widget.mobile ? 42 : 92,
-          child: OutlinedButton.icon(
-            onPressed: _loading ? null : _open,
-            icon: _loading
-                ? const SizedBox(
-                    width: 13,
-                    height: 13,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.visibility_outlined, size: 14),
-            label:
-                widget.mobile ? const SizedBox.shrink() : const Text('เรียกดู'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: LaColors.primaryDark,
-              side: const BorderSide(color: LaColors.primary),
-              visualDensity: VisualDensity.compact,
-              padding: widget.mobile ? EdgeInsets.zero : null,
-            ),
+          child: _TenantViewButton(
+            onTap: _loading ? null : _open,
+            label: widget.mobile ? '' : 'เรียกดู',
+            icon: Icons.visibility_outlined,
+            loading: _loading,
           ),
         ),
       ],
@@ -1888,41 +2064,11 @@ class _ReceiptViewButtonState extends State<_ReceiptViewButton> {
   Widget build(BuildContext context) {
     return Tooltip(
       message: 'ดูใบเสร็จ',
-      child: InkWell(
+      child: _TenantViewButton(
         onTap: _loading ? null : _open,
-        borderRadius: BorderRadius.circular(LaRadius.sm),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(
-            color: LaColors.primaryDark,
-            borderRadius: BorderRadius.circular(LaRadius.sm),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (_loading)
-                const SizedBox(
-                  width: 14,
-                  height: 14,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: Colors.white,
-                  ),
-                )
-              else
-                const Icon(Icons.receipt_long_rounded,
-                    size: 14, color: Colors.white),
-              const SizedBox(width: 4),
-              Text(
-                'เรียกดู',
-                style: LaText.caption.copyWith(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
+        label: 'เรียกดู',
+        icon: Icons.receipt_long_rounded,
+        loading: _loading,
       ),
     );
   }
@@ -2455,21 +2601,11 @@ class _DocumentRowState extends State<_DocumentRow> {
             ),
           ),
           const SizedBox(width: LaSpace.sm),
-          OutlinedButton.icon(
-            onPressed: _loading ? null : _open,
-            icon: _loading
-                ? const SizedBox(
-                    width: 13,
-                    height: 13,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.visibility_outlined, size: 15),
-            label: const Text('เรียกดู'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: LaColors.primaryDark,
-              side: const BorderSide(color: LaColors.primary),
-              visualDensity: VisualDensity.compact,
-            ),
+          _TenantViewButton(
+            onTap: _loading ? null : _open,
+            label: 'เรียกดู',
+            icon: Icons.visibility_outlined,
+            loading: _loading,
           ),
         ],
       ),

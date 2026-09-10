@@ -1949,23 +1949,9 @@ class _OfficerFooter extends StatelessWidget {
 
 String _formatDateThai(DateTime? dt) {
   if (dt == null) return '';
-  const months = [
-    '',
-    'ม.ค.',
-    'ก.พ.',
-    'มี.ค.',
-    'เม.ย.',
-    'พ.ค.',
-    'มิ.ย.',
-    'ก.ค.',
-    'ส.ค.',
-    'ก.ย.',
-    'ต.ค.',
-    'พ.ย.',
-    'ธ.ค.',
-  ];
   final thaiYear = dt.year + 543;
-  return '${dt.day} ${months[dt.month]} $thaiYear';
+  return '${dt.day.toString().padLeft(2, '0')}-'
+      '${dt.month.toString().padLeft(2, '0')}-$thaiYear';
 }
 
 class _SignatureBox extends StatelessWidget {

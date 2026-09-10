@@ -63,6 +63,13 @@ class RegistrationAddStep2 extends StatefulWidget {
 }
 
 class _RegistrationAddStep2State extends State<RegistrationAddStep2> {
+  String _formatThaiDate(String raw) {
+    final date = DateTime.tryParse(raw)?.toLocal();
+    if (date == null) return '-';
+    return '${date.day.toString().padLeft(2, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+  }
+
   Future<void> _selectDate() async {
     DateTime initial = DateTime.now();
     if (widget.birth.text.isNotEmpty) {
@@ -732,8 +739,7 @@ class _RegistrationAddStep2State extends State<RegistrationAddStep2> {
             Expanded(
               child: Text(
                 widget.birth.text.isNotEmpty
-                    ? DateFormat('dd-MM-yyyy')
-                        .format(DateTime.parse(widget.birth.text))
+                    ? _formatThaiDate(widget.birth.text)
                     : 'ระบุวันเกิด',
                 style: TextStyle(
                   color: widget.birth.text.isNotEmpty

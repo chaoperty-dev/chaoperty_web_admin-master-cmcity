@@ -17,8 +17,6 @@
 // กลับมาในแต่ละแถวด้วย ส่วน query filter ใช้ `zser=<int>` ที่ root level
 // ============================================================================
 
-import 'package:intl/intl.dart';
-
 import '../unity/license_status_labels.dart';
 
 /// module — ดึงจาก json['module']
@@ -198,8 +196,7 @@ class AttachRequestItem {
     return AttachRequestItem(
       uuid: (json['uuid'] ?? '').toString(),
       module: moduleJson is Map
-          ? AttachRequestModule.fromJson(
-              Map<String, dynamic>.from(moduleJson))
+          ? AttachRequestModule.fromJson(Map<String, dynamic>.from(moduleJson))
           : const AttachRequestModule(),
       customer: customerJson is Map
           ? AttachRequestCustomer.fromJson(
@@ -235,7 +232,6 @@ class AttachRequestItem {
   /// Status label (TH) — delegate to central mapper
   String get statusLabel => LicenseStatusLabels.th(status);
 }
-
 
 /// Wrapper สำหรับ list endpoint — items + meta + links
 class AttachRequestsListResult {
@@ -273,9 +269,11 @@ class AttachRequestsListResult {
 String formatAttachRequestDate(String? raw) {
   if (raw == null || raw.isEmpty) return '-';
   try {
-    final dt = DateTime.parse(raw);
-    return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+    final dt = DateTime.parse(raw).toLocal();
+    return '${dt.day.toString().padLeft(2, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   } catch (_) {
-    return raw;
+    return '-';
   }
 }

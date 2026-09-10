@@ -28,7 +28,8 @@ class TenantLicenseDetailPersonal extends StatelessWidget {
             children: [
               // ─── Title bar ───
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: const Color(0xFFDCFCE7).withOpacity(.5),
                   borderRadius: BorderRadius.circular(8),
@@ -142,7 +143,8 @@ class TenantLicenseDetailPersonal extends StatelessWidget {
   }
 
   List<_DisplayField> _personFields() => [
-        _DisplayField('ชื่อ-นามสกุล*', _value(permit.customer['cname'] ?? permit.customerName)),
+        _DisplayField('ชื่อ-นามสกุล*',
+            _value(permit.customer['cname'] ?? permit.customerName)),
         _DisplayField('เลขบัตรประจำตัวประชาชน*',
             _value(permit.customer['tax'] ?? permit.customer['taxno'])),
         _DisplayField('อายุ*', _value(permit.customer['age'])),
@@ -155,17 +157,20 @@ class TenantLicenseDetailPersonal extends StatelessWidget {
         _DisplayField('อำเภอ/เขต*', _address('amphoe')),
         _DisplayField('จังหวัด*', _address('province')),
         _DisplayField('เบอร์โทร*', _value(permit.customer['tel'])),
-        _DisplayField('หมายเหตุ', _value(permit.customer['addr_1']), maxLines: 3),
+        _DisplayField('หมายเหตุ', _value(permit.customer['addr_1']),
+            maxLines: 3),
       ];
 
   _ShopData _shopFields() => _ShopData(
         subFields: [
           _DisplayField('บริเวณ', _value(permit.details['subzone'])),
           _DisplayField('โซน', _value(permit.details['zn'] ?? permit.zoneId)),
-          _DisplayField('ล็อกที่', _value(permit.details['ln'] ?? permit.lockCode)),
+          _DisplayField(
+              'ล็อกที่', _value(permit.details['ln'] ?? permit.lockCode)),
         ],
         fields: [
-          _DisplayField('ขนาดพื้นที่เช่า (ตร.ม.)', _value(permit.details['qty'])),
+          _DisplayField(
+              'ขนาดพื้นที่เช่า (ตร.ม.)', _value(permit.details['qty'])),
           _DisplayField('ประเภทสินค้า', _value(permit.customer['stype'])),
           _DisplayField('ชื่อร้าน', _value(permit.customer['scname'])),
         ],
@@ -200,9 +205,13 @@ class TenantLicenseDetailPersonal extends StatelessWidget {
   static String _date(dynamic value) {
     final text = _value(value);
     if (text == '-') return text;
-    return text.length >= 10
-        ? text.substring(0, 10).split('-').reversed.join('-')
-        : text;
+    try {
+      final date = DateTime.parse(text).toLocal();
+      return '${date.day.toString().padLeft(2, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+    } catch (_) {
+      return '-';
+    }
   }
 }
 
@@ -281,7 +290,8 @@ class _PersonFields extends StatelessWidget {
     return Column(
       children: [
         for (final field in fields)
-          _RequestFieldRow(label: field.label, child: _InputField(field: field)),
+          _RequestFieldRow(
+              label: field.label, child: _InputField(field: field)),
       ],
     );
   }
@@ -334,7 +344,8 @@ class _ShopFields extends StatelessWidget {
           ),
         ),
         for (final field in fields.fields)
-          _RequestFieldRow(label: field.label, child: _InputField(field: field)),
+          _RequestFieldRow(
+              label: field.label, child: _InputField(field: field)),
       ],
     );
   }
@@ -523,9 +534,8 @@ class _InputField extends StatelessWidget {
         fontSize: 14,
         color: Color(0xFF0F172A),
       ),
-      decoration: showLabel
-          ? _shopSubDecoration(field.label)
-          : _inputDecoration(null),
+      decoration:
+          showLabel ? _shopSubDecoration(field.label) : _inputDecoration(null),
     );
   }
 }
@@ -560,9 +570,7 @@ class _ContractInputField extends StatelessWidget {
             Icon(
               field.isDate ? Icons.event_rounded : Icons.info_outline_rounded,
               size: 16,
-              color: empty
-                  ? const Color(0xFF94A3B8)
-                  : const Color(0xFF475569),
+              color: empty ? const Color(0xFF94A3B8) : const Color(0xFF475569),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -572,9 +580,8 @@ class _ContractInputField extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 14,
-                  color: empty
-                      ? const Color(0xFF94A3B8)
-                      : const Color(0xFF0F172A),
+                  color:
+                      empty ? const Color(0xFF94A3B8) : const Color(0xFF0F172A),
                 ),
               ),
             ),

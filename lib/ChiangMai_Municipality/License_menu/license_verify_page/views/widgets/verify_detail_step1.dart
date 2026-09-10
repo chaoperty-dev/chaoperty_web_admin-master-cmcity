@@ -431,7 +431,10 @@ class _VerifyInfoTab extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // ─── ภาพรวมคำขอ ───
-              _RequestOverviewCard(requestUuid: context.findAncestorWidgetOfExactType<_Step1Scaffold>()?.requestUuid),
+              _RequestOverviewCard(
+                  requestUuid: context
+                      .findAncestorWidgetOfExactType<_Step1Scaffold>()
+                      ?.requestUuid),
               const SizedBox(height: LaSpace.md),
               // ─── Section: เลือกเอกสาร ───
               const _SectionHeader(),
@@ -1470,10 +1473,10 @@ class _DocumentRow extends StatelessWidget {
     final s = v.toString();
     if (s.isEmpty || s == 'null') return '-';
     try {
-      final dt = DateTime.parse(s);
+      final dt = DateTime.parse(s).toLocal();
       final dd = dt.day.toString().padLeft(2, '0');
       final mm = dt.month.toString().padLeft(2, '0');
-      return '$dd-$mm-${dt.year}';
+      return '$dd-$mm-${dt.year + 543}';
     } catch (_) {
       return '-';
     }
@@ -1789,10 +1792,10 @@ class _DocumentCard extends StatelessWidget {
     final s = v.toString();
     if (s.isEmpty || s == 'null') return '-';
     try {
-      final dt = DateTime.parse(s);
+      final dt = DateTime.parse(s).toLocal();
       final dd = dt.day.toString().padLeft(2, '0');
       final mm = dt.month.toString().padLeft(2, '0');
-      return '$dd/$mm/${dt.year % 100}';
+      return '$dd-$mm-${dt.year + 543}';
     } catch (_) {
       return '-';
     }
@@ -2219,10 +2222,10 @@ class _DocumentGridCard extends StatelessWidget {
     final s = v.toString();
     if (s.isEmpty || s == 'null') return '-';
     try {
-      final dt = DateTime.parse(s);
+      final dt = DateTime.parse(s).toLocal();
       final dd = dt.day.toString().padLeft(2, '0');
       final mm = dt.month.toString().padLeft(2, '0');
-      return '$dd/$mm/${dt.year % 100}';
+      return '$dd-$mm-${dt.year + 543}';
     } catch (_) {
       return '-';
     }
@@ -2565,14 +2568,26 @@ class _RequestOverviewCardState extends State<_RequestOverviewCard> {
   Future<void> _load() async {
     final uuid = widget.requestUuid?.trim() ?? '';
     if (uuid.isEmpty) {
-      if (mounted) setState(() { _loading = false; _error = 'ไม่พบ UUID ของคำขอ'; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = 'ไม่พบ UUID ของคำขอ';
+        });
       return;
     }
     try {
       await _vm.loadFromUuid(uuid);
-      if (mounted) setState(() { _loading = false; _error = _vm.errorMessage; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = _vm.errorMessage;
+        });
     } catch (e) {
-      if (mounted) setState(() { _loading = false; _error = '$e'; });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = '$e';
+        });
     }
   }
 
@@ -2583,23 +2598,35 @@ class _RequestOverviewCardState extends State<_RequestOverviewCard> {
   }
 
   String _value(String keyword) {
-    final field = _vm.dataPerson.where((x) => x.title.contains(keyword)).firstOrNull;
+    final field =
+        _vm.dataPerson.where((x) => x.title.contains(keyword)).firstOrNull;
     return field?.detail.trim() ?? '';
   }
 
   String _shopValue(String keyword) {
-    final field = _vm.dataShop.where((x) => x.title.contains(keyword)).firstOrNull;
+    final field =
+        _vm.dataShop.where((x) => x.title.contains(keyword)).firstOrNull;
     return field?.detail.trim() ?? '';
   }
 
   @override
   Widget build(BuildContext context) {
     if (_loading) return const _RequestOverviewLoading();
-    if (_error != null) return _RequestOverviewError(message: _error!, onRetry: () { setState(() { _loading = true; _error = null; }); _load(); });
+    if (_error != null)
+      return _RequestOverviewError(
+          message: _error!,
+          onRetry: () {
+            setState(() {
+              _loading = true;
+              _error = null;
+            });
+            _load();
+          });
 
     final zone = _vm.selectedZn?.trim() ?? '';
     final subZone = _vm.selectedSubZone?.trim() ?? '';
-    final zoneLabel = [subZone, zone].where((x) => x.isNotEmpty && x != 'null').join(' / ');
+    final zoneLabel =
+        [subZone, zone].where((x) => x.isNotEmpty && x != 'null').join(' / ');
     final area = _vm.selectedLn?.trim() ?? '';
     final contact = _value('ชื่อ-นามสกุล');
     final tax = _value('เลขบัตรประจำตัว');
@@ -2616,56 +2643,108 @@ class _RequestOverviewCardState extends State<_RequestOverviewCard> {
             children: [
               _OverviewStatus(label: status),
               const Spacer(),
-              _OverviewPill(icon: Icons.tag_rounded, label: 'รหัสรายการ: ${_short(uuid)}'),
+              _OverviewPill(
+                  icon: Icons.tag_rounded,
+                  label: 'รหัสรายการ: ${_short(uuid)}'),
             ],
           ),
           const SizedBox(height: 14),
           LayoutBuilder(builder: (context, c) {
             final narrow = c.maxWidth < 650;
-            final left = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            final left =
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const _OverviewHeading('ข้อมูลคำขอ'),
               const SizedBox(height: 6),
-              _OverviewInfo(icon: Icons.location_on_rounded, label: 'บริเวณ / โซน', value: zoneLabel),
+              _OverviewInfo(
+                  icon: Icons.location_on_rounded,
+                  label: 'บริเวณ / โซน',
+                  value: zoneLabel),
               const SizedBox(height: 5),
-              _OverviewInfo(icon: Icons.tag_rounded, label: 'รหัสพื้นที่', value: area),
+              _OverviewInfo(
+                  icon: Icons.tag_rounded, label: 'รหัสพื้นที่', value: area),
             ]);
-            final right = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            final right =
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               const _OverviewHeading('ข้อมูลลูกค้า'),
               const SizedBox(height: 6),
-              _OverviewInfo(icon: Icons.person_rounded, label: 'ชื่อผู้ติดต่อ', value: contact),
+              _OverviewInfo(
+                  icon: Icons.person_rounded,
+                  label: 'ชื่อผู้ติดต่อ',
+                  value: contact),
               const SizedBox(height: 5),
-              _OverviewInfo(icon: Icons.badge_outlined, label: 'เลขประจำตัวผู้เสียภาษี', value: tax),
+              _OverviewInfo(
+                  icon: Icons.badge_outlined,
+                  label: 'เลขประจำตัวผู้เสียภาษี',
+                  value: tax),
             ]);
-            return narrow ? Column(children: [left, const SizedBox(height: 12), right]) : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [Expanded(child: left), const SizedBox(width: 32), Expanded(child: right)]);
+            return narrow
+                ? Column(children: [left, const SizedBox(height: 12), right])
+                : Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Expanded(child: left),
+                    const SizedBox(width: 32),
+                    Expanded(child: right)
+                  ]);
           }),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-            decoration: BoxDecoration(color: LaColors.surfaceMuted, borderRadius: BorderRadius.circular(LaRadius.sm)),
-            child: const Row(children: [Icon(Icons.info_outline_rounded, size: 14, color: LaColors.textMuted), SizedBox(width: 6), Expanded(child: Text('ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด ไปที่แท็บ "ข้อมูลคำขอ"', style: LaText.caption))]),
+            decoration: BoxDecoration(
+                color: LaColors.surfaceMuted,
+                borderRadius: BorderRadius.circular(LaRadius.sm)),
+            child: const Row(children: [
+              Icon(Icons.info_outline_rounded,
+                  size: 14, color: LaColors.textMuted),
+              SizedBox(width: 6),
+              Expanded(
+                  child: Text(
+                      'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด ไปที่แท็บ "ข้อมูลคำขอ"',
+                      style: LaText.caption))
+            ]),
           ),
         ],
       ),
     );
   }
 
-  String _short(String value) => value.length <= 12 ? value : '${value.substring(0, 8)}…';
+  String _short(String value) =>
+      value.length <= 12 ? value : '${value.substring(0, 8)}…';
 }
 
 class _OverviewHeading extends StatelessWidget {
   final String text;
   const _OverviewHeading(this.text);
   @override
-  Widget build(BuildContext context) => Text(text, style: LaText.label.copyWith(color: LaColors.primaryDark, letterSpacing: .8));
+  Widget build(BuildContext context) => Text(text,
+      style: LaText.label
+          .copyWith(color: LaColors.primaryDark, letterSpacing: .8));
 }
 
 class _OverviewInfo extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _OverviewInfo({required this.icon, required this.label, required this.value});
+  const _OverviewInfo(
+      {required this.icon, required this.label, required this.value});
   @override
-  Widget build(BuildContext context) => Row(children: [Container(width: 28, height: 28, decoration: BoxDecoration(color: LaColors.primaryLight, borderRadius: BorderRadius.circular(7)), child: Icon(icon, size: 15, color: LaColors.primaryDark)), const SizedBox(width: 8), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: LaText.caption), Text(value.isEmpty ? '-' : value, maxLines: 1, overflow: TextOverflow.ellipsis, style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600))]))]);
+  Widget build(BuildContext context) => Row(children: [
+        Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+                color: LaColors.primaryLight,
+                borderRadius: BorderRadius.circular(7)),
+            child: Icon(icon, size: 15, color: LaColors.primaryDark)),
+        const SizedBox(width: 8),
+        Expanded(
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(label, style: LaText.caption),
+          Text(value.isEmpty ? '-' : value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: LaText.tableCell.copyWith(fontWeight: FontWeight.w600))
+        ]))
+      ]);
 }
 
 class _OverviewPill extends StatelessWidget {
@@ -2673,20 +2752,49 @@ class _OverviewPill extends StatelessWidget {
   final String label;
   const _OverviewPill({required this.icon, required this.label});
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: LaColors.surfaceMuted, borderRadius: BorderRadius.circular(999), border: Border.all(color: LaColors.border)), child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, size: 13, color: LaColors.textSecondary), const SizedBox(width: 5), Text(label, style: LaText.caption.copyWith(color: LaColors.textSecondary, fontWeight: FontWeight.w600))]));
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: LaColors.surfaceMuted,
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: LaColors.border)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 13, color: LaColors.textSecondary),
+        const SizedBox(width: 5),
+        Text(label,
+            style: LaText.caption.copyWith(
+                color: LaColors.textSecondary, fontWeight: FontWeight.w600))
+      ]));
 }
 
 class _OverviewStatus extends StatelessWidget {
   final String label;
   const _OverviewStatus({required this.label});
   @override
-  Widget build(BuildContext context) => Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: LaColors.statusPendingBg, borderRadius: BorderRadius.circular(999)), child: Row(mainAxisSize: MainAxisSize.min, children: [Container(width: 6, height: 6, decoration: const BoxDecoration(color: LaColors.statusPendingFg, shape: BoxShape.circle)), const SizedBox(width: 6), Text(label, style: LaText.label.copyWith(color: LaColors.statusPendingFg))]));
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+          color: LaColors.statusPendingBg,
+          borderRadius: BorderRadius.circular(999)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+                color: LaColors.statusPendingFg, shape: BoxShape.circle)),
+        const SizedBox(width: 6),
+        Text(label,
+            style: LaText.label.copyWith(color: LaColors.statusPendingFg))
+      ]));
 }
 
 class _RequestOverviewLoading extends StatelessWidget {
   const _RequestOverviewLoading();
   @override
-  Widget build(BuildContext context) => Container(decoration: LaDecor.card(), padding: const EdgeInsets.all(24), child: const Center(child: CircularProgressIndicator(strokeWidth: 2)));
+  Widget build(BuildContext context) => Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(24),
+      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)));
 }
 
 class _RequestOverviewError extends StatelessWidget {
@@ -2694,5 +2802,14 @@ class _RequestOverviewError extends StatelessWidget {
   final VoidCallback onRetry;
   const _RequestOverviewError({required this.message, required this.onRetry});
   @override
-  Widget build(BuildContext context) => Container(decoration: LaDecor.card(), padding: const EdgeInsets.all(14), child: Row(children: [const Icon(Icons.error_outline_rounded, color: LaColors.statusRejectedFg), const SizedBox(width: 8), Expanded(child: Text(message, style: LaText.caption)), TextButton(onPressed: onRetry, child: const Text('ลองใหม่'))]));
+  Widget build(BuildContext context) => Container(
+      decoration: LaDecor.card(),
+      padding: const EdgeInsets.all(14),
+      child: Row(children: [
+        const Icon(Icons.error_outline_rounded,
+            color: LaColors.statusRejectedFg),
+        const SizedBox(width: 8),
+        Expanded(child: Text(message, style: LaText.caption)),
+        TextButton(onPressed: onRetry, child: const Text('ลองใหม่'))
+      ]));
 }

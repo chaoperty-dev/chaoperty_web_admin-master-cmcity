@@ -144,8 +144,7 @@ class PrepaymentData {
     );
   }
 
-  double get grandTotal =>
-      details.fold(0.0, (sum, e) => sum + e.totalAmount);
+  double get grandTotal => details.fold(0.0, (sum, e) => sum + e.totalAmount);
 
   String get grandTotalDisplay => formatMoney(grandTotal);
 
@@ -161,23 +160,22 @@ class PrepaymentResponse {
   factory PrepaymentResponse.fromJson(Map<String, dynamic> json) {
     final d = json['data'];
     return PrepaymentResponse(
-      data: d is Map
-          ? PrepaymentData.fromJson(d as Map<String, dynamic>)
-          : null,
+      data:
+          d is Map ? PrepaymentData.fromJson(d as Map<String, dynamic>) : null,
     );
   }
 }
 
 /// Helper format (ทำซ้ำจาก detail model เพื่อไม่ให้เกิด circular import)
-String formatMoney(double v) =>
-    NumberFormat('#,##0.00', 'en_US').format(v);
+String formatMoney(double v) => NumberFormat('#,##0.00', 'en_US').format(v);
 
 String formatPrepayDate(String? raw) {
   if (raw == null || raw.isEmpty) return '-';
   try {
-    final dt = DateTime.parse(raw);
-    return DateFormat('dd-MM-yyyy').format(dt);
+    final dt = DateTime.parse(raw).toLocal();
+    return '${dt.day.toString().padLeft(2, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
   } catch (_) {
-    return raw;
+    return '-';
   }
 }

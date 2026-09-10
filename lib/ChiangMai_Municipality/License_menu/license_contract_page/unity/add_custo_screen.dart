@@ -34,6 +34,13 @@ class Add_Custo_Screen extends StatefulWidget {
 }
 
 class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
+  String _formatThaiDate(String raw) {
+    final date = DateTime.tryParse(raw)?.toLocal();
+    if (date == null) return '-';
+    return '${date.day.toString().padLeft(2, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+  }
+
   final List<TypeModel> typeModels = [];
   List<TransModel> transModels = [];
   final _formKey = GlobalKey<FormState>();
@@ -312,8 +319,6 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) return;
     if (typeModels.isEmpty) {
-
-
       return;
     }
 
@@ -514,8 +519,7 @@ class _Add_Custo_ScreenState extends State<Add_Custo_Screen> {
             Expanded(
               child: Text(
                 Status4Form_birth.text.isNotEmpty
-                    ? DateFormat('dd-MM-yyyy')
-                        .format(DateTime.parse(Status4Form_birth.text))
+                    ? _formatThaiDate(Status4Form_birth.text)
                     : 'ระบุวันเกิด',
                 style: TextStyle(
                   color: Status4Form_birth.text.isNotEmpty

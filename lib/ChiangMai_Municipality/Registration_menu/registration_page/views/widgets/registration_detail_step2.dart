@@ -45,7 +45,9 @@ class RegistrationDetailStep2 extends StatelessWidget {
   String _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return '—';
     try {
-      return DateFormat('dd-MM-yyyy').format(DateTime.parse(raw));
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
       return raw;
     }

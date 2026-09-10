@@ -17,9 +17,8 @@
 // กลับมาในแต่ละแถวด้วย ส่วน query filter ใช้ `zser=<int>` ที่ root level
 // ============================================================================
 
-import 'package:intl/intl.dart';
-
 import '../unity/license_status_labels.dart';
+import 'package:intl/intl.dart';
 
 /// module — ดึงจาก json['module']
 class LicenseRequestModule {
@@ -198,8 +197,7 @@ class LicenseRequestItem {
     return LicenseRequestItem(
       uuid: (json['uuid'] ?? '').toString(),
       module: moduleJson is Map
-          ? LicenseRequestModule.fromJson(
-              Map<String, dynamic>.from(moduleJson))
+          ? LicenseRequestModule.fromJson(Map<String, dynamic>.from(moduleJson))
           : const LicenseRequestModule(),
       customer: customerJson is Map
           ? LicenseRequestCustomer.fromJson(
@@ -272,9 +270,11 @@ class LicenseRequestsListResult {
 String formatLicenseRequestDate(String? raw) {
   if (raw == null || raw.isEmpty) return '-';
   try {
-    final dt = DateTime.parse(raw);
-    return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+    final dt = DateTime.parse(raw).toLocal();
+    return '${dt.day.toString().padLeft(2, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   } catch (_) {
-    return raw;
+    return '-';
   }
 }

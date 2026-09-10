@@ -10,7 +10,6 @@ import 'dart:typed_data';
 
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart' show immutable;
 
@@ -781,9 +780,10 @@ class _PaymentSummaryCard extends StatelessWidget {
     if (raw == null || raw.isEmpty) return null;
     try {
       final dt = DateTime.parse(raw);
-      return DateFormat('dd/MM/yyyy').format(dt);
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
-      return raw;
+      return null;
     }
   }
 
@@ -1907,10 +1907,12 @@ class _StatusDetailGrid extends StatelessWidget {
 
   String _fmtDate(String s) {
     try {
-      final dt = DateTime.parse(s);
-      return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+      final dt = DateTime.parse(s).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return s;
+      return '-';
     }
   }
 

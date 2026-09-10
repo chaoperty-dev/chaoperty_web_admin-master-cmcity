@@ -11,7 +11,6 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/auto_exp_models.dart';
@@ -163,8 +162,10 @@ class AddBillingTable extends StatelessWidget {
                                     constraints:
                                         const BoxConstraints(maxWidth: 180),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text(
                                           row.expname ?? '-',
@@ -228,11 +229,7 @@ class AddBillingTable extends StatelessWidget {
                                             (row.sdate == null ||
                                                     row.sdate!.isEmpty)
                                                 ? 'เลือกวันที่'
-                                                : _displayDateFormat.format(
-                                                    DateTime.tryParse(
-                                                            row.sdate!) ??
-                                                        DateTime.now(),
-                                                  ),
+                                                : _displayThaiDate(row.sdate),
                                             style: LcText.tableCell.copyWith(
                                               color: (row.sdate == null ||
                                                       row.sdate!.isEmpty)
@@ -467,7 +464,13 @@ class AddBillingTable extends StatelessWidget {
     );
   }
 
-  static final _displayDateFormat = DateFormat('dd-MM-yyyy');
+  String _displayThaiDate(String? raw) {
+    if (raw == null || raw.isEmpty) return '-';
+    final date = DateTime.tryParse(raw);
+    if (date == null) return '-';
+    return '${date.day.toString().padLeft(2, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+  }
 
   Future<void> _pickDate(
       BuildContext context, AddBillingViewModel vm, LcExpTransModel row) async {
@@ -695,7 +698,8 @@ class _AddBillingPageState extends State<_AddBillingPage> {
                   horizontal: LrSpace.lg, vertical: LrSpace.md),
               decoration: const BoxDecoration(
                 color: LrColors.surfaceMuted,
-                border: Border(top: BorderSide(color: LrColors.border, width: 1)),
+                border:
+                    Border(top: BorderSide(color: LrColors.border, width: 1)),
               ),
               child: Consumer<AddBillingViewModel>(
                 builder: (context, vm, _) => Row(
@@ -716,8 +720,7 @@ class _AddBillingPageState extends State<_AddBillingPage> {
                     ),
                     const Spacer(),
                     _FooterCancelButton(
-                      onTap:
-                          _isSaving ? null : () => Navigator.pop(context),
+                      onTap: _isSaving ? null : () => Navigator.pop(context),
                     ),
                     const SizedBox(width: LrSpace.sm),
                     _FooterSaveButton(
@@ -915,9 +918,8 @@ class _FooterSaveButtonState extends State<_FooterSaveButton> {
               borderRadius: BorderRadius.circular(LrRadius.md),
               boxShadow: [
                 BoxShadow(
-                  color: LrColors.primary.withOpacity(disabled
-                      ? 0
-                      : (_hover ? .35 : .25)),
+                  color: LrColors.primary
+                      .withOpacity(disabled ? 0 : (_hover ? .35 : .25)),
                   blurRadius: _hover ? 12 : 8,
                   offset: const Offset(0, 4),
                 ),
@@ -932,8 +934,7 @@ class _FooterSaveButtonState extends State<_FooterSaveButton> {
                     height: 14,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor:
-                          AlwaysStoppedAnimation<Color>(Colors.white),
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                     ),
                   )
                 else
@@ -1389,7 +1390,6 @@ class _StyledDropdown<T> extends StatelessWidget {
     );
   }
 }
-
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Widget — UUID Subtitle (แสดงใต้ชื่อรายการ: "รหัส 01a0184a…" + copy on tap)

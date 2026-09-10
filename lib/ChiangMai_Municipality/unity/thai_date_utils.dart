@@ -24,6 +24,28 @@
 //   return short ? shortMonths[month] : fullMonths[month];
 // }
 
+String formatThaiDate(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return '-';
+  try {
+    final date = DateTime.parse(raw).toLocal();
+    return '${date.day.toString().padLeft(2, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+  } catch (_) {
+    return '-';
+  }
+}
+
+String formatThaiDateTime(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return '-';
+  try {
+    final date = DateTime.parse(raw).toLocal();
+    return '${formatThaiDate(raw)} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  } catch (_) {
+    return '-';
+  }
+}
+
 // String toThaiNumber(String input) {
 //   const arabicToThai = {
 //     '0': '๐',

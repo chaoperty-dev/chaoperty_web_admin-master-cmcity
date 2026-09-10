@@ -14,6 +14,7 @@ import 'package:chaoperty/Constant/Myconstant.dart';
 import 'package:chaoperty/Constant/global_http.dart';
 import 'package:chaoperty/Model/GetSubZone_Model.dart';
 import 'package:chaoperty/Model/GetZone_Model.dart';
+import 'package:http/http.dart' as http;
 
 import '../../../unity/area_zones_api.dart';
 import '../models/tenant_permit_models.dart';
@@ -48,22 +49,33 @@ class TenantLicenseService {
     try {
       final headers = await MyHeaders.build();
       debugPrint('[TenantLicenseService] GET permits $uri');
-      final response = await httpClient.get(uri, headers: headers);
+      final response = await http.get(uri, headers: headers);
       print('[TenantLicenseService] permits status=${response.statusCode}');
-      if (response.statusCode != 200) return const TenantPermitListResult(
-        items: [], currentPage: 1, lastPage: 1, total: 0,
-      );
+      if (response.statusCode != 200)
+        return const TenantPermitListResult(
+          items: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        );
       final decoded = jsonDecode(response.body);
-      if (decoded is! Map) return const TenantPermitListResult(
-        items: [], currentPage: 1, lastPage: 1, total: 0,
-      );
+      if (decoded is! Map)
+        return const TenantPermitListResult(
+          items: [],
+          currentPage: 1,
+          lastPage: 1,
+          total: 0,
+        );
       return TenantPermitListResult.fromJson(
         Map<String, dynamic>.from(decoded),
       );
     } catch (e) {
       print('[TenantLicenseService] fetchPermits error: $e');
       return const TenantPermitListResult(
-        items: [], currentPage: 1, lastPage: 1, total: 0,
+        items: [],
+        currentPage: 1,
+        lastPage: 1,
+        total: 0,
       );
     }
   }
@@ -77,8 +89,9 @@ class TenantLicenseService {
     try {
       final headers = await MyHeaders.build();
       print('[TenantLicenseService] GET permit detail $uri');
-      final response = await httpClient.get(uri, headers: headers);
-      print('[TenantLicenseService] permit detail status=${response.statusCode}');
+      final response = await http.get(uri, headers: headers);
+      print(
+          '[TenantLicenseService] permit detail status=${response.statusCode}');
       if (response.statusCode != 200) return null;
       final decoded = jsonDecode(response.body);
       if (decoded is! Map) return null;
@@ -144,7 +157,7 @@ class TenantLicenseService {
     try {
       final headers = await MyHeaders.build();
       headers['Accept'] = 'application/pdf';
-      final response = await httpClient.get(uri, headers: headers);
+      final response = await http.get(uri, headers: headers);
       return response.statusCode == 200 && response.bodyBytes.isNotEmpty
           ? response.bodyBytes
           : null;
@@ -163,7 +176,7 @@ class TenantLicenseService {
     );
     try {
       final headers = await MyHeaders.build();
-      final response = await httpClient.get(uri, headers: headers);
+      final response = await http.get(uri, headers: headers);
       return response.statusCode == 200 && response.bodyBytes.isNotEmpty
           ? response.bodyBytes
           : null;
@@ -183,7 +196,7 @@ class TenantLicenseService {
     );
     try {
       final headers = await MyHeaders.build();
-      final response = await httpClient.get(uri, headers: headers);
+      final response = await http.get(uri, headers: headers);
       return response.statusCode == 200 && response.bodyBytes.isNotEmpty
           ? response.bodyBytes
           : null;
@@ -199,7 +212,7 @@ class TenantLicenseService {
     );
     try {
       final headers = await MyHeaders.build();
-      final response = await httpClient.post(uri, headers: headers);
+      final response = await http.post(uri, headers: headers);
       return response.statusCode >= 200 && response.statusCode < 300;
     } catch (e) {
       print('[TenantLicenseService] retryPermit error: $e');
@@ -211,7 +224,7 @@ class TenantLicenseService {
     final uri = Uri.parse('${MyConstant().domain_v1}/admin/permits/$path');
     try {
       final headers = await MyHeaders.build();
-      final response = await httpClient.get(uri, headers: headers);
+      final response = await http.get(uri, headers: headers);
       if (response.statusCode != 200) return null;
       final decoded = jsonDecode(response.body);
       return decoded is Map ? Map<String, dynamic>.from(decoded) : null;
@@ -226,7 +239,10 @@ class TenantLicenseService {
   List<Map<String, dynamic>> _extractList(Map<String, dynamic>? body) {
     final data = body?['data'];
     if (data is List) {
-      return data.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+      return data
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
     return <Map<String, dynamic>>[];
   }
@@ -236,7 +252,12 @@ class TenantLicenseService {
   Future<List<ZoneModel>> fetchZones({String? zoneSubSer}) async {
     final raw = await _zonesApi.fetchZones(groupSer: zoneSubSer);
     final defaultZone = ZoneModel.fromJson({
-      'ser': '0', 'rser': '0', 'zn': 'ทั้งหมด', 'qty': '0', 'img': '0', 'data_update': '0',
+      'ser': '0',
+      'rser': '0',
+      'zn': 'ทั้งหมด',
+      'qty': '0',
+      'img': '0',
+      'data_update': '0',
     });
     final zones = <ZoneModel>[defaultZone];
     for (final row in raw) {
@@ -262,7 +283,12 @@ class TenantLicenseService {
   Future<List<SubZoneModel>> fetchSubZones() async {
     final raw = await _zonesApi.fetchGroups();
     final defaultMap = <String, dynamic>{
-      'ser': '0', 'rser': '0', 'zn': 'ทั้งหมด', 'qty': '0', 'img': '0', 'data_update': '0',
+      'ser': '0',
+      'rser': '0',
+      'zn': 'ทั้งหมด',
+      'qty': '0',
+      'img': '0',
+      'data_update': '0',
     };
     final subs = <SubZoneModel>[SubZoneModel.fromJson(defaultMap)];
     for (final row in raw) {

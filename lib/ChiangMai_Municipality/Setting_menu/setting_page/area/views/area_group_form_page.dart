@@ -193,7 +193,7 @@ String _formatDateTime(String raw) {
   }
   if (dt == null) return raw;
   // Convert to Buddhist year (พ.ศ. = ค.ศ. + 543)
-  final yyyy = dt.year.toString();
+  final yyyy = (dt.year + 543).toString();
   final dd = dt.day.toString().padLeft(2, '0');
   final mm = dt.month.toString().padLeft(2, '0');
   final hh = dt.hour.toString().padLeft(2, '0');
@@ -405,8 +405,7 @@ class _FooterBtnState extends State<_FooterBtn> {
           onTap: widget.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 120),
-            padding:
-                const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 9),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: _hover
@@ -460,15 +459,13 @@ class _FooterBtnState extends State<_FooterBtn> {
         onTap: widget.onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 120),
-          padding:
-              const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
             color: _hover ? AeaColors.statusRejectedBg : Colors.white,
             borderRadius: BorderRadius.circular(AeaRadius.md),
             border: Border.all(
-              color: _hover
-                  ? AeaColors.statusRejectedFg
-                  : AeaColors.borderStrong,
+              color:
+                  _hover ? AeaColors.statusRejectedFg : AeaColors.borderStrong,
             ),
           ),
           child: Row(

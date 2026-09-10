@@ -35,8 +35,7 @@ class TenantLicenseTable extends StatelessWidget {
                   statusLabel: vm.statusLabel(permits[i].status),
                   onView: () => _openDetail(context, permits[i]),
                 ),
-                if (i < permits.length - 1)
-                  const SizedBox(height: LaSpace.sm),
+                if (i < permits.length - 1) const SizedBox(height: LaSpace.sm),
               ],
             ],
           );
@@ -95,13 +94,20 @@ class _TableHeader extends StatelessWidget {
       child: const Row(
         children: [
           SizedBox(width: 110),
-          Expanded(flex: 3, child: Text('เลขที่ใบอนุญาต', style: LaText.tableHeader)),
-          Expanded(flex: 4, child: Text('ผู้ถือใบอนุญาต', style: LaText.tableHeader)),
+          Expanded(
+              flex: 3,
+              child: Text('เลขที่ใบอนุญาต', style: LaText.tableHeader)),
+          Expanded(
+              flex: 4,
+              child: Text('ผู้ถือใบอนุญาต', style: LaText.tableHeader)),
           Expanded(flex: 2, child: Text('โซน', style: LaText.tableHeader)),
-          Expanded(flex: 2, child: Text('รหัสพื้นที่', style: LaText.tableHeader)),
+          Expanded(
+              flex: 2, child: Text('รหัสพื้นที่', style: LaText.tableHeader)),
           Expanded(flex: 2, child: Text('วันมีผล', style: LaText.tableHeader)),
-          Expanded(flex: 2, child: Text('วันหมดอายุ', style: LaText.tableHeader)),
-          Expanded(flex: 2, child: Text('วันที่ออก', style: LaText.tableHeader)),
+          Expanded(
+              flex: 2, child: Text('วันหมดอายุ', style: LaText.tableHeader)),
+          Expanded(
+              flex: 2, child: Text('วันที่ออก', style: LaText.tableHeader)),
           Expanded(flex: 2, child: Text('สถานะ', style: LaText.tableHeader)),
         ],
       ),
@@ -135,13 +141,23 @@ class _PermitRow extends StatelessWidget {
         children: [
           SizedBox(width: 110, child: _ViewButton(onTap: onView)),
           Expanded(flex: 3, child: _Cell(permit.permitNo, mono: true)),
-          Expanded(flex: 4, child: _Cell(permit.customerName, tooltip: permit.customerName)),
+          Expanded(
+              flex: 4,
+              child: _Cell(permit.customerName, tooltip: permit.customerName)),
           Expanded(flex: 2, child: _Cell(permit.zoneId)),
           Expanded(flex: 2, child: _Cell(permit.lockCode, mono: true)),
-          Expanded(flex: 2, child: _Cell(_formatDate(permit.validFrom), mono: true)),
-          Expanded(flex: 2, child: _Cell(_formatDate(permit.validUntil), mono: true)),
-          Expanded(flex: 2, child: _Cell(_formatDate(permit.issuedAt), mono: true)),
-          Expanded(flex: 2, child: Align(alignment: Alignment.centerLeft, child: _StatusPill(label: statusLabel, palette: palette))),
+          Expanded(
+              flex: 2, child: _Cell(_formatDate(permit.validFrom), mono: true)),
+          Expanded(
+              flex: 2,
+              child: _Cell(_formatDate(permit.validUntil), mono: true)),
+          Expanded(
+              flex: 2, child: _Cell(_formatDate(permit.issuedAt), mono: true)),
+          Expanded(
+              flex: 2,
+              child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: _StatusPill(label: statusLabel, palette: palette))),
         ],
       ),
     );
@@ -178,15 +194,25 @@ class _PermitCard extends StatelessWidget {
                   color: LaColors.primaryLight,
                   borderRadius: BorderRadius.circular(LaRadius.sm),
                 ),
-                child: const Icon(Icons.description_outlined, color: LaColors.primaryDark, size: 20),
+                child: const Icon(Icons.description_outlined,
+                    color: LaColors.primaryDark, size: 20),
               ),
               const SizedBox(width: LaSpace.sm),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(permit.permitNo.isEmpty ? '-' : permit.permitNo, maxLines: 1, overflow: TextOverflow.ellipsis, style: LaText.tableCell.copyWith(fontFamily: LaText.fontBold, fontWeight: FontWeight.w700)),
-                    Text(permit.customerName.isEmpty ? '-' : permit.customerName, maxLines: 1, overflow: TextOverflow.ellipsis, style: LaText.caption),
+                    Text(permit.permitNo.isEmpty ? '-' : permit.permitNo,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LaText.tableCell.copyWith(
+                            fontFamily: LaText.fontBold,
+                            fontWeight: FontWeight.w700)),
+                    Text(
+                        permit.customerName.isEmpty ? '-' : permit.customerName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: LaText.caption),
                   ],
                 ),
               ),
@@ -194,12 +220,22 @@ class _PermitCard extends StatelessWidget {
             ],
           ),
           const Divider(height: LaSpace.lg, color: LaColors.border),
-          _InfoLine(label: 'โซน / รหัสพื้นที่', value: '${permit.zoneId.isEmpty ? '-' : permit.zoneId} / ${permit.lockCode.isEmpty ? '-' : permit.lockCode}'),
-          _InfoLine(label: 'วันมีผล - วันหมดอายุ', value: '${_formatDate(permit.validFrom)} - ${_formatDate(permit.validUntil)}'),
-          if (permit.issuedBy.isNotEmpty) _InfoLine(label: 'ออกโดย', value: permit.issuedBy),
-          if (permit.failureMessage.isNotEmpty) _InfoLine(label: 'ข้อผิดพลาด', value: permit.failureMessage),
+          _InfoLine(
+              label: 'โซน / รหัสพื้นที่',
+              value:
+                  '${permit.zoneId.isEmpty ? '-' : permit.zoneId} / ${permit.lockCode.isEmpty ? '-' : permit.lockCode}'),
+          _InfoLine(
+              label: 'วันมีผล - วันหมดอายุ',
+              value:
+                  '${_formatDate(permit.validFrom)} - ${_formatDate(permit.validUntil)}'),
+          if (permit.issuedBy.isNotEmpty)
+            _InfoLine(label: 'ออกโดย', value: permit.issuedBy),
+          if (permit.failureMessage.isNotEmpty)
+            _InfoLine(label: 'ข้อผิดพลาด', value: permit.failureMessage),
           const SizedBox(height: LaSpace.sm),
-          Align(alignment: Alignment.centerRight, child: _ViewButton(onTap: onView)),
+          Align(
+              alignment: Alignment.centerRight,
+              child: _ViewButton(onTap: onView)),
         ],
       ),
     );
@@ -219,7 +255,11 @@ class _InfoLine extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(width: 145, child: Text(label, style: LaText.caption)),
-          Expanded(child: Text(value.isEmpty ? '-' : value, maxLines: 2, overflow: TextOverflow.ellipsis, style: LaText.tableCell.copyWith(fontSize: 12))),
+          Expanded(
+              child: Text(value.isEmpty ? '-' : value,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: LaText.tableCell.copyWith(fontSize: 12))),
         ],
       ),
     );
@@ -242,7 +282,8 @@ class _Cell extends StatelessWidget {
           value.isEmpty ? '-' : value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: LaText.tableCell.copyWith(fontFamily: mono ? 'monospace' : LaText.fontRegular),
+          style: LaText.tableCell
+              .copyWith(fontFamily: mono ? 'monospace' : LaText.fontRegular),
         ),
       ),
     );
@@ -259,7 +300,14 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: LaDecor.pill(palette.bg, palette.fg),
-      child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontFamily: LaText.fontBold, fontSize: 11, color: palette.fg, fontWeight: FontWeight.w700)),
+      child: Text(label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+              fontFamily: LaText.fontBold,
+              fontSize: 11,
+              color: palette.fg,
+              fontWeight: FontWeight.w700)),
     );
   }
 }
@@ -274,7 +322,9 @@ class _ViewButton extends StatelessWidget {
       onPressed: onTap,
       icon: const Icon(Icons.visibility_outlined, size: 14),
       label: const Text('เรียกดู'),
-      style: TextButton.styleFrom(foregroundColor: LaColors.primaryDark, visualDensity: VisualDensity.compact),
+      style: TextButton.styleFrom(
+          foregroundColor: LaColors.primaryDark,
+          visualDensity: VisualDensity.compact),
     );
   }
 }
@@ -292,11 +342,16 @@ class _EmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.description_outlined, size: 48, color: LaColors.textMuted),
+            const Icon(Icons.description_outlined,
+                size: 48, color: LaColors.textMuted),
             const SizedBox(height: 8),
-            Text(filtered ? 'ไม่พบใบอนุญาตที่ตรงกัน' : 'ยังไม่มีใบอนุญาต', style: LaText.bodyMuted),
+            Text(filtered ? 'ไม่พบใบอนุญาตที่ตรงกัน' : 'ยังไม่มีใบอนุญาต',
+                style: LaText.bodyMuted),
             const SizedBox(height: 12),
-            OutlinedButton.icon(onPressed: onRefresh, icon: const Icon(Icons.refresh_rounded), label: const Text('รีเฟรช')),
+            OutlinedButton.icon(
+                onPressed: onRefresh,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('รีเฟรช')),
           ],
         ),
       ),
@@ -306,7 +361,11 @@ class _EmptyState extends StatelessWidget {
 
 String _formatDate(String raw) {
   if (raw.isEmpty) return '-';
-  final value = raw.length >= 10 ? raw.substring(0, 10) : raw;
-  final parts = value.split('-');
-  return parts.length == 3 ? '${parts[2]}-${parts[1]}-${parts[0]}' : raw;
+  try {
+    final date = DateTime.parse(raw).toLocal();
+    return '${date.day.toString().padLeft(2, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+  } catch (_) {
+    return '-';
+  }
 }

@@ -231,8 +231,7 @@ class _RoundSummaryBanner extends StatelessWidget {
           ),
           if (round.currentStepOrder != null)
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               decoration: BoxDecoration(
                 color: LaColors.statusPendingBg,
                 borderRadius: BorderRadius.circular(LaRadius.pill),
@@ -254,11 +253,12 @@ class _RoundSummaryBanner extends StatelessWidget {
   String _formatDateTime(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
     try {
-      final dt = DateTime.parse(raw);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return raw;
+      return '-';
     }
   }
 }
@@ -350,9 +350,7 @@ class _TimelineItem extends StatelessWidget {
         icon: Icons.check_rounded,
         label: label.isEmpty ? 'ผ่าน' : label,
       );
-    } else if (s == 'failed' ||
-        s == 'rejected' ||
-        s.contains('ไม่ผ่าน')) {
+    } else if (s == 'failed' || s == 'rejected' || s.contains('ไม่ผ่าน')) {
       return _StyleData(
         bg: LaColors.statusRejectedBg,
         fg: LaColors.statusRejectedFg,
@@ -523,8 +521,8 @@ class _DotWithPulseState extends State<_DotWithPulse>
                 decoration: BoxDecoration(
                   color: widget.bg,
                   shape: BoxShape.circle,
-                  border: Border.all(
-                      color: widget.fg.withOpacity(.4), width: 1.5),
+                  border:
+                      Border.all(color: widget.fg.withOpacity(.4), width: 1.5),
                   boxShadow: widget.animate
                       ? [
                           BoxShadow(
@@ -687,11 +685,9 @@ class _Content extends StatelessWidget {
 
   Widget _remarkBox() {
     final isCollecting = _isCollectingRemark();
-    final bgColor = isCollecting
-        ? LaColors.statusApprovedBg
-        : LaColors.surfaceMuted;
-    final accentColor =
-        isCollecting ? LaColors.statusApprovedFg : st.fg;
+    final bgColor =
+        isCollecting ? LaColors.statusApprovedBg : LaColors.surfaceMuted;
+    final accentColor = isCollecting ? LaColors.statusApprovedFg : st.fg;
     final textColor =
         isCollecting ? LaColors.statusApprovedFg : LaColors.textSecondary;
 
@@ -724,8 +720,7 @@ class _Content extends StatelessWidget {
               style: LaText.caption.copyWith(
                 color: textColor,
                 fontStyle: FontStyle.italic,
-                fontWeight:
-                    isCollecting ? FontWeight.w700 : FontWeight.w400,
+                fontWeight: isCollecting ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
           ),
@@ -747,11 +742,12 @@ class _Content extends StatelessWidget {
   String _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return '-';
     try {
-      final dt = DateTime.parse(raw);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year} '
+      final dt = DateTime.parse(raw).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
           '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return raw;
+      return '-';
     }
   }
 

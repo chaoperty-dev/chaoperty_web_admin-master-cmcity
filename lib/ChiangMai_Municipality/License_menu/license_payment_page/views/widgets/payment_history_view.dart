@@ -105,7 +105,8 @@ class _PaymentHistoryViewState extends State<PaymentHistoryView> {
       builder: (ctx, scrollCtrl) => Container(
         decoration: const BoxDecoration(
           color: LaColors.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(LaRadius.lg)),
+          borderRadius:
+              BorderRadius.vertical(top: Radius.circular(LaRadius.lg)),
         ),
         child: Column(
           children: [
@@ -170,8 +171,8 @@ class _PaymentHistoryViewState extends State<PaymentHistoryView> {
                   Text('ประวัติการรับชำระ', style: LaText.h2),
                   Text(
                     'uuid: ${_short(widget.paymentUuid)}',
-                    style: LaText.caption
-                        .copyWith(fontFamily: 'monospace', color: LaColors.textMuted),
+                    style: LaText.caption.copyWith(
+                        fontFamily: 'monospace', color: LaColors.textMuted),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -199,9 +200,11 @@ class _PaymentHistoryViewState extends State<PaymentHistoryView> {
             Row(
               children: [
                 Expanded(
-                  child: _kv('เลขที่ใบเสร็จ', p.paymentNo.isEmpty ? '-' : p.paymentNo),
+                  child: _kv(
+                      'เลขที่ใบเสร็จ', p.paymentNo.isEmpty ? '-' : p.paymentNo),
                 ),
-                _kv('สถานะ', p.statusLabel, isStatus: true, statusText: p.status),
+                _kv('สถานะ', p.statusLabel,
+                    isStatus: true, statusText: p.status),
               ],
             ),
             const SizedBox(height: LaSpace.sm),
@@ -211,7 +214,8 @@ class _PaymentHistoryViewState extends State<PaymentHistoryView> {
                   child: _kv('จำนวนเงิน', formatMoney(p.amount)),
                 ),
                 Expanded(
-                  child: _kv('ผู้ชำระ', p.payerName.isEmpty ? '-' : p.payerName),
+                  child:
+                      _kv('ผู้ชำระ', p.payerName.isEmpty ? '-' : p.payerName),
                 ),
               ],
             ),
@@ -379,8 +383,8 @@ class _ErrorRow extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             child: Text(message,
-                style: LaText.caption
-                    .copyWith(color: LaColors.statusRejectedFg)),
+                style:
+                    LaText.caption.copyWith(color: LaColors.statusRejectedFg)),
           ),
           TextButton(onPressed: onRetry, child: const Text('ลองใหม่')),
         ],
@@ -486,8 +490,8 @@ class _TimelineRow extends StatelessWidget {
                     Expanded(
                       child: Text(
                         title,
-                        style: LaText.body
-                            .copyWith(fontWeight: FontWeight.w600),
+                        style:
+                            LaText.body.copyWith(fontWeight: FontWeight.w600),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -495,8 +499,8 @@ class _TimelineRow extends StatelessWidget {
                     if (time != null && time!.isNotEmpty)
                       Text(
                         _shortTime(time!),
-                        style: LaText.caption
-                            .copyWith(color: LaColors.textMuted),
+                        style:
+                            LaText.caption.copyWith(color: LaColors.textMuted),
                       ),
                   ],
                 ),
@@ -537,10 +541,10 @@ class _TimelineRow extends StatelessWidget {
   static String _shortTime(String raw) {
     if (raw.isEmpty) return '';
     try {
-      final dt = DateTime.parse(raw);
-      final d = dt.toLocal();
+      final d = DateTime.parse(raw).toLocal();
       String two(int n) => n.toString().padLeft(2, '0');
-      return '${d.day}/${d.month}/${d.year} ${two(d.hour)}:${two(d.minute)}';
+      return '${two(d.day)}-${two(d.month)}-${d.year + 543} '
+          '${two(d.hour)}:${two(d.minute)}';
     } catch (_) {
       return raw;
     }

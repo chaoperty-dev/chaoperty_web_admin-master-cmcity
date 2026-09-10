@@ -74,7 +74,8 @@ class LicenseAnnounceTable extends StatelessWidget {
           // Empty state ต้องอ่าน searchQuery/selectedZoneSer ด้วย — ใช้ Consumer เฉพาะ branch
           return Selector<LicenseAnnounceViewModel, _EmptyStateState>(
             selector: (_, vm) => _EmptyStateState(
-              hasFilter: vm.searchQuery.isNotEmpty || vm.selectedZoneSer != null,
+              hasFilter:
+                  vm.searchQuery.isNotEmpty || vm.selectedZoneSer != null,
             ),
             builder: (context, e, _) => _EmptyState(
               hasFilter: e.hasFilter,
@@ -92,8 +93,7 @@ class LicenseAnnounceTable extends StatelessWidget {
                 const LinearProgressIndicator(
                   minHeight: 2,
                   backgroundColor: LrColors.surfaceMuted,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(LrColors.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(LrColors.primary),
                 ),
               for (int i = 0; i < state.filtered.length; i++) ...[
                 _AnnounceCard(
@@ -122,8 +122,7 @@ class LicenseAnnounceTable extends StatelessWidget {
                 const LinearProgressIndicator(
                   minHeight: 2,
                   backgroundColor: LrColors.surfaceMuted,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(LrColors.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(LrColors.primary),
                 ),
               for (int i = 0; i < state.filtered.length; i++)
                 _dataRow(context, vm, state.filtered[i], i),
@@ -161,9 +160,14 @@ class LicenseAnnounceTable extends StatelessWidget {
 
   Widget _dataRow(BuildContext context, LicenseAnnounceViewModel vm,
       LicenseAnnounceItem p, int index) {
-    final f = DateFormat('dd-MM-yyyy');
     DateTime parse(String s) => DateTime.tryParse(s) ?? DateTime.now();
-    String safeDate(String s) => s.isEmpty ? '-' : f.format(parse(s));
+    String safeDate(String s) {
+      if (s.isEmpty) return '-';
+      final date = parse(s);
+      return '${date.day.toString().padLeft(2, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+    }
+
     final palette =
         StatusPalette.of(p.computedStatus.isEmpty ? null : p.computedStatus);
     return _HoverableRow(
@@ -272,11 +276,16 @@ class _AnnounceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final f = DateFormat('dd-MM-yyyy');
     DateTime parse(String s) => DateTime.tryParse(s) ?? DateTime.now();
-    String safeDate(String s) => s.isEmpty ? '-' : f.format(parse(s));
-    final palette =
-        StatusPalette.of(item.computedStatus.isEmpty ? null : item.computedStatus);
+    String safeDate(String s) {
+      if (s.isEmpty) return '-';
+      final date = parse(s);
+      return '${date.day.toString().padLeft(2, '0')}-'
+          '${date.month.toString().padLeft(2, '0')}-${date.year + 543}';
+    }
+
+    final palette = StatusPalette.of(
+        item.computedStatus.isEmpty ? null : item.computedStatus);
     final statusLabel = item.computedStatus.isEmpty
         ? (item.isActive ? 'ใช้งาน' : 'ปิด')
         : item.computedStatus;
@@ -330,9 +339,16 @@ class _AnnounceCard extends StatelessWidget {
               // ─── Row 2: รายละเอียด (label/value grid) ───
               if ((item.zonePn ?? '').isNotEmpty)
                 _CardRow(label: 'โซน', value: item.zonePn!),
-              _CardRow(label: 'วันเริ่ม', value: safeDate(item.sdate), isMono: true),
-              _CardRow(label: 'วันสิ้นสุด', value: safeDate(item.edate), isMono: true),
-              _CardRow(label: 'วันที่ประกาศ', value: safeDate(item.announceDate), isMono: true),
+              _CardRow(
+                  label: 'วันเริ่ม', value: safeDate(item.sdate), isMono: true),
+              _CardRow(
+                  label: 'วันสิ้นสุด',
+                  value: safeDate(item.edate),
+                  isMono: true),
+              _CardRow(
+                  label: 'วันที่ประกาศ',
+                  value: safeDate(item.announceDate),
+                  isMono: true),
               const SizedBox(height: LrSpace.sm),
               // ─── Row 3: ปุ่ม ───
               Align(

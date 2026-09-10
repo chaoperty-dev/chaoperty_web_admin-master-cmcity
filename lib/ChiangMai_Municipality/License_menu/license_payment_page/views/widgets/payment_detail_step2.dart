@@ -7,7 +7,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:printing/printing.dart';
 import 'package:pdf/pdf.dart';
@@ -302,10 +301,11 @@ class _StepHeader extends StatelessWidget {
   /// ฟอร์แมต ISO date → dd/MM/yyyy
   static String _formatDate(String s) {
     try {
-      final dt = DateTime.parse(s);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+      final dt = DateTime.parse(s).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
-      return s;
+      return '-';
     }
   }
 
@@ -475,10 +475,11 @@ class _StepHeader extends StatelessWidget {
   static String _formatDateShort(String s) {
     if (s.isEmpty) return '';
     try {
-      final dt = DateTime.parse(s);
-      return '${dt.day.toString().padLeft(2, '0')}/${dt.year.toString().substring(2)}';
+      final dt = DateTime.parse(s).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
-      return s;
+      return '-';
     }
   }
 
@@ -1337,25 +1338,24 @@ class _A4PaperState extends State<_A4Paper> {
 
   String _fmtDate(String s) {
     try {
-      return DateFormat('dd/MM/yyyy').format(DateTime.parse(s));
+      final dt = DateTime.parse(s).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
-      return s;
+      return '-';
     }
   }
 
-  String _fmtDateShort(String s) {
-    try {
-      return DateFormat('dd/MM/yy').format(DateTime.parse(s));
-    } catch (_) {
-      return s;
-    }
-  }
+  String _fmtDateShort(String s) => _fmtDate(s);
 
   String _fmtDateTime(String s) {
     try {
-      return DateFormat('dd/MM/yyyy HH:mm').format(DateTime.parse(s));
+      final dt = DateTime.parse(s).toLocal();
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
-      return s;
+      return '-';
     }
   }
 }

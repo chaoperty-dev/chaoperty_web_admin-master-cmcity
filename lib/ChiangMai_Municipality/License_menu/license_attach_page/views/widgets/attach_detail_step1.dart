@@ -1016,7 +1016,7 @@ class _DocumentRow extends StatelessWidget {
       final dt = DateTime.parse(s);
       final dd = dt.day.toString().padLeft(2, '0');
       final mm = dt.month.toString().padLeft(2, '0');
-      return '$dd-$mm-${dt.year}';
+      return '$dd-$mm-${dt.year + 543}';
     } catch (_) {
       return '-';
     }
@@ -1322,7 +1322,7 @@ class _DocumentCard extends StatelessWidget {
       final dt = DateTime.parse(s);
       final dd = dt.day.toString().padLeft(2, '0');
       final mm = dt.month.toString().padLeft(2, '0');
-      return '$dd/$mm/${dt.year % 100}';
+      return '$dd-$mm-${dt.year + 543}';
     } catch (_) {
       return '-';
     }
@@ -1786,7 +1786,7 @@ class _DocumentGridCard extends StatelessWidget {
       final dt = DateTime.parse(s);
       final dd = dt.day.toString().padLeft(2, '0');
       final mm = dt.month.toString().padLeft(2, '0');
-      return '$dd/$mm/${dt.year % 100}';
+      return '$dd-$mm-${dt.year + 543}';
     } catch (_) {
       return '-';
     }

@@ -17,7 +17,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show Clipboard, ClipboardData;
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../models/fact_check_item.dart';
@@ -293,16 +292,15 @@ class _ReviewCheck extends StatelessWidget {
       child: Align(
         alignment: Alignment.center,
         child: Tooltip(
-          message: hasReview ? _buildTooltipMessage(review!) : 'ยังไม่เริ่มตรวจสอบ',
+          message:
+              hasReview ? _buildTooltipMessage(review!) : 'ยังไม่เริ่มตรวจสอบ',
           waitDuration: const Duration(milliseconds: 200),
           child: Icon(
             hasReview
                 ? Icons.check_box_rounded
                 : Icons.check_box_outline_blank_rounded,
             size: 18,
-            color: hasReview
-                ? const Color(0xFF15803D)
-                : LaColors.textMuted,
+            color: hasReview ? const Color(0xFF15803D) : LaColors.textMuted,
           ),
         ),
       ),
@@ -313,8 +311,9 @@ class _ReviewCheck extends StatelessWidget {
   /// แสดง 4 ฟิลด์: state_label, round, created_at, updated_at
   String _buildTooltipMessage(FactCheckReview r) {
     final rows = <String>[];
-    final stateLabel =
-        (r.stateLabel ?? '').trim().isNotEmpty ? r.stateLabel! : (r.state ?? '-');
+    final stateLabel = (r.stateLabel ?? '').trim().isNotEmpty
+        ? r.stateLabel!
+        : (r.state ?? '-');
     rows.add('สถานะ: ${_truncate(stateLabel, 30)}');
     if (r.round != null) rows.add('รอบ: ${r.round}');
     if ((r.createdAt ?? '').isNotEmpty) {
@@ -335,7 +334,9 @@ class _ReviewCheck extends StatelessWidget {
     if (raw == null || raw.isEmpty) return '-';
     try {
       final dt = DateTime.parse(raw);
-      return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return raw;
     }

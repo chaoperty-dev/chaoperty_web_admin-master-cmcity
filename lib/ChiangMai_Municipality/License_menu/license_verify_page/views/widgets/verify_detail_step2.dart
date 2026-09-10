@@ -116,7 +116,8 @@ class _VerifyDetailStep2State extends State<VerifyDetailStep2> {
   Widget _buildContent(
       BuildContext context, LicenseverifyChecklistPreview preview) {
     final vm = context.read<LicenseverifyDetailViewModel>();
-    final docs = vm.mergedAttachments; // รวม preview + all-attachments (เห็นทุกรายการ)
+    final docs =
+        vm.mergedAttachments; // รวม preview + all-attachments (เห็นทุกรายการ)
     return SingleChildScrollView(
       padding: const EdgeInsets.all(LaSpace.lg),
       child: Column(
@@ -338,8 +339,8 @@ class _VerifyDetailStep2State extends State<VerifyDetailStep2> {
               if (requestNews != null)
                 pw.Container(
                   width: 110,
-                  padding: const pw.EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 6),
+                  padding:
+                      const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                   decoration: pw.BoxDecoration(
                     color: PdfColors.white,
                     borderRadius: pw.BorderRadius.circular(3),
@@ -401,8 +402,8 @@ class _VerifyDetailStep2State extends State<VerifyDetailStep2> {
         child: pw.Column(
           children: [
             pw.Container(
-              padding: const pw.EdgeInsets.symmetric(
-                  horizontal: 10, vertical: 4),
+              padding:
+                  const pw.EdgeInsets.symmetric(horizontal: 10, vertical: 4),
               decoration: const pw.BoxDecoration(
                 color: PdfColors.grey100,
                 border: pw.Border(
@@ -1244,8 +1245,8 @@ class _MetaChip extends StatelessWidget {
         ),
         Text(
           value,
-          style: LaText.body.copyWith(
-              fontFamily: LaText.fontBold, fontSize: 13),
+          style:
+              LaText.body.copyWith(fontFamily: LaText.fontBold, fontSize: 13),
         ),
       ],
     );
@@ -1327,8 +1328,7 @@ class _FormSection extends StatelessWidget {
             if (requestNews != null)
               Container(
                 width: 110,
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
                   color: LaColors.surface,
                   borderRadius: BorderRadius.circular(LaRadius.sm),
@@ -1359,8 +1359,7 @@ class _FormSection extends StatelessWidget {
                 style: LaText.bodyMuted.copyWith(fontSize: compact ? 11 : 12)),
             const SizedBox(width: LaSpace.sm),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
               decoration: LaDecor.softCard(),
               child: Text(
                 indexDate,
@@ -1438,8 +1437,8 @@ class _DocumentTable extends StatelessWidget {
                 ),
                 Expanded(
                   flex: 3,
-                  child: Text('หมายเหตุ/เหตุผลประกอบ',
-                      style: LaText.tableHeader),
+                  child:
+                      Text('หมายเหตุ/เหตุผลประกอบ', style: LaText.tableHeader),
                 ),
               ],
             ),
@@ -1641,8 +1640,7 @@ class _OfficerFooter extends StatelessWidget {
                   '** เอกสารฉบับนี้ คือ หลักฐานการยื่นคำขอต่ออายุใบอนุญาตฯ '
                   'ไม่ใช่ใบอนุญาตฉบับจริง ผู้ยื่นคำขอจะได้รับใบอนุญาตเมื่อ '
                   'ผ่านการพิจารณาคุณสมบัติและชำระเงินค่าธรรมเนียมแล้ว',
-                  style:
-                      LaText.bodyMuted.copyWith(fontSize: compact ? 11 : 12),
+                  style: LaText.bodyMuted.copyWith(fontSize: compact ? 11 : 12),
                 ),
               ),
             ],
@@ -1678,23 +1676,9 @@ class _OfficerFooter extends StatelessWidget {
 
 String _formatDateThai(DateTime? dt) {
   if (dt == null) return '';
-  const months = [
-    '',
-    'ม.ค.',
-    'ก.พ.',
-    'มี.ค.',
-    'เม.ย.',
-    'พ.ค.',
-    'มิ.ย.',
-    'ก.ค.',
-    'ส.ค.',
-    'ก.ย.',
-    'ต.ค.',
-    'พ.ย.',
-    'ธ.ค.',
-  ];
   final thaiYear = dt.year + 543;
-  return '${dt.day} ${months[dt.month]} $thaiYear';
+  return '${dt.day.toString().padLeft(2, '0')}-'
+      '${dt.month.toString().padLeft(2, '0')}-$thaiYear';
 }
 
 class _SignatureBox extends StatelessWidget {
@@ -1769,8 +1753,8 @@ class _PositionBox extends StatelessWidget {
         const SizedBox(height: 2),
         Text(
           position,
-          style: LaText.body.copyWith(
-              fontFamily: LaText.fontBold, fontSize: 13),
+          style:
+              LaText.body.copyWith(fontFamily: LaText.fontBold, fontSize: 13),
           textAlign: TextAlign.center,
         ),
       ],

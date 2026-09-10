@@ -10,7 +10,6 @@ import 'dart:typed_data';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../../services/license_fact_check_service.dart';
@@ -648,7 +647,9 @@ class _Content extends StatelessWidget {
     if (raw == null || raw.isEmpty) return '-';
     try {
       final dt = DateTime.parse(raw);
-      return DateFormat('dd MMM yyyy HH:mm').format(dt);
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
     } catch (_) {
       return raw;
     }

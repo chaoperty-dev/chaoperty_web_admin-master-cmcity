@@ -146,13 +146,13 @@ class _Step1Body extends StatelessWidget {
     }
 
     // Breakpoints:
-  //   mobile  : < 700
-  //   tablet  : 700..1099
-  //   desktop : >= 1100
-  final screenWidth = MediaQuery.of(context).size.width;
-  final isMobile = screenWidth < 700;
-  final isTablet = screenWidth >= 700 && screenWidth < 1100;
-  final isCompact = isMobile || isTablet;  // single-column mode
+    //   mobile  : < 700
+    //   tablet  : 700..1099
+    //   desktop : >= 1100
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 700;
+    final isTablet = screenWidth >= 700 && screenWidth < 1100;
+    final isCompact = isMobile || isTablet; // single-column mode
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
@@ -440,7 +440,8 @@ class _DateGrid extends StatelessWidget {
     if (raw == null || raw.isEmpty) return '-';
     try {
       final dt = DateTime.parse(raw).toLocal();
-      return DateFormat('dd-MM-yyyy').format(dt);
+      return '${dt.day.toString().padLeft(2, '0')}-'
+          '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543}';
     } catch (_) {
       return raw;
     }

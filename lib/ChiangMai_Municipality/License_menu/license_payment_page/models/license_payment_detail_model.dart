@@ -459,8 +459,7 @@ class ReceiptVendor {
       zip: (json['zip'] ?? '').toString(),
       tel: (json['tel'] ?? '').toString(),
       email: (json['email'] ?? '').toString(),
-      snapshotAt:
-          (json['snapshot_at'] ?? json['snapshotAt'] ?? '').toString(),
+      snapshotAt: (json['snapshot_at'] ?? json['snapshotAt'] ?? '').toString(),
     );
   }
 }
@@ -531,9 +530,8 @@ class ReceiptOfficer {
     final sig = json['signature'];
     return ReceiptOfficer(
       userUuid: (json['user_uuid'] ?? json['userUuid'] ?? '').toString(),
-      fullName:
-          (json['full_name'] ?? json['fullName'] ?? json['name'] ?? '')
-              .toString(),
+      fullName: (json['full_name'] ?? json['fullName'] ?? json['name'] ?? '')
+          .toString(),
       position: pos is Map
           ? ReceiptPosition.fromJson(Map<String, dynamic>.from(pos as Map))
           : null,
@@ -636,9 +634,11 @@ String formatMoney(double v) => NumberFormat('#,##0.00', 'en_US').format(v);
 String formatDate(String? raw) {
   if (raw == null || raw.isEmpty) return '-';
   try {
-    final dt = DateTime.parse(raw);
-    return DateFormat('dd-MM-yyyy HH:mm').format(dt);
+    final dt = DateTime.parse(raw).toLocal();
+    return '${dt.day.toString().padLeft(2, '0')}-'
+        '${dt.month.toString().padLeft(2, '0')}-${dt.year + 543} '
+        '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   } catch (_) {
-    return raw;
+    return '-';
   }
 }

@@ -15,7 +15,11 @@ class LicenseverifyDetailViewModel extends ChangeNotifier {
   ///   2 = สรุปการแนบเอกสาร (Step 2)
   static const int detailTotalSteps = 2;
 
-  LicenseverifyDetailViewModel({this.requestUuid});
+  LicenseverifyDetailViewModel({
+    this.requestUuid,
+    LicenseverifyChecklistPreview? initialChecklist,
+  })  : _checklist = initialChecklist,
+        _allAttachments = initialChecklist?.payload.attachments ?? const [];
 
   /// UUID ของ request (ส่งต่อมาจาก routeData ของหน้า list)
   final String? requestUuid;
@@ -83,8 +87,7 @@ class LicenseverifyDetailViewModel extends ChangeNotifier {
       var preview = results[0] as LicenseverifyChecklistPreview?;
       preview ??= await LicenseverifyChecklistService.fetchByUuid(requestUuid);
       _checklist = preview;
-      _allAttachments =
-          results[1] as List<LicenseverifyChecklistAttachment>;
+      _allAttachments = results[1] as List<LicenseverifyChecklistAttachment>;
       _error = null;
     } catch (e) {
       _error = e.toString();
@@ -152,4 +155,3 @@ class LicenseverifyDetailViewModel extends ChangeNotifier {
     }
   }
 }
-
