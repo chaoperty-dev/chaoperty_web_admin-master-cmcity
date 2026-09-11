@@ -105,7 +105,7 @@ class LicensePaymentTable extends StatelessWidget {
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
-          _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
+          _HeaderCell(label: 'ผู้ขอใบอนุญาต', flex: 3),
           // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
           // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
           _HeaderCell(label: 'การชำระ', flex: 2),
@@ -349,7 +349,7 @@ class _PaymentCard extends StatelessWidget {
                   isMono: true),
               _CardRow(
                   icon: Icons.person_outline,
-                  label: 'ชื่อผู้ติดต่อ',
+                  label: 'ผู้ขอใบอนุญาต',
                   value: name),
               // ─── ชำระ (payment progress) — เหมือนตาราง ───
               Padding(

@@ -206,7 +206,7 @@ class _SectionHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  'ลายเซ็นผู้แนบ',
+                  'ลายเซ็นผู้ขอใบอนุญาต',
                   style: LaText.h2.copyWith(fontSize: mobile ? 14 : 16),
                   overflow: TextOverflow.ellipsis,
                 ),

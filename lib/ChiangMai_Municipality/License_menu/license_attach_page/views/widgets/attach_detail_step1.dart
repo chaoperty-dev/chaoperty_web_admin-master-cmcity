@@ -1661,8 +1661,7 @@ class _FooterHint extends StatelessWidget {
         Icon(Icons.info_outline_rounded, size: 14, color: LaColors.textMuted),
         SizedBox(width: 6),
         Expanded(
-          child: Text('เลือกเอกสารให้ครบถ้วนก่อนกด "ถัดไป"',
-              style: LaText.caption),
+          child: Text('ตรวจสอบเอกสารก่อน "อัพโหลด"', style: LaText.caption),
         ),
       ],
     );
@@ -2459,7 +2458,7 @@ class _AttachRequestOverviewCardState
             final narrow = c.maxWidth < 650;
             final request =
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const _AttachOverviewHeading('ข้อมูลคำขอ'),
+              const _AttachOverviewHeading('ข้อมูลพื้นที่'),
               const SizedBox(height: 6),
               _AttachOverviewInfo(
                   icon: Icons.location_on_rounded,
@@ -2473,11 +2472,11 @@ class _AttachRequestOverviewCardState
             ]);
             final customer =
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              const _AttachOverviewHeading('ข้อมูลลูกค้า'),
+              const _AttachOverviewHeading('ข้อมูลผู้ขอ'),
               const SizedBox(height: 6),
               _AttachOverviewInfo(
                   icon: Icons.person_rounded,
-                  label: 'ชื่อผู้ติดต่อ',
+                  label: 'ชื่อ-นามสกุล',
                   value: _person('ชื่อ-นามสกุล')),
               const SizedBox(height: 5),
               _AttachOverviewInfo(
@@ -2510,7 +2509,7 @@ class _AttachRequestOverviewCardState
               SizedBox(width: 6),
               Expanded(
                   child: Text(
-                      'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด ไปที่แท็บ "ข้อมูลคำขอ"',
+                      'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" สำหรับตรวจสอบเบื้องต้น',
                       style: LaText.caption))
             ]),
           ),

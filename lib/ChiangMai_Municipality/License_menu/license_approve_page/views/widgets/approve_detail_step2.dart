@@ -126,7 +126,7 @@ class _ApproveDetailStep2State extends State<ApproveDetailStep2> {
         children: [
           Icon(Icons.timeline_rounded, size: 18, color: LaColors.primaryDark),
           SizedBox(width: 8),
-          Text('ลำดับขั้นตอนการอนุมัติ', style: LaText.h2),
+          Text('ประวัติการอนุมัติ', style: LaText.h2),
         ],
       ),
     );

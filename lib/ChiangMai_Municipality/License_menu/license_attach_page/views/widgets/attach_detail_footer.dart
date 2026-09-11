@@ -54,8 +54,8 @@ class AttachDetailFooter extends StatelessWidget {
             readOnly
                 ? 'โหมดดูอย่างเดียว'
                 : isLast
-                    ? 'พร้อมบันทึก'
-                    : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
+                    ? 'ตรวจอสอบข้อมูลก่อนบันทึกเอกสาร'
+                    : 'กรุณากรอกข้อมูลให้ครบถ้วน',
             style: LaText.caption,
           ),
           const Spacer(),
@@ -70,11 +70,11 @@ class AttachDetailFooter extends StatelessWidget {
           if (!readOnly)
             isLast
                 ? (showSaveButton
-                    ? 
-                    
-                    _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
+                    ? _SaveButton(
+                        label: saveLabel ?? 'บันทึกเอกสาร', onTap: onSave)
                     : const SizedBox.shrink())
-                : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
+                : _NextButton(
+                    label: nextLabel ?? 'เอกสารเช็กลิสต์', onTap: onNext),
         ],
       ),
     );

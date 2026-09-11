@@ -112,7 +112,7 @@ class LicenseAttachTable extends StatelessWidget {
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
-          _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
+          _HeaderCell(label: 'ผู้ขอใบอนุญาต', flex: 3),
           // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
           // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
           _HeaderCell(label: 'เอกสาร', flex: 1),
@@ -153,10 +153,7 @@ class LicenseAttachTable extends StatelessWidget {
           _Cell(value: task.subzone, flex: 2),
           _Cell(value: task.zn, flex: 2),
           // รหัสพื้นที่ (swap → lease ln)
-          _Cell(
-              value: task.ln.isEmpty ? '-' : task.ln,
-              flex: 2,
-              isMono: true),
+          _Cell(value: task.ln.isEmpty ? '-' : task.ln, flex: 2, isMono: true),
           _Cell(value: _maskName(task.customerName), flex: 3),
           // _Cell(
           //     value: _maskPhone(formatPhoneNumber(task.customerTel)),
@@ -314,8 +311,7 @@ class _AttachCard extends StatelessWidget {
     final palette = StatusPalette.of(task.statusLabel);
     final name = _maskName(task.customerName);
     final phone = _maskPhone(formatPhoneNumber(task.customerTel));
-    final endDate =
-        formatDate(task.submittedAt, type: DateFormatType.dmy);
+    final endDate = formatDate(task.submittedAt, type: DateFormatType.dmy);
 
     return Material(
       type: MaterialType.transparency,
@@ -369,7 +365,7 @@ class _AttachCard extends StatelessWidget {
               ),
               const Divider(height: LaSpace.lg, color: LaColors.border),
               // ─── Row 2: รายละเอียด (label/value grid) ───
-              _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
+              _CardRow(label: 'ผู้ขอใบอนุญาต', value: name),
               _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
               if (task.subzone.isNotEmpty)
                 _CardRow(label: 'บริเวณ', value: task.subzone),

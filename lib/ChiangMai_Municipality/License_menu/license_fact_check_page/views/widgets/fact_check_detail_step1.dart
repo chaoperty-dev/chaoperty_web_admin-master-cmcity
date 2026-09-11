@@ -319,7 +319,7 @@ class _FactCheckInfoTab extends StatelessWidget {
                       SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          'ตรวจสอบข้อเท็จจริงให้ครบถ้วนก่อนกด "ถัดไป"',
+                          'ตรวจสอบข้อเท็จจริงให้ครบถ้วนก่อนกด "ผ่าน"',
                           style: LaText.caption,
                         ),
                       ),
@@ -817,7 +817,7 @@ class _ActiveInspectionBanner extends StatelessWidget {
                 ),
                 const SizedBox(height: 2),
                 AutoSizeText(
-                  'uuid: ${vm.activeInspectionUuid}',
+                  'รหัสรายการ: ${vm.activeInspectionUuid}',
                   minFontSize: 11,
                   maxFontSize: 12,
                   maxLines: 1,
@@ -2369,7 +2369,7 @@ class _RequestSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลคำขอ',
+                  title: 'ข้อมูลพื้นที่',
                   items: [
                     // _InfoItem(
                     //   icon: Icons.receipt_long_rounded,
@@ -2398,11 +2398,11 @@ class _RequestSummaryCard extends StatelessWidget {
               const SizedBox(width: LaSpace.lg),
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลลูกค้า',
+                  title: 'ข้อมูลผู้ขอ',
                   items: [
                     _InfoItem(
                       icon: Icons.person_rounded,
-                      label: 'ชื่อผู้ติดต่อ',
+                      label: 'ชื่อ-นามสกุล',
                       value: client?.cname ?? client?.scname,
                     ),
                     // _InfoItem(
@@ -2445,7 +2445,7 @@ class _RequestSummaryCard extends StatelessWidget {
                 Expanded(
                   child: AutoSizeText(
                     'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                    'สำหรับตรวจสอบเบื้องต้น — รายละเอียดเพิ่มเติมจะแสดงใน Step ถัดไป',
+                    'สำหรับตรวจสอบเบื้องต้น',
                     style: LaText.caption,
                     maxLines: 2,
                   ),

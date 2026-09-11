@@ -713,7 +713,7 @@ class _RequestSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลคำขอ',
+                  title: 'ข้อมูลพื้นที่',
                   items: [
                     // [HIDDEN per user request] — keep commented for reference
                     // _InfoItem(
@@ -743,11 +743,11 @@ class _RequestSummaryCard extends StatelessWidget {
               const SizedBox(width: LaSpace.lg),
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลลูกค้า',
+                  title: 'ข้อมูลผู้ขอ',
                   items: [
                     _InfoItem(
                       icon: Icons.person_rounded,
-                      label: 'ชื่อผู้ติดต่อ',
+                      label: 'ชื่อ-นามสกุล',
                       value: client.cname,
                     ),
                     // [HIDDEN per user request] — keep commented for reference
@@ -792,7 +792,7 @@ class _RequestSummaryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                    'สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด โปรดไปที่แท็บ "ข้อมูลคำขอ"',
+                    'สำหรับตรวจสอบเบื้องต้น',
                     style: LaText.caption,
                     maxLines: 2,
                   ),

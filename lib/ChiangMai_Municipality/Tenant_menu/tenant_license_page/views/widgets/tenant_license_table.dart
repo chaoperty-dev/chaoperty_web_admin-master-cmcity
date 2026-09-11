@@ -7,7 +7,7 @@ import '../tenant_license_detail_page.dart';
 import '../theme/tenant_license_theme.dart';
 
 class TenantLicenseTable extends StatelessWidget {
-  const TenantLicenseTable({super.key});  
+  const TenantLicenseTable({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +139,10 @@ class _PermitRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          SizedBox(width: 110, child: _ViewButton(onTap: onView)),
+          SizedBox(
+            width: 110,
+            child: Center(child: _ViewButton(onTap: onView)),
+          ),
           Expanded(flex: 3, child: _Cell(permit.permitNo, mono: true)),
           Expanded(
               flex: 4,
@@ -235,7 +238,7 @@ class _PermitCard extends StatelessWidget {
           const SizedBox(height: LaSpace.sm),
           Align(
               alignment: Alignment.centerRight,
-              child: _ViewButton(onTap: onView)),
+              child: Center(child: _ViewButton(onTap: onView))),
         ],
       ),
     );
@@ -312,19 +315,57 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-class _ViewButton extends StatelessWidget {
+class _ViewButton extends StatefulWidget {
   final VoidCallback onTap;
   const _ViewButton({required this.onTap});
 
   @override
+  State<_ViewButton> createState() => _ViewButtonState();
+}
+
+class _ViewButtonState extends State<_ViewButton> {
+  bool _hover = false;
+
+  @override
   Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: const Icon(Icons.visibility_outlined, size: 14),
-      label: const Text('เรียกดู'),
-      style: TextButton.styleFrom(
-          foregroundColor: LaColors.primaryDark,
-          visualDensity: VisualDensity.compact),
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _hover ? LaColors.primary : LaColors.surfaceMuted,
+            borderRadius: BorderRadius.circular(LaRadius.pill),
+            border: Border.all(
+              color: _hover ? LaColors.primary : LaColors.border,
+              width: 1,
+            ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.visibility_outlined,
+                size: 13,
+                color: _hover ? Colors.white : LaColors.textSecondary,
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'เรียกดู',
+                style: TextStyle(
+                  fontFamily: LaText.fontBold,
+                  fontSize: 11,
+                  color: _hover ? Colors.white : LaColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

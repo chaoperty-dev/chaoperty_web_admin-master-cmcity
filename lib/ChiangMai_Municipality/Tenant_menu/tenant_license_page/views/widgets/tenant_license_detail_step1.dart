@@ -431,11 +431,11 @@ class _AttachRequestOverviewCard extends StatelessWidget {
               final customer = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _AttachOverviewHeading('ข้อมูลผู้เช่า'),
+                  const _AttachOverviewHeading('ข้อมูลผู้ได้รับอนุญาต'),
                   const SizedBox(height: 6),
                   _AttachOverviewInfo(
                     icon: Icons.person_rounded,
-                    label: 'ชื่อผู้ติดต่อ',
+                    label: 'ชื่อ-นามสกุล',
                     value:
                         _value(permit.customer['cname'] ?? permit.customerName),
                   ),

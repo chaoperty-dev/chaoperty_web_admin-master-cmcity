@@ -6,7 +6,7 @@
   "items": [
     {
       "type": "item",
-      "label": "พื้นที่เช่า",
+      "label": "พื้นที่ผ่อนผัน",
       "route": "/area",
       "icon": "map_outlined",
       "activeIcon": "map",
@@ -15,7 +15,7 @@
     },
     {
       "type": "item",
-      "label": "ผู้เช่า",
+      "label": "ผู้ได้รับใบอนุญาต",
       "route": "/tenant",
       "icon": "people_outline",
       "activeIcon": "people",
@@ -125,7 +125,7 @@
       "permission": "REGISTRY_REPORT"
         },
         {
-          "label": "รายงานพื้นที่เช่า",
+          "label": "รายงานพื้นที่ผ่อนผัน",
           "route": "/report/areas",
           "icon": "area_chart_outlined",
           "activeIcon": "area_chart",

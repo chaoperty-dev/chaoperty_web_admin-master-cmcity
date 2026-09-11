@@ -1,7 +1,7 @@
 // ============================================================================
 // tenant_license_page.dart
 // ============================================================================
-// Main View — "ผู้เช่า"
+// Main View — "ผู้ได้รับใบอนุญาต"
 //
 // ใช้งานได้ 2 รูปแบบ:
 //   ✅ TenantLicensePage.create(...) — สร้าง + wrap Provider ให้อัตโนมัติ (แนะนำ)
@@ -41,7 +41,7 @@ class TenantLicensePage extends StatefulWidget {
   const TenantLicensePage._({
     this.routeData,
     this.serTitle,
-    this.title = 'ใบอนุญาต',
+    this.title = 'ผู้ได้รับใบอนุญาต',
   });
 
   /// Factory สร้าง Page พร้อม Provider (ใช้ใน AdminScaffold / Navigator)
@@ -49,7 +49,7 @@ class TenantLicensePage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'ใบอนุญาต',
+    String title = 'ผู้ได้รับใบอนุญาต',
     TenantLicenseConfig? config,
   }) {
     final cfg = config ??
@@ -192,7 +192,7 @@ class TenantLicenseHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'ใบอนุญาต',
+    this.title = 'ผู้ได้รับใบอนุญาต',
   });
 
   @override

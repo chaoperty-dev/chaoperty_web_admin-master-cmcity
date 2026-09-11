@@ -1,12 +1,12 @@
 // ============================================================================
 // tenant_license_detail_models.dart
 // ============================================================================
-// Models สำหรับหน้า detail 2 step (ผู้เช่า)
+// Models สำหรับหน้า detail 2 step (ผู้ได้รับใบอนุญาต)
 // - สร้างเองทั้งหมด ไม่ดึงจาก project อื่น
 // - ใช้กับ step1 (ข้อมูล) และ step2 (รูปภาพ)
 // ============================================================================
 
-/// ฟิลด์ข้อมูลผู้เช่า (เช่น ชื่อ, เลขบัตร, ที่อยู่, เบอร์โทร)
+/// ฟิลด์ข้อมูลผู้ได้รับใบอนุญาต (เช่น ชื่อ, เลขบัตร, ที่อยู่, เบอร์โทร)
 /// - สามารถดึงค่าจาก TeNantModel ผ่าน `valueResolver` ได้
 class TenantPersonField {
   final String ser;
@@ -145,37 +145,37 @@ String _resolver(dynamic tenant, String? Function(dynamic t) pick) {
 final List<TenantPersonField> tenantPersonFields = [
   TenantPersonField(
     ser: '1',
-    title: 'ชื่อ-นามสกุล*',
+    title: 'ชื่อ-นามสกุล',
     iconHint: IconHint.person,
     valueResolver: (t) => _resolver(t, (x) => _s(x.cname)),
   ),
   TenantPersonField(
     ser: '2',
-    title: 'เลขบัตรประจำตัวประชาชน*',
+    title: 'เลขบัตรประจำตัวประชาชน',
     iconHint: IconHint.badge,
     valueResolver: (t) => _resolver(t, (x) => _s(x.cid)),
   ),
   TenantPersonField(
     ser: '3',
-    title: 'อายุ*',
+    title: 'อายุ',
     iconHint: IconHint.cake,
     valueResolver: (t) => '',
   ),
   TenantPersonField(
     ser: '4',
-    title: 'สัญชาติ*',
+    title: 'สัญชาติ',
     iconHint: IconHint.flag,
     valueResolver: (t) => _resolver(t, (x) => _s(x.ctype)),
   ),
   TenantPersonField(
     ser: '5',
-    title: 'บ้านเลขที่*',
+    title: 'บ้านเลขที่',
     iconHint: IconHint.home,
     valueResolver: (t) => _resolver(t, (x) => _s(x.addr)),
   ),
   TenantPersonField(
     ser: '6',
-    title: 'เบอร์โทร*',
+    title: 'เบอร์โทร',
     iconHint: IconHint.phone,
     valueResolver: (t) => _resolver(t, (x) => _s(x.tel)),
   ),
@@ -248,15 +248,15 @@ const List<TenantDocument> tenantDocuments = [
 const List<TenantReceipt> tenantReceipts = [
   TenantReceipt(
     ser: '1',
-    no: 'R68-04-000001',
-    date: '21-04-2025',
+    no: 'R69-XX-XXXXXX',
+    date: '21-04-2569',
     status: 'รอตรวจสอบ',
     verify: '-',
   ),
 ];
 
 const List<TenantPhoto> tenantPhotos = [
-  TenantPhoto(ser: '1', title: 'รูปถ่ายผู้เช่า'),
+  TenantPhoto(ser: '1', title: 'รูปถ่ายผู้ได้รับใบอนุญาต'),
   TenantPhoto(ser: '2', title: 'รูปถ่ายคู่กับร้านค้าและสินค้า'),
   TenantPhoto(ser: '3', title: 'รูปถ่ายสินค้า'),
   TenantPhoto(ser: '4', title: 'รูปถ่ายสถานที่ตั้งร้าน'),

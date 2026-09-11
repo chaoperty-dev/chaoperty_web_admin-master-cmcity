@@ -112,7 +112,7 @@ class VerifyTable extends StatelessWidget {
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
-          _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
+          _HeaderCell(label: 'ผู้ขอใบอนุญาต', flex: 3),
           // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
           // _HeaderCell(label: 'วันที่ส่งคำร้อง', flex: 2), // คอมเมนต์ปิดวันที่ส่งคำร้อง
           _HeaderCell(label: 'เอกสาร', flex: 2),
@@ -133,9 +133,8 @@ class VerifyTable extends StatelessWidget {
     VerifyAttachmentItem task,
     int index,
   ) {
-    final moduleLabel = task.moduleNameTh.isNotEmpty
-        ? task.moduleNameTh
-        : task.moduleCode;
+    final moduleLabel =
+        task.moduleNameTh.isNotEmpty ? task.moduleNameTh : task.moduleCode;
     final palette = StatusPalette.of(task.statusLabel);
     return _HoverableRow(
       index: index,
@@ -148,18 +147,13 @@ class VerifyTable extends StatelessWidget {
                 Center(child: _ViewButton(onTap: () => vm.onViewRequest(task))),
           ),
           // รายการ — module.name_th (v2)
-          _Cell(
-              value: moduleLabel.isEmpty ? '-' : moduleLabel,
-              flex: 2),
+          _Cell(value: moduleLabel.isEmpty ? '-' : moduleLabel, flex: 2),
           // บริเวณ — details.subzone
           _Cell(value: task.subzone, flex: 2),
           // โซนพื้นที่ — details.zn
           _Cell(value: task.zn, flex: 2),
           // รหัสพื้นที่ — details.ln
-          _Cell(
-              value: task.ln.isEmpty ? '-' : task.ln,
-              flex: 2,
-              isMono: true),
+          _Cell(value: task.ln.isEmpty ? '-' : task.ln, flex: 2, isMono: true),
           // ชื่อผู้ติดต่อ — customer.cname (อาจว่าง)
           _Cell(
               value: _maskName(task.customerName),
@@ -729,29 +723,24 @@ class _AttachmentCounters extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            allDone
-                ? Icons.task_alt_rounded
-                : Icons.pending_actions_rounded,
+            allDone ? Icons.task_alt_rounded : Icons.pending_actions_rounded,
             size: 14,
             color: allDone
-                ? const Color(0xFF15803D)  // green-700
+                ? const Color(0xFF15803D) // green-700
                 : const Color(0xFFB45309), // amber-700
           ),
           const SizedBox(width: 4),
           Text(
             '$approved/$total',
             style: LaText.tableCell.copyWith(
-              color: allDone
-                  ? const Color(0xFF15803D)
-                  : LaColors.textPrimary,
+              color: allDone ? const Color(0xFF15803D) : LaColors.textPrimary,
               fontWeight: FontWeight.w700,
             ),
           ),
           if (pending > 0) ...[
             const SizedBox(width: 4),
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
               decoration: BoxDecoration(
                 color: const Color(0xFFFEF3C7), // amber-100
                 borderRadius: BorderRadius.circular(LaRadius.pill),
@@ -795,9 +784,8 @@ class _VerifyListCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = StatusPalette.of(task.statusLabel);
-    final leaseNo = task.moduleNameTh.isNotEmpty
-        ? task.moduleNameTh
-        : task.moduleCode;
+    final leaseNo =
+        task.moduleNameTh.isNotEmpty ? task.moduleNameTh : task.moduleCode;
     final leaseLn = task.ln.isEmpty ? '-' : task.ln;
     final name = _maskName(task.customerName);
 
@@ -853,7 +841,7 @@ class _VerifyListCard extends StatelessWidget {
               // ─── Row 2: รายละเอียด (label/value grid) ───
               _CardRow(
                   icon: Icons.person_outline,
-                  label: 'ชื่อผู้ติดต่อ',
+                  label: 'ผู้ขอใบอนุญาต',
                   value: name,
                   flexValue: 2),
               _CardRow(

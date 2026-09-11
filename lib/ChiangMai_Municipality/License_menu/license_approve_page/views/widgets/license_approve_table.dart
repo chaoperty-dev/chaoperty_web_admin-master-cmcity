@@ -156,7 +156,7 @@ class LicenseApproveTable extends StatelessWidget {
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
-          _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
+          _HeaderCell(label: 'ผู้ขอใบอนุญาต', flex: 3),
           // ─── ปิดคอลัมเบอร์โทรไว้ก่อน ───
           // _HeaderCell(label: 'เบอร์โทร', flex: 2),
           // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
@@ -196,10 +196,8 @@ class LicenseApproveTable extends StatelessWidget {
     //     '';
     // ─── UUID หลัก: v2 step_uuid → v1 uuid (model.uuid รวมไว้แล้ว)
     // ถ้าว่างจริงๆ fallback ไป request_uuid (v2) เพื่อให้ copy ได้
-    final displayUuid = (model.uuid?.isNotEmpty == true
-            ? model.uuid
-            : model.requestUuid) ??
-        '';
+    final displayUuid =
+        (model.uuid?.isNotEmpty == true ? model.uuid : model.requestUuid) ?? '';
     return _HoverableRow(
       index: index,
       child: Row(
@@ -694,16 +692,15 @@ class _ApproveCardState extends State<_ApproveCard> {
     final nr = m.newRequest;
     final palette = StatusPalette.of(m.statusLabel ?? m.status ?? '');
     // รายการ: ใช้ module.name_th ตรงๆ
-    final listName = (m.module?.nameTh?.isNotEmpty == true
-            ? m.module!.nameTh
-            : null) ??
-        (nr?.leaseNumber?.isNotEmpty == true ? nr!.leaseNumber : null) ??
-        '-';
+    final listName =
+        (m.module?.nameTh?.isNotEmpty == true ? m.module!.nameTh : null) ??
+            (nr?.leaseNumber?.isNotEmpty == true ? nr!.leaseNumber : null) ??
+            '-';
     // ขั้นตอน: ใช้ step_name
     final stepLabel =
         (m.stepName?.isNotEmpty == true ? m.stepName : null) ?? '-';
-    final displayUuid = (m.uuid?.isNotEmpty == true ? m.uuid : m.requestUuid) ??
-        '';
+    final displayUuid =
+        (m.uuid?.isNotEmpty == true ? m.uuid : m.requestUuid) ?? '';
     return Material(
       type: MaterialType.transparency,
       child: InkWell(

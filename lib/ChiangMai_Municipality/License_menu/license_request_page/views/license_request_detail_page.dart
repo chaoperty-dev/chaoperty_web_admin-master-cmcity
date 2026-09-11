@@ -22,13 +22,13 @@ class LicenseRequestDetailPage extends StatefulWidget {
   const LicenseRequestDetailPage({
     super.key,
     this.routeData,
-    this.title = 'คำขอต่อสัญญา',
+    this.title = 'คำขอใบอนุญาต',
   });
 
   static Widget create({
     Key? key,
     String? routeData,
-    String title = 'คำขอต่อสัญญา',
+    String title = 'คำขอใบอนุญาต',
   }) {
     // ✅ MultiProvider ที่ root — Providers เป็น ancestor ของทุก widget
     return MultiProvider(

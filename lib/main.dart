@@ -6,8 +6,6 @@ import 'package:month_year_picker/month_year_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// ignore: depend_on_referenced_packages
-import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'ChiangMai_Municipality/List_CMM/Register_CMM/AuthService.dart';
 import 'app/root_scaffold_messenger.dart';
@@ -23,6 +21,8 @@ const bool enableAppLogs = true;
 // /flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-define=web-browser-flag=--disable-web-security --no-tree-shake-icons
 // ** */ flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-browser-flag=--disable-web-security --no-tree-shake-icons --base-href /user_intents/
 // flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-browser-flag=--disable-web-security --no-tree-shake-icons --base-href /cmcity_test/
+//flutter build web --dart-define=BROWSER_IMAGE_DECODING_ENABLED=false-browser-flag=--disable-web-security --no-tree-shake-icons --base-href /cmcity_test/
+
 class SidebarController extends ChangeNotifier {
   static const _key = 'isSidebarOpen';
   bool _isOpen = true;
@@ -51,8 +51,7 @@ class SidebarController extends ChangeNotifier {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // ✅ Path URL (no hash) — e.g. "/area" แทน "/#/area"
-  setUrlStrategy(PathUrlStrategy());
+  // ใช้ hash URL เพื่อให้ refresh/deep link ทำงานโดยไม่ต้องตั้ง server rewrite.
 
   // โหลด SidebarController ก่อน build app (เหมือนเดิม)
   final sidebarCtrl = SidebarController();

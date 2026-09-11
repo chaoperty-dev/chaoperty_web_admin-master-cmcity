@@ -44,7 +44,7 @@ class LicenseRequestPage extends StatefulWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'คำขอต่อสัญญา',
+    this.title = 'คำขอใบอนุญาต',
     this.onSave,
     this.config,
   });
@@ -54,7 +54,7 @@ class LicenseRequestPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'คำขอต่อสัญญา',
+    String title = 'คำขอใบอนุญาต',
     ValueChanged<LicenseContractResult>? onSave,
     LicenseRequestConfig? config,
   }) {
@@ -151,8 +151,7 @@ class _LicenseRequestPageBodyState extends State<_LicenseRequestPageBody> {
       case LicenseRequestNavigateEvent(:final routeData):
         // ✅ GoRouter push — URL เปลี่ยนเป็น '/contract/<uuid>'
         final title = context.read<LicenseRequestViewModel>().title;
-        context
-            .push<bool>(
+        context.push<bool>(
           routeData == null || routeData.isEmpty
               ? '/contract'
               : '/contract/${Uri.encodeComponent(routeData)}',

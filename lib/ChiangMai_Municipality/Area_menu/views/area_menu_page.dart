@@ -41,7 +41,7 @@ class AreaMenuPage extends StatefulWidget {
     Key? key,
     String? routeData,
     int? serTitle,
-    String title = 'พื้นที่เช่า',
+    String title = 'พื้นที่ผ่อนผัน',
     ValueChanged<LicenseContractResult>? onSave,
     bool readOnly = false,
   }) {
@@ -143,7 +143,7 @@ class _AreaMenuPageBodyState extends State<_AreaMenuPageBody> {
           children: [
             AreaMenuHeader(
               title: vm.title,
-              subtitle: 'จำแนกพื้นที่เช่าตามโซนและประเภทพื้นที่เช่า',
+              subtitle: 'จำแนกพื้นที่ผ่อนผันตามโซนและประเภทพื้นที่ผ่อนผัน',
               totalCount: vm.total,
               totalArea: vm.totalArea,
               totalLeased: vm.totalLeased,
@@ -207,7 +207,7 @@ class AreaMenuHost extends StatelessWidget {
     super.key,
     this.routeData,
     this.serTitle,
-    this.title = 'พื้นที่เช่า',
+    this.title = 'พื้นที่ผ่อนผัน',
     this.onSave,
   });
 

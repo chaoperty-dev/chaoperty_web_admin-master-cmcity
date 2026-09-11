@@ -55,8 +55,8 @@ class SubmitApprovalDetailFooter extends StatelessWidget {
             readOnly
                 ? 'โหมดดูอย่างเดียว'
                 : isLast
-                    ? 'ลำดับขั้นตอนการอนุมัติ — กด "ย้อนกลับ" เพื่อกลับไปแก้ไข'
-                    : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
+                    ? 'กด "ย้อนกลับ" เพื่อกลับไปแก้ไข'
+                    : 'กรุณาตรวจสอบข้อมูลให้ครบถ้วนก่อน',
             style: LaText.caption,
           ),
           const Spacer(),
@@ -71,7 +71,7 @@ class SubmitApprovalDetailFooter extends StatelessWidget {
           if (showNext) ...[
             const SizedBox(width: LaSpace.sm),
             _NextButton(
-              label: nextLabel ?? 'ถัดไป',
+              label: nextLabel ?? 'ขั้นตอนการอนุมัติ',
               onTap: onNext,
             ),
           ],

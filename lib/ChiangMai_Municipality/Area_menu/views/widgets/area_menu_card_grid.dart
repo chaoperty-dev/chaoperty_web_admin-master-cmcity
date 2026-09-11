@@ -126,7 +126,7 @@ class _EmptyState extends StatelessWidget {
           Text(
             hasFilter
                 ? 'ลองปรับตัวกรองหรือคำค้นหาใหม่อีกครั้ง'
-                : 'ยังไม่มีข้อมูลพื้นที่เช่าในระบบ',
+                : 'ยังไม่มีข้อมูลพื้นที่ผ่อนผันในระบบ',
             style: LaText.bodyMuted,
             textAlign: TextAlign.center,
           ),

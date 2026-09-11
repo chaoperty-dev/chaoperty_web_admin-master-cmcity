@@ -709,7 +709,7 @@ class _PaymentSummaryCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลคำขอ',
+                  title: 'ข้อมูลพื้นที่',
                   items: [
                     _InfoItem(
                       icon: Icons.location_on_rounded,
@@ -728,11 +728,11 @@ class _PaymentSummaryCard extends StatelessWidget {
               const SizedBox(width: LaSpace.lg),
               Expanded(
                 child: _InfoColumn(
-                  title: 'ข้อมูลลูกค้า',
+                  title: 'ข้อมูลผู้ขอ',
                   items: [
                     _InfoItem(
                       icon: Icons.person_rounded,
-                      label: 'ชื่อผู้ติดต่อ',
+                      label: 'ชื่อ-นามสกุล',
                       value: d.payerName,
                     ),
                     _InfoItem(
@@ -763,7 +763,7 @@ class _PaymentSummaryCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     'ข้อมูลด้านบนเป็น "ภาพรวมคำขอ" '
-                    'สำหรับตรวจสอบเบื้องต้น — หากต้องการดูข้อมูลคำขอทั้งหมด โปรดไปที่แท็บ "ข้อมูลคำขอ"',
+                    'สำหรับตรวจสอบเบื้องต้น',
                     style: LaText.caption,
                     maxLines: 2,
                   ),
@@ -977,30 +977,30 @@ class _PrepaymentCard extends StatelessWidget {
                   ),
                 ),
               ],
-              const Spacer(),
-              // ✅ จำกัดความกว้าง — กัน overflow ตอนจอแคบ
-              Flexible(
-                child: _PillIcon(
-                  icon: Icons.tag_rounded,
-                  text: 'Prepay: ${_short(prepayment.uuid ?? '')}',
-                  muted: true,
-                ),
-              ),
+              // const Spacer(),
+              // // ✅ จำกัดความกว้าง — กัน overflow ตอนจอแคบ
+              // Flexible(
+              //   child: _PillIcon(
+              //     icon: Icons.tag_rounded,
+              //     text: 'Prepay: ${_short(prepayment.uuid ?? '')}',
+              //     muted: true,
+              //   ),
+              // ),
             ],
           ),
           const SizedBox(height: LaSpace.md),
 
-          if (prepayment.requestUuid != null &&
-              prepayment.requestUuid!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(bottom: LaSpace.md),
-              child: _InfoItem(
-                icon: Icons.link_rounded,
-                label: 'Request UUID',
-                value: prepayment.requestUuid,
-                mono: true,
-              ),
-            ),
+          // if (prepayment.requestUuid != null &&
+          //     prepayment.requestUuid!.isNotEmpty)
+          //   Padding(
+          //     padding: const EdgeInsets.only(bottom: LaSpace.md),
+          //     child: _InfoItem(
+          //       icon: Icons.link_rounded,
+          //       label: 'Request UUID',
+          //       value: prepayment.requestUuid,
+          //       mono: true,
+          //     ),
+          //   ),
 
           // ─── รายการ (ตารางบนจอกว้าง / การ์ดบนจอแคบ) ───
           if (items.isEmpty)

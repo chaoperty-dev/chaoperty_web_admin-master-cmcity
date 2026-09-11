@@ -1,7 +1,7 @@
 // ============================================================================
 // area_menu_view_model.dart
 // ============================================================================
-// ViewModel — หน้า "พื้นที่เช่า"
+// ViewModel — หน้า "พื้นที่ผ่อนผัน"
 // Data Source: GET /api/v2/admin/areas/overview — SERVER-DRIVEN
 // - ลอจิกยิง API สำรองมาจาก license_request_view_model:
 //   เลือก dropdown → sync ZoneSelectionStore → listener resolve ser →
@@ -19,7 +19,7 @@ import '../services/area_menu_service.dart';
 
 class AreaMenuViewModel extends ChangeNotifier {
   AreaMenuViewModel({
-    String title = 'พื้นที่เช่า',
+    String title = 'พื้นที่ผ่อนผัน',
     String? routeData,
     bool readOnly = false,
     AreaMenuService? service,
@@ -47,12 +47,10 @@ class AreaMenuViewModel extends ChangeNotifier {
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
   void _onZoneStoreChanged() {
-    final newSub = _zoneStore.areaSubZone == 'ทั้งหมด'
-        ? null
-        : _zoneStore.areaSubZone;
-    final newZone = _zoneStore.areaZone == 'ทั้งหมด'
-        ? null
-        : _zoneStore.areaZone;
+    final newSub =
+        _zoneStore.areaSubZone == 'ทั้งหมด' ? null : _zoneStore.areaSubZone;
+    final newZone =
+        _zoneStore.areaZone == 'ทั้งหมด' ? null : _zoneStore.areaZone;
     final newRequestStatus = _zoneStore.areaRequestStatus;
     final newLeaseStatus = _zoneStore.areaLeaseStatus;
     final subChanged = _selectedZoneSub != newSub;

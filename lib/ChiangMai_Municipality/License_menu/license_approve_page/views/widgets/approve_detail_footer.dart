@@ -53,7 +53,7 @@ class ApproveDetailFooter extends StatelessWidget {
                 ? 'โหมดดูอย่างเดียว'
                 : isLast
                     ? 'พร้อมบันทึก'
-                    : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
+                    : 'กรุณาตรวจสอบข้อมูลให้ครบถ้วน',
             style: LaText.caption,
           ),
           const Spacer(),
@@ -68,7 +68,8 @@ class ApproveDetailFooter extends StatelessWidget {
           if (!readOnly)
             isLast
                 ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
-                : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
+                : _NextButton(
+                    label: nextLabel ?? 'ประวัติการอนุมัติ', onTap: onNext),
         ],
       ),
     );

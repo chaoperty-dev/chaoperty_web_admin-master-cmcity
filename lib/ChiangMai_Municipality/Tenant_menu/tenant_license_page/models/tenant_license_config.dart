@@ -11,7 +11,7 @@ class TenantLicenseConfig {
   final bool readOnly;
 
   const TenantLicenseConfig({
-    this.title = 'ผู้เช่า',
+    this.title = 'ผู้ได้รับใบอนุญาต',
     this.routeData,
     this.serTitle,
     this.readOnly = false,

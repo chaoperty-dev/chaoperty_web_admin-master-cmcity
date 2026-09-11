@@ -59,7 +59,7 @@ class PaymentDetailFooter extends StatelessWidget {
                 ? 'โหมดดูอย่างเดียว'
                 : isLast
                     ? 'พร้อมบันทึก'
-                    : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
+                    : 'กรุณาตรวจสอบข้อมูลให้ครบถ้วน',
             style: LaText.caption,
           ),
           const Spacer(),

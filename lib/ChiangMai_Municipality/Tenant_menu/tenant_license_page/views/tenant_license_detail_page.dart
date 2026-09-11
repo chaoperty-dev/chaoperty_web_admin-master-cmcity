@@ -100,15 +100,18 @@ class _TenantLicenseDetailPageBody extends StatelessWidget {
                                 Expanded(
                                   child: vm.currentDetailStep == 1
                                       ? TenantLicenseDetailStep1(permit: permit)
-                                      : TenantLicenseDetailStep2(permit: permit),
+                                      : TenantLicenseDetailStep2(
+                                          permit: permit),
                                 ),
                                 SubmitApprovalDetailFooter(
                                   readOnly: false,
                                   currentStep: vm.currentDetailStep,
                                   totalSteps: vm.totalDetailSteps,
-                                  onNext: vm.currentDetailStep < vm.totalDetailSteps
-                                      ? vm.nextDetailStep
-                                      : null,
+                                  onNext:
+                                      vm.currentDetailStep < vm.totalDetailSteps
+                                          ? vm.nextDetailStep
+                                          : null,
+                                  nextLabel: 'ประวัติการอนุมัติ',
                                   onCancel: vm.currentDetailStep > 1
                                       ? vm.previousDetailStep
                                       : () => Navigator.of(context).maybePop(),

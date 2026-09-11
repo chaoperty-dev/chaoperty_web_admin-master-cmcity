@@ -53,7 +53,7 @@ class VerifyDetailFooter extends StatelessWidget {
                 ? 'โหมดดูอย่างเดียว'
                 : isLast
                     ? 'พร้อมบันทึก'
-                    : 'กรอกข้อมูลให้ครบถ้วนก่อนกดถัดไป',
+                    : 'กรุณาตรวจสอบข้อมูลให้ครบถ้วน',
             style: LaText.caption,
           ),
           const Spacer(),
@@ -67,8 +67,9 @@ class VerifyDetailFooter extends StatelessWidget {
           const SizedBox(width: LaSpace.sm),
           if (!readOnly)
             isLast
-                ? _SaveButton(label: saveLabel ?? 'บันทึก', onTap: onSave)
-                : _NextButton(label: nextLabel ?? 'ถัดไป', onTap: onNext),
+                ? _SaveButton(label: saveLabel ?? 'บันทึกเอกสาร', onTap: onSave)
+                : _NextButton(
+                    label: nextLabel ?? 'เอกสารเช็กลิสต์', onTap: onNext),
         ],
       ),
     );
@@ -256,5 +257,3 @@ class _SaveButtonState extends State<_SaveButton> {
     );
   }
 }
-
-

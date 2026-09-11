@@ -108,7 +108,7 @@ class LicenseRequestTable extends StatelessWidget {
           _HeaderCell(label: 'บริเวณ', flex: 2),
           _HeaderCell(label: 'โซนพื้นที่', flex: 2),
           _HeaderCell(label: 'รหัสพื้นที่', flex: 2),
-          _HeaderCell(label: 'ชื่อผู้ติดต่อ', flex: 3),
+          _HeaderCell(label: 'ผู้ขอใบอนุญาต', flex: 3),
           // _HeaderCell(label: 'เบอร์โทร', flex: 2), // คอมเมนต์ปิดเบอร์โทร
           // _HeaderCell(label: 'วันที่สิ้นสุด', flex: 2), // คอมเมนต์ปิดวันที่สิ้นสุด
           _HeaderCell(label: 'เอกสาร', flex: 1),
@@ -149,9 +149,7 @@ class LicenseRequestTable extends StatelessWidget {
           _Cell(value: model.subzone, flex: 2),
           _Cell(value: model.zn, flex: 2),
           _Cell(
-              value: model.ln.isEmpty ? '-' : model.ln,
-              flex: 2,
-              isMono: true),
+              value: model.ln.isEmpty ? '-' : model.ln, flex: 2, isMono: true),
           _Cell(
               value: _maskName(model.customerName),
               tooltip: model.customerName,
@@ -373,7 +371,7 @@ class _RequestCard extends StatelessWidget {
               ),
               const Divider(height: LrSpace.lg, color: LrColors.border),
               // ─── Row 2: รายละเอียด (label/value grid) ───
-              _CardRow(label: 'ชื่อผู้ติดต่อ', value: name),
+              _CardRow(label: 'ผู้ขอใบอนุญาต', value: name),
               _CardRow(label: 'เบอร์โทร', value: phone, isMono: true),
               if (model.subzone.isNotEmpty)
                 _CardRow(label: 'บริเวณ', value: model.subzone),
