@@ -49,7 +49,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
   final LicensePaymentDetailService _detailService;
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
-  void _onZoneStoreChanged() {
+  Future<void> _onZoneStoreChanged() async {
     final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
         ? null
         : _zoneStore.licenseSubZone;
@@ -82,9 +82,10 @@ class LicensePaymentViewModel extends ChangeNotifier {
 
     // resolve sub-ser + reload zones filtered
     if (_selectedZoneSub != null) {
-      _loadZones(zoneSubSer: _selectedZoneSubSer);
+      await _loadZones(zoneSubSer: _selectedZoneSubSer);
     }
-    refresh();
+    _syncSelectedZoneSer();
+    await refresh();
   }
 
   // ---------- Event channel ----------
@@ -245,6 +246,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
     _selectedZoneSubSer = subSer;
     // 3) load zones (filtered by sub-zone)
     await _loadZones(zoneSubSer: subSer);
+    _syncSelectedZoneSer();
     // 4) load payments
     await refresh();
   }
@@ -258,6 +260,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
+      _syncSelectedZoneSer();
       final zserRaw = _selectedZoneSer;
       final zserFilter = (zserRaw == null ||
               zserRaw.isEmpty ||
@@ -423,19 +426,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
   /// _selectedZone = 'ทั้งหมด' หลังเปลี่ยน subzone — ถ้า filter ทิ้ง dropdown
   /// จะ assertion fail (value ไม่ match item)
   List<ZoneModel> get zoneModels {
-    if (_selectedZoneSub == null || _selectedZoneSub == 'ทั้งหมด') {
-      return _zoneModels;
-    }
-    final subSer = _selectedZoneSubSer;
-    if (subSer == null || subSer.isEmpty || subSer == '0') {
-      return _zoneModels;
-    }
-    final filtered = _zoneModels.where((z) => z.sub_zone == subSer).toList();
-    // คง default "ทั้งหมด" ไว้เป็น option แรกเสมอ
-    if (_zoneModels.isNotEmpty && _zoneModels.first.zn == 'ทั้งหมด') {
-      return [_zoneModels.first, ...filtered];
-    }
-    return filtered;
+    return _zoneModels;
   }
 
   /// ดรอปดาวน์ SubZones
@@ -444,6 +435,17 @@ class LicensePaymentViewModel extends ChangeNotifier {
   String? get selectedZoneSub => _selectedZoneSub;
   String? get selectedZone => _selectedZone;
   String? get selectedZoneSer => _selectedZoneSer;
+
+  void _syncSelectedZoneSer() {
+    if (_selectedZone == null || _selectedZone!.isEmpty) return;
+    final zone = _zoneModels.firstWhere(
+      (z) => z.zn == _selectedZone,
+      orElse: () => ZoneModel(),
+    );
+    if (zone.ser != null && zone.ser!.isNotEmpty) {
+      _selectedZoneSer = zone.ser;
+    }
+  }
 
   // ===============================================================
   // User actions
@@ -480,6 +482,7 @@ class LicensePaymentViewModel extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
+      _syncSelectedZoneSer();
       final zserRaw = _selectedZoneSer;
       final zserFilter = (zserRaw == null ||
               zserRaw.isEmpty ||

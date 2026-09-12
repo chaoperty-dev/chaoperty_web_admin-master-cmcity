@@ -44,7 +44,7 @@ class LicenseAttachViewModel extends ChangeNotifier {
   final LicenseAttachService _service;
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
-  void _onZoneStoreChanged() {
+  Future<void> _onZoneStoreChanged() async {
     final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
         ? null
         : _zoneStore.licenseSubZone;
@@ -72,9 +72,16 @@ class LicenseAttachViewModel extends ChangeNotifier {
         orElse: () => SubZoneModel(),
       );
       subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-      loadZones(zoneSubSer: subSer);
+      await loadZones(zoneSubSer: subSer);
     }
-    refresh();
+    if (_selectedZone != null && _selectedZone!.isNotEmpty) {
+      final zone = _zoneModels.firstWhere(
+        (z) => z.zn == _selectedZone,
+        orElse: () => ZoneModel(),
+      );
+      _selectedZoneSer = zone.ser;
+    }
+    await refresh();
   }
 
   // ---------- Event channel ----------
@@ -302,6 +309,7 @@ class LicenseAttachViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _setLoading(true);
     try {
+      _syncSelectedZoneSer();
       final zserRaw = _selectedZoneSer;
       final zserFilter = (zserRaw == null ||
               zserRaw.isEmpty ||
@@ -335,6 +343,7 @@ class LicenseAttachViewModel extends ChangeNotifier {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
+      _syncSelectedZoneSer();
       final zserRaw = _selectedZoneSer;
       final zserFilter = (zserRaw == null ||
               zserRaw.isEmpty ||
@@ -372,6 +381,17 @@ class LicenseAttachViewModel extends ChangeNotifier {
 
   Future<void> executeSearch() async {
     await refresh();
+  }
+
+  void _syncSelectedZoneSer() {
+    if (_selectedZone == null || _selectedZone!.isEmpty) return;
+    final zone = _zoneModels.firstWhere(
+      (z) => z.zn == _selectedZone,
+      orElse: () => ZoneModel(),
+    );
+    if (zone.ser != null && zone.ser!.isNotEmpty) {
+      _selectedZoneSer = zone.ser;
+    }
   }
 
   // ===============================================================

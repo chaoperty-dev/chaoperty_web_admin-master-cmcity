@@ -46,7 +46,7 @@ class LicensefactcheckViewModel extends ChangeNotifier {
   final LicensefactcheckService _service;
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
-  void _onZoneStoreChanged() {
+  Future<void> _onZoneStoreChanged() async {
     final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
         ? null
         : _zoneStore.licenseSubZone;
@@ -74,9 +74,16 @@ class LicensefactcheckViewModel extends ChangeNotifier {
         orElse: () => SubZoneModel(),
       );
       subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-      loadZones(zoneSubSer: subSer);
+      await loadZones(zoneSubSer: subSer);
     }
-    refresh();
+    if (_selectedZone != null && _selectedZone!.isNotEmpty) {
+      final zone = _zoneModels.firstWhere(
+        (z) => z.zn == _selectedZone,
+        orElse: () => ZoneModel(),
+      );
+      _selectedZoneSer = zone.ser;
+    }
+    await refresh();
   }
 
   // ---------- Event channel ----------

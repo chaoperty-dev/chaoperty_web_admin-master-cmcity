@@ -44,7 +44,7 @@ class LicenseVerifyViewModel extends ChangeNotifier {
   final LicenseVerifyService _service;
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
-  void _onZoneStoreChanged() {
+  Future<void> _onZoneStoreChanged() async {
     final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
         ? null
         : _zoneStore.licenseSubZone;
@@ -72,9 +72,16 @@ class LicenseVerifyViewModel extends ChangeNotifier {
         orElse: () => SubZoneModel(),
       );
       subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-      loadZones(zoneSubSer: subSer);
+      await loadZones(zoneSubSer: subSer);
     }
-    refresh();
+    if (_selectedZone != null && _selectedZone!.isNotEmpty) {
+      final zone = _zoneModels.firstWhere(
+        (z) => z.zn == _selectedZone,
+        orElse: () => ZoneModel(),
+      );
+      _selectedZoneSer = zone.ser;
+    }
+    await refresh();
   }
 
   // ---------- Event channel ----------
@@ -273,6 +280,7 @@ class LicenseVerifyViewModel extends ChangeNotifier {
         includeDone: false,
         perPage: 50,
         zser: zserFilter,
+        subzoneser: _selectedSubZoneSerFilter,
         statuses: _statusesFilter,
         sortBy: _selectedSort,
         sortDir: _selectedSortDir,
@@ -307,6 +315,7 @@ class LicenseVerifyViewModel extends ChangeNotifier {
         includeDone: false,
         perPage: 50,
         zser: zserFilter,
+        subzoneser: _selectedSubZoneSerFilter,
         statuses: _statusesFilter,
         sortBy: _selectedSort,
         sortDir: _selectedSortDir,
@@ -331,6 +340,16 @@ class LicenseVerifyViewModel extends ChangeNotifier {
 
   Future<void> executeSearch() async {
     await refresh();
+  }
+
+  String? get _selectedSubZoneSerFilter {
+    if (_selectedZoneSub == null || _selectedZoneSub!.isEmpty) return null;
+    final subzone = _subzoneModels.firstWhere(
+      (s) => s.zn == _selectedZoneSub,
+      orElse: () => SubZoneModel(),
+    );
+    final ser = subzone.ser;
+    return ser == null || ser.isEmpty || ser == '0' ? null : ser;
   }
 
   // ===============================================================

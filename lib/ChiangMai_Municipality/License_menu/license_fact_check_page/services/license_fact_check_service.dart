@@ -78,7 +78,7 @@ class LicensefactcheckService {
   /// โหลดรายการ fact-check (inspections) — v2 endpoint
   /// - GET /api/v2/admin/requests/tasks/inspections
   /// - query params: include_done, sort_by, sort_dir, q, inspection_passed,
-  ///                 created_from, created_to, zser, subzoneser, per_page, page, zn
+  ///                 created_from, created_to, zser, subzoneser, per_page, page
   /// - urlCustom: ลิงก์จาก Laravel pagination (full URL)
   Future<FactCheckListResult> fetchInspections({
     String? urlCustom,
@@ -93,7 +93,6 @@ class LicensefactcheckService {
     String? createdTo, // YYYY-MM-DD
     String? zser,
     String? subzoneser,
-    String? zn,
     List<String>? statuses,
   }) async {
     try {
@@ -109,7 +108,8 @@ class LicensefactcheckService {
           inspectionPassed: inspectionPassed,
           createdFrom: createdFrom,
           createdTo: createdTo,
-          zn: zn,
+          zser: zser,
+          subzoneser: subzoneser,
           statuses: statuses,
         );
       } else {
@@ -136,9 +136,6 @@ class LicensefactcheckService {
             subzoneser != '0') {
           qp['subzoneser'] = subzoneser;
         }
-        if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
-          qp['zn'] = zn;
-        }
         if (statuses != null && statuses.isNotEmpty) {
           for (final s in statuses) {
             qp['status[]'] = s;
@@ -153,7 +150,7 @@ class LicensefactcheckService {
       print('║ [fetchInspections][v2] GET → $uri');
       print('║   • urlCustom       : $urlCustom');
       print('║   • query           : "$query"');
-      print('║   • zn / zser       : $zn / $zser');
+      print('║   • zser            : $zser');
       print('║   • subzoneser      : $subzoneser');
       print('║   • include_done    : $includeDone');
       print('║   • inspection_passed: $inspectionPassed');
@@ -250,7 +247,8 @@ class LicensefactcheckService {
     bool? inspectionPassed,
     String? createdFrom,
     String? createdTo,
-    String? zn,
+    String? zser,
+    String? subzoneser,
     List<String>? statuses,
   }) {
     final base = MyConstant().domain_v1.replaceFirst(RegExp(r'/v1/?$'), '');
@@ -282,8 +280,16 @@ class LicensefactcheckService {
     if (createdTo != null && createdTo.isNotEmpty) {
       qp['created_to'] = qp['created_to'] ?? createdTo;
     }
-    if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
-      qp['zn'] = zn;
+    qp.remove('zn');
+    if (zser != null && zser.isNotEmpty && zser != '0') {
+      qp['zser'] = zser;
+    } else {
+      qp.remove('zser');
+    }
+    if (subzoneser != null && subzoneser.isNotEmpty && subzoneser != '0') {
+      qp['subzoneser'] = subzoneser;
+    } else {
+      qp.remove('subzoneser');
     }
     if (statuses != null && statuses.isNotEmpty) {
       final existing = qp.keys.where((k) => k.startsWith('status[')).toList();

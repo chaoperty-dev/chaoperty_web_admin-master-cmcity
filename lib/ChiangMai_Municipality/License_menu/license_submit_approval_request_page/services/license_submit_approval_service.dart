@@ -116,7 +116,7 @@ class LicenseSubmitApprovalService {
 
   // ---------- 2. List Tasks Approvals (v2 — ใหม่) ----------
   /// GET /api/v2/admin/requests/tasks/approvals
-  /// - query params: per_page, page, q, zn
+  /// - query params: per_page, page, q, zser
   /// - urlCustom: ลิงก์จาก Laravel pagination (full URL)
   /// ใช้ SubmitApprovalDetail.fromJson() parse (รองรับ v2 shape)
   Future<SubmitApprovalListResult> listTasksApprovals({
@@ -124,7 +124,7 @@ class LicenseSubmitApprovalService {
     String query = '',
     int perPage = 50,
     int page = 1,
-    String? zn,
+    String? zser,
     List<String>? statuses,
     String? sortBy,
     String? sortDir,
@@ -133,15 +133,15 @@ class LicenseSubmitApprovalService {
       Uri uri;
       if (urlCustom != null && urlCustom.isNotEmpty) {
         uri = _resolvePagingUrl(urlCustom,
-            query: query, perPage: perPage, zn: zn, statuses: statuses);
+            query: query, perPage: perPage, zser: zser, statuses: statuses);
       } else {
         final qp = <String, String>{
           'per_page': '$perPage',
           if (page > 1) 'page': '$page',
         };
         if (query.trim().isNotEmpty) qp['q'] = query.trim();
-        if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
-          qp['zn'] = zn;
+        if (zser != null && zser.isNotEmpty && zser != '0') {
+          qp['zser'] = zser;
         }
         if (statuses != null && statuses.isNotEmpty) {
           for (final s in statuses) {
@@ -165,7 +165,7 @@ class LicenseSubmitApprovalService {
       print('║ [listTasksApprovals][v2] GET → $uri');
       print('║   • urlCustom  : $urlCustom');
       print('║   • query      : "$query"');
-      print('║   • zn (zone)  : $zn');
+      print('║   • zser (zone) : $zser');
       print('║   • perPage    : $perPage');
       print('║   • page       : $page');
       print('╚══════════════════════════════════════════════════════════════');
@@ -270,7 +270,7 @@ class LicenseSubmitApprovalService {
     String raw, {
     required String query,
     required int perPage,
-    String? zn,
+    String? zser,
     List<String>? statuses,
   }) {
     final base = MyConstant().domain_v1.replaceFirst(RegExp(r'/v1/?$'), '');
@@ -290,8 +290,11 @@ class LicenseSubmitApprovalService {
     if (query.trim().isNotEmpty && !qp.containsKey('q')) {
       qp['q'] = query.trim();
     }
-    if (zn != null && zn.isNotEmpty && zn != '0' && zn != 'ทั้งหมด') {
-      qp['zn'] = zn;
+    qp.remove('zn');
+    if (zser != null && zser.isNotEmpty && zser != '0') {
+      qp['zser'] = zser;
+    } else {
+      qp.remove('zser');
     }
     if (statuses != null && statuses.isNotEmpty) {
       final existing = qp.keys.where((k) => k.startsWith('status[')).toList();

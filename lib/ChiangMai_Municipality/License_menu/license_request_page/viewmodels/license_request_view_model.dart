@@ -44,7 +44,7 @@ class LicenseRequestViewModel extends ChangeNotifier {
   final LicenseRequestService _service;
   final ZoneSelectionStore _zoneStore = ZoneSelectionStore.instance;
 
-  void _onZoneStoreChanged() {
+  Future<void> _onZoneStoreChanged() async {
     final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
         ? null
         : _zoneStore.licenseSubZone;
@@ -72,9 +72,10 @@ class LicenseRequestViewModel extends ChangeNotifier {
         orElse: () => SubZoneModel(),
       );
       subSer = (sub.ser == '0' || sub.ser == null) ? null : sub.ser;
-      loadZones(zoneSubSer: subSer);
+      await loadZones(zoneSubSer: subSer);
     }
-    refresh();
+    _syncSelectedZoneSer();
+    await refresh();
   }
 
   // ---------- Event channel ----------
@@ -118,6 +119,27 @@ class LicenseRequestViewModel extends ChangeNotifier {
   String? get selectedZoneSub => _selectedZoneSub;
   String? get selectedZone => _selectedZone;
   String? get selectedZoneSer => _selectedZoneSer;
+
+  void _syncSelectedZoneSer() {
+    if (_selectedZone == null || _selectedZone!.isEmpty) return;
+    final zone = _zoneModels.firstWhere(
+      (z) => z.zn == _selectedZone,
+      orElse: () => ZoneModel(),
+    );
+    if (zone.ser != null && zone.ser!.isNotEmpty) {
+      _selectedZoneSer = zone.ser;
+    }
+  }
+
+  String? get _selectedSubZoneSerFilter {
+    if (_selectedZoneSub == null || _selectedZoneSub!.isEmpty) return null;
+    final subzone = _subzoneModels.firstWhere(
+      (s) => s.zn == _selectedZoneSub,
+      orElse: () => SubZoneModel(),
+    );
+    final ser = subzone.ser;
+    return ser == null || ser.isEmpty || ser == '0' ? null : ser;
+  }
 
   // ---------- Status filter ----------
   /// รายการ status ทั้งหมดที่ filter ได้
@@ -283,6 +305,7 @@ class LicenseRequestViewModel extends ChangeNotifier {
   Future<void> refresh() async {
     _setLoading(true);
     try {
+      _syncSelectedZoneSer();
       final zserRaw = _selectedZoneSer;
       final zserFilter = (zserRaw == null ||
               zserRaw.isEmpty ||
@@ -296,6 +319,7 @@ class LicenseRequestViewModel extends ChangeNotifier {
         sortBy: _selectedSort,
         sortDir: _selectedSortDir,
         zser: zserFilter,
+        subzoneser: _selectedSubZoneSerFilter,
         statuses: _statusesFilter,
       );
       _requests = res.items;
@@ -315,6 +339,7 @@ class LicenseRequestViewModel extends ChangeNotifier {
     if (url == null || url.isEmpty) return;
     _setLoading(true);
     try {
+      _syncSelectedZoneSer();
       final zserRaw = _selectedZoneSer;
       final zserFilter = (zserRaw == null ||
               zserRaw.isEmpty ||
@@ -329,6 +354,7 @@ class LicenseRequestViewModel extends ChangeNotifier {
         sortBy: _selectedSort,
         sortDir: _selectedSortDir,
         zser: zserFilter,
+        subzoneser: _selectedSubZoneSerFilter,
         statuses: _statusesFilter,
       );
       _requests = res.items;

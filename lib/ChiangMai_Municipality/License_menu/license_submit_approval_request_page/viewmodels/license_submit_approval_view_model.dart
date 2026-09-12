@@ -242,15 +242,11 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
     _clearError();
     try {
       // ถ้าเลือก "ทั้งหมด" (ser=0) ให้ส่ง null — ไม่ filter
-      final znFilter = (_selectedZone == null ||
-              _selectedZone == '0' ||
-              _selectedZone == 'ทั้งหมด')
-          ? null
-          : _selectedZone;
+      final zserFilter = _selectedZoneSerFilter;
       final res = await _paymentService.listTasksApprovals(
         query: _searchQuery,
         page: 1,
-        zn: znFilter,
+        zser: zserFilter,
         statuses: _statusesFilter,
         sortBy: _selectedSort,
         sortDir: _selectedSortDir,
@@ -274,15 +270,11 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
     _setLoading(true);
     _clearError();
     try {
-      final znFilter = (_selectedZone == null ||
-              _selectedZone == '0' ||
-              _selectedZone == 'ทั้งหมด')
-          ? null
-          : _selectedZone;
+      final zserFilter = _selectedZoneSerFilter;
       final res = await _paymentService.listTasksApprovals(
         urlCustom: url,
         query: _searchQuery,
-        zn: znFilter,
+        zser: zserFilter,
         statuses: _statusesFilter,
         sortBy: _selectedSort,
         sortDir: _selectedSortDir,
@@ -424,24 +416,10 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
     _zoneStore.setLicenseZone(value);
   }
 
-  /// ดรอปดาวน์ Zones: filter by sub_zone (sub_zone.ser == zone.sub_zone)
-  /// หมายเหตุ: ต้องคง default "ทั้งหมด" ไว้เสมอ เพราะ onSubZoneChanged จะ reset
-  /// _selectedZone = 'ทั้งหมด' หลังเปลี่ยน subzone — ถ้า filter ทิ้ง dropdown
-  /// จะ assertion fail (value ไม่ match item)
+  /// ดรอปดาวน์ Zones: API กรองตาม group_ser ให้แล้ว
+  /// ต้องคืนรายการจาก API ตรง ๆ เพราะ ZoneModel ไม่มี sub_zone จาก endpoint นี้
   List<ZoneModel> get zoneModels {
-    if (_selectedZoneSub == null || _selectedZoneSub == 'ทั้งหมด') {
-      return _zoneModels;
-    }
-    final subSer = _selectedZoneSubSer;
-    if (subSer == null || subSer.isEmpty || subSer == '0') {
-      return _zoneModels;
-    }
-    final filtered = _zoneModels.where((z) => z.sub_zone == subSer).toList();
-    // คง default "ทั้งหมด" ไว้เป็น option แรกเสมอ
-    if (_zoneModels.isNotEmpty && _zoneModels.first.zn == 'ทั้งหมด') {
-      return [_zoneModels.first, ...filtered];
-    }
-    return filtered;
+    return _zoneModels;
   }
 
   /// ดรอปดาวน์ SubZones
@@ -450,6 +428,20 @@ class LicenseSubmitApprovalViewModel extends ChangeNotifier {
   String? get selectedZoneSub => _selectedZoneSub;
   String? get selectedZone => _selectedZone;
   String? get selectedZoneSer => _selectedZoneSer;
+
+  String? get _selectedZoneSerFilter {
+    if (_selectedZone == null ||
+        _selectedZone == '0' ||
+        _selectedZone == 'ทั้งหมด') {
+      return null;
+    }
+    final zone = _zoneModels.firstWhere(
+      (z) => z.zn == _selectedZone,
+      orElse: () => ZoneModel(),
+    );
+    final ser = zone.ser;
+    return ser == null || ser.isEmpty || ser == '0' ? null : ser;
+  }
 
   // ===============================================================
   // User actions
