@@ -79,7 +79,25 @@ class AuthService {
   /// - assigned == true → user มี role นี้ (ใช้ filter เมนู)
   /// - cache ทั้ง tree ไว้ใน SecurePrefs (authRolesTree)
   /// - สรุป code ที่ assigned เป็น string เก็บใน prefs 'menuPermission'
-  static Future<List<Map<String, dynamic>>?> fetchRolesTree() async {
+  ///
+  /// กันยิงซ้อน: ถ้ามี request ค้างอยู่แล้ว จะคืน Future ตัวเดิม
+  /// (เช่น poller กับ login ยิงพร้อมกัน → ยิงเน็ตครั้งเดียว)
+  static Future<List<Map<String, dynamic>>?> fetchRolesTree() {
+    final running = _treeInflight;
+    if (running != null) return running;
+
+    final future = _fetchRolesTree();
+    _treeInflight = future;
+    future.whenComplete(() {
+      if (identical(_treeInflight, future)) _treeInflight = null;
+    });
+    return future;
+  }
+
+  /// request ที่กำลังวิ่งอยู่ — null = ว่าง
+  static Future<List<Map<String, dynamic>>?>? _treeInflight;
+
+  static Future<List<Map<String, dynamic>>?> _fetchRolesTree() async {
     final token = await AuthTokenStore.read();
     if (token == null) return null;
     try {

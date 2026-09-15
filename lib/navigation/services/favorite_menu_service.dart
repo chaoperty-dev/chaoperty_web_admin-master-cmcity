@@ -4,9 +4,9 @@
 // Service — pin/favorite เมนู navigation ของ user
 //
 // Backend:
-// - GET  {domain_v2}/admin/roles/tree   → roles tree (รวม assigned menus)
-//     node ไหน "favorite": true = เมนูที่ user ปักพิน (ทั้ง top-level และ children)
 // - POST {domain_v2}/admin/roles/pin    body: {role_id, favorite: bool}
+// - GET  {domain_v2}/admin/roles/tree   → ย้ายไป MenuAccessService แล้ว
+//   (เดิม service นี้ยิงเอง ทำให้ตอน login ยิงซ้ำหลายรอบ)
 //
 // Frontend cache (SharedPreferences key 'menuFavoriteRoutes'):
 // - CSV ของ route paths ที่ user pin (เช่น "/contract,/payment")
@@ -25,13 +25,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../Constant/Myconstant.dart';
 import '../../ChiangMai_Municipality/unity/auth_token_store.dart';
-import 'navigation_menu_service.dart';
 
 class FavoriteMenuService {
   static const String _cacheKey = 'menuFavoriteRoutes';
 
-  // Roles tree endpoint (เราใช้ตัวเดียวกับ AuthService)
-  static String get _rolesTreeUrl => '${MyConstant().domain_v2}/admin/roles/tree';
   static String get _pinUrl => '${MyConstant().domain_v2}/admin/roles/pin';
 
   /// อ่าน pinned routes จาก local cache (CSV ใน SharedPreferences)
@@ -61,138 +58,12 @@ class FavoriteMenuService {
     }
   }
 
-  /// GET /admin/roles/tree → routes ที่ user ปักพิน (favorite == true)
-  /// - เดิน tree ทุก node (top-level + children) เก็บ code ของ node ที่ favorite
-  /// - แปลง code → route ผ่าน navigation_menu.json (permission == code)
-  /// - group ที่ถูกปักพิน → รวม route ของ children ทั้งกลุ่ม
-  static Future<Set<String>> fetchPinnedRoutes() async {
-    final token = await AuthTokenStore.read();
-    if (token == null) return <String>{};
-    try {
-      final headers = <String, String>{
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-      final response =
-          await http.get(Uri.parse(_rolesTreeUrl), headers: headers);
-      if (response.statusCode != 200) return <String>{};
-      final jsonRes = jsonDecode(response.body);
-      final data = jsonRes is Map ? jsonRes['data'] : null;
-      if (data is! List) return <String>{};
-
-      final favCodes = _collectFavoriteCodes(data);
-      if (favCodes.isEmpty) return <String>{};
-      final pinned = await _codesToRoutes(favCodes);
-      if (pinned.isNotEmpty) await _writeCache(pinned);
-      return pinned;
-    } catch (e) {
-      print('[FavoriteMenuService] fetchPinnedRoutes error: $e');
-      return <String>{};
-    }
-  }
-
-  /// GET /admin/roles/tree → Map<route, role_id> ไว้ใช้ toggle pin
-  /// - tree: code → role_id (recursive ทุก node)
-  /// - menu asset: route → permission code
-  /// - รวมเป็น route → role_id เพื่อ POST /admin/roles/pin ให้ถูก role
-  static Future<Map<String, int>> fetchRouteRoleIds() async {
-    final token = await AuthTokenStore.read();
-    if (token == null) return <String, int>{};
-    try {
-      final headers = <String, String>{
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      };
-      final response =
-          await http.get(Uri.parse(_rolesTreeUrl), headers: headers);
-      if (response.statusCode != 200) return <String, int>{};
-      final jsonRes = jsonDecode(response.body);
-      final data = jsonRes is Map ? jsonRes['data'] : null;
-      if (data is! List) return <String, int>{};
-
-      // 1) tree: code → role_id
-      final codeToId = <String, int>{};
-      void walk(List list) {
-        for (final raw in list) {
-          if (raw is! Map) continue;
-          final code = raw['code']?.toString() ?? '';
-          final id = raw['role_id'] ?? raw['id'];
-          final idInt = id is int ? id : int.tryParse('$id');
-          if (code.isNotEmpty && idInt != null) codeToId[code] = idInt;
-          final kids = raw['children'];
-          if (kids is List && kids.isNotEmpty) walk(kids);
-        }
-      }
-
-      walk(data);
-      if (codeToId.isEmpty) return <String, int>{};
-
-      // 2) menu asset: route → permission code → role_id
-      final menu = await NavigationMenuService.load();
-      final routeToId = <String, int>{};
-      for (final item in menu.items) {
-        final itemId = item.permission == null ? null : codeToId[item.permission];
-        if (itemId != null && item.route != null && item.route!.isNotEmpty) {
-          routeToId[item.route!] = itemId;
-        }
-        for (final c in item.children) {
-          final cid = c.permission == null ? null : codeToId[c.permission];
-          if (cid != null && c.route.isNotEmpty) routeToId[c.route] = cid;
-        }
-      }
-      return routeToId;
-    } catch (e) {
-      print('[FavoriteMenuService] fetchRouteRoleIds error: $e');
-      return <String, int>{};
-    }
-  }
-
-  /// เดิน tree แบบ recursive — รวม code ของทุก node ที่ favorite == true
-  static Set<String> _collectFavoriteCodes(List nodes) {
-    final codes = <String>{};
-    void walk(List list) {
-      for (final raw in list) {
-        if (raw is! Map) continue;
-        if (raw['favorite'] == true) {
-          final code = raw['code']?.toString() ?? '';
-          if (code.isNotEmpty) codes.add(code);
-        }
-        final kids = raw['children'];
-        if (kids is List && kids.isNotEmpty) walk(kids);
-      }
-    }
-
-    walk(nodes);
-    return codes;
-  }
-
-  /// แปลง favorite codes → routes จากเมนู asset (permission == code)
-  static Future<Set<String>> _codesToRoutes(Set<String> codes) async {
-    final menu = await NavigationMenuService.load();
-    final routes = <String>{};
-    for (final item in menu.items) {
-      if (item.permission != null && codes.contains(item.permission)) {
-        if (item.isGroup) {
-          // group ถูกปักพิน → pin ทุก route ในกลุ่ม
-          for (final c in item.children) {
-            if (c.route.isNotEmpty) routes.add(c.route);
-          }
-        } else if (item.route != null && item.route!.isNotEmpty) {
-          routes.add(item.route!);
-        }
-      }
-      for (final c in item.children) {
-        if (c.permission != null &&
-            codes.contains(c.permission) &&
-            c.route.isNotEmpty) {
-          routes.add(c.route);
-        }
-      }
-    }
-    return routes;
-  }
+  // ────────────────────────────────────────────────────────────────────────
+  // NOTE: fetchPinnedRoutes() และ fetchRouteRoleIds() ถูกถอดออกแล้ว
+  //   เดิม 2 ตัวนี้ยิง GET /admin/roles/tree แยกกันเอง (payload ก้อนเดียวกัน)
+  //   ทำให้ตอน login ยิงซ้ำ ใช้ MenuAccessService.load() แทน — อ่าน cache ก่อน
+  //   และ parse tree ครั้งเดียวได้ครบทั้ง pinned routes + route_role_ids
+  // ────────────────────────────────────────────────────────────────────────
 
   /// Toggle pin สำหรับ role (POST /admin/roles/pin)
   /// Body ตามตัวอย่าง user ส่ง: `{ "role_id": 6, "favorite": true }`

@@ -10,6 +10,7 @@ import '../Constant/Myconstant.dart';
 import '../router/auth_state_notifier.dart';
 import 'models/navigation_menu_model.dart';
 import 'services/favorite_menu_service.dart';
+import 'services/menu_access_service.dart';
 import 'services/navigation_menu_service.dart';
 import 'widgets/favorites_section.dart';
 
@@ -120,38 +121,19 @@ class _AppNavigationRailState extends State<AppNavigationRail> {
     final cached = await FavoriteMenuService.readCachedRoutes();
     if (!mounted) return;
     setState(() => _pinnedRoutes = cached);
-    // 2) sync จาก server
-    final fresh = await FavoriteMenuService.fetchPinnedRoutes();
-    if (!mounted) return;
-    if (fresh.isNotEmpty || cached.isEmpty) {
-      setState(() => _pinnedRoutes = fresh);
-    }
-    // 3) load role id (ไว้สำหรับ POST /admin/roles/pin)
-    final roleId = await _readRoleId();
-    if (!mounted) return;
-    setState(() => _currentRoleId = roleId);
-    // 4) map route → role_id ของเมนูตัวเอง (pin ต้องส่ง role_id ให้ถูก role)
-    final routeIds = await FavoriteMenuService.fetchRouteRoleIds();
-    if (!mounted) return;
-    setState(() => _routeRoleIds = routeIds);
-  }
 
-  Future<int?> _readRoleId() async {
-    try {
-      final raw = await AuthRolesTreeStore.read();
-      if (raw == null || raw.isEmpty) return null;
-      final data = jsonDecode(raw);
-      if (data is List) {
-        for (final r in data) {
-          if (r is Map && r['assigned'] == true) {
-            final id = r['id'] ?? r['role_id'];
-            if (id is int) return id;
-            if (id is String) return int.tryParse(id);
-          }
-        }
+    // 2) โหลดสิทธิ์เมนูทั้งหมดในคราวเดียว
+    //    - pinnedRoutes + routeRoleIds + primaryRoleId มาจาก tree ก้อนเดียวกัน
+    //    - service อ่าน cache (AuthRolesTreeStore) ก่อน → ปกติไม่ยิงเน็ตเลย
+    final access = await MenuAccessService.load();
+    if (!mounted) return;
+    setState(() {
+      if (access.pinnedRoutes.isNotEmpty || cached.isEmpty) {
+        _pinnedRoutes = access.pinnedRoutes;
       }
-    } catch (_) {}
-    return null;
+      _routeRoleIds = access.routeRoleIds;
+      _currentRoleId = access.primaryRoleId;
+    });
   }
 
   Future<void> _loadUserName() async {

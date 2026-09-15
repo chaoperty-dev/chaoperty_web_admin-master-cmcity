@@ -10,6 +10,7 @@ import '../router/auth_state_notifier.dart';
 import 'app_navigation_rail.dart';
 import 'models/navigation_menu_model.dart';
 import 'services/favorite_menu_service.dart';
+import 'services/menu_access_service.dart';
 import 'services/navigation_menu_service.dart';
 import 'widgets/favorites_section.dart';
 
@@ -151,36 +152,18 @@ class _MobileDrawerState extends State<_MobileDrawer> {
     final cached = await FavoriteMenuService.readCachedRoutes();
     if (!mounted) return;
     setState(() => _pinnedRoutes = cached);
-    final fresh = await FavoriteMenuService.fetchPinnedRoutes();
-    if (!mounted) return;
-    if (fresh.isNotEmpty || cached.isEmpty) {
-      setState(() => _pinnedRoutes = fresh);
-    }
-    final roleId = await _readRoleId();
-    if (!mounted) return;
-    setState(() => _currentRoleId = roleId);
-    // map route → role_id ของเมนูตัวเอง (pin ต้องส่ง role_id ให้ถูก role)
-    final routeIds = await FavoriteMenuService.fetchRouteRoleIds();
-    if (!mounted) return;
-    setState(() => _routeRoleIds = routeIds);
-  }
 
-  Future<int?> _readRoleId() async {
-    try {
-      final raw = await AuthRolesTreeStore.read();
-      if (raw == null || raw.isEmpty) return null;
-      final data = jsonDecode(raw);
-      if (data is List) {
-        for (final r in data) {
-          if (r is Map && r['assigned'] == true) {
-            final id = r['id'] ?? r['role_id'];
-            if (id is int) return id;
-            if (id is String) return int.tryParse(id);
-          }
-        }
+    // โหลดสิทธิ์เมนูทั้งหมดในคราวเดียว (เหมือน AppNavigationRail)
+    // — service อ่าน cache ก่อน → ปกติไม่ยิงเน็ต
+    final access = await MenuAccessService.load();
+    if (!mounted) return;
+    setState(() {
+      if (access.pinnedRoutes.isNotEmpty || cached.isEmpty) {
+        _pinnedRoutes = access.pinnedRoutes;
       }
-    } catch (_) {}
-    return null;
+      _routeRoleIds = access.routeRoleIds;
+      _currentRoleId = access.primaryRoleId;
+    });
   }
 
   Future<void> _togglePin(String route) async {
