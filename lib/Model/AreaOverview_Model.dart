@@ -44,6 +44,9 @@ class AreaOverviewResponse {
   final int? totalVacant;
   final int? duplicateLeases;
   final List<AreaOverviewItem> items;
+  final int currentPage;
+  final int lastPage;
+  final int total;
 
   const AreaOverviewResponse({
     this.date,
@@ -53,6 +56,9 @@ class AreaOverviewResponse {
     this.totalVacant,
     this.duplicateLeases,
     this.items = const [],
+    this.currentPage = 1,
+    this.lastPage = 1,
+    this.total = 0,
   });
 
   factory AreaOverviewResponse.fromJson(Map<String, dynamic> json) {
@@ -75,7 +81,15 @@ class AreaOverviewResponse {
       totalVacant: _asInt(json['total_vacant']),
       duplicateLeases: _asInt(json['duplicate_leases']),
       items: items,
+      currentPage: _asInt(_mapValue(json['pagination'], 'current_page')) ?? 1,
+      lastPage: _asInt(_mapValue(json['pagination'], 'last_page')) ?? 1,
+      total: _asInt(_mapValue(json['pagination'], 'total')) ?? items.length,
     );
+  }
+
+  static dynamic _mapValue(dynamic value, String key) {
+    if (value is Map) return value[key];
+    return null;
   }
 
   static int? _asInt(dynamic v) {
@@ -98,10 +112,10 @@ class AreaOverviewItem {
   final int? zoneQty; // API เก่าเท่านั้น
 
   // ── lock ──
-  final String? lock;       // รหัสล็อก (เช่น "T1")
-  final String? lockCode;   // API เก่าเท่านั้น
-  final dynamic area;       // ขนาดพื้นที่ (API เก่าเท่านั้น)
-  final dynamic lockRent;   // ค่าเช่า (API เก่าเท่านั้น)
+  final String? lock; // รหัสล็อก (เช่น "T1")
+  final String? lockCode; // API เก่าเท่านั้น
+  final dynamic area; // ขนาดพื้นที่ (API เก่าเท่านั้น)
+  final dynamic lockRent; // ค่าเช่า (API เก่าเท่านั้น)
   final dynamic lockStatus; // API เก่าเท่านั้น
 
   // ── requester — string (ชื่อ, API ใหม่) หรือ object (API เก่า) ──
@@ -116,7 +130,7 @@ class AreaOverviewItem {
   final String? sdate;
   final String? ldate;
   final String? requestUuid; // API เก่าเท่านั้น
-  final String? status;      // EN key เช่น "in_progress"
+  final String? status; // EN key เช่น "in_progress"
 
   const AreaOverviewItem({
     this.aser,

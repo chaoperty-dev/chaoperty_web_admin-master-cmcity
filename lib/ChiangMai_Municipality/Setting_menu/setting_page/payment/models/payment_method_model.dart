@@ -29,7 +29,7 @@ class PaymentMethodModel {
       code: '${json['code'] ?? ''}',
       nameTh: '${json['name_th'] ?? ''}',
       description: '${json['description'] ?? ''}',
-      paymentSystem: '${json['payment_system'] ?? ''}',
+      paymentSystem: json['payment_system']?.toString() ?? '',
       payTypes: rawPayTypes is List
           ? rawPayTypes.map((e) => '$e').toList()
           : const <String>[],

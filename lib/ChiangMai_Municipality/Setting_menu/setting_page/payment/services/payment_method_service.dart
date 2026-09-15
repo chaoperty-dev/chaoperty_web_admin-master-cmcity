@@ -76,12 +76,6 @@ class PaymentMethodService {
     _check(response);
   }
 
-  Future<void> delete(String uuid) async {
-    final response =
-        await http.delete(_uri(uuid), headers: await MyHeaders.build());
-    _check(response);
-  }
-
   Map<String, dynamic> _payload({
     required String code,
     required String nameTh,

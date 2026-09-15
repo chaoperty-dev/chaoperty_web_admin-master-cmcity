@@ -53,9 +53,8 @@ class LicenseContractViewModel extends ChangeNotifier {
     final newSub = _zoneStore.licenseSubZone == 'ทั้งหมด'
         ? null
         : _zoneStore.licenseSubZone;
-    final newZone = _zoneStore.licenseZone == 'ทั้งหมด'
-        ? null
-        : _zoneStore.licenseZone;
+    final newZone =
+        _zoneStore.licenseZone == 'ทั้งหมด' ? null : _zoneStore.licenseZone;
     final subChanged = _selectedSubZone != newSub;
     final zoneChanged = _selectedZn != newZone;
     if (!subChanged && !zoneChanged) return;
@@ -117,7 +116,16 @@ class LicenseContractViewModel extends ChangeNotifier {
   // ---------- Data from service ----------
   List<ZoneModel> _zoneModels = [];
   List<SubZoneModel> _subzoneModels = [];
-  List<AreaModel> _zoneAreas = []; // ทุกล็อกทั้งหมด (รวมที่มี/ไม่มีคนเช่า)
+  List<AreaModel> _zoneAreas = []; // รายการพื้นที่ของหน้า overview
+  bool _isAreasLoading = false;
+  int _areasCurrentPage = 1;
+  int _areasLastPage = 1;
+  int _areasTotal = 0;
+
+  bool get isAreasLoading => _isAreasLoading;
+  int get areasCurrentPage => _areasCurrentPage;
+  int get areasLastPage => _areasLastPage;
+  int get areasTotal => _areasTotal;
 
   // ---------- Announcement ----------
   AnnouncementZone? _announcementZone;
@@ -346,35 +354,53 @@ class LicenseContractViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> loadAreas(String? zoneSer, {String? subzoneSer}) async {
-    // ── ใช้ API ใหม่ /admin/areas/overview ──
+  Future<void> loadAreas(String? zoneSer,
+      {String? subzoneSer, int page = 1}) async {
+    _isAreasLoading = true;
+    notifyListeners();
     try {
       final overview = await _service.fetchAreasOverview(
         zoneSer: zoneSer,
         subzoneSer: subzoneSer,
+        page: page,
       );
-      _zoneAreas = overview.items
-          .map((it) => _mapOverviewToAreaModel(it))
-          .toList();
+      _zoneAreas.addAll(
+        overview.items.map(_mapOverviewToAreaModel),
+      );
+      _areasCurrentPage = overview.currentPage;
+      _areasLastPage = overview.lastPage < 1 ? 1 : overview.lastPage;
+      _areasTotal = overview.total;
     } catch (e) {
-      _zoneAreas = [];
+      if (page == 1) {
+        _zoneAreas = [];
+        _areasCurrentPage = 1;
+        _areasLastPage = 1;
+        _areasTotal = 0;
+      }
       _emitError('โหลดข้อมูลพื้นที่เช่าไม่สำเร็จ: $e');
+    } finally {
+      _isAreasLoading = false;
+      notifyListeners();
     }
-    notifyListeners();
   }
 
   Future<void> refreshProperties() async {
-    String? subzoneSer;
-    if (_selectedSubZone != null && _selectedSubZone!.isNotEmpty) {
-      final subzone = _subzoneModels.firstWhere(
-        (sub) => sub.zn == _selectedSubZone,
-        orElse: () => SubZoneModel(),
-      );
-      subzoneSer = (subzone.ser == '0' || subzone.ser == null)
-          ? null
-          : subzone.ser;
-    }
-    await loadAreas(_getZoneSer(_selectedZn), subzoneSer: subzoneSer);
+    _zoneAreas = [];
+    await loadAreas(
+      _getZoneSer(_selectedZn),
+      subzoneSer: _getSubZoneSer(_selectedSubZone ?? ''),
+    );
+  }
+
+  bool get hasMoreAreas => _areasCurrentPage < _areasLastPage;
+
+  Future<void> loadMoreAreas() async {
+    if (_isAreasLoading || !hasMoreAreas) return;
+    await loadAreas(
+      _getZoneSer(_selectedZn),
+      subzoneSer: _getSubZoneSer(_selectedSubZone ?? ''),
+      page: _areasCurrentPage + 1,
+    );
   }
 
   // ── Map helper: AreaOverviewItem → AreaModel ──

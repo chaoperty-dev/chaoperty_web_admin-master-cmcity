@@ -18,7 +18,6 @@ import '../../../../Model/GetZone_Model.dart';
 import '../../../Model/AnnouncementZone_Model.dart';
 import '../unity/API_announcement.dart';
 
-
 class LicenseContractService {
   LicenseContractService({ApiCache? cache})
       : _cache = cache ?? ApiCache(ttl: const Duration(seconds: 60));
@@ -143,9 +142,9 @@ class LicenseContractService {
   }
 
   // ---------- Areas Overview (API ใหม่ — มี aser, status EN key) ----------
-  /// โหลด "ภาพรวมพื้นที่เช่า" 1 หน้า:
+  /// โหลดรายการพื้นที่ 1 หน้า:
   ///   GET {domain_v2}/admin/areas/overview
-  ///   ?subzoneser=<subzoneSer>&zser=<zoneSer>&per_page=50&page=<page>
+  ///   ?subzoneser=<subzoneSer>&zser=<zoneSer>&per_page=5&page=<page>
   ///
   /// null/0/'0' ของ filter จะไม่ถูกส่ง (= ทั้งหมด)
   /// pagination เป็น server-driven จาก data.pagination
@@ -156,7 +155,7 @@ class LicenseContractService {
   }) async {
     final headers = await MyHeaders.build();
     final params = <String, String>{
-      'per_page': '50',
+      'per_page': '5',
       'page': '$page',
     };
     if (subzoneSer != null && subzoneSer.isNotEmpty && subzoneSer != '0') {

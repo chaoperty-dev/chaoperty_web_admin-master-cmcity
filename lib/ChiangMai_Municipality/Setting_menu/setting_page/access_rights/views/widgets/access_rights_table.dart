@@ -28,7 +28,8 @@ class AccessRightsTable extends StatelessWidget {
       return const _LoadingState();
     }
     if (rows.isEmpty) {
-      return _EmptyState(hasFilter: vm.searchQuery.isNotEmpty, onRefresh: vm.refresh);
+      return _EmptyState(
+          hasFilter: vm.searchQuery.isNotEmpty, onRefresh: vm.refresh);
     }
 
     return LayoutBuilder(
@@ -82,7 +83,8 @@ class AccessRightsTable extends StatelessWidget {
   // Header
   // ========================================================================
   Widget _headerRow(AccessRightsViewModel vm) {
-    Widget cell(String label, String columnId, {int flex = 2, bool center = false}) {
+    Widget cell(String label, String columnId,
+        {int flex = 2, bool center = false}) {
       final sorted = vm.sortColumn == columnId;
       return Expanded(
         flex: flex,
@@ -137,8 +139,7 @@ class AccessRightsTable extends StatelessWidget {
           cell('ตำแหน่ง', 'position', flex: 2),
           cell('สิทธิ์การเข้าถึง', 'roles', flex: 3),
           cell('ลำดับเซ็น', 'level', flex: 1, center: true),
-          const SizedBox(
-              width: 170, child: _ActionHeader()),
+          const SizedBox(width: 170, child: _ActionHeader()),
         ],
       ),
     );
@@ -176,7 +177,8 @@ class AccessRightsTable extends StatelessWidget {
             ),
             Expanded(
               flex: 2,
-              child: _Cell(value: model.positionName.isEmpty ? '-' : model.positionName),
+              child: _Cell(
+                  value: model.positionName.isEmpty ? '-' : model.positionName),
             ),
             Expanded(
               flex: 3,
@@ -190,7 +192,9 @@ class AccessRightsTable extends StatelessWidget {
             Expanded(
               flex: 1,
               child: _Cell(
-                value: model.roles.isEmpty ? '-' : model.roles.first.level.toString(),
+                value: model.roles.isEmpty
+                    ? '-'
+                    : model.roles.first.level.toString(),
                 center: true,
                 mono: true,
               ),
@@ -210,7 +214,7 @@ class AccessRightsTable extends StatelessWidget {
                     icon: Icons.draw_rounded,
                     label: 'ลายเซ็น',
                     onTap: () => vm.onSignature(model.uuid),
-                    color: ArColors.statusInfoFg,
+                    color: const Color(0xFF7C3AED),
                   ),
                 ],
               ),
@@ -385,7 +389,7 @@ class _MiniButtonState extends State<_MiniButton> {
   bool _hover = false;
   @override
   Widget build(BuildContext context) {
-    final c = widget.color ?? ArColors.primary;
+    final c = widget.color ?? ArColors.statusInfoFg;
     final fg = _hover ? Colors.white : c;
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -445,7 +449,8 @@ class _LoadingState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: const [
-          CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(ArColors.primary)),
+          CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation(ArColors.primary)),
           SizedBox(height: 12),
           Text('กำลังโหลดข้อมูลผู้ใช้...',
               style: TextStyle(color: ArColors.textSecondary)),
@@ -658,7 +663,7 @@ class _DesktopUserCard extends StatelessWidget {
                 icon: Icons.draw_rounded,
                 label: 'ลายเซ็น',
                 onTap: onSignature,
-                color: ArColors.statusInfoFg,
+                color: const Color(0xFF7C3AED),
               ),
             ],
           ),
@@ -711,9 +716,8 @@ class _UserCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rolesText = model.roles.isEmpty
-        ? '-'
-        : model.roles.map((r) => r.nameTh).join(', ');
+    final rolesText =
+        model.roles.isEmpty ? '-' : model.roles.map((r) => r.nameTh).join(', ');
     final levelText =
         model.roles.isEmpty ? '-' : model.roles.first.level.toString();
 
@@ -737,8 +741,8 @@ class _UserCard extends StatelessWidget {
               ),
               if (levelText != '-')
                 Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color: ArColors.primaryLight.withOpacity(.4),
                     borderRadius: BorderRadius.circular(ArRadius.pill),
@@ -775,7 +779,7 @@ class _UserCard extends StatelessWidget {
                 icon: Icons.draw_rounded,
                 label: 'ลายเซ็น',
                 onTap: onSignature,
-                color: ArColors.statusInfoFg,
+                color: const Color(0xFF7C3AED),
               ),
             ],
           ),

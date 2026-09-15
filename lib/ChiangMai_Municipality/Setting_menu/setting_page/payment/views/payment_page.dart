@@ -1,9 +1,19 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../models/payment_method_event.dart';
+import '../models/payment_method_form_data.dart';
 import '../models/payment_method_model.dart';
 import '../viewmodels/payment_method_view_model.dart';
 import '../../views/theme/setting_page_theme.dart';
+import 'widgets/payment_action_button.dart';
+import 'widgets/payment_code_avatar.dart';
+import 'widgets/payment_method_card.dart';
+import 'widgets/payment_view_toggle.dart';
+import 'widgets/payment_states.dart';
+import 'widgets/payment_status_badge.dart';
 
 class PaymentPage extends StatelessWidget {
   const PaymentPage._();
@@ -17,8 +27,69 @@ class PaymentPage extends StatelessWidget {
   Widget build(BuildContext context) => create();
 }
 
-class _PaymentMethodsBody extends StatelessWidget {
+class _PaymentMethodsBody extends StatefulWidget {
   const _PaymentMethodsBody();
+
+  @override
+  State<_PaymentMethodsBody> createState() => _PaymentMethodsBodyState();
+}
+
+class _PaymentMethodsBodyState extends State<_PaymentMethodsBody> {
+  StreamSubscription<PaymentMethodEvent>? _events;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _events ??= context.read<PaymentMethodViewModel>().events.listen(_onEvent);
+  }
+
+  void _onEvent(PaymentMethodEvent event) {
+    if (!mounted) return;
+    switch (event) {
+      case PaymentMethodOpenCreateEvent():
+        _openForm();
+        break;
+      case PaymentMethodOpenEditEvent(:final item):
+        _openForm(item);
+        break;
+      case PaymentMethodSuccessEvent(:final message):
+        _showSnack(message, SetColors.primary);
+        break;
+      case PaymentMethodErrorEvent(:final message):
+        _showSnack(message, const Color(0xFFB91C1C));
+        break;
+    }
+  }
+
+  void _showSnack(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: color,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(SetRadius.md),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openForm([PaymentMethodModel? item]) async {
+    final vm = context.read<PaymentMethodViewModel>();
+    await showDialog<void>(
+      context: context,
+      builder: (_) => _PaymentMethodDialog(
+        item: item,
+        viewModel: vm,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _events?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +110,7 @@ class _PaymentMethodsBody extends StatelessWidget {
                     Navigator.of(context).pop();
                   }
                 },
-                onAdd: () => _showForm(context),
+                onAdd: vm.onCreate,
               ),
               const SizedBox(height: SetSpace.lg),
               LayoutBuilder(
@@ -55,7 +126,7 @@ class _PaymentMethodsBody extends StatelessWidget {
                         Row(
                           children: [
                             if (!mobile)
-                              _ViewModeToggle(
+                              PaymentViewToggle(
                                 mode: vm.viewMode,
                                 onChanged: vm.setViewMode,
                               ),
@@ -70,7 +141,7 @@ class _PaymentMethodsBody extends StatelessWidget {
                     children: [
                       const Expanded(child: _PaymentSearchBar()),
                       const SizedBox(width: SetSpace.md),
-                      _ViewModeToggle(
+                      PaymentViewToggle(
                         mode: vm.viewMode,
                         onChanged: vm.setViewMode,
                       ),
@@ -85,9 +156,10 @@ class _PaymentMethodsBody extends StatelessWidget {
                 child: vm.loading && vm.items.isEmpty
                     ? const Center(child: CircularProgressIndicator())
                     : vm.error != null && vm.items.isEmpty
-                        ? _ErrorState(message: vm.error!, onRetry: vm.load)
+                        ? PaymentErrorState(
+                            message: vm.error!, onRetry: vm.load)
                         : visibleItems.isEmpty
-                            ? _PaymentEmptyState(
+                            ? PaymentEmptyState(
                                 hasSearch: vm.searchQuery.trim().isNotEmpty,
                                 onAction: vm.searchQuery.trim().isNotEmpty
                                     ? vm.clearSearch
@@ -119,10 +191,10 @@ class _PaymentMethodsBody extends StatelessWidget {
                                         ),
                                         itemCount: visibleItems.length,
                                         itemBuilder: (context, index) =>
-                                            _PaymentMethodCard(
+                                            PaymentMethodCard(
                                           item: visibleItems[index],
-                                          onEdit: () => _showForm(
-                                              context, visibleItems[index]),
+                                          onEdit: () =>
+                                              vm.onEdit(visibleItems[index]),
                                         ),
                                       ),
                                     );
@@ -131,18 +203,14 @@ class _PaymentMethodsBody extends StatelessWidget {
                                   final tableWidth = constraints.maxWidth < 980
                                       ? 980.0
                                       : constraints.maxWidth;
-                                  return Scrollbar(
-                                    thumbVisibility: true,
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: SizedBox(
-                                        width: tableWidth,
-                                        child: SingleChildScrollView(
-                                          child: _PaymentMethodTable(
-                                            items: visibleItems,
-                                            onEdit: (item) =>
-                                                _showForm(context, item),
-                                          ),
+                                  return SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
+                                    child: SizedBox(
+                                      width: tableWidth,
+                                      child: SingleChildScrollView(
+                                        child: _PaymentMethodTable(
+                                          items: visibleItems,
+                                          onEdit: vm.onEdit,
                                         ),
                                       ),
                                     ),
@@ -156,236 +224,7 @@ class _PaymentMethodsBody extends StatelessWidget {
       ),
     );
   }
-
-  Future<void> _showForm(BuildContext context,
-      [PaymentMethodModel? item]) async {
-    final vm = context.read<PaymentMethodViewModel>();
-    final result = await showDialog<_PaymentMethodFormResult>(
-      context: context,
-      builder: (_) => _PaymentMethodDialog(item: item),
-    );
-    if (result == null) return;
-    final ok = item == null
-        ? await vm.create(
-            code: result.code,
-            nameTh: result.nameTh,
-            description: result.description,
-            paymentSystem: result.paymentSystem,
-            payTypes: result.payTypes,
-            sortOrder: result.sortOrder,
-            active: result.active,
-          )
-        : await vm.update(
-            item,
-            nameTh: result.nameTh,
-            description: result.description,
-            paymentSystem: result.paymentSystem,
-            payTypes: result.payTypes,
-            sortOrder: result.sortOrder,
-            active: result.active,
-          );
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-          content: Text(ok ? 'บันทึกสำเร็จ' : (vm.error ?? 'บันทึกล้มเหลว'))),
-    );
-  }
 }
-
-/* class _PaymentDeleteDialog extends StatelessWidget {
-  final String name;
-  const _PaymentDeleteDialog({required this.name});
-
-  @override
-  Widget build(BuildContext context) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(SetSpace.xl),
-        child: Container(
-          constraints: const BoxConstraints(maxWidth: 420),
-          decoration: BoxDecoration(
-            color: SetColors.surface,
-            borderRadius: BorderRadius.circular(SetRadius.lg),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: .14),
-                blurRadius: 28,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFFB91C1C), Color(0xFFC62828)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(SetRadius.lg),
-                    topRight: Radius.circular(SetRadius.lg),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: .18),
-                        borderRadius: BorderRadius.circular(SetRadius.md),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: .30),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.delete_outline_rounded,
-                        color: Colors.white,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: SetSpace.md),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'ยืนยันการลบช่องทาง',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontFamily: SetText.fontBold,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'การดำเนินการนี้ไม่สามารถยกเลิกได้',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: .85),
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 22, 24, 14),
-                child: Text(
-                  'ต้องการลบช่องทาง "$name" หรือไม่?',
-                  style: SetText.body.copyWith(fontSize: 14, height: 1.5),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 18),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _PaymentDialogButton(
-                        label: 'ยกเลิก',
-                        icon: Icons.close_rounded,
-                        onTap: () => Navigator.of(context).pop(false),
-                      ),
-                    ),
-                    const SizedBox(width: SetSpace.sm),
-                    Expanded(
-                      child: _PaymentDialogButton(
-                        label: 'ลบช่องทาง',
-                        icon: Icons.delete_sweep_outlined,
-                        primary: true,
-                        onTap: () => Navigator.of(context).pop(true),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-}
-
-class _PaymentDialogButton extends StatefulWidget {
-  final String label;
-  final IconData icon;
-  final bool primary;
-  final VoidCallback onTap;
-
-  const _PaymentDialogButton({
-    required this.label,
-    required this.icon,
-    required this.onTap,
-    this.primary = false,
-  });
-
-  @override
-  State<_PaymentDialogButton> createState() => _PaymentDialogButtonState();
-}
-
-class _PaymentDialogButtonState extends State<_PaymentDialogButton> {
-  bool _hover = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final foreground = widget.primary
-        ? Colors.white
-        : (_hover ? SetColors.textPrimary : SetColors.textSecondary);
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() => _hover = false),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          decoration: BoxDecoration(
-            gradient: widget.primary
-                ? LinearGradient(
-                    colors: _hover
-                        ? const [Color(0xFFC62828), Color(0xFFB91C1C)]
-                        : const [Color(0xFFB91C1C), Color(0xFFC62828)],
-                  )
-                : null,
-            color: widget.primary
-                ? null
-                : (_hover ? SetColors.surfaceMuted : Colors.white),
-            borderRadius: BorderRadius.circular(SetRadius.md),
-            border: Border.all(
-              color: widget.primary
-                  ? Colors.transparent
-                  : (_hover ? SetColors.textSecondary : SetColors.border),
-            ),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(widget.icon, size: 17, color: foreground),
-              const SizedBox(width: 6),
-              Text(
-                widget.label,
-                style: TextStyle(
-                  color: foreground,
-                  fontFamily: SetText.fontBold,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-*/
 
 class _PaymentSearchBar extends StatefulWidget {
   const _PaymentSearchBar();
@@ -737,44 +576,31 @@ class _PaymentMethodCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: SetColors.primaryLight,
-                  borderRadius: BorderRadius.circular(SetRadius.md),
-                ),
-                child: const Icon(
-                  Icons.payments_outlined,
-                  size: 20,
-                  color: SetColors.primaryDark,
-                ),
-              ),
-              const SizedBox(width: SetSpace.md),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      item.nameTh.isEmpty ? '-' : item.nameTh,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: SetText.body.copyWith(
-                        fontFamily: SetText.fontBold,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      item.code.isEmpty ? '-' : item.code,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: SetText.caption,
-                    ),
-                  ],
+                child: Text(
+                  item.nameTh.isEmpty ? '-' : item.nameTh,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: SetText.body.copyWith(
+                    fontFamily: SetText.fontBold,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              _PaymentStatusPill(active: item.active),
+              const SizedBox(width: SetSpace.sm),
+              PaymentCodeAvatar(code: item.code, size: 30),
+              const SizedBox(width: SetSpace.sm),
+              Flexible(
+                child: Text(
+                  item.code.isEmpty ? '-' : item.code,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.end,
+                  style: SetText.caption,
+                ),
+              ),
+              const SizedBox(width: SetSpace.sm),
+              PaymentStatusBadge(active: item.active),
             ],
           ),
           const Divider(height: SetSpace.lg, color: SetColors.border),
@@ -797,7 +623,7 @@ class _PaymentMethodCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              _PaymentMiniButton(
+              PaymentActionButton(
                 icon: Icons.edit_rounded,
                 label: 'แก้ไข',
                 color: const Color(0xFF2563EB),
@@ -810,6 +636,38 @@ class _PaymentMethodCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _PaymentCodeAvatar extends StatelessWidget {
+  final String code;
+  final double size;
+
+  const _PaymentCodeAvatar({required this.code, this.size = 38});
+
+  IconData get _icon {
+    final value = code.toUpperCase();
+    if (value.contains('QR')) return Icons.qr_code_2_rounded;
+    if (value.contains('BANK')) return Icons.account_balance_rounded;
+    if (value.contains('CARD')) return Icons.credit_card_rounded;
+    if (value.contains('CASH')) return Icons.payments_rounded;
+    if (value.contains('GBPAY')) return Icons.account_balance_wallet_rounded;
+    return Icons.payments_outlined;
+  }
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          color: SetColors.primaryLight,
+          borderRadius: BorderRadius.circular(SetRadius.md),
+        ),
+        child: Icon(
+          _icon,
+          size: size * .52,
+          color: SetColors.primaryDark,
+        ),
+      );
 }
 
 class _PaymentCardInfoLine extends StatelessWidget {
@@ -942,7 +800,7 @@ class _PaymentMethodTable extends StatelessWidget {
         ),
         child: const Row(
           children: [
-            _PaymentHeaderCell(label: 'Code', flex: 2),
+            _PaymentHeaderCell(label: 'ช่องทาง', flex: 2),
             _PaymentHeaderCell(label: 'ชื่อช่องทาง', flex: 3),
             _PaymentHeaderCell(label: 'ระบบ', flex: 2),
             _PaymentHeaderCell(label: 'ประเภทการจ่าย', flex: 3),
@@ -1023,7 +881,29 @@ class _PaymentTableRowState extends State<_PaymentTableRow> {
         ),
         child: Row(
           children: [
-            _PaymentTableCell(value: item.code, flex: 2),
+            Expanded(
+              flex: 2,
+              child: Row(
+                children: [
+                  PaymentCodeAvatar(code: item.code, size: 30),
+                  const SizedBox(width: SetSpace.sm),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 4),
+                      child: Text(
+                        item.code.isEmpty ? '-' : item.code,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: SetText.bodyMuted.copyWith(
+                          color: SetColors.textPrimary,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             _PaymentTableCell(value: item.nameTh, flex: 3),
             _PaymentTableCell(value: item.paymentSystem, flex: 2),
             _PaymentTableCell(value: item.payTypes.join(', '), flex: 3),
@@ -1031,7 +911,7 @@ class _PaymentTableRowState extends State<_PaymentTableRow> {
               flex: 2,
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: _PaymentStatusPill(active: item.active),
+                child: PaymentStatusBadge(active: item.active),
               ),
             ),
             SizedBox(
@@ -1039,7 +919,7 @@ class _PaymentTableRowState extends State<_PaymentTableRow> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  _PaymentMiniButton(
+                  PaymentActionButton(
                     icon: Icons.edit_rounded,
                     label: 'แก้ไข',
                     color: const Color(0xFF2563EB),
@@ -1438,27 +1318,14 @@ class _ErrorState extends StatelessWidget {
       );
 }
 
-class _PaymentMethodFormResult {
-  final String code;
-  final String nameTh;
-  final String description;
-  final String paymentSystem;
-  final List<String> payTypes;
-  final int sortOrder;
-  final bool active;
-  const _PaymentMethodFormResult(
-      {required this.code,
-      required this.nameTh,
-      required this.description,
-      required this.paymentSystem,
-      required this.payTypes,
-      required this.sortOrder,
-      required this.active});
-}
-
 class _PaymentMethodDialog extends StatefulWidget {
   final PaymentMethodModel? item;
-  const _PaymentMethodDialog({this.item});
+  final PaymentMethodViewModel viewModel;
+
+  const _PaymentMethodDialog({
+    required this.item,
+    required this.viewModel,
+  });
   @override
   State<_PaymentMethodDialog> createState() => _PaymentMethodDialogState();
 }
@@ -1605,6 +1472,7 @@ class _PaymentFormActionButtonState extends State<_PaymentFormActionButton> {
 }
 
 class _PaymentMethodDialogState extends State<_PaymentMethodDialog> {
+  final _formKey = GlobalKey<FormState>();
   late final TextEditingController code;
   late final TextEditingController name;
   late final TextEditingController description;
@@ -1641,7 +1509,6 @@ class _PaymentMethodDialogState extends State<_PaymentMethodDialog> {
         ? 'เพิ่มช่องทางการรับชำระ'
         : 'แก้ไขช่องทางการรับชำระ';
     final isCreate = widget.item == null;
-
     return Dialog(
       backgroundColor: SetColors.cardBg,
       shape: RoundedRectangleBorder(
@@ -1705,70 +1572,73 @@ class _PaymentMethodDialogState extends State<_PaymentMethodDialog> {
             ),
             const Divider(height: 1, color: SetColors.border),
             Flexible(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(SetSpace.lg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _PaymentFormSectionLabel(
-                      icon: Icons.payments_outlined,
-                      text: 'ข้อมูลช่องทางการรับชำระ',
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    _PaymentFormField(
-                      controller: code,
-                      label: 'Code',
-                      enabled: isCreate,
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    _PaymentFormField(
-                      controller: name,
-                      label: 'ชื่อภาษาไทย',
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    _PaymentFormField(
-                      controller: description,
-                      label: 'รายละเอียด',
-                      maxLines: 2,
-                    ),
-                    const SizedBox(height: SetSpace.lg),
-                    const _PaymentFormSectionLabel(
-                      icon: Icons.settings_outlined,
-                      text: 'การตั้งค่าระบบ',
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    _PaymentFormField(
-                      controller: system,
-                      label: 'Payment system',
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    _PaymentFormField(
-                      controller: types,
-                      label: 'Pay types (คั่นด้วย comma)',
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    _PaymentFormField(
-                      controller: order,
-                      label: 'ลำดับ',
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: SetSpace.sm),
-                    Container(
-                      decoration: SetDecor.softCard(),
-                      child: SwitchListTile(
-                        value: active,
-                        onChanged: (value) => setState(() => active = value),
-                        title: const Text('เปิดใช้งาน', style: SetText.body),
-                        subtitle: Text(
-                          active
-                              ? 'ช่องทางนี้พร้อมใช้งาน'
-                              : 'ปิดการใช้งานชั่วคราว',
-                          style: SetText.caption,
-                        ),
-                        activeThumbColor: SetColors.primary,
+              child: Form(
+                key: _formKey,
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(SetSpace.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const _PaymentFormSectionLabel(
+                        icon: Icons.payments_outlined,
+                        text: 'ข้อมูลช่องทางการรับชำระ',
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: SetSpace.sm),
+                      _PaymentFormField(
+                        controller: code,
+                        label: 'Code',
+                        enabled: isCreate,
+                      ),
+                      const SizedBox(height: SetSpace.sm),
+                      _PaymentFormField(
+                        controller: name,
+                        label: 'ชื่อภาษาไทย',
+                      ),
+                      const SizedBox(height: SetSpace.sm),
+                      _PaymentFormField(
+                        controller: description,
+                        label: 'รายละเอียด',
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: SetSpace.lg),
+                      const _PaymentFormSectionLabel(
+                        icon: Icons.settings_outlined,
+                        text: 'การตั้งค่าระบบ',
+                      ),
+                      const SizedBox(height: SetSpace.sm),
+                      _PaymentFormField(
+                        controller: system,
+                        label: 'Payment system',
+                      ),
+                      const SizedBox(height: SetSpace.sm),
+                      _PaymentFormField(
+                        controller: types,
+                        label: 'Pay types (คั่นด้วย comma)',
+                      ),
+                      const SizedBox(height: SetSpace.sm),
+                      _PaymentFormField(
+                        controller: order,
+                        label: 'ลำดับ',
+                        keyboardType: TextInputType.number,
+                      ),
+                      const SizedBox(height: SetSpace.sm),
+                      Container(
+                        decoration: SetDecor.softCard(),
+                        child: SwitchListTile(
+                          value: active,
+                          onChanged: (value) => setState(() => active = value),
+                          title: const Text('เปิดใช้งาน', style: SetText.body),
+                          subtitle: Text(
+                            active
+                                ? 'ช่องทางนี้พร้อมใช้งาน'
+                                : 'ปิดการใช้งานชั่วคราว',
+                            style: SetText.caption,
+                          ),
+                          activeThumbColor: SetColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -1801,23 +1671,26 @@ class _PaymentMethodDialogState extends State<_PaymentMethodDialog> {
     );
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (code.text.trim().isEmpty || name.text.trim().isEmpty) return;
-    Navigator.pop(
-        context,
-        _PaymentMethodFormResult(
-          code: code.text.trim(),
-          nameTh: name.text.trim(),
-          description: description.text.trim(),
-          paymentSystem: system.text.trim(),
-          payTypes: types.text
-              .split(',')
-              .map((e) => e.trim())
-              .where((e) => e.isNotEmpty)
-              .toList(),
-          sortOrder: int.tryParse(order.text.trim()) ?? 0,
-          active: active,
-        ));
+    final data = PaymentMethodFormData(
+      code: code.text.trim(),
+      nameTh: name.text.trim(),
+      description: description.text.trim(),
+      paymentSystem: system.text.trim(),
+      payTypes: types.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList(),
+      sortOrder: int.tryParse(order.text.trim()) ?? 0,
+      active: active,
+    );
+    final saved = await widget.viewModel.save(
+      initial: widget.item,
+      data: data,
+    );
+    if (saved && mounted) Navigator.of(context).pop();
   }
 }
 
