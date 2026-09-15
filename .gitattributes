@@ -1,0 +1,65 @@
+# ============================================================================
+# .gitattributes — normalize line endings + binary detection
+# ============================================================================
+# กติกา: ไฟล์ทั้งหมดถูก normalize เป็น LF ใน repo (มาตรฐาน Dart/Flutter ecosystem)
+# - text=auto → git ตรวจว่าเป็น text แล้วเก็บ LF ใน repo
+# - eol=lf    → checkout ออกมาเป็น LF เสมอ (ไม่ว่า OS ไหน)
+# - binary    → ไม่แตะเลย (กัน diff เพี้ยน / corruption)
+# ============================================================================
+
+# ค่าเริ่มต้น: ตรวจอัตโนมัติ + บังคับ LF
+* text=auto eol=lf
+
+# --- Source code -------------------------------------------------------------
+*.dart      text eol=lf
+*.yaml      text eol=lf
+*.yml       text eol=lf
+*.json      text eol=lf
+*.md        text eol=lf
+*.sh        text eol=lf
+*.ps1       text eol=crlf
+*.bat       text eol=crlf
+*.cmd       text eol=crlf
+
+# --- Platform config ---------------------------------------------------------
+*.gradle    text eol=lf
+*.properties text eol=lf
+*.plist     text eol=lf
+*.xml       text eol=lf
+*.xcconfig  text eol=lf
+
+# --- Binary (ห้าม normalize) -------------------------------------------------
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.webp      binary
+*.ico       binary
+*.bmp       binary
+*.ttf       binary
+*.otf       binary
+*.woff      binary
+*.woff2     binary
+*.xlsx      binary
+*.xls       binary
+*.pdf       binary
+*.zip       binary
+*.jar       binary
+*.so        binary
+*.dll       binary
+*.exe       binary
+*.keystore  binary
+*.jks       binary
+*.p12       binary
+*.mobileprovision binary
+
+# --- Generated / vendored (ทำ diff ให้สั้นลง) --------------------------------
+pubspec.lock     -diff linguist-generated
+*.g.dart         linguist-generated
+*.freezed.dart   linguist-generated
+lib/_vendor/**   linguist-vendored
+vendor/**        linguist-vendored
+
+# --- Git internals -----------------------------------------------------------
+.gitattributes export-ignore
+.gitignore     export-ignore
