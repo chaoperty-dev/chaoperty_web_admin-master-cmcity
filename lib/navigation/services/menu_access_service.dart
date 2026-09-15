@@ -14,6 +14,7 @@
 //   1) อ่านจาก AuthRolesTreeStore (cache ที่ AuthService เขียนไว้) ก่อน
 //      ไม่มีค่อยยิงเน็ต — ปกติแล้วจะมี เพราะ login/tryAutoLogin เขียนให้แล้ว
 //   2) in-flight dedupe — ถ้ากำลังโหลดอยู่ คืน Future เดิม ไม่ยิงซ้อน
+//      (rail กับ drawer เรียกพร้อมกันตอน breakpoint เปลี่ยน ก็ยิงครั้งเดียว)
 //   3) parse ครั้งเดียว ได้ครบ pinnedRoutes + routeRoleIds + primaryRoleId
 //   4) cache ผูกกับ "เนื้อหา JSON" — login ใหม่เขียน tree ใหม่ → parse ใหม่เอง
 //      (ไม่ต้องให้ AuthService เรียก invalidate() → เลี่ยง circular import)
@@ -38,21 +39,16 @@ class MenuAccess {
   /// role_id แรกที่ assigned == true (fallback ตอน pin)
   final int? primaryRoleId;
 
-  /// code ทุกตัวที่ assigned == true (ใช้ filter เมนู)
-  final Set<String> assignedCodes;
-
   const MenuAccess({
     required this.pinnedRoutes,
     required this.routeRoleIds,
     required this.primaryRoleId,
-    required this.assignedCodes,
   });
 
   static const MenuAccess empty = MenuAccess(
     pinnedRoutes: {},
     routeRoleIds: {},
     primaryRoleId: null,
-    assignedCodes: {},
   );
 }
 
@@ -66,7 +62,7 @@ class MenuAccessService {
   /// กันยิงซ้อน — ถ้ากำลังโหลดอยู่ คืน Future เดิม
   static Future<MenuAccess>? _inflight;
 
-  /// อ่านสิทธิ์เมนูทั้งหมด (pinned + role ids + assigned codes)
+  /// อ่านสิทธิ์เมนูทั้งหมด (pinned + role ids)
   ///
   /// เรียกซ้ำได้บ่อยเท่าที่ต้องการ — จะยิงเน็ตก็ต่อเมื่อ cache ไม่มีจริงๆ
   static Future<MenuAccess> load() {
@@ -80,13 +76,6 @@ class MenuAccessService {
       if (identical(_inflight, future)) _inflight = null;
     });
     return future;
-  }
-
-  /// ล้าง in-memory cache — ใช้เมื่ออยากบังคับอ่านใหม่ (เช่น หลัง logout)
-  static void invalidate() {
-    _srcJson = null;
-    _parsed = null;
-    _inflight = null;
   }
 
   static Future<MenuAccess> _run() async {
@@ -133,10 +122,9 @@ MenuAccess parseTree(String treeJson, NavigationMenuModel menu) {
     return MenuAccess.empty;
   }
 
-  // ── 1) เดิน tree: เก็บ code→role_id, favorite codes, assigned codes ──
+  // ── 1) เดิน tree: เก็บ code→role_id, favorite codes ──
   final codeToId = <String, int>{};
   final favoriteCodes = <String>{};
-  final assignedCodes = <String>{};
   int? primaryRoleId;
 
   void walk(List<dynamic> list) {
@@ -149,10 +137,7 @@ MenuAccess parseTree(String treeJson, NavigationMenuModel menu) {
 
       if (code.isNotEmpty && idInt != null) codeToId[code] = idInt;
       if (code.isNotEmpty && raw['favorite'] == true) favoriteCodes.add(code);
-      if (raw['assigned'] == true) {
-        if (code.isNotEmpty) assignedCodes.add(code);
-        primaryRoleId ??= idInt;
-      }
+      if (raw['assigned'] == true) primaryRoleId ??= idInt;
 
       final kids = raw['children'];
       if (kids is List && kids.isNotEmpty) walk(kids);
@@ -202,6 +187,5 @@ MenuAccess parseTree(String treeJson, NavigationMenuModel menu) {
     pinnedRoutes: pinnedRoutes,
     routeRoleIds: routeRoleIds,
     primaryRoleId: primaryRoleId,
-    assignedCodes: assignedCodes,
   );
 }

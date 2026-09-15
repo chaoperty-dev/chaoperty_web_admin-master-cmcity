@@ -305,22 +305,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.1.1"
-  cupertino_icons:
-    dependency: transitive
-    description:
-      name: cupertino_icons
-      sha256: "41e005c33bd814be4d3096aff55b1908d419fde52ca656c8c47719ec745873cd"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.9"
-  cupertino_stepper:
-    dependency: "direct main"
-    description:
-      name: cupertino_stepper
-      sha256: "124690b8b23db7b43fc6d547688e42a9f3d73c8f46d0b210568e98a04b5645b2"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.2.1"
   custom_rating_bar:
     dependency: "direct main"
     description:
@@ -693,14 +677,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "5.2.1"
-  flutter_easy_table:
-    dependency: "direct main"
-    description:
-      name: flutter_easy_table
-      sha256: d3f61b8cb9fc9d8b038fe1c5ce5ff48c0cd80eedb559229f029476e10ce091ef
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.1+1"
   flutter_gbprimepay_qrcode:
     dependency: "direct main"
     description:
@@ -908,14 +884,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.1.2"
-  iconsax:
-    dependency: transitive
-    description:
-      name: iconsax
-      sha256: fb0144c61f41f3f8a385fadc27783ea9f5359670be885ed7f35cef32565d5228
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.0.8"
   im_stepper:
     dependency: "direct main"
     description:

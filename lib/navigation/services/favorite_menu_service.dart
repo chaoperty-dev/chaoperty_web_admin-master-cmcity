@@ -68,7 +68,7 @@ class FavoriteMenuService {
   /// Toggle pin สำหรับ role (POST /admin/roles/pin)
   /// Body ตามตัวอย่าง user ส่ง: `{ "role_id": 6, "favorite": true }`
   /// - คืน true ถ้า server ตอบ 2xx
-  static Future<bool> setPin({
+  static Future<bool> _setPin({
     required int roleId,
     required bool favorite,
   }) async {
@@ -121,7 +121,7 @@ class FavoriteMenuService {
     // optimistic write
     await _writeCache(next);
     // sync to server
-    final ok = await setPin(roleId: roleId, favorite: nowPinned);
+    final ok = await _setPin(roleId: roleId, favorite: nowPinned);
     if (!ok) {
       // rollback ถ้า server fail
       await _writeCache(current);
